@@ -1,0 +1,107 @@
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+html {
+	font-size: 62.5%;
+	scroll-behavior: smooth;
+}
+
+body {
+	font-size: 1.6rem;
+	height: 100vh;
+}
+
+[id] {
+	scroll-margin-top: 71.5px;
+}
+
+@media (min-width: 992px) {
+	[id] {
+		scroll-margin-top: 67px;
+	}
+}
+
+.hero-shadow {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.8);
+	z-index: -1;
+}
+
+.logo {
+	width: 80px;
+}
+
+.nav-link,
+.navbar-toggler-icon {
+	font-size: 1.8rem;
+	text-transform: uppercase;
+}
+
+.navbar-toggler {
+	padding: 0.5em 1em;
+}
+
+.home {
+	position: relative;
+	height: 70rem;
+	background-image: url('../img/photos/DSC07904.jpg');
+	background-size: cover;
+	background-position: center;
+	z-index: 0;
+}
+
+.home .btn {
+	padding: 1em 2em;
+	font-size: 1.4rem;
+	text-transform: uppercase;
+}
+
+.home .welcome-text {
+	font-size: 2.2rem;
+}
+
+.event-boxes h3 {
+	font-size: 2.4rem;
+	padding-bottom: 1em;
+	font-weight: bold;
+}
+
+a {
+	text-decoration: none;
+}
+
+.accordion-button {
+	padding: 1em;
+	font-size: 1.8rem;
+}
+
+.attractions {
+	background-color: rgb(248, 248, 248);
+}
+
+.attractions .card-title {
+	font-size: 2rem;
+}
+
+.contact h3 {
+	font-size: 2rem;
+	font-weight: bold;
+	text-transform: uppercase;
+}
+
+.contact .submit-btn {
+	font-size: 1.6rem;
+}
+textarea.form-control,
+input.form-control {
+	font-size: 1.4rem;
+}

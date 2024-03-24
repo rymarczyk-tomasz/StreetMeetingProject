@@ -1,11 +1,162 @@
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StreetMeetingPoland</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="css/custom.css">
 </head>
-<body>
-    <div></div>
+
+<body data-bs-spy="scroll" data-bs-target="#navbar">
+
+    <nav class="navbar navbar-expand-lg bg-body-tertiary py-4 fixed-top" id="#navbar">
+        <div class="container">
+            <a class="navbar-brand" href="#home"><img class="logo" src="img/Logo 2.0/PNG/Logo_4500.png" alt=""></a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup"
+                aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link active" href="#home">Home</a>
+                    <a class="nav-link" href="#event">Event</a>
+                    <a class="nav-link" href="#attractions">Atrakcje</a>
+                    <a class="nav-link" href="#contact">Kontakt</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section id="home" class="home">
+        <div
+            class="container-fluid h-100 d-flex flex-column justify-content-center align-items-center text-light text-center">
+            <p class="display-1">Street Show 2024 </p>
+            <p class="welcome-text mb-5">6 lipca</p>
+            <p class="welcome-text mb-5">Polsat Plus Arena Gdańsk</p>
+            <div class="hero-shadow"></div>
+        </div>
+    </section>
+
+    <main>
+        <section id="event">
+            <div class="container py-5 event-boxes">
+                <div class="row text-center">
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="m-3 p-4 p-lg-5 border text-dark event h-100">
+                            <h3><a href="https://www.kupbilecik.pl/imprezy/117246/Gdańsk/Street+Show+2024/"
+                                    target="_blank" rel="noopener noreferrer">Bilety</a></h3>
+                            <p>Zapraszamy na najwieksze wydarzenie motoryzacyjne w Trójmieście! Bilety już w sprzedaży!
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="m-3 p-4 p-lg-5 border text-dark event h-100">
+                            <h3><a href="http://forms.gle/TDCNEKjFWMkezaxu8" target="_blank"
+                                    rel="noopener noreferrer">Zgłoszenia na 1/8 mili</a></h3>
+                            <p>Lubisz szybką jazdę, masz szybki samochód i chciałbyś się sprawdzić w starciu z innymi
+                                zawodnikami? To jest Twoja szansa! Wyślij zgłoszenie i spróbuj swoich sił w wyścigu na
+                                1/8 mili</p>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-12 col-lg-4">
+                        <div class="m-3 p-4 p-lg-5 border text-dark event h-100">
+                            <h3><a href="http://https://forms.gle/otszBCgWDBagajg57" target="_blank"
+                                    rel="noopener noreferrer">Zgłozsenia strefa
+                                    pojazdów select</a></h3>
+                            <p>Stworzyłeś super projekt? Posiadasz super samochod i chciałbyś się nim pochwalić? Wyślij
+                                zgłoszenie już teraz, a My zweryfikujemy, czy pokazać Twój samochód na koronie stadionu!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="attractions" class="attractions py-5">
+            <div class="container py-5 text-center">
+                <p class="display-3 text-uppercase orange-color mb-0">Atrakcje</p>
+                <p class="py-5">Największe wydarzenie motoryzacyjne w Trójmieście- zrzeszamy miłośników motoryzacji z
+                    całego kraju, przyjedź i się przekonaj</p>
+
+
+                <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4">
+                    <div class="col">
+                        <div class="card h-100">
+                            <img src="./img/photos/DSC07381.jpg" class="card-img-top" alt="Ścigające się samochody">
+                            <div class="card-body">
+                                <h5 class="card-title">Wyścigi na 1/8 mili</h5>
+                                <p class="card-text">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Repellat
+                                    impedit sit ipsam.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card h-100">
+                            <img src="./img/photos/DSC07367.jpg" class="card-img-top" alt="auta">
+                            <div class="card-body">
+                                <h5 class="card-title">Strefa Select</h5>
+                                <p class="card-text">Lorem ipsum dolor, sit amet consectetur adipisicing elit. Neque
+                                    dicta quo qui! Maiores, non iusto!
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card h-100">
+                            <img src="./img/photos/driftTaxi.jpg" class="card-img-top" alt="driftujące samochody">
+                            <div class="card-body">
+                                <h5 class="card-title">Drift Taxi</h5>
+                                <p class="card-text">Lorem ipsum dolor sit amet consectetur adipisicing elit. Sequi,
+                                    porro rem magni laboriosam itaque eveniet magnam fuga.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card h-100">
+                            <img src="./img/photos/DSC07486.jpg" class="card-img-top" alt="FoodTruck">
+                            <div class="card-body">
+                                <h5 class="card-title">Strefa Food Truck</h5>
+                                <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ut!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="contact" class="concatc bg-dark text-light py-5">
+            <div class="container text-center py-5">
+                <p class="display-3 pb-lg-5 text-uppercase">kontakt</p>
+                <div class="row">
+                    <div class="col-lg-6 mt-4 m-lg-0 contact-info">
+                        <h3>Media społecznościowe:</h3>
+                        <p><i class="bi bi-facebook"><a href="https://www.facebook.com/streetmeetingpoland/"
+                                    target="_blank" rel="noopener noreferrer"> Facebook</a></i></p>
+                        <p><i class="bi bi-instagram"><a href="https://www.instagram.com/streetmeetingpoland/"
+                                    target="_blank" rel="noopener noreferrer"> Instagram</a></i></p>
+                    </div>
+                    <div class="col-lg-6 mt-4 m-lg-0 contact-info">
+                        <h3>Adres:</h3>
+                        <p>Street Meeting Polska</p>
+                        <p><i class="bi bi-geo-alt"></i> ul. Pokoleń Lechii Gdańsk 1 <br />80-560 Gdańsk </p>
+                        <p><i class="bi bi-phone"></i> +48 693 152 553</p>
+                        <p><i class="bi bi-at"></i> streetmeetingpolska@gmail.com</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer class="footer bg-dark text-light border-top">
+        <p class="text-center mb-0 py-5">&copy; <span class="footer-year"></span> Street Meeting Polska</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+    <script src="js/main.js"></script>
 </body>
+
 </html>
