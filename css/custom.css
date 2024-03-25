@@ -105,3 +105,15 @@ textarea.form-control,
 input.form-control {
 	font-size: 1.4rem;
 }
+
+.contact-info {
+	padding-top: 2em;
+}
+.contact-info a {
+	color: white;
+	font-size: 2.5rem;
+	padding: 10px;
+}
+.contact-info a:hover {
+	color: rgb(16, 104, 237);
+}
