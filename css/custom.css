@@ -90,16 +90,8 @@ a {
 }
 
 .attractions .card-img-top {
-	/* height: 150px; */
-	/* width: 100%; */
-	/* background-size: cover;
-	background-position: center;
-	background-attachment: fixed; */
+	height: 150px;
 	object-fit: cover;
-	/* max-width: 100%;
-    height: auto; */
-	/* object-fit: scale-down; */
-	/* object-fit: fill; */
 }
 
 .attractions .card-title {
@@ -135,16 +127,8 @@ input.form-control {
 	color: rgb(16, 104, 237);
 }
 
-@media (max-width: 1199px) {
+@media (max-width: 768px) {
 	.attractions .card-img-top {
-		height: 250px;
-		/* object-fit: cover; */
-	}
-}
-
-@media (min-width: 1200px) {
-	.attractions .card-img-top {
-		height: 150px;
-		object-fit: cover;
+		height: 100%;
 	}
 }
