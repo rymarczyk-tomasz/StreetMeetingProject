@@ -32,7 +32,7 @@ body {
 	left: 0;
 	width: 100%;
 	height: 100%;
-	background-color: rgba(0, 0, 0, 0.8);
+	background-color: rgba(0, 0, 0, 0.85);
 	z-index: -1;
 }
 
@@ -53,7 +53,7 @@ body {
 .home {
 	position: relative;
 	height: 100vh;
-	background-image: url('../img/photos/DSC07904-min.jpg');
+	background-image: url('../img/photos/hero_image.jpg');
 	background-size: cover;
 	background-position: center;
 	background-attachment: fixed;
@@ -64,10 +64,6 @@ body {
 	padding: 1em 2em;
 	font-size: 1.4rem;
 	text-transform: uppercase;
-}
-
-.home .welcome-text {
-	font-size: 2.2rem;
 }
 
 .event-boxes h3 {
@@ -117,12 +113,18 @@ input.form-control {
 	padding-top: 2em;
 }
 
+.event-boxes a{
+	text-transform: uppercase;
+	color: black;
+}
+
 .contact-info a {
 	color: white;
 	font-size: 2.5rem;
 	padding: 10px;
 }
 
+.event-boxes a:hover,
 .contact-info a:hover {
 	color: rgb(16, 104, 237);
 }
