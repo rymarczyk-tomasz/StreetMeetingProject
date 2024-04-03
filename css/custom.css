@@ -32,7 +32,7 @@ body {
 	left: 0;
 	width: 100%;
 	height: 100%;
-	background-color: rgba(0, 0, 0, 0.85);
+	background-color: rgba(0, 0, 0, 0.7);
 	z-index: -1;
 }
 
@@ -110,7 +110,7 @@ input.form-control {
 }
 
 .contact-info {
-	padding-top: 2em;
+	padding-top: 1em;
 }
 
 .event-boxes a{
