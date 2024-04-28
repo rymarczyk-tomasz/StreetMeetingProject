@@ -118,7 +118,14 @@ input.form-control {
   color: black;
 }
 
-.contact-info a {
+.links {
+  font-size: 1.6rem;
+  text-decoration: none;
+  color: white;
+  padding-top: 1em;
+}
+
+.social-media {
   color: white;
   font-size: 2.5rem;
   padding: 10px;
