@@ -135,9 +135,12 @@ input.form-control {
 
 @media (max-width: 768px) {
     .home {
-        background-image: url("../img/photos/Hero-image.jpg");
+        background-image: url("../img/photos/hero_image-mobile.jpg");
     }
 
+    .hero-shadow {
+        background-color: rgba(0, 0, 0, 0.4);
+    }
     .event .card-img-top {
         height: 100%;
     }
