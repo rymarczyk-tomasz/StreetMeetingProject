@@ -133,6 +133,35 @@ input.form-control {
     color: rgb(16, 104, 237);
 }
 
+.form {
+    background-color: #f8f9fa;
+    padding: 40px;
+    border-radius: 8px;
+}
+
+.form h2 {
+    color: #333;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+
+.form .form-label {
+    font-size: 1.6rem;
+    font-weight: 500;
+}
+
+.form .form-control {
+    font-size: 1.4rem;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+
+.form .btn {
+    font-size: 1.6rem;
+    padding: 10px 20px;
+}
+
 @media (max-width: 768px) {
     .home {
         background-image: url("../img/photos/hero_image-mobile.jpg");
