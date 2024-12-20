@@ -1,3 +1,4 @@
+require("dotenv").config(); // Załaduj zmienne środowiskowe z pliku .env
 const express = require("express");
 const multer = require("multer");
 const { google } = require("googleapis");
@@ -6,6 +7,9 @@ const path = require("path");
 
 const app = express();
 const PORT = 3000;
+
+// Załaduj dane z credentials.json
+const credentials = JSON.parse(fs.readFileSync("credentials.json"));
 
 // Konfiguracja Multer do obsługi przesyłania zdjęć
 const storage = multer.diskStorage({
@@ -18,10 +22,12 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Wczytaj poświadczenia Google API
-const credentials = JSON.parse(fs.readFileSync("credentials.json"));
+// Konfiguracja Google API za pomocą credentials.json
 const auth = new google.auth.GoogleAuth({
-    credentials: credentials,
+    credentials: {
+        client_email: credentials.client_email, // Pobierz client_email z credentials.json
+        private_key: credentials.private_key.replace(/\\n/g, "\n"), // Upewnij się, że klucz ma poprawny format
+    },
     scopes: [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive",
@@ -33,7 +39,7 @@ const drive = google.drive({ version: "v3", auth });
 
 // Funkcja do zapisu danych w Arkuszu Google
 async function appendToSheet(data) {
-    const spreadsheetId = "1FJWpiKO1zJVWTtX-PSZxV9TUp_G5d4BY0IfbXupJti0";
+    const spreadsheetId = process.env.SPREADSHEET_ID; // Pobierz ID arkusza z .env
     await sheets.spreadsheets.values.append({
         spreadsheetId,
         range: "Arkusz1!A:H",
@@ -59,7 +65,7 @@ async function appendToSheet(data) {
 async function uploadFileToDrive(filePath, fileName) {
     const fileMetadata = {
         name: fileName,
-        parents: ["1OgAGdsbb9bd7GCLDP9OY2lv8yVMCBqmd"],
+        parents: [process.env.DRIVE_FOLDER_ID], // Pobierz ID folderu z .env
     };
     const media = {
         mimeType: "image/jpeg",
@@ -74,7 +80,7 @@ async function uploadFileToDrive(filePath, fileName) {
     return file.data.webViewLink;
 }
 
-// Endpoint do obsługi przesyłania danych - dodaj `async` tutaj
+// Endpoint do obsługi przesyłania danych
 app.post("/upload", upload.single("photo"), async (req, res) => {
     try {
         const {
@@ -102,7 +108,7 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
                 .json({ message: "Wszystkie pola są wymagane." });
         }
 
-        // Użycie `await` w funkcji asynchronicznej
+        // Prześlij zdjęcie na Dysk Google
         const photoUrl = await uploadFileToDrive(
             req.file.path,
             req.file.filename
