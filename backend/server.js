@@ -8,9 +8,6 @@ const path = require("path");
 const app = express();
 const PORT = 3000;
 
-// Załaduj dane z credentials.json
-const credentials = JSON.parse(fs.readFileSync("credentials.json"));
-
 // Konfiguracja Multer do obsługi przesyłania zdjęć
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -22,11 +19,11 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Konfiguracja Google API za pomocą credentials.json
+// Konfiguracja Google API za pomocą zmiennych środowiskowych
 const auth = new google.auth.GoogleAuth({
     credentials: {
-        client_email: credentials.client_email, // Pobierz client_email z credentials.json
-        private_key: credentials.private_key.replace(/\\n/g, "\n"), // Upewnij się, że klucz ma poprawny format
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"), // Upewnij się, że klucz ma poprawny format
     },
     scopes: [
         "https://www.googleapis.com/auth/spreadsheets",
