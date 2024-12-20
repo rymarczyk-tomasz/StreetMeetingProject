@@ -1,29 +1,39 @@
-require("dotenv").config(); // Załaduj zmienne środowiskowe z pliku .env
+require("dotenv").config();
 const express = require("express");
 const multer = require("multer");
 const { google } = require("googleapis");
 const fs = require("fs");
 const path = require("path");
+const cors = require("cors");
 
 const app = express();
 const PORT = 3000;
 
-// Konfiguracja Multer do obsługi przesyłania zdjęć
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, "uploads/");
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
-    },
-});
-const upload = multer({ storage: storage });
+app.use(cors());
+app.use(express.static(path.join(__dirname, "../")));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Konfiguracja Google API za pomocą zmiennych środowiskowych
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, "uploads/"),
+    filename: (req, file, cb) =>
+        cb(null, Date.now() + path.extname(file.originalname)),
+});
+const upload = multer({ storage });
+
+// Check environment variables
+if (!process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_CLIENT_EMAIL) {
+    console.error(
+        "Missing GOOGLE_PRIVATE_KEY or GOOGLE_CLIENT_EMAIL in .env file"
+    );
+    process.exit(1);
+}
+
+// Create auth object using environment variables
 const auth = new google.auth.GoogleAuth({
     credentials: {
+        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"), // Upewnij się, że klucz ma poprawny format
     },
     scopes: [
         "https://www.googleapis.com/auth/spreadsheets",
@@ -34,11 +44,12 @@ const auth = new google.auth.GoogleAuth({
 const sheets = google.sheets({ version: "v4", auth });
 const drive = google.drive({ version: "v3", auth });
 
-// Funkcja do zapisu danych w Arkuszu Google
+const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+const GOOGLE_DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID;
+
 async function appendToSheet(data) {
-    const spreadsheetId = process.env.SPREADSHEET_ID; // Pobierz ID arkusza z .env
     await sheets.spreadsheets.values.append({
-        spreadsheetId,
+        spreadsheetId: SPREADSHEET_ID,
         range: "Arkusz1!A:H",
         valueInputOption: "RAW",
         resource: {
@@ -58,26 +69,20 @@ async function appendToSheet(data) {
     });
 }
 
-// Funkcja do przesyłania zdjęcia na Dysk Google
 async function uploadFileToDrive(filePath, fileName) {
-    const fileMetadata = {
-        name: fileName,
-        parents: [process.env.DRIVE_FOLDER_ID], // Pobierz ID folderu z .env
-    };
+    const fileMetadata = { name: fileName, parents: [GOOGLE_DRIVE_FOLDER_ID] };
     const media = {
         mimeType: "image/jpeg",
         body: fs.createReadStream(filePath),
     };
-
     const file = await drive.files.create({
         resource: fileMetadata,
-        media: media,
+        media,
         fields: "id, webViewLink",
     });
     return file.data.webViewLink;
 }
 
-// Endpoint do obsługi przesyłania danych
 app.post("/upload", upload.single("photo"), async (req, res) => {
     try {
         const {
@@ -105,13 +110,10 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
                 .json({ message: "Wszystkie pola są wymagane." });
         }
 
-        // Prześlij zdjęcie na Dysk Google
         const photoUrl = await uploadFileToDrive(
             req.file.path,
             req.file.filename
         );
-
-        // Zapisz dane w Arkuszu Google
         await appendToSheet({
             firstName,
             lastName,
@@ -123,7 +125,6 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
             photoUrl,
         });
 
-        // Usuń plik po przesłaniu na Google Drive
         fs.unlink(req.file.path, (err) => {
             if (err) console.error("Błąd przy usuwaniu pliku:", err);
         });
@@ -132,12 +133,11 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
             message: `Dziękujemy za zgłoszenie, ${firstName} ${lastName}!`,
         });
     } catch (error) {
-        console.error("Błąd:", error);
+        console.error("Błąd na serwerze:", error);
         res.status(500).json({ message: "Wystąpił błąd serwera." });
     }
 });
 
-// Uruchomienie serwera
 app.listen(PORT, () => {
     console.log(`Serwer działa na http://localhost:${PORT}`);
 });

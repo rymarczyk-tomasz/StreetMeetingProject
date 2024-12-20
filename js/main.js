@@ -1,57 +1,43 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const nav = document.querySelector(".navbar-collapse");
-    const footerYear = document.querySelector(".footer-year");
+    const form = document.getElementById("registrationForm");
+    const responseMessage = document.getElementById("responseMessage");
 
-    // Obsługa kliknięcia poza menu nawigacyjne
-    document.addEventListener("click", () => {
-        if (nav.classList.contains("show")) {
-            nav.classList.remove("show");
-        }
-    });
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        console.log("Formularz został wysłany");
 
-    // Ustawianie aktualnego roku w stopce
-    const handleCurrentYear = () => {
-        const year = new Date().getFullYear();
-        footerYear.innerText = year;
-    };
+        responseMessage.innerText = "Wysyłanie formularza, proszę czekać...";
+        responseMessage.style.color = "blue";
 
-    handleCurrentYear();
+        const formData = new FormData(form);
+        console.log("Formularz wysyłany:", formData);
 
-    // Śledzenie kliknięć w linki
-    document.querySelectorAll("a").forEach((anchor) => {
-        anchor.addEventListener("click", () => {
-            // Śledzenie zdarzeń w Google Analytics
-            if (typeof gtag === "function") {
-                gtag("event", "click", {
-                    event_category: "link",
-                    event_label: anchor.href,
-                });
-            }
-        });
-    });
-
-    // Obsługa formularza
-    const uploadForm = document.getElementById("uploadForm");
-
-    if (uploadForm) {
-        uploadForm.addEventListener("submit", (e) => {
-            e.preventDefault(); // Zapobieganie domyślnemu działaniu formularza
-
-            const formData = new FormData(uploadForm);
-
-            // Wysyłanie danych do serwera
-            fetch(uploadForm.action, {
+        try {
+            const response = await fetch("http://localhost:3000/upload", {
                 method: "POST",
                 body: formData,
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    alert(data.message); // Wyświetlenie komunikatu sukcesu
-                })
-                .catch((error) => {
-                    console.error("Błąd:", error);
-                    alert("Wystąpił błąd podczas przesyłania formularza.");
-                });
-        });
-    }
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log("Odpowiedź serwera:", result);
+                responseMessage.innerText =
+                    "Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją.";
+                responseMessage.style.color = "green";
+                form.reset();
+            } else {
+                const error = await response.json();
+                console.log("Błąd odpowiedzi:", error);
+                responseMessage.innerText = `Błąd: ${
+                    error.message || "Wystąpił błąd przy wysyłaniu formularza."
+                }`;
+                responseMessage.style.color = "red";
+            }
+        } catch (error) {
+            console.error("Błąd podczas przesyłania:", error);
+            responseMessage.innerText =
+                "Wystąpił błąd przy wysyłaniu formularza. Spróbuj ponownie później.";
+            responseMessage.style.color = "red";
+        }
+    });
 });

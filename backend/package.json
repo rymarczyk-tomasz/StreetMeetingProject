@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "@google-cloud/recaptcha-enterprise": "^5.13.0",
     "axios": "^1.7.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
