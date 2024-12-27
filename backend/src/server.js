@@ -1,10 +1,11 @@
-require("dotenv").config();
-const express = require("express");
-const multer = require("multer");
-const { google } = require("googleapis");
-const fs = require("fs");
-const path = require("path");
+// filepath: /d:/Projekty/SM/StreetMeetingProject/backend/server.js
 const cors = require("cors");
+const express = require("express");
+const path = require("path");
+const multer = require("multer");
+const fs = require("fs");
+const { google } = require("googleapis");
+require("dotenv").config();
 
 // Inicjalizacja aplikacji Express
 const app = express();
@@ -25,7 +26,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Wczytanie pliku credentials.json do autoryzacji Google API
-const credentials = JSON.parse(fs.readFileSync("./credentials.json"));
+const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
 
 // Konfiguracja autoryzacji Google Auth
 const auth = new google.auth.GoogleAuth({
@@ -67,11 +68,12 @@ async function appendToSheet(data) {
             },
         });
     } catch (error) {
-        console.error("Błąd podczas dodawania danych do arkusza:", error);
+        console.error("Błąd na serwerze:", error);
+        res.status(500).json({ message: "Wystąpił błąd serwera." });
     }
 }
 
-// Funkcja do przesyłania pliku do Google Drive
+// Przesyłanie pliku do Google Drive
 async function uploadFileToDrive(filePath, fileName) {
     const fileMetadata = {
         name: fileName,
