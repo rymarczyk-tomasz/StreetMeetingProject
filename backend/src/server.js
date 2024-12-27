@@ -1,4 +1,3 @@
-// filepath: /d:/Projekty/SM/StreetMeetingProject/backend/server.js
 const cors = require("cors");
 const express = require("express");
 const path = require("path");
@@ -26,7 +25,13 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Wczytanie pliku credentials.json do autoryzacji Google API
-const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+let credentials;
+try {
+    credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+} catch (error) {
+    console.error("Błąd wczytywania credentials.json:", error);
+    process.exit(1);
+}
 
 // Konfiguracja autoryzacji Google Auth
 const auth = new google.auth.GoogleAuth({

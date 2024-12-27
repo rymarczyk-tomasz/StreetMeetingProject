@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
-        console.log("Formularz został wysłany");
 
         responseMessage.innerText = "Wysyłanie formularza, proszę czekać...";
         responseMessage.style.color = "blue";
