@@ -201,5 +201,4 @@ app.post('/upload', upload.single('file'), (req, res) => {
 
 // Uruchomienie serwera
 app.listen(PORT, () => {
-    console.log(`Serwer działa na porcie ${PORT}`);
 });
