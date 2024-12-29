@@ -1,16 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("DOM w pełni załadowany i przetworzony");
     const form = document.getElementById("registrationForm");
     const responseMessage = document.getElementById("responseMessage");
 
-    if (!form) {
-        console.error("Formularz nie został znaleziony");
-        return;
-    }
-
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
-        console.log("Formularz został przesłany");
 
         responseMessage.innerText = "Wysyłanie formularza, proszę czekać...";
         responseMessage.style.color = "blue";
@@ -19,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("Formularz wysyłany:", formData);
 
         try {
-            const response = await fetch(window.ENV.API_BASE_URL, {
+            const response = await fetch("http://localhost:3000/upload", {
                 method: "POST",
                 body: formData,
             });
