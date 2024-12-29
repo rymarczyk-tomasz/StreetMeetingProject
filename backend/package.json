@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "@azure/functions": "^4.0.0",
     "axios": "^1.7.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
@@ -11,15 +10,13 @@
   },
   "name": "backend",
   "version": "1.0.0",
-  "main": "backend/src/server.js",
+  "main": "src/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node backend/src/server.js",
-    "build": "npm run build"
+    "start": "node src/server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
-  "devDependencies": {}
+  "description": ""
 }
