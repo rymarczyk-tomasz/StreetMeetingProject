@@ -23,7 +23,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 responseMessage.innerText =
                     "Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją.";
                 responseMessage.style.color = "green";
-                form.reset();
             } else {
                 const error = await response.json();
                 console.log("Błąd odpowiedzi:", error);
