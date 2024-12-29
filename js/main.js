@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("Formularz wysyłany:", formData);
 
         try {
-            const response = await fetch("https://streetmeetingbackend.azurewebsites.net/upload", { // Zaktualizuj URL
+            const response = await fetch(window.ENV.API_BASE_URL, { // Użyj API_BASE_URL z config.js
                 method: "POST",
                 body: formData,
             });
