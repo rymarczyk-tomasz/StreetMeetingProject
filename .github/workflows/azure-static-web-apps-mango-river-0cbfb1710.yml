@@ -21,6 +21,38 @@ jobs:
               with:
                   submodules: true
                   lfs: false
+
+            # Tworzenie pliku .env
+            - name: Create .env file
+              run: |
+                  echo "# Google API credentials" > .env
+                  echo "GOOGLE_CLIENT_EMAIL=${{ secrets.GOOGLE_CLIENT_EMAIL }}" >> .env
+                  echo 'GOOGLE_PRIVATE_KEY="${{ secrets.GOOGLE_PRIVATE_KEY }}"' >> .env
+                  echo "" >> .env
+                  echo "# Spreadsheet ID" >> .env
+                  echo "SPREADSHEET_ID=${{ secrets.SPREADSHEET_ID }}" >> .env
+                  echo "" >> .env
+                  echo "# Google Drive folder ID" >> .env
+                  echo "DRIVE_FOLDER_ID=${{ secrets.DRIVE_FOLDER_ID }}" >> .env
+
+            # Tworzenie pliku credentials.json
+            - name: Create credentials.json file
+              run: |
+                  echo '{' > credentials.json
+                  echo '  "type": "service_account",' >> credentials.json
+                  echo '  "project_id": "formularzstreetmeeting",' >> credentials.json
+                  echo '  "private_key_id": "${{ secrets.PRIVATE_KEY_ID }}",' >> credentials.json
+                  echo '  "private_key": "${{ secrets.GOOGLE_PRIVATE_KEY }}",' >> credentials.json
+                  echo '  "client_email": "${{ secrets.GOOGLE_CLIENT_EMAIL }}",' >> credentials.json
+                  echo '  "client_id": "102922157351549060087",' >> credentials.json
+                  echo '  "auth_uri": "https://accounts.google.com/o/oauth2/auth",' >> credentials.json
+                  echo '  "token_uri": "https://oauth2.googleapis.com/token",' >> credentials.json
+                  echo '  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",' >> credentials.json
+                  echo '  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/formularzstreetmeeting-434%40formularzstreetmeeting.iam.gserviceaccount.com",' >> credentials.json
+                  echo '  "universe_domain": "googleapis.com"' >> credentials.json
+                  echo '}' >> credentials.json
+
+            # Azure Static Web Apps - BEZ ZMIAN
             - name: Build And Deploy
               id: builddeploy
               uses: Azure/static-web-apps-deploy@v1
