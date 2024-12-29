@@ -18,7 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Konfiguracja Multer (upload plików)
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, "uploads/"),
+    destination: (req, file, cb) => cb(null, "./uploads/"),
     filename: (req, file, cb) =>
         cb(null, Date.now() + path.extname(file.originalname)),
 });
