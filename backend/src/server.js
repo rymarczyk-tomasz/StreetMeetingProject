@@ -1,14 +1,15 @@
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, "../config/.env") });
+
 const cors = require("cors");
 const express = require("express");
-const path = require("path");
 const multer = require("multer");
 const fs = require("fs");
 const { google } = require("googleapis");
-require("dotenv").config();
 
 // Inicjalizacja aplikacji Express
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
@@ -27,9 +28,11 @@ const upload = multer({ storage });
 // Wczytanie pliku credentials.json do autoryzacji Google API
 let credentials;
 try {
-    credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+    const credentialsPath = path.join(__dirname, "../config/credentials.json");
+    const credentialsData = fs.readFileSync(credentialsPath, "utf8");
+    credentials = JSON.parse(credentialsData);
 } catch (error) {
-    console.error("Błąd wczytywania credentials.json:", error);
+    console.error("Błąd wczytywania credentials.json:", error.message);
     process.exit(1);
 }
 
@@ -73,8 +76,11 @@ async function appendToSheet(data) {
             },
         });
     } catch (error) {
-        console.error("Błąd na serwerze:", error);
-        res.status(500).json({ message: "Wystąpił błąd serwera." });
+        console.error(
+            "Błąd podczas dodawania danych do Google Sheets:",
+            error.message
+        );
+        throw new Error("Nie udało się dodać danych do arkusza.");
     }
 }
 
@@ -104,6 +110,7 @@ async function uploadFileToDrive(filePath, fileName) {
 
 // Endpoint do przesyłania danych (formularz)
 app.post("/upload", upload.single("photo"), async (req, res) => {
+    let photoPath;
     try {
         const {
             firstName,
@@ -115,7 +122,6 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
             carDescription,
         } = req.body;
 
-        // Walidacja danych
         if (
             !firstName ||
             !lastName ||
@@ -131,13 +137,9 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
                 .json({ message: "Wszystkie pola są wymagane." });
         }
 
-        // Przesyłanie pliku do Google Drive
-        const photoUrl = await uploadFileToDrive(
-            req.file.path,
-            req.file.filename
-        );
+        photoPath = req.file.path;
+        const photoUrl = await uploadFileToDrive(photoPath, req.file.filename);
 
-        // Dodanie danych do Google Sheets
         await appendToSheet({
             firstName,
             lastName,
@@ -149,22 +151,23 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
             photoUrl,
         });
 
-        // Usunięcie pliku z serwera po wysłaniu
-        fs.unlink(req.file.path, (err) => {
-            if (err) console.error("Błąd przy usuwaniu pliku:", err);
-        });
-
-        // Odpowiedź dla użytkownika
         res.json({
             message: `Dziękujemy za zgłoszenie, ${firstName} ${lastName}!`,
         });
     } catch (error) {
-        console.error("Błąd na serwerze:", error);
+        console.error("Błąd na serwerze:", error.message);
         res.status(500).json({ message: "Wystąpił błąd serwera." });
+    } finally {
+        if (photoPath) {
+            fs.unlink(photoPath, (err) => {
+                if (err)
+                    console.error("Błąd przy usuwaniu pliku:", err.message);
+            });
+        }
     }
 });
 
 // Uruchomienie serwera
 app.listen(PORT, () => {
-    console.log(`Serwer działa na http://localhost:${PORT}`);
+    console.log(`Serwer działa na porcie ${PORT}`);
 });
