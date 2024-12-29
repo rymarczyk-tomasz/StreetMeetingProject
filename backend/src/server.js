@@ -18,12 +18,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Konfiguracja Multer (upload plików)
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, "./uploads/"),
-    filename: (req, file, cb) =>
-        cb(null, Date.now() + path.extname(file.originalname)),
-});
-const upload = multer({ storage });
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const upload = multer({ dest: uploadDir });
 
 // Wczytanie danych uwierzytelniających z zmiennych środowiskowych
 const credentials = {
@@ -177,10 +177,26 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
 });
 
 app.post('/upload', upload.single('file'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ message: 'No file uploaded.' });
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded.' });
+        }
+
+        // Przetwarzanie pliku i innych danych
+        const { originalname, path: filePath } = req.file;
+        console.log(`Plik otrzymany: ${originalname}, ścieżka: ${filePath}`);
+
+        res.json({ message: 'File uploaded successfully', file: req.file });
+    } catch (error) {
+        console.error("Błąd na serwerze:", error.message);
+        res.status(500).json({ message: "Wystąpił błąd serwera." });
+    } finally {
+        if (req.file && req.file.path) {
+            fs.unlink(req.file.path, (err) => {
+                if (err) console.error("Błąd przy usuwaniu pliku:", err.message);
+            });
+        }
     }
-    res.json({ message: 'File uploaded successfully', file: req.file });
 });
 
 // Uruchomienie serwera
