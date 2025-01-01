@@ -133,6 +133,10 @@ input.form-control {
     color: rgb(16, 104, 237);
 }
 
+.arrow {
+    animation: blink 1s infinite;
+}
+
 .form {
     background-color: #f8f9fa;
     padding: 40px;
@@ -173,11 +177,6 @@ input.form-control {
     .event .card-img-top {
         height: 100%;
     }
-}
-
-
-.arrow {
-    animation: blink 1s infinite;
 }
 
 @keyframes blink {
