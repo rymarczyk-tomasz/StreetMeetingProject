@@ -165,7 +165,7 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
         });
 
         res.json({
-            message: `Gratulacje! ${firstName} ${lastName}! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją.`,
+            message: `Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)`,
         });
     } catch (error) {
         console.error("Błąd na serwerze:", error.message);
