@@ -13,15 +13,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const formData = new FormData(form);
 
         try {
-            const response = await fetch(window.ENV.API_BASE_URL, { // Użyj API_BASE_URL z config.js
+            const response = await fetch(window.ENV.API_BASE_URL, {
+                // Użyj API_BASE_URL z config.js
                 method: "POST",
                 body: formData,
             });
 
             if (response.ok) {
                 const result = await response.json();
-                responseMessage.innerText =
-                    "Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją.";
+                responseMessage.innerText = `Gratulacje! ${firstName} ${lastName}! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją.`;
                 responseMessage.style.color = "green";
             } else {
                 const error = await response.json();
