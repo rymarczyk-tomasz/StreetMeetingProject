@@ -4,11 +4,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const navbarCollapse = document.getElementById("navbarNavAltMarkup");
     const navLinks = document.querySelectorAll(".nav-link");
 
+    let dotsInterval;
+
+    function animateDots() {
+        let dots = "";
+        dotsInterval = setInterval(() => {
+            dots = dots.length < 3 ? dots + "." : "";
+            responseMessage.innerText = `Wysyłanie formularza, proszę czekać${dots}`;
+        }, 500);
+    }
+
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
 
-        responseMessage.innerText = "Wysyłanie formularza, proszę czekać...";
+        responseMessage.innerText = "Wysyłanie formularza, proszę czekać";
         responseMessage.style.color = "blue";
+        animateDots();
 
         const formData = new FormData(form);
 
