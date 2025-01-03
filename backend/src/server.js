@@ -118,7 +118,7 @@ async function uploadFileToDrive(filePath, fileName) {
 }
 
 // Endpoint do przesyłania danych (formularz)
-app.post("/uploads", upload.single("photo"), async (req, res) => {
+app.post("/upload", upload.single("photo"), async (req, res) => {
     let photoPath;
     try {
         const {
@@ -176,7 +176,7 @@ app.post("/uploads", upload.single("photo"), async (req, res) => {
     }
 });
 
-app.post('/uploads', upload.single('file'), (req, res) => {
+app.post('/upload', upload.single('file'), (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: 'No file uploaded.' });
