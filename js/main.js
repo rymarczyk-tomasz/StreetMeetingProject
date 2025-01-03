@@ -20,7 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             if (response.ok) {
-                const result = await response.json();
                 responseMessage.innerText = `Gratulacje! ${firstName} ${lastName}! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją.`;
                 responseMessage.style.color = "green";
             } else {
