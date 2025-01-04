@@ -4,15 +4,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const navbarCollapse = document.getElementById("navbarNavAltMarkup");
     const navLinks = document.querySelectorAll(".nav-link");
 
-    let dotsInterval;
+    // let dotsInterval;
 
-    function animateDots() {
-        let dots = "";
-        dotsInterval = setInterval(() => {
-            dots = dots.length < 3 ? dots + "." : "";
-            responseMessage.innerText = `Wysyłanie formularza, proszę czekać${dots}`;
-        }, 500);
-    }
+    // function animateDots() {
+    //     let dots = "";
+    //     dotsInterval = setInterval(() => {
+    //         dots = dots.length < 3 ? dots + "." : "";
+    //         responseMessage.innerText = `Wysyłanie formularza, proszę czekać${dots}`;
+    //     }, 500);
+    // }
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
