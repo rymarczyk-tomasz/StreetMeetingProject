@@ -65,6 +65,7 @@ const drive = google.drive({ version: "v3", auth });
 // ID arkusza kalkulacyjnego i folderu Google Drive z .env
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const GOOGLE_DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID;
+const GOOGLE_DRIVE_GALLERY_FOLDER_ID = process.env.DRIVE_GALLERY_FOLDER_ID;
 
 // Funkcja do dodawania danych do Google Sheets
 async function appendToSheet(data) {
@@ -177,6 +178,27 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
                     console.error("Błąd przy usuwaniu pliku:", err.message);
             });
         }
+    }
+});
+
+// Endpoint do pobierania zdjęć z Google Drive
+app.get("/api/gallery", async (req, res) => {
+    try {
+        const response = await drive.files.list({
+            q: `'${GOOGLE_DRIVE_GALLERY_FOLDER_ID}' in parents and mimeType contains 'image/'`,
+            fields: "files(id, name)",
+        });
+
+        const files = response.data.files.map((file) => ({
+            id: file.id,
+            name: file.name,
+            url: `https://drive.google.com/uc?id=${file.id}`,
+        }));
+
+        res.json(files);
+    } catch (error) {
+        console.error("Błąd przy pobieraniu zdjęć:", error.message);
+        res.status(500).json({ message: "Nie udało się pobrać zdjęć." });
     }
 });
 
