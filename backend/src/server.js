@@ -17,12 +17,20 @@ app.use(express.static(path.join(__dirname, "../")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Konfiguracja folderu do przechowywania pobranych zdjęć
+const downloadsDir = path.join(__dirname, "downloads");
+if (!fs.existsSync(downloadsDir)) {
+    fs.mkdirSync(downloadsDir, { recursive: true });
+}
+
+// Middleware do serwowania plików z folderu `downloads`
+app.use("/downloads", express.static(downloadsDir));
+
 // Konfiguracja Multer (upload plików)
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
-
 const upload = multer({ dest: uploadDir });
 
 // Wczytanie danych uwierzytelniających z zmiennych środowiskowych
@@ -52,136 +60,16 @@ if (!credentials.private_key) {
 // Konfiguracja autoryzacji Google Auth
 const auth = new google.auth.GoogleAuth({
     credentials: credentials,
-    scopes: [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive",
-    ],
+    scopes: ["https://www.googleapis.com/auth/drive"],
 });
 
-// Inicjalizacja Google Sheets i Google Drive
-const sheets = google.sheets({ version: "v4", auth });
+// Inicjalizacja Google Drive
 const drive = google.drive({ version: "v3", auth });
 
-// ID arkusza kalkulacyjnego i folderu Google Drive z .env
-const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
-const GOOGLE_DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID;
+// ID folderu Google Drive z .env
 const GOOGLE_DRIVE_GALLERY_FOLDER_ID = process.env.DRIVE_GALLERY_FOLDER_ID;
 
-// Funkcja do dodawania danych do Google Sheets
-async function appendToSheet(data) {
-    try {
-        await sheets.spreadsheets.values.append({
-            spreadsheetId: SPREADSHEET_ID,
-            range: "Arkusz1!A:H",
-            valueInputOption: "RAW",
-            resource: {
-                values: [
-                    [
-                        data.firstName,
-                        data.lastName,
-                        data.email,
-                        data.phone,
-                        data.licensePlate,
-                        data.carBrand,
-                        data.carDescription,
-                        data.photoUrl,
-                    ],
-                ],
-            },
-        });
-    } catch (error) {
-        console.error(
-            "Błąd podczas dodawania danych do Google Sheets:",
-            error.message
-        );
-        throw new Error("Nie udało się dodać danych do arkusza.");
-    }
-}
-
-// Przesyłanie pliku do Google Drive
-async function uploadFileToDrive(filePath, fileName) {
-    const fileMetadata = {
-        name: fileName,
-        parents: [GOOGLE_DRIVE_FOLDER_ID],
-    };
-    const media = {
-        mimeType: "image/jpeg",
-        body: fs.createReadStream(filePath),
-    };
-
-    try {
-        const file = await drive.files.create({
-            resource: fileMetadata,
-            media,
-            fields: "id, webViewLink",
-        });
-        return file.data.webViewLink; // Zwróci link do pliku na Google Drive
-    } catch (error) {
-        console.error("Błąd przy przesyłaniu pliku do Google Drive:", error);
-        throw error;
-    }
-}
-
-// Endpoint do przesyłania danych (formularz)
-app.post("/upload", upload.single("photo"), async (req, res) => {
-    let photoPath;
-    try {
-        const {
-            firstName,
-            lastName,
-            email,
-            phone,
-            licensePlate,
-            carBrand,
-            carDescription,
-        } = req.body;
-
-        if (
-            !firstName ||
-            !lastName ||
-            !email ||
-            !phone ||
-            !licensePlate ||
-            !carBrand ||
-            !carDescription ||
-            !req.file
-        ) {
-            return res
-                .status(400)
-                .json({ message: "Wszystkie pola są wymagane." });
-        }
-
-        photoPath = req.file.path;
-        const photoUrl = await uploadFileToDrive(photoPath, req.file.filename);
-
-        await appendToSheet({
-            firstName,
-            lastName,
-            email,
-            phone,
-            licensePlate,
-            carBrand,
-            carDescription,
-            photoUrl,
-        });
-
-        res.json({
-            message: `Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)`,
-        });
-    } catch (error) {
-        console.error("Błąd na serwerze:", error.message);
-        res.status(500).json({ message: "Wystąpił błąd serwera." });
-    } finally {
-        if (photoPath) {
-            fs.unlink(photoPath, (err) => {
-                if (err)
-                    console.error("Błąd przy usuwaniu pliku:", err.message);
-            });
-        }
-    }
-});
-
-// Endpoint do pobierania zdjęć z Google Drive
+// Endpoint do pobierania zdjęć z Google Drive i zapisywania ich lokalnie
 app.get("/api/gallery", async (req, res) => {
     try {
         const response = await drive.files.list({
@@ -191,21 +79,26 @@ app.get("/api/gallery", async (req, res) => {
 
         const files = await Promise.all(
             response.data.files.map(async (file) => {
-                // Generowanie autoryzowanego linku do pobrania
-                const result = await drive.files.get({
-                    fileId: file.id,
-                    fields: "id, name, webContentLink",
-                });
+                const filePath = path.join(downloadsDir, file.name);
 
-                return {
-                    id: file.id,
-                    name: file.name,
-                    url: result.data.webContentLink, // Użycie linku do pobrania
-                };
+                // Sprawdź, czy plik już istnieje
+                if (!fs.existsSync(filePath)) {
+                    const dest = fs.createWriteStream(filePath);
+                    await drive.files.get(
+                        { fileId: file.id, alt: "media" },
+                        { responseType: "stream" },
+                        (err, response) => {
+                            if (err) throw err;
+                            response.data.pipe(dest);
+                        }
+                    );
+                }
+
+                return { name: file.name, path: `/downloads/${file.name}` };
             })
         );
 
-        res.json(files);
+        res.json(files); // Zwraca listę plików z lokalnymi ścieżkami
     } catch (error) {
         console.error("Błąd przy pobieraniu zdjęć:", error.message);
         res.status(500).json({ message: "Nie udało się pobrać zdjęć." });

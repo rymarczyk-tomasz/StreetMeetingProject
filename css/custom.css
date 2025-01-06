@@ -169,15 +169,19 @@ input.form-control {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
+    margin-top: 40px;
     padding: 20px;
     background-color: #f4f4f4;
 }
 .gallery img {
-    width: 100%;
-    height: auto;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 200px; /* Szerokość w pikselach */
+    height: 200px; /* Wysokość w pikselach */
+    object-fit: cover; /* Dopasowanie zawartości bez zniekształceń */
+    border-radius: 8px; /* Opcjonalne: zaokrąglone rogi */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Opcjonalne: cień */
+    margin: 10px; /* Odstęp między obrazami */
 }
+
 .back-btn {
     display: inline-block;
     margin: 20px;
