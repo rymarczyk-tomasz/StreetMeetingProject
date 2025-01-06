@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
     async function loadGallery() {
         try {
             // Pobierz listę zdjęć z serwera
-            const response = await fetch("/api/gallery");
+            const response = await fetch("http://127.0.0.1:3000/api/gallery");
             if (!response.ok) throw new Error("Nie udało się pobrać zdjęć.");
 
             const photos = await response.json();

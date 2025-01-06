@@ -189,11 +189,21 @@ app.get("/api/gallery", async (req, res) => {
             fields: "files(id, name)",
         });
 
-        const files = response.data.files.map((file) => ({
-            id: file.id,
-            name: file.name,
-            url: `https://drive.google.com/uc?id=${file.id}`,
-        }));
+        const files = await Promise.all(
+            response.data.files.map(async (file) => {
+                // Generowanie autoryzowanego linku do pobrania
+                const result = await drive.files.get({
+                    fileId: file.id,
+                    fields: "id, name, webContentLink",
+                });
+
+                return {
+                    id: file.id,
+                    name: file.name,
+                    url: result.data.webContentLink, // Użycie linku do pobrania
+                };
+            })
+        );
 
         res.json(files);
     } catch (error) {
