@@ -18,7 +18,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Konfiguracja Multer (upload plików)
-const uploadDir = path.join(__dirname, 'uploads');
+const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -30,19 +30,23 @@ const credentials = {
     type: "service_account",
     project_id: process.env.GOOGLE_PROJECT_ID,
     private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-    private_key: process.env.GOOGLE_PRIVATE_KEY ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n') : null,
+    private_key: process.env.GOOGLE_PRIVATE_KEY
+        ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n")
+        : null,
     client_email: process.env.GOOGLE_CLIENT_EMAIL,
     client_id: process.env.GOOGLE_CLIENT_ID,
     auth_uri: "https://accounts.google.com/o/oauth2/auth",
     token_uri: "https://oauth2.googleapis.com/token",
     auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
     client_x509_cert_url: process.env.GOOGLE_CLIENT_X509_CERT_URL,
-    universe_domain: "googleapis.com"
+    universe_domain: "googleapis.com",
 };
 
 // Sprawdzenie, czy wszystkie wymagane zmienne środowiskowe są zdefiniowane
 if (!credentials.private_key) {
-    throw new Error("GOOGLE_PRIVATE_KEY is not defined in environment variables.");
+    throw new Error(
+        "GOOGLE_PRIVATE_KEY is not defined in environment variables."
+    );
 }
 
 // Konfiguracja autoryzacji Google Auth
@@ -61,6 +65,7 @@ const drive = google.drive({ version: "v3", auth });
 // ID arkusza kalkulacyjnego i folderu Google Drive z .env
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const GOOGLE_DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID;
+const GOOGLE_DRIVE_GALLERY_FOLDER_ID = process.env.DRIVE_GALLERY_FOLDER_ID;
 
 // Funkcja do dodawania danych do Google Sheets
 async function appendToSheet(data) {
@@ -161,7 +166,7 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
         });
 
         res.json({
-            message: `Dziękujemy za zgłoszenie, ${firstName} ${lastName}!`,
+            message: `Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)`,
         });
     } catch (error) {
         console.error("Błąd na serwerze:", error.message);
@@ -176,26 +181,34 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
     }
 });
 
-app.post('/upload', upload.single('file'), (req, res) => {
+// Endpoint do pobierania zdjęć z Google Drive
+app.get("/api/gallery", async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ message: 'No file uploaded.' });
-        }
+        const response = await drive.files.list({
+            q: `'${GOOGLE_DRIVE_GALLERY_FOLDER_ID}' in parents and mimeType contains 'image/'`,
+            fields: "files(id, name)",
+        });
 
-        // Przetwarzanie pliku i innych danych
-        const { originalname, path: filePath } = req.file;
-        console.log(`Plik otrzymany: ${originalname}, ścieżka: ${filePath}`);
+        const files = await Promise.all(
+            response.data.files.map(async (file) => {
+                // Generowanie autoryzowanego linku do pobrania
+                const result = await drive.files.get({
+                    fileId: file.id,
+                    fields: "id, name, webContentLink",
+                });
 
-        res.json({ message: 'File uploaded successfully', file: req.file });
+                return {
+                    id: file.id,
+                    name: file.name,
+                    url: result.data.webContentLink, // Użycie linku do pobrania
+                };
+            })
+        );
+
+        res.json(files);
     } catch (error) {
-        console.error("Błąd na serwerze:", error.message);
-        res.status(500).json({ message: "Wystąpił błąd serwera." });
-    } finally {
-        if (req.file && req.file.path) {
-            fs.unlink(req.file.path, (err) => {
-                if (err) console.error("Błąd przy usuwaniu pliku:", err.message);
-            });
-        }
+        console.error("Błąd przy pobieraniu zdjęć:", error.message);
+        res.status(500).json({ message: "Nie udało się pobrać zdjęć." });
     }
 });
 

@@ -118,19 +118,80 @@ input.form-control {
 .links {
     font-size: 1.6rem;
     text-decoration: none;
-    color: white;
+    /* color: white; */
     padding-top: 1em;
 }
 
 .social-media {
-    color: white;
+    /* color: white; */
     font-size: 2.5rem;
     padding: 10px;
 }
 
 .contact-info a:hover,
-.card-title a:hover {
+.card-title a:hover,
+.event-link:hover {
     color: rgb(16, 104, 237);
+}
+
+.carousel-item .row {
+    display: flex;
+}
+
+.carousel-item .col-md-4 {
+    flex: 1;
+    padding: 0 5px;
+}
+
+.carousel-item img {
+    width: 100%;
+    height: auto;
+}
+
+.gallery-btn {
+    display: inline-block;
+    padding: 15px 25px;
+    margin-top: 50px;
+    font-size: 18px;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.gallery-btn:hover {
+    background-color: #0056b3;
+}
+
+.gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    background-color: #f4f4f4;
+}
+.gallery img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.back-btn {
+    display: inline-block;
+    margin: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+}
+.back-btn:hover {
+    background-color: #0056b3;
 }
 
 .arrow {
@@ -180,7 +241,8 @@ input.form-control {
 }
 
 @keyframes blink {
-    0%, 100% {
+    0%,
+    100% {
         opacity: 1;
     }
     50% {
