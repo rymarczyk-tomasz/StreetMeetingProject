@@ -17,6 +17,15 @@ app.use(express.static(path.join(__dirname, "../")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Konfiguracja folderu do przechowywania pobranych zdjęć
+const downloadsDir = path.join(__dirname, "downloads");
+if (!fs.existsSync(downloadsDir)) {
+    fs.mkdirSync(downloadsDir, { recursive: true });
+}
+
+// Middleware do serwowania plików z folderu `downloads`
+app.use("/downloads", express.static(downloadsDir));
+
 // Konfiguracja Multer (upload plików)
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -181,7 +190,7 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
     }
 });
 
-// Endpoint do pobierania zdjęć z Google Drive
+// Endpoint do pobierania zdjęć z Google Drive i zapisywania ich lokalnie
 app.get("/api/gallery", async (req, res) => {
     try {
         const response = await drive.files.list({
@@ -191,21 +200,26 @@ app.get("/api/gallery", async (req, res) => {
 
         const files = await Promise.all(
             response.data.files.map(async (file) => {
-                // Generowanie autoryzowanego linku do pobrania
-                const result = await drive.files.get({
-                    fileId: file.id,
-                    fields: "id, name, webContentLink",
-                });
+                const filePath = path.join(downloadsDir, file.name);
 
-                return {
-                    id: file.id,
-                    name: file.name,
-                    url: result.data.webContentLink, // Użycie linku do pobrania
-                };
+                // Sprawdź, czy plik już istnieje
+                if (!fs.existsSync(filePath)) {
+                    const dest = fs.createWriteStream(filePath);
+                    await drive.files.get(
+                        { fileId: file.id, alt: "media" },
+                        { responseType: "stream" },
+                        (err, response) => {
+                            if (err) throw err;
+                            response.data.pipe(dest);
+                        }
+                    );
+                }
+
+                return { name: file.name, path: `/downloads/${file.name}` };
             })
         );
 
-        res.json(files);
+        res.json(files); // Zwraca listę plików z lokalnymi ścieżkami
     } catch (error) {
         console.error("Błąd przy pobieraniu zdjęć:", error.message);
         res.status(500).json({ message: "Nie udało się pobrać zdjęć." });

@@ -128,7 +128,6 @@
         />
         <link rel="stylesheet" href="css/custom.css" />
         <link rel="canonical" href="https://www.streetshow.pl/" />
-        <script src="config.js"></script>
     </head>
 
     <body data-bs-spy="scroll" data-bs-target="#navbar">
@@ -168,10 +167,21 @@
                     <div class="navbar-nav ms-auto">
                         <a class="nav-link active" href="#home">Home</a>
                         <a class="nav-link" href="#event">Event</a>
-                        <a class="nav-link" href="#gallery">Galeria</a>
+                        <!-- <a class="nav-link" href="#gallery">Galeria</a> -->
                         <a class="nav-link" href="#contact">Kontakt</a>
-                        <a class="nav-link" href="#faq">FAQ</a>
                         <a class="nav-link" href="#form">Formularz</a>
+                        <!-- <a
+                            class="nav-link"
+                            href="faq.html"
+                            rel="noopener noreferrer"
+                            >FAQ</a
+                        >
+                        <a
+                            class="nav-link"
+                            href="regulamin.html"
+                            rel="noopener noreferrer"
+                            >Regulamin</a
+                        > -->
                     </div>
                 </div>
             </div>
@@ -211,11 +221,11 @@
                                     <h3>
                                         <span class="arrow">➡️</span>
                                         <a
-                                            href="#"
+                                            href="https://bkb.pl/151648-edcca"
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            class="links event-link"
-                                            >KUP BILET 6 STYCZNIA
+                                            class="event-links event-link"
+                                            >KUP BILET
                                         </a>
                                         <span class="arrow">⬅️</span>
                                     </h3>
@@ -239,7 +249,7 @@
                                         <span class="arrow">➡️</span>
                                         <a
                                             href="#form"
-                                            class="links event-link"
+                                            class="event-links event-link"
                                             rel="noopener noreferrer"
                                             >STREFA POJAZDÓW SELECT</a
                                         >
@@ -282,7 +292,7 @@
                     </div>
                 </div>
             </section>
-            <section id="gallery" class="faq bg-dark text-light py-5">
+            <!-- <section id="gallery" class="bg-dark text-light py-5">
                 <div class="container text-center">
                     <h2 class="display-3 pb-lg-3 text-uppercase">Galeria</h2>
                     <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
@@ -290,7 +300,7 @@
                             <div class="card h-100">
                                 <img
                                     loading="lazy"
-                                    src="./img/photos/6.jpg"
+                                    src="./img/photos/Street Meeting Poland 2024-139.jpg"
                                     class="card-img-top"
                                     alt="Czeno biały nissan"
                                 />
@@ -300,7 +310,7 @@
                             <div class="card h-100">
                                 <img
                                     loading="lazy"
-                                    src="./img/photos/7.jpg"
+                                    src="./img/photos/Street Meeting Poland 2024-252.jpg"
                                     class="card-img-top"
                                     alt="Czeno biały nissan"
                                 />
@@ -310,104 +320,12 @@
                             <div class="card h-100">
                                 <img
                                     loading="lazy"
-                                    src="./img/photos/Hero-image.jpg"
+                                    src="./img/photos/2024.03.29 Street Meeting 2-13.jpg"
                                     class="card-img-top"
                                     alt="Czeno biały nissan"
                                 />
                             </div>
                         </div>
-                    </div>
-                </div>
-                <div class="container text-center">
-                    <a href="galeria.html" class="gallery-btn"
-                        >Przejdź do galerii</a
-                    >
-                </div>
-            </section>
-            <!-- <section id="gallery" class="faq bg-dark text-light py-5">
-                <div class="row">
-                    <div
-                    id="carouselExampleAutoplaying"
-                    class="carousel slide"
-                    data-bs-ride="carousel"
-                    >
-                    <div class="carousel-inner container text-center">
-                            <h2 class="display-3 pb-lg-3 text-uppercase">Galeria</h2>
-                            <div class="carousel-item active">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <img
-                                            src="./img/photos/6.jpg"
-                                            class="d-block w-100"
-                                            alt="..."
-                                        />
-                                    </div>
-                                    <div class="col-md-4">
-                                        <img
-                                            src="./img/photos/7.jpg"
-                                            class="d-block w-100"
-                                            alt="..."
-                                        />
-                                    </div>
-                                    <div class="col-md-4">
-                                        <img
-                                            src="./img/photos/7.jpg"
-                                            class="d-block w-100"
-                                            alt="..."
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="carousel-item">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <img
-                                            src="./img/photos/6.jpg"
-                                            class="d-block w-100"
-                                            alt="..."
-                                        />
-                                    </div>
-                                    <div class="col-md-4">
-                                        <img
-                                            src="./img/photos/6.jpg"
-                                            class="d-block w-100"
-                                            alt="..."
-                                        />
-                                    </div>
-                                    <div class="col-md-4">
-                                        <img
-                                            src="./img/photos/6.jpg"
-                                            class="d-block w-100"
-                                            alt="..."
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <button
-                            class="carousel-control-prev"
-                            type="button"
-                            data-bs-target="#carouselExampleAutoplaying"
-                            data-bs-slide="prev"
-                        >
-                            <span
-                                class="carousel-control-prev-icon"
-                                aria-hidden="true"
-                            ></span>
-                            <span class="visually-hidden">Previous</span>
-                        </button>
-                        <button
-                            class="carousel-control-next"
-                            type="button"
-                            data-bs-target="#carouselExampleAutoplaying"
-                            data-bs-slide="next"
-                        >
-                            <span
-                                class="carousel-control-next-icon"
-                                aria-hidden="true"
-                            ></span>
-                            <span class="visually-hidden">Next</span>
-                        </button>
                     </div>
                 </div>
                 <div class="container text-center">
@@ -416,7 +334,7 @@
                     >
                 </div>
             </section> -->
-            <section id="contact" class="contact bg-light text-dark py-5">
+            <section id="contact" class="contact bg-dark text-light py-5">
                 <div class="container text-center">
                     <h2 class="display-3 pb-lg-3 text-uppercase">kontakt</h2>
                     <div class="row">
@@ -459,124 +377,6 @@
                                     streetmeetingpolska@gmail.com
                                 </p></a
                             >
-                        </div>
-                    </div>
-                </div>
-            </section>
-            <section id="faq" class="faq bg-dark text-light py-5">
-                <div class="container text-center">
-                    <h2 class="display-3 pb-lg-3 text-uppercase">FAQ</h2>
-                    <div class="accordion" id="accordionExample">
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button
-                                    class="accordion-button"
-                                    type="button"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target="#collapseOne"
-                                    aria-expanded="true"
-                                    aria-controls="collapseOne"
-                                >
-                                    Accordion Item #1
-                                </button>
-                            </h2>
-                            <div
-                                id="collapseOne"
-                                class="accordion-collapse collapse show"
-                                data-bs-parent="#accordionExample"
-                            >
-                                <div class="accordion-body">
-                                    <strong
-                                        >This is the first item's accordion
-                                        body.</strong
-                                    >
-                                    It is shown by default, until the collapse
-                                    plugin adds the appropriate classes that we
-                                    use to style each element. These classes
-                                    control the overall appearance, as well as
-                                    the showing and hiding via CSS transitions.
-                                    You can modify any of this with custom CSS
-                                    or overriding our default variables. It's
-                                    also worth noting that just about any HTML
-                                    can go within the
-                                    <code>.accordion-body</code>, though the
-                                    transition does limit overflow.
-                                </div>
-                            </div>
-                        </div>
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button
-                                    class="accordion-button collapsed"
-                                    type="button"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target="#collapseTwo"
-                                    aria-expanded="false"
-                                    aria-controls="collapseTwo"
-                                >
-                                    Accordion Item #2
-                                </button>
-                            </h2>
-                            <div
-                                id="collapseTwo"
-                                class="accordion-collapse collapse"
-                                data-bs-parent="#accordionExample"
-                            >
-                                <div class="accordion-body">
-                                    <strong
-                                        >This is the second item's accordion
-                                        body.</strong
-                                    >
-                                    It is hidden by default, until the collapse
-                                    plugin adds the appropriate classes that we
-                                    use to style each element. These classes
-                                    control the overall appearance, as well as
-                                    the showing and hiding via CSS transitions.
-                                    You can modify any of this with custom CSS
-                                    or overriding our default variables. It's
-                                    also worth noting that just about any HTML
-                                    can go within the
-                                    <code>.accordion-body</code>, though the
-                                    transition does limit overflow.
-                                </div>
-                            </div>
-                        </div>
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button
-                                    class="accordion-button collapsed"
-                                    type="button"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target="#collapseThree"
-                                    aria-expanded="false"
-                                    aria-controls="collapseThree"
-                                >
-                                    Accordion Item #3
-                                </button>
-                            </h2>
-                            <div
-                                id="collapseThree"
-                                class="accordion-collapse collapse"
-                                data-bs-parent="#accordionExample"
-                            >
-                                <div class="accordion-body">
-                                    <strong
-                                        >This is the third item's accordion
-                                        body.</strong
-                                    >
-                                    It is hidden by default, until the collapse
-                                    plugin adds the appropriate classes that we
-                                    use to style each element. These classes
-                                    control the overall appearance, as well as
-                                    the showing and hiding via CSS transitions.
-                                    You can modify any of this with custom CSS
-                                    or overriding our default variables. It's
-                                    also worth noting that just about any HTML
-                                    can go within the
-                                    <code>.accordion-body</code>, though the
-                                    transition does limit overflow.
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
