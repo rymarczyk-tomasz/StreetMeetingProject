@@ -271,9 +271,37 @@ input.form-control {
 }
 
 .form {
-    background-color: #f8f9fa;
-    padding: 40px;
-    border-radius: 8px;
+    background-color: #f8f9fa; /* Kolor tła dla całej sekcji */
+    padding: 40px 0; /* Góra i dół sekcji */
+}
+
+.form form {
+    max-width: 600px; /* Maksymalna szerokość formularza */
+    margin: 0 auto; /* Wyśrodkowanie formularza */
+    padding: 20px; /* Wewnętrzne odstępy */
+    background-color: #ffffff; /* Kolor tła tylko formularza */
+    border-radius: 8px; /* Zaokrąglone rogi formularza */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Opcjonalny cień */
+}
+
+/* Wyśrodkowanie tytułu */
+.form h2 {
+    text-align: center; /* Wyśrodkowanie tytułu */
+    color: #333;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+
+/* Wyrównanie pozostałych elementów do lewej */
+.form .form-label,
+.form .form-control {
+    text-align: left; /* Wyrównanie etykiet i zawartości do lewej */
+}
+
+/* Odstępy dla spójnego układu */
+.form .mb-3 {
+    text-align: left; /* Wyrównanie kontenerów pól formularza */
 }
 
 .form h2 {
