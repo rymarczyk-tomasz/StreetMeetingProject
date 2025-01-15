@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const responseMessage = document.getElementById("responseMessage");
     const navbarCollapse = document.getElementById("navbarNavAltMarkup");
     const navLinks = document.querySelectorAll(".nav-link");
+    const footerYear = document.querySelector(".footer-year");
 
     let dotsInterval;
 
@@ -57,4 +58,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     });
+
+    const handleCurrentYear = () => {
+        const currentYear = new Date().getFullYear();
+        footerYear.innerText = currentYear;
+    };
+
+    handleCurrentYear();
 });
