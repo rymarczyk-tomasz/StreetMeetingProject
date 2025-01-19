@@ -2,48 +2,53 @@ document.addEventListener("DOMContentLoaded", () => {
     const gallery = document.getElementById("gallery-folder");
     const modal = document.getElementById("imageModal");
     const modalImg = document.getElementById("modalImage");
-    const captionText = document.getElementById("caption");
     const closeBtn = document.querySelector(".close");
     const prevBtn = document.getElementById("prevImage");
     const nextBtn = document.getElementById("nextImage");
 
-    let photos = []; // Tablica zdjęć
-    let currentIndex = 0; // Indeks bieżącego zdjęcia
+    let photos = [];
+    let currentIndex = 0;
 
-    async function loadGallery() {
-        loader.style.display = "block"; // Pokaż loader
-        try {
-            const response = await fetch("http://127.0.0.1:3000/api/gallery");
+    function loadGallery() {
+        const imageFolder = "img/gallery"; // Ścieżka do folderu ze zdjęciami
+        const imageExtensions = ["jpg", "jpeg", "png", "gif"];
 
-            if (!response.ok) throw new Error("Nie udało się pobrać zdjęć.");
+        // Mocking an array of image names (in a real case, you'd get this list dynamically)
+        const imageNames = [
+            "1.jpg",
+            "2.jpg",
+            "3.jpg",
+            "4.jpg",
+            "5.jpg",
+            "6.jpg",
+            "7.jpg",
+            "8.jpg",
+            "9.jpg",
+            "10.jpg",
+            "11.jpg",
+            "12.jpg",
+            "13.jpg",
+        ]; // Dodaj tutaj swoje zdjęcia
 
-            // Wczytaj dane do globalnej tablicy `photos`
-            photos = await response.json();
-            loader.style.display = "none"; // Ukryj loader po załadowaniu
+        photos = imageNames.map((name) => `${imageFolder}/${name}`);
 
-            // Generowanie galerii
-            photos.forEach((photo, index) => {
-                const img = document.createElement("img");
-                img.src = `http://127.0.0.1:3000${photo.path}`;
-                img.loading = "lazy"; // Lazy loading
-                img.style.maxWidth = "300px";
-                img.style.margin = "10px";
+        photos.forEach((photoPath, index) => {
+            const img = document.createElement("img");
+            img.src = photoPath;
+            img.loading = "lazy"; // Lazy loading
+            img.style.maxWidth = "300px";
+            img.style.margin = "10px";
 
-                // Dodaj zdarzenie kliknięcia, aby otworzyć modal
-                img.addEventListener("click", () => {
-                    openModal(index); // Przekazanie indeksu zdjęcia
-                });
-
-                gallery.appendChild(img);
+            img.addEventListener("click", () => {
+                openModal(index);
             });
-        } catch (error) {
-            console.error("Błąd przy generowaniu galerii:", error.message);
-            loader.style.display = "none"; // Ukryj loader w przypadku błędu
-        }
+
+            gallery.appendChild(img);
+        });
     }
 
     function openModal(index) {
-        currentIndex = index; // Ustaw indeks bieżącego zdjęcia
+        currentIndex = index;
         modal.style.display = "block";
         updateModal();
     }
@@ -54,25 +59,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function updateModal() {
         const photo = photos[currentIndex];
-        modalImg.src = `http://127.0.0.1:3000${photo.path}`;
+        modalImg.src = photo;
     }
 
     function showNextImage() {
-        currentIndex = (currentIndex + 1) % photos.length; // Przejście do następnego zdjęcia
+        currentIndex = (currentIndex + 1) % photos.length;
         updateModal();
     }
 
     function showPrevImage() {
-        currentIndex = (currentIndex - 1 + photos.length) % photos.length; // Przejście do poprzedniego zdjęcia
+        currentIndex = (currentIndex - 1 + photos.length) % photos.length;
         updateModal();
     }
 
-    // Obsługa zdarzeń nawigacyjnych
     nextBtn.addEventListener("click", showNextImage);
     prevBtn.addEventListener("click", showPrevImage);
     closeBtn.addEventListener("click", closeModal);
 
-    // Obsługa klawiatury
     window.addEventListener("keydown", (e) => {
         if (modal.style.display === "block") {
             if (e.key === "ArrowRight") showNextImage();
@@ -81,7 +84,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Zamknij modal po kliknięciu poza obrazem
     modal.addEventListener("click", (e) => {
         if (e.target === modal) {
             closeModal();
