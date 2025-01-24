@@ -339,6 +339,7 @@ input.form-control {
 @media (max-width: 768px) {
     .home {
         background-image: url("../img/photos/hero_image-mobile.jpg");
+        background-attachment: scroll;
     }
 
     .hero-shadow {

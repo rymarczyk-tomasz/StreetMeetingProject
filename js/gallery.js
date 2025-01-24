@@ -6,14 +6,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const prevBtn = document.getElementById("prevImage");
     const nextBtn = document.getElementById("nextImage");
 
-    let photos = [];
+    const photos = [];
     let currentIndex = 0;
 
     function loadGallery() {
         const imageFolder = "img/gallery"; // Ścieżka do folderu ze zdjęciami
-        const imageExtensions = ["jpg", "jpeg", "png", "gif"];
-
-        // Mocking an array of image names (in a real case, you'd get this list dynamically)
         const imageNames = [
             "1.jpg",
             "2.jpg",
@@ -30,9 +27,12 @@ document.addEventListener("DOMContentLoaded", () => {
             "13.jpg",
         ]; // Dodaj tutaj swoje zdjęcia
 
-        photos = imageNames.map((name) => `${imageFolder}/${name}`);
+        const fragment = document.createDocumentFragment();
 
-        photos.forEach((photoPath, index) => {
+        imageNames.forEach((name) => {
+            const photoPath = `${imageFolder}/${name}`;
+            photos.push(photoPath);
+
             const img = document.createElement("img");
             img.src = photoPath;
             img.loading = "lazy"; // Lazy loading
@@ -40,17 +40,20 @@ document.addEventListener("DOMContentLoaded", () => {
             img.style.margin = "10px";
 
             img.addEventListener("click", () => {
-                openModal(index);
+                openModal(photos.indexOf(photoPath));
             });
 
-            gallery.appendChild(img);
+            fragment.appendChild(img);
         });
+
+        gallery.appendChild(fragment);
     }
 
     function openModal(index) {
         currentIndex = index;
         modal.style.display = "block";
         updateModal();
+        preloadImages();
     }
 
     function closeModal() {
@@ -58,8 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function updateModal() {
-        const photo = photos[currentIndex];
-        modalImg.src = photo;
+        modalImg.src = photos[currentIndex];
     }
 
     function showNextImage() {
@@ -72,17 +74,36 @@ document.addEventListener("DOMContentLoaded", () => {
         updateModal();
     }
 
+    function preloadImages() {
+        const nextIndex = (currentIndex + 1) % photos.length;
+        const prevIndex = (currentIndex - 1 + photos.length) % photos.length;
+
+        const nextImg = new Image();
+        nextImg.src = photos[nextIndex];
+
+        const prevImg = new Image();
+        prevImg.src = photos[prevIndex];
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+
     nextBtn.addEventListener("click", showNextImage);
     prevBtn.addEventListener("click", showPrevImage);
     closeBtn.addEventListener("click", closeModal);
 
-    window.addEventListener("keydown", (e) => {
+    window.addEventListener("keydown", debounce((e) => {
         if (modal.style.display === "block") {
             if (e.key === "ArrowRight") showNextImage();
             if (e.key === "ArrowLeft") showPrevImage();
             if (e.key === "Escape") closeModal();
         }
-    });
+    }, 100));
 
     modal.addEventListener("click", (e) => {
         if (e.target === modal) {
