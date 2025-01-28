@@ -327,6 +327,10 @@ input.form-control {
     padding: 10px 20px;
 }
 
+.privacy-policy {
+    margin-top: 20px;
+}
+
 @keyframes spin {
     0% {
         transform: rotate(0deg);
@@ -339,6 +343,10 @@ input.form-control {
 @media (max-width: 768px) {
     .home {
         background-image: url("../img/photos/hero_image-mobile.jpg");
+        background-size: cover;
+        background-position: center;
+        background-attachment: scroll;
+        min-height: 100vh;
     }
 
     .hero-shadow {
