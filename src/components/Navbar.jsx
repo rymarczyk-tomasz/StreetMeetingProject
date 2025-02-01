@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
     return (
@@ -7,13 +8,13 @@ const Navbar = () => {
             id="navbar"
         >
             <div className="container">
-                <a className="navbar-brand" href="#home">
+                <Link className="navbar-brand" to="/">
                     <img
                         className="logo"
-                        src="img/Logo 2.0/SVG/Logo_4.svg"
+                        src="src/img/Logo 2.0/SVG/Logo_4.svg"
                         alt="Street Meeting Poland"
                     />
-                </a>
+                </Link>
                 <button
                     className="navbar-toggler"
                     type="button"
@@ -30,7 +31,7 @@ const Navbar = () => {
                     id="navbarNavAltMarkup"
                 >
                     <div className="navbar-nav ms-auto">
-                        <a className="nav-link active" href="#home">
+                        <a className="nav-link" href="#home">
                             Home
                         </a>
                         <a className="nav-link" href="#event">
@@ -47,14 +48,16 @@ const Navbar = () => {
                         </a>
                         <a
                             className="nav-link"
-                            href="https://streetshow.pl/faq"
+                            href="/faq"
+                            target="_blank"
                             rel="noopener noreferrer"
                         >
                             FAQ
                         </a>
                         <a
                             className="nav-link"
-                            href="https://streetshow.pl/regulamin"
+                            href="/regulations"
+                            target="_blank"
                             rel="noopener noreferrer"
                         >
                             Regulamin

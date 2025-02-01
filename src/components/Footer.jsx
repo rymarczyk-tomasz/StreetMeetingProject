@@ -1,6 +1,12 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 const Footer = () => {
+    useEffect(() => {
+        const footerYear = document.querySelector(".footer-year");
+        const currentYear = new Date().getFullYear();
+        footerYear.innerText = currentYear;
+    }, []);
+
     return (
         <footer className="bg-dark text-light">
             <div className="newsletter">

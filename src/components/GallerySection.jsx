@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const GallerySection = () => {
     return (
@@ -39,12 +40,9 @@ const GallerySection = () => {
                 </div>
             </div>
             <div className="container text-center">
-                <a
-                    href="https://streetshow.pl/galeria.html"
-                    className="gallery-btn"
-                >
+                <Link to="/gallery" className="gallery-btn">
                     Przejdź do galerii
-                </a>
+                </Link>
             </div>
         </section>
     );

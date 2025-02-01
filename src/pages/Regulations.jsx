@@ -1,287 +1,14 @@
-<!DOCTYPE html>
-<html lang="pl">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Regulamin Wydarzenia - Street Show 2025</title>
-        <meta
-            name="google-site-verification"
-            content="CGzbENN--sDvWRJRZJJrfE_gVDvesajQrMM81r3xbWQ"
-        />
-        <meta
-            name="description"
-            content="Street Show 2025 - 31 maja na Polsat Plus Arena, Gdańsk. Przyjdź i doświadcz niesamowitych wrażeń!"
-        />
-        <meta
-            name="keywords"
-            content="Street Show, 2025, Polsat Plus Arena, Gdańsk, wydarzenie, bilety"
-        />
-        <meta name="author" content="Street Meeting Poland" />
+import React from "react";
 
-        <!-- Facebook Pixel Code -->
-        <script>
-            !(function (f, b, e, v, n, t, s) {
-                if (f.fbq) return;
-                n = f.fbq = function () {
-                    n.callMethod
-                        ? n.callMethod.apply(n, arguments)
-                        : n.queue.push(arguments);
-                };
-                if (!f._fbq) f._fbq = n;
-                n.push = n;
-                n.loaded = !0;
-                n.version = "2.0";
-                n.queue = [];
-                t = b.createElement(e);
-                t.async = !0;
-                t.src = v;
-                s = b.getElementsByTagName(e)[0];
-                s.parentNode.insertBefore(t, s);
-            })(
-                window,
-                document,
-                "script",
-                "https://connect.facebook.net/en_US/fbevents.js"
-            );
-            fbq("init", "2023117151421928");
-            fbq("track", "PageView");
-        </script>
-        <noscript>
-            <img
-                height="1"
-                width="1"
-                src="https://www.facebook.com/tr?id=2023117151421928&ev=PageView
-&noscript=1"
-            />
-        </noscript>
-        <!-- End Facebook Pixel Code -->
-
-        <!-- Google Tag Manager -->
-        <script>
-            (function (w, d, s, l, i) {
-                w[l] = w[l] || [];
-                w[l].push({
-                    "gtm.start": new Date().getTime(),
-                    event: "gtm.js",
-                });
-                var f = d.getElementsByTagName(s)[0],
-                    j = d.createElement(s),
-                    dl = l != "dataLayer" ? "&l=" + l : "";
-                j.async = true;
-                j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
-                f.parentNode.insertBefore(j, f);
-            })(window, document, "script", "dataLayer", "GTM-WHCQDGMC");
-        </script>
-        <!-- End Google Tag Manager -->
-
-        <!-- Favicons -->
-        <link
-            rel="apple-touch-icon"
-            sizes="57x57"
-            href="img/favicon_io/apple-icon-57x57.png"
-        />
-        <link
-            rel="apple-touch-icon"
-            sizes="60x60"
-            href="img/favicon_io/apple-icon-60x60.png"
-        />
-        <link
-            rel="apple-touch-icon"
-            sizes="72x72"
-            href="img/favicon_io/apple-icon-72x72.png"
-        />
-        <link
-            rel="apple-touch-icon"
-            sizes="76x76"
-            href="img/favicon_io/apple-icon-76x76.png"
-        />
-        <link
-            rel="apple-touch-icon"
-            sizes="114x114"
-            href="img/favicon_io/apple-icon-114x114.png"
-        />
-        <link
-            rel="apple-touch-icon"
-            sizes="120x120"
-            href="img/favicon_io/apple-icon-120x120.png"
-        />
-        <link
-            rel="apple-touch-icon"
-            sizes="144x144"
-            href="img/favicon_io/apple-icon-144x144.png"
-        />
-        <link
-            rel="apple-touch-icon"
-            sizes="152x152"
-            href="img/favicon_io/apple-icon-152x152.png"
-        />
-        <link
-            rel="apple-touch-icon"
-            sizes="180x180"
-            href="img/favicon_io/apple-icon-180x180.png"
-        />
-        <link
-            rel="icon"
-            type="image/png"
-            sizes="192x192"
-            href="img/favicon_io/android-icon-192x192.png"
-        />
-        <link
-            rel="icon"
-            type="image/png"
-            sizes="32x32"
-            href="img/favicon_io/favicon-32x32.png"
-        />
-        <link
-            rel="icon"
-            type="image/png"
-            sizes="96x96"
-            href="img/favicon_io/favicon-96x96.png"
-        />
-        <link
-            rel="icon"
-            type="image/png"
-            sizes="16x16"
-            href="img/favicon_io/favicon-16x16.png"
-        />
-        <link rel="manifest" href="img/favicon_io/manifest.json" />
-        <meta name="msapplication-TileColor" content="#ffffff" />
-        <meta
-            name="msapplication-TileImage"
-            content="img/favicon_io/ms-icon-144x144.png"
-        />
-        <meta name="theme-color" content="#ffffff" />
-
-        <!-- CSS Links -->
-        <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-            rel="stylesheet"
-            integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
-            crossorigin="anonymous"
-        />
-        <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
-            rel="stylesheet"
-        />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&display=swap"
-            rel="stylesheet"
-        />
-        <link rel="stylesheet" href="css/custom.css" />
-        <link rel="canonical" href="https://www.streetshow.pl/" />
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                line-height: 1.6;
-                margin: 20px;
-            }
-            h1,
-            h2,
-            h3 {
-                color: #333;
-            }
-            h1,
-            h2 {
-                text-align: center;
-                margin-bottom: 40px;
-                font-weight: bold;
-            }
-            section {
-                margin-bottom: 30px;
-            }
-            ul {
-                padding-left: 40px;
-            }
-            li {
-                margin-bottom: 10px;
-            }
-            .alphanumeric {
-                list-style-type: lower-alpha;
-            }
-            .underline {
-                text-decoration: underline;
-            }
-        </style>
-    </head>
-    <body>
-        <!-- Google Tag Manager (noscript) -->
-        <noscript>
-            <iframe
-                src="https://www.googletagmanager.com/ns.html?id=GTM-WHCQDGMC"
-                height="0"
-                width="0"
-                style="display: none; visibility: hidden"
-            ></iframe>
-        </noscript>
-        <!-- End Google Tag Manager (noscript) -->
-        <nav
-            class="navbar navbar-expand-lg bg-body-tertiary py-4 fixed-top"
-            id="#navbar"
-        >
-            <div class="container">
-                <a class="navbar-brand" href="index.html"
-                    ><img
-                        class="logo"
-                        src="img/Logo 2.0/SVG/Logo_4.svg"
-                        alt="Street Meeting Poland"
-                /></a>
-                <button
-                    class="navbar-toggler"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#navbarNavAltMarkup"
-                    aria-controls="navbarNavAltMarkup"
-                    aria-expanded="false"
-                    aria-label="Toggle navigation"
-                >
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-                    <div class="navbar-nav ms-auto">
-                        <a class="nav-link" href="https://streetshow.pl/#home"
-                            >Home</a
-                        >
-                        <a class="nav-link" href="https://streetshow.pl/#event"
-                            >Event</a
-                        >
-                        <a
-                            class="nav-link"
-                            href="https://streetshow.pl/galeria.html"
-                            >Galeria</a
-                        >
-                        <a
-                            class="nav-link"
-                            href="https://streetshow.pl/#contact"
-                            >Kontakt</a
-                        >
-                        <a class="nav-link" href="https://streetshow.pl/#form"
-                            >Formularz</a
-                        >
-                        <a
-                            class="nav-link"
-                            href="https://streetshow.pl/faq"
-                            rel="noopener noreferrer"
-                            >FAQ</a
-                        >
-                        <a
-                            class="nav-link active"
-                            href="https://streetshow.pl/regulamin"
-                            rel="noopener noreferrer"
-                            >Regulamin</a
-                        >
-                    </div>
-                </div>
-            </div>
-        </nav>
-        <br /><br /><br />
-        <div class="container">
+const Regulations = () => {
+    return (
+        <div className="container">
             <h1>Regulamin Wydarzenia „STREET SHOW 2025”</h1>
 
             <section>
-                <h2 class="text-uppercase">
-                    §1<br />
+                <h2 className="text-uppercase">
+                    §1
+                    <br />
                     postanowienia ogólne
                 </h2>
                 <ol>
@@ -339,20 +66,21 @@
                         i adres zamieszkania osoby nim się posługującej.
                     </li>
                     <li>
-                        Poprzez „<strong>Służby Porządkowe</strong>” i „<strong
-                            >Służby Organizatora</strong
-                        >” należy rozumieć osoby, legitymujące się
-                        identyfikatorem lub jednolitym strojem ochrony (Służby
-                        Porządkowe), powołane przez Organizatora do dbania o ład
-                        organizacyjny oraz bezpieczeństwo Uczestników
-                        przebywających na terenie Wydarzenia.
+                        Poprzez „<strong>Służby Porządkowe</strong>” i „
+                        <strong>Służby Organizatora</strong>” należy rozumieć
+                        osoby, legitymujące się identyfikatorem lub jednolitym
+                        strojem ochrony (Służby Porządkowe), powołane przez
+                        Organizatora do dbania o ład organizacyjny oraz
+                        bezpieczeństwo Uczestników przebywających na terenie
+                        Wydarzenia.
                     </li>
                 </ol>
             </section>
 
             <section>
-                <h2 class="text-uppercase">
-                    §2<br />
+                <h2 className="text-uppercase">
+                    §2
+                    <br />
                     sprzedaż biletów
                 </h2>
                 <ol>
@@ -364,9 +92,11 @@
                             href="https://www.kupbilecik.pl/"
                             target="_blank"
                             rel="noopener noreferrer"
-                            class="links event-link"
-                            >www.kupbilecik.pl</a
-                        >. Bilety mogą być sprzedawane wyłącznie po cenie
+                            className="links event-link"
+                        >
+                            www.kupbilecik.pl
+                        </a>
+                        . Bilety mogą być sprzedawane wyłącznie po cenie
                         określonej przez Organizatora.
                     </li>
                     <li>
@@ -377,13 +107,14 @@
                         <strong>Opaskę identyfikującą</strong> (zapinaną na
                         nadgarstku). Z jednej opaski może korzystać wyłącznie
                         jeden Uczestnik.
-                        <strong
-                            >W przypadku jej uszkodzenia traci ona
-                            ważność</strong
-                        >, a tym samym Uczestnik
-                        <strong
-                            >traci prawo do uczestniczenia w Wydarzeniu</strong
-                        >.
+                        <strong>
+                            W przypadku jej uszkodzenia traci ona ważność
+                        </strong>
+                        , a tym samym Uczestnik
+                        <strong>
+                            traci prawo do uczestniczenia w Wydarzeniu
+                        </strong>
+                        .
                     </li>
                     <li>
                         Zamianie na Opaskę podlega wyłącznie Bilet oryginalny,
@@ -404,7 +135,7 @@
                     <li>Zakupiony bilet nie podlega zwrotowi ani wymianie.</li>
                     <li>
                         Każdy z biletów występuje w opcji:
-                        <ol class="alphanumeric">
+                        <ol className="alphanumeric">
                             <li>Normalnej</li>
                             <li>
                                 Ulgowej - przysługuje dzieciom, młodzieży
@@ -421,8 +152,9 @@
             </section>
 
             <section>
-                <h2 class="text-uppercase">
-                    §3<br />
+                <h2 className="text-uppercase">
+                    §3
+                    <br />
                     Warunki uczestnictwa
                 </h2>
                 <ol>
@@ -431,26 +163,27 @@
                         posiadającej dowód tożsamości oraz Bilet lub zaproszenie
                         wydane przez Organizatora, które przy pierwszym wejściu
                         na Teren Wydarzenia zostanie wymienione na Opaskę.
-                        <span class="underline"
-                            >Każdorazowe wejście na Teren Wydarzenia(w ramach
+                        <span className="underline">
+                            Każdorazowe wejście na Teren Wydarzenia(w ramach
                             ważności Biletu) przysługuje tylko Uczestnikowi z
-                            nieuszkodzoną Opaską umocowaną trwałe na ręku.</span
-                        >
+                            nieuszkodzoną Opaską umocowaną trwałe na ręku.
+                        </span>
                     </li>
                     <li>
                         W przypadku, gdy
-                        <strong
-                            >Uczestnikiem Wydarzenia chce być małoletni w wieku
-                            poniżej 15 lat</strong
-                        >, może on uczestniczyć w Imprezie wyłącznie
-                        <span class="underline"
-                            >pod opieką osoby dorosłej, która w pełni ponosi
-                            odpowiedzialność za podopiecznego.</span
-                        >
+                        <strong>
+                            Uczestnikiem Wydarzenia chce być małoletni w wieku
+                            poniżej 15 lat
+                        </strong>
+                        , może on uczestniczyć w Imprezie wyłącznie
+                        <span className="underline">
+                            pod opieką osoby dorosłej, która w pełni ponosi
+                            odpowiedzialność za podopiecznego.
+                        </span>
                     </li>
                     <li>
                         <strong>Zabrania się:</strong>
-                        <ul class="alphanumeric">
+                        <ul className="alphanumeric">
                             <li>
                                 wprowadzania psów i innych zwierząt na Teren
                                 Imprezy, za wyjątkiem psów przewodników
@@ -474,13 +207,13 @@
                                 Wydarzenia,
                             </li>
                             <li>
-                                <span class="underline"
-                                    >prowadzenia sprzedaży, reklamy, roznoszenia
+                                <span className="underline">
+                                    prowadzenia sprzedaży, reklamy, roznoszenia
                                     materiałów reklamowych, tworzenia cyfrowych
                                     materiałów marketingowych pod kara grzywny
                                     <strong>(50.000 zł.)</strong>
-                                    bez wcześniejszej zgody Organizatora.</span
-                                >
+                                    bez wcześniejszej zgody Organizatora.
+                                </span>
                             </li>
                             <li>
                                 prowadzenie przez Uczestników jakichkolwiek
@@ -489,10 +222,10 @@
                                 oraz zbiórek pieniężnych nieuzgodnionych z
                                 Organizatorem, jak również działań niezgodnych z
                                 obowiązującymi przepisami prawa
-                                <span class="underline"
-                                    >pod kara grzywny
-                                    <strong>(50.000 zł.)</strong></span
-                                >
+                                <span className="underline">
+                                    pod kara grzywny
+                                    <strong>(50.000 zł.)</strong>
+                                </span>
                             </li>
                             <li>
                                 W przypadku złamania zakazu prowadzenia działań
@@ -525,11 +258,11 @@
                         </ul>
                     </li>
                     <li>
-                        <strong
-                            >Organizator zastrzega sobie prawo odmówić wstępu na
-                            Teren Wydarzenia osobie:</strong
-                        >
-                        <ul class="alphanumeric">
+                        <strong>
+                            Organizator zastrzega sobie prawo odmówić wstępu na
+                            Teren Wydarzenia osobie:
+                        </strong>
+                        <ul className="alphanumeric">
                             <li>
                                 znajdującej się pod widocznym wpływem alkoholu,
                                 środków odurzających, psychotropowych lub innych
@@ -560,35 +293,35 @@
                         </ul>
                     </li>
                     <li>
-                        <strong
-                            >Ocena przedmiotów i kwalifikowanie ich, jako
-                            niebezpiecznych należy do Służb
-                            Porządkowych.</strong
-                        >
+                        <strong>
+                            Ocena przedmiotów i kwalifikowanie ich, jako
+                            niebezpiecznych należy do Służb Porządkowych.
+                        </strong>
                     </li>
                     <li>
-                        <strong
-                            >Każde wejście na teren Wydarzenia, niezależnie od
+                        <strong>
+                            Każde wejście na teren Wydarzenia, niezależnie od
                             sposobu uzyskania biletu, oznacza akceptację
                             Regulaminu przez osobę wchodzącą. Uczestnik
                             zobowiązuje się przestrzegać zasad określonych w
                             Regulaminie, który jest dostępny w punkcie sprzedaży
-                            oraz na stronie internetowej Organizatora.</strong
-                        >
+                            oraz na stronie internetowej Organizatora.
+                        </strong>
                     </li>
                 </ol>
             </section>
 
             <section>
-                <h2 class="text-uppercase">
-                    §4<br />
+                <h2 className="text-uppercase">
+                    §4
+                    <br />
                     zasady organizacyjne
                 </h2>
                 <ol>
                     <li>
                         Organizator zapewnia Uczestnikom Wydarzenia
                         bezpieczeństwo oraz porządek poprzez m.in.:
-                        <ul class="alphanumeric">
+                        <ul className="alphanumeric">
                             <li>
                                 Służby Porządkowe wyróżniające się elementami
                                 ubioru;
@@ -612,10 +345,11 @@
                         Uczestnicy Wydarzenia zobowiązani są zachowywać się w
                         sposób niezagrażający bezpieczeństwu innych, a w
                         szczególności
-                        <strong
-                            >przestrzegać postanowień niniejszego regulaminu
-                            oraz regulaminu obiektu</strong
-                        >, w którym odbywa się Wydarzenie. Zakazane jest
+                        <strong>
+                            przestrzegać postanowień niniejszego regulaminu oraz
+                            regulaminu obiektu
+                        </strong>
+                        , w którym odbywa się Wydarzenie. Zakazane jest
                         niszczenie oznaczeń i tablic informacyjnych, elementów
                         obiektu, nośników reklamowych, urządzeń i sprzętu
                         znajdującego się na Terenie Wydarzenia, itp., a
@@ -631,10 +365,10 @@
                         bezpieczeństwa osób i mienia.
                     </li>
                     <li>
-                        <strong
-                            >Uczestnicy zobowiązani są bezwzględnie do:</strong
-                        >
-                        <ul class="alphanumeric">
+                        <strong>
+                            Uczestnicy zobowiązani są bezwzględnie do:
+                        </strong>
+                        <ul className="alphanumeric">
                             <li>
                                 respektowania oznaczeń, ciągów komunikacyjnych
                                 oraz stref wydzielonych z ruchu podlegających
@@ -650,7 +384,7 @@
                     <li>
                         <strong>Uczestnikom zabrania się</strong> (chyba, że
                         właściciel obecny na miejscu zadecyduje inaczej):
-                        <ul class="alphanumeric">
+                        <ul className="alphanumeric">
                             <li>dotykania aut wystawowych,</li>
                             <li>wsiadania do aut,</li>
                             <li>opierania się o karoserię,</li>
@@ -671,10 +405,9 @@
                         zostanie potwierdzone stosownym protokołem.
                     </li>
                     <li>
-                        <strong
-                            >Opiekunowie osób niepełnoletnich
-                            zobowiązani</strong
-                        >
+                        <strong>
+                            Opiekunowie osób niepełnoletnich zobowiązani
+                        </strong>
                         są do pełnej kontroli osób pozostających pod ich opieką
                         i ponoszą za nich pełną odpowiedzialność (w tym
                         finansową).
@@ -684,18 +417,23 @@
                         Terenie Wydarzenia zobowiązani są posiadać na ręku ważną
                         Opaskę. Brak Opaski identyfikującej lub posiadanie
                         Opaski
-                        <span class="underline">zerwanej lub uszkodzonej</span>,
-                        <span class="underline">jak również nie zapiętej</span>
+                        <span className="underline">
+                            zerwanej lub uszkodzonej
+                        </span>
+                        ,
+                        <span className="underline">
+                            jak również nie zapiętej
+                        </span>
                         na ręce jest jednoznaczną
-                        <span class="underline"
-                            >podstawą do usunięcia uczestnika z Terenu
-                            Wydarzenia</span
-                        >.
-                        <strong
-                            >Samodzielne opuszczenie terenu Wydarzenia z
+                        <span className="underline">
+                            podstawą do usunięcia uczestnika z Terenu Wydarzenia
+                        </span>
+                        .
+                        <strong>
+                            Samodzielne opuszczenie terenu Wydarzenia z
                             uszkodzoną lub zerwaną Opaską jest równoznaczne z
-                            rezygnacją z uczestnictwa w Wydarzeniu.</strong
-                        >
+                            rezygnacją z uczestnictwa w Wydarzeniu.
+                        </strong>
                     </li>
                     <li>
                         Wszyscy Uczestnicy Wydarzenia, w trakcie trwania
@@ -705,7 +443,7 @@
                     </li>
                     <li>
                         <strong>Służby Porządkowe są uprawnione do:</strong>
-                        <ul class="alphanumeric">
+                        <ul className="alphanumeric">
                             <li>
                                 sprawdzania uprawnień do przebywania na
                                 Wydarzeniu, a w przypadku stwierdzenia braku
@@ -766,11 +504,11 @@
                         wyznaczonych.
                     </li>
                     <li>
-                        <strong
-                            >Biorąc udział w Wydarzeniu Uczestnik wyraża zgodę
-                            na korzystanie przez Organizatora z wizerunku
-                            utrwalonego</strong
-                        >
+                        <strong>
+                            Biorąc udział w Wydarzeniu Uczestnik wyraża zgodę na
+                            korzystanie przez Organizatora z wizerunku
+                            utrwalonego
+                        </strong>
                         w związku z realizacją Wydarzenia oraz przenosi na
                         Organizatora w zakresie nieograniczonym czasowo i
                         terytorialnie wszelkie prawa do korzystania i
@@ -788,8 +526,9 @@
             </section>
 
             <section>
-                <h2 class="text-uppercase">
-                    §5<br />
+                <h2 className="text-uppercase">
+                    §5
+                    <br />
                     dane osobowe
                 </h2>
                 <ol>
@@ -802,7 +541,7 @@
                     </li>
                     <li>
                         Dane osobowe Uczestnika przetwarzane są w celu:
-                        <ul class="alphanumeric">
+                        <ul className="alphanumeric">
                             <li>
                                 uczestnictwa w Wydarzeniu, konkursach, zgodnie z
                                 Regulaminem,
@@ -831,12 +570,11 @@
                         prawo do przeniesienia danych do innego administratora,
                         a także prawo do odwołania wyrażonej wcześniej zgody na
                         przetwarzanie danych w każdym momencie.
-                        <span class="underline"
-                            >Odwołanie zgody nie wpłynie na zgodność
+                        <span className="underline">
+                            Odwołanie zgody nie wpłynie na zgodność
                             przetwarzania danych Uczestnika, którego dokonano na
-                            podstawie zgody udzielonej przed jej
-                            cofnięciem.</span
-                        >
+                            podstawie zgody udzielonej przed jej cofnięciem.
+                        </span>
                     </li>
                     <li>
                         Uczestnikowi przysługuje prawo do wniesienia skargi do
@@ -845,18 +583,20 @@
                     <li>
                         Podanie przez Uczestnika danych osobowych jest niezbędne
                         do realizacji usługi, w tym obsługi procesu reklamacji.
-                        <span class="underline"
-                            >Odmowa podania przez Uczestnika danych osobowych
-                            uniemożliwi udział w Wydarzeniu</span
-                        >, a także realizację reklamacji zgłoszonej przez
+                        <span className="underline">
+                            Odmowa podania przez Uczestnika danych osobowych
+                            uniemożliwi udział w Wydarzeniu
+                        </span>
+                        , a także realizację reklamacji zgłoszonej przez
                         Uczestnika czy realizację obowiązków ustawowych przez
                         Firmę Street Meeting Poland.
                     </li>
                 </ol>
             </section>
             <section>
-                <h2 class="text-uppercase">
-                    §6<br />
+                <h2 className="text-uppercase">
+                    §6
+                    <br />
                     Postanowienia końcowe
                 </h2>
                 <ol>
@@ -872,8 +612,9 @@
                             href="http://streetshow.pl"
                             target="_blank"
                             rel="noopener noreferrer"
-                            >www.streetshow.pl</a
                         >
+                            www.streetshow.pl
+                        </a>
                         lub/i na profilu społecznościowym wydarzenia.
                         Uczestnikom nie przysługuje prawo roszczeń z tego
                         tytułu.
@@ -893,8 +634,9 @@
                             href="http://streetshow.pl"
                             target="_blank"
                             rel="noopener noreferrer"
-                            >www.streetshow.pl</a
                         >
+                            www.streetshow.pl
+                        </a>
                         oraz w kasach na Terenie Wydarzenia.
                     </li>
                     <li>
@@ -925,19 +667,7 @@
                 </ol>
             </section>
         </div>
-        <div id="regulations-folder" class="regulations"></div>
-        <a href="index.html" class="back-btn">Wróć na stronę główną</a>
-        <footer class="footer bg-dark text-light border-top">
-            <p class="text-center mb-0 py-3">
-                &copy; <span class="footer-year"></span> Street Meeting Poland
-            </p>
-        </footer>
-        <script
-            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-            crossorigin="anonymous"
-        ></script>
-        <script src="js/config.js"></script>
-        <script src="js/main.js"></script>
-    </body>
-</html>
+    );
+};
+
+export default Regulations; 

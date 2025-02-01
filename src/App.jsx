@@ -8,18 +8,32 @@ import GallerySection from "./components/GallerySection";
 import FormSection from "./components/FormSection";
 import Footer from "./components/Footer";
 import ContactSection from "./components/ContactSection";
+import { Routes, Route } from "react-router-dom";
+import Regulations from "./pages/Regulations";
+import FAQ from "./pages/FAQ";
 
 function App() {
     return (
         <>
             <Navbar />
-            <Header />
-            <main>
-                <EventSection />
-                <GallerySection />
-                <ContactSection />
-                <FormSection />
-            </main>
+            <Routes>
+                <Route
+                    path="/"
+                    element={
+                        <>
+                            <Header />
+                            <main>
+                                <EventSection />
+                                <GallerySection />
+                                <ContactSection />
+                                <FormSection />
+                            </main>
+                        </>
+                    }
+                />
+                <Route path="/regulations" element={<Regulations />} />
+                <Route path="/faq" element={<FAQ />} />
+            </Routes>
             <Footer />
         </>
     );
