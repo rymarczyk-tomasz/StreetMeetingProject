@@ -9,8 +9,8 @@ import FormSection from "./components/FormSection";
 import Footer from "./components/Footer";
 import ContactSection from "./components/ContactSection";
 import { Routes, Route } from "react-router-dom";
-import Regulations from "./pages/Regulations";
-import FAQ from "./pages/FAQ";
+import Regulations from "./pages/RegulationsPage";
+import FAQ from "./pages/FaqPage";
 
 function App() {
     return (
