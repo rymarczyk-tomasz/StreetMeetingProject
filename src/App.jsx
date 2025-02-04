@@ -11,6 +11,7 @@ import ContactSection from "./components/ContactSection";
 import { Routes, Route } from "react-router-dom";
 import Regulations from "./pages/RegulationsPage";
 import FAQ from "./pages/FaqPage";
+import GalleryPage from "./pages/GalleryPage"; // Importuj GalleryPage
 
 function App() {
     return (
@@ -33,6 +34,8 @@ function App() {
                 />
                 <Route path="/regulations" element={<Regulations />} />
                 <Route path="/faq" element={<FAQ />} />
+                <Route path="/gallery" element={<GalleryPage />} />{" "}
+                {/* Dodaj trasę dla GalleryPage */}
             </Routes>
             <Footer />
         </>

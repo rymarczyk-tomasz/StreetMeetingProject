@@ -1,10 +1,12 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const BackButton = () => {
     return (
-        <a href="index.html" className="back-btn">
+        <Link to="/" className="back-btn">
             Wróć na stronę główną
-        </a>
+        </Link>
     );
 };
- export default BackButton;
+
+export default BackButton;

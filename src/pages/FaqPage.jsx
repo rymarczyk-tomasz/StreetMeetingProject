@@ -1,4 +1,5 @@
 import React from "react";
+import BackButton from "../components/BackButton";
 
 const FAQ = () => {
     return (
@@ -298,6 +299,7 @@ const FAQ = () => {
                     </div>
                 </div>
             </div>
+            <BackButton />
         </div>
     );
 };

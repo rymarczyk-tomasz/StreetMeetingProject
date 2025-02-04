@@ -1,4 +1,5 @@
 import React from "react";
+import BackButton from "../components/BackButton";
 
 const Regulations = () => {
     return (
@@ -666,8 +667,9 @@ const Regulations = () => {
                     </li>
                 </ol>
             </section>
+            <BackButton />
         </div>
     );
 };
 
-export default Regulations; 
+export default Regulations;
