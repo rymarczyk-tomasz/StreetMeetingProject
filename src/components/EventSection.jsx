@@ -16,7 +16,7 @@ const EventSection = () => {
                         title="BILETY"
                     >
                         Od 6 stycznia do 15 lutego kup swój bilet na wydarzenie
-                        w promocyjnej cenie! Link do biletów znajdziesz
+                        w promocyjnej cenie! Link do biletów znajdziesz{" "}
                         <a
                             href="https://bkb.pl/151648-edcca"
                             target="_blank"
@@ -24,6 +24,7 @@ const EventSection = () => {
                         >
                             TUTAJ
                         </a>
+                        .
                     </Card>
                     <Card
                         imgSrc="src/img/photos/6.jpg"

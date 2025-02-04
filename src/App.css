@@ -162,13 +162,13 @@ input.form-control {
     background-color: #f4f4f4;
 }
 .gallery img {
-    width: 200px; 
-    height: 200px; 
-    object-fit: cover; 
-    border-radius: 8px; 
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
-    margin: 10px; 
-    cursor: pointer; 
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 10px;
+    cursor: pointer;
 }
 
 .back-btn {
