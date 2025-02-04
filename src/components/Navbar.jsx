@@ -1,7 +1,20 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const Navbar = () => {
+    useEffect(() => {
+        const navLinks = document.querySelectorAll(".nav-link");
+        const navbarCollapse = document.getElementById("navbarNavAltMarkup");
+
+        navLinks.forEach((link) => {
+            link.addEventListener("click", () => {
+                if (navbarCollapse.classList.contains("show")) {
+                    new window.bootstrap.Collapse(navbarCollapse).toggle();
+                }
+            });
+        });
+    }, []);
+
     return (
         <nav
             className="navbar navbar-expand-lg bg-body-tertiary py-4 fixed-top"

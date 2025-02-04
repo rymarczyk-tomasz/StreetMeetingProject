@@ -20,6 +20,13 @@ body {
     scroll-margin-top: 71.5px;
 }
 
+h1,
+h2 {
+    text-align: center;
+    margin-bottom: 40px;
+    font-weight: bold;
+}
+
 @media (min-width: 992px) {
     [id] {
         scroll-margin-top: 67px;

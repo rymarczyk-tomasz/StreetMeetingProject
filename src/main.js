@@ -1,9 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("registrationForm");
     const responseMessage = document.getElementById("responseMessage");
-    const navbarCollapse = document.getElementById("navbarNavAltMarkup");
-    const navLinks = document.querySelectorAll(".nav-link");
-    const footerYear = document.querySelector(".footer-year");
 
     let dotsInterval;
 
@@ -49,13 +46,5 @@ document.addEventListener("DOMContentLoaded", () => {
                 "Wystąpił błąd przy wysyłaniu formularza. Spróbuj ponownie później.";
             responseMessage.style.color = "red";
         }
-    });
-
-    navLinks.forEach((link) => {
-        link.addEventListener("click", () => {
-            if (navbarCollapse.classList.contains("show")) {
-                new bootstrap.Collapse(navbarCollapse).toggle();
-            }
-        });
     });
 });

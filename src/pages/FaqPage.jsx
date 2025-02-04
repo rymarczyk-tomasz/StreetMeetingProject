@@ -4,7 +4,9 @@ import BackButton from "../components/BackButton";
 const FAQ = () => {
     return (
         <div className="container my-5">
-            <h1 className="text-center mb-4">FAQ</h1>
+            <h1 style={{ marginTop: "100px" }} className="text-center mb-4">
+                FAQ
+            </h1>
             <div className="accordion" id="faqAccordion">
                 <div className="accordion-item">
                     <h2 className="accordion-header" id="headingBilety">
@@ -31,14 +33,14 @@ const FAQ = () => {
                             </strong>
                             <br />
                             Bilety są dostępne online na stronie internetowej
-                            operatora sprzedaży biletów –
+                            operatora sprzedaży biletów –{" "}
                             <a
                                 rel="noopener noreferrer"
                                 target="_blank"
                                 href="https://bkb.pl/151648-edcca"
                             >
                                 Kupbilecik
-                            </a>
+                            </a>{" "}
                             oraz w punktach sprzedaży w dniu wydarzenia.
                             <br />
                             <br />

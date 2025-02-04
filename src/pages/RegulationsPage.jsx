@@ -3,8 +3,10 @@ import BackButton from "../components/BackButton";
 
 const Regulations = () => {
     return (
-        <div className="container">
-            <h1>Regulamin Wydarzenia „STREET SHOW 2025”</h1>
+        <div className="container my-5">
+            <h1 style={{ marginTop: "100px" }}>
+                Regulamin Wydarzenia „STREET SHOW 2025”
+            </h1>
 
             <section>
                 <h2 className="text-uppercase">
@@ -15,20 +17,20 @@ const Regulations = () => {
                 <ol>
                     <li>
                         Organizatorem wydarzenia pn.: „Street Meeting Poland”,
-                        zwanego dalej „<strong>Imprezą</strong>”, jest Street
+                        zwanego dalej „ <strong>Imprezą</strong>”, jest Street
                         Meeting Poland Sp. z o.o. z siedzibą w Elblągu (82-300),
                         przy ul. Królewiecka 205/15, NIP 5783153201, zwana dalej
-                        „<strong>Organizatorem</strong>”.
+                        „ <strong>Organizatorem</strong>”.
                     </li>
                     <li>
-                        Impreza odbywa się w dniach
+                        Impreza odbywa się w dniach{" "}
                         <strong>31 maja 2025r.</strong> na terenie stadionu
                         Polsat Plus Arena Gdańsk, przy ul. Pokoleń Lechii Gdańsk
-                        1, zwanym dalej „<strong>Terenem Wydarzenia</strong>”.
+                        1, zwanym dalej „ <strong>Terenem Wydarzenia</strong>”.
                     </li>
                     <li>
-                        Impreza ma charakter odpłatny. Dzieci
-                        <strong>do lat 6</strong> wchodzą
+                        Impreza ma charakter odpłatny. Dzieci{" "}
+                        <strong>do lat 6</strong> wchodzą{" "}
                         <strong> za darmo</strong> za okazaniem dokumentu
                         potwierdzającego wiek.
                     </li>
@@ -42,7 +44,7 @@ const Regulations = () => {
                     </li>
                     <li>
                         Osoby przebywające na terenie Imprezy w dalszej części
-                        Regulaminu zwane są „<strong>Uczestnikami</strong>”.
+                        Regulaminu zwane są „ <strong>Uczestnikami</strong>”.
                     </li>
                     <li>
                         Regulamin skierowany jest do każdej osoby przebywającej
@@ -55,7 +57,7 @@ const Regulations = () => {
                         oraz zasad organizacyjnych.
                     </li>
                     <li>
-                        Poprzez „<strong>Bilet</strong>” należy rozumieć zgodę
+                        Poprzez „ <strong>Bilet</strong>” należy rozumieć zgodę
                         Organizatora na uczestnictwo w Wydarzeniu. Bilet
                         upoważnia do wstępu na teren Wydarzenia.
                     </li>
@@ -67,7 +69,7 @@ const Regulations = () => {
                         i adres zamieszkania osoby nim się posługującej.
                     </li>
                     <li>
-                        Poprzez „<strong>Służby Porządkowe</strong>” i „
+                        Poprzez „ <strong>Służby Porządkowe</strong>” i „{" "}
                         <strong>Służby Organizatora</strong>” należy rozumieć
                         osoby, legitymujące się identyfikatorem lub jednolitym
                         strojem ochrony (Służby Porządkowe), powołane przez
@@ -86,14 +88,14 @@ const Regulations = () => {
                 </h2>
                 <ol>
                     <li>
+                        {" "}
                         <strong>Bilety sprzedawane</strong> są wyłącznie w
-                        autoryzowanych punktach sprzedaży
-                        <strong>(podczas Imprezy)</strong> oraz na stronie
+                        autoryzowanych punktach sprzedaży{" "}
+                        <strong>(podczas Imprezy)</strong> oraz na stronie{" "}
                         <a
                             href="https://www.kupbilecik.pl/"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="links event-link"
                         >
                             www.kupbilecik.pl
                         </a>
@@ -102,16 +104,16 @@ const Regulations = () => {
                     </li>
                     <li>
                         Każdy uczestnik posiadający Bilet lub dokonujący jego
-                        zakupu przed Wydarzeniem, przy
-                        <strong>pierwszym wejściu</strong> na teren Wydarzenia,
-                        <strong>otrzyma</strong> na trwałe
+                        zakupu przed Wydarzeniem, przy{" "}
+                        <strong>pierwszym wejściu</strong> na teren Wydarzenia,{" "}
+                        <strong>otrzyma</strong> na trwałe{" "}
                         <strong>Opaskę identyfikującą</strong> (zapinaną na
                         nadgarstku). Z jednej opaski może korzystać wyłącznie
-                        jeden Uczestnik.
+                        jeden Uczestnik.{" "}
                         <strong>
                             W przypadku jej uszkodzenia traci ona ważność
                         </strong>
-                        , a tym samym Uczestnik
+                        , a tym samym Uczestnik{" "}
                         <strong>
                             traci prawo do uczestniczenia w Wydarzeniu
                         </strong>
@@ -171,7 +173,7 @@ const Regulations = () => {
                         </span>
                     </li>
                     <li>
-                        W przypadku, gdy
+                        W przypadku, gdy{" "}
                         <strong>
                             Uczestnikiem Wydarzenia chce być małoletni w wieku
                             poniżej 15 lat
@@ -183,6 +185,7 @@ const Regulations = () => {
                         </span>
                     </li>
                     <li>
+                        {" "}
                         <strong>Zabrania się:</strong>
                         <ul className="alphanumeric">
                             <li>
@@ -211,7 +214,7 @@ const Regulations = () => {
                                 <span className="underline">
                                     prowadzenia sprzedaży, reklamy, roznoszenia
                                     materiałów reklamowych, tworzenia cyfrowych
-                                    materiałów marketingowych pod kara grzywny
+                                    materiałów marketingowych pod kara grzywny{" "}
                                     <strong>(50.000 zł.)</strong>
                                     bez wcześniejszej zgody Organizatora.
                                 </span>
@@ -224,7 +227,7 @@ const Regulations = () => {
                                 Organizatorem, jak również działań niezgodnych z
                                 obowiązującymi przepisami prawa
                                 <span className="underline">
-                                    pod kara grzywny
+                                    pod kara grzywny{" "}
                                     <strong>(50.000 zł.)</strong>
                                 </span>
                             </li>
@@ -259,6 +262,7 @@ const Regulations = () => {
                         </ul>
                     </li>
                     <li>
+                        {" "}
                         <strong>
                             Organizator zastrzega sobie prawo odmówić wstępu na
                             Teren Wydarzenia osobie:
@@ -294,12 +298,14 @@ const Regulations = () => {
                         </ul>
                     </li>
                     <li>
+                        {" "}
                         <strong>
                             Ocena przedmiotów i kwalifikowanie ich, jako
                             niebezpiecznych należy do Służb Porządkowych.
                         </strong>
                     </li>
                     <li>
+                        {" "}
                         <strong>
                             Każde wejście na teren Wydarzenia, niezależnie od
                             sposobu uzyskania biletu, oznacza akceptację
@@ -345,7 +351,7 @@ const Regulations = () => {
                     <li>
                         Uczestnicy Wydarzenia zobowiązani są zachowywać się w
                         sposób niezagrażający bezpieczeństwu innych, a w
-                        szczególności
+                        szczególności{" "}
                         <strong>
                             przestrzegać postanowień niniejszego regulaminu oraz
                             regulaminu obiektu
@@ -366,6 +372,7 @@ const Regulations = () => {
                         bezpieczeństwa osób i mienia.
                     </li>
                     <li>
+                        {" "}
                         <strong>
                             Uczestnicy zobowiązani są bezwzględnie do:
                         </strong>
@@ -383,6 +390,7 @@ const Regulations = () => {
                         </ul>
                     </li>
                     <li>
+                        {" "}
                         <strong>Uczestnikom zabrania się</strong> (chyba, że
                         właściciel obecny na miejscu zadecyduje inaczej):
                         <ul className="alphanumeric">
@@ -406,6 +414,7 @@ const Regulations = () => {
                         zostanie potwierdzone stosownym protokołem.
                     </li>
                     <li>
+                        {" "}
                         <strong>
                             Opiekunowie osób niepełnoletnich zobowiązani
                         </strong>
@@ -429,7 +438,7 @@ const Regulations = () => {
                         <span className="underline">
                             podstawą do usunięcia uczestnika z Terenu Wydarzenia
                         </span>
-                        .
+                        .{" "}
                         <strong>
                             Samodzielne opuszczenie terenu Wydarzenia z
                             uszkodzoną lub zerwaną Opaską jest równoznaczne z
@@ -443,6 +452,7 @@ const Regulations = () => {
                         dowodu tożsamości na żądania Organizatora.
                     </li>
                     <li>
+                        {" "}
                         <strong>Służby Porządkowe są uprawnione do:</strong>
                         <ul className="alphanumeric">
                             <li>
@@ -498,13 +508,14 @@ const Regulations = () => {
                         Wydarzenia. Organizator nie prowadzi depozytu.
                     </li>
                     <li>
-                        Na terenie Wydarzenia,
-                        <strong>wewnątrz budynku</strong>, obowiązuje surowy
+                        Na terenie Wydarzenia, <strong>wewnątrz budynku</strong>
+                        , obowiązuje surowy{" "}
                         <strong>zakaz palenia wyrobów tytoniowych</strong>.
                         Palenie może obywać się jedynie w miejscach do tego
                         wyznaczonych.
                     </li>
                     <li>
+                        {" "}
                         <strong>
                             Biorąc udział w Wydarzeniu Uczestnik wyraża zgodę na
                             korzystanie przez Organizatora z wizerunku
@@ -608,14 +619,14 @@ const Regulations = () => {
                     <li>
                         Organizator zastrzega sobie prawo do zmiany regulaminu i
                         programu wydarzenia, w każdym momencie bez podawania
-                        przyczyny, o czym poinformuje na stronie
+                        przyczyny, o czym poinformuje na stronie{" "}
                         <a
                             href="http://streetshow.pl"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
                             www.streetshow.pl
-                        </a>
+                        </a>{" "}
                         lub/i na profilu społecznościowym wydarzenia.
                         Uczestnikom nie przysługuje prawo roszczeń z tego
                         tytułu.
@@ -630,14 +641,14 @@ const Regulations = () => {
                     </li>
                     <li>
                         Niniejszy Regulamin jest dostępny na stronie
-                        internetowej Imprezy:
+                        internetowej Imprezy:{" "}
                         <a
                             href="http://streetshow.pl"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
                             www.streetshow.pl
-                        </a>
+                        </a>{" "}
                         oraz w kasach na Terenie Wydarzenia.
                     </li>
                     <li>
