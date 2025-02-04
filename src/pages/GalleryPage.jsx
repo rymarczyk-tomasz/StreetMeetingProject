@@ -7,7 +7,7 @@ const Gallery = () => {
     const [currentIndex, setCurrentIndex] = useState(null);
 
     useEffect(() => {
-        const imageFolder = "src/img/gallery";
+        const imageFolder = "/img/gallery";
         const imageNames = [
             "1.jpg",
             "2.jpg",

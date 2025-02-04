@@ -9,15 +9,15 @@ const GallerySection = () => {
                 <h2 className="display-3 pb-lg-3 text-uppercase">Galeria</h2>
                 <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
                     <Card
-                        imgSrc="src/img/photos/Street Meeting Poland 2024-139.jpg"
+                        imgSrc="/img/photos/Street Meeting Poland 2024-139.jpg"
                         imgAlt="Czeno biały nissan"
                     />
                     <Card
-                        imgSrc="src/img/photos/Street Meeting Poland 2024-252.jpg"
+                        imgSrc="/img/photos/Street Meeting Poland 2024-252.jpg"
                         imgAlt="Czeno biały nissan"
                     />
                     <Card
-                        imgSrc="src/img/photos/2024.03.29 Street Meeting 2-13.jpg"
+                        imgSrc="/img/photos/2024.03.29 Street Meeting 2-13.jpg"
                         imgAlt="Czeno biały nissan"
                     />
                 </div>

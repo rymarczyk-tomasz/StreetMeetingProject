@@ -11,7 +11,7 @@ const EventSection = () => {
                 </p>
                 <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
                     <Card
-                        imgSrc="src/img/photos/10.jpg"
+                        imgSrc="/img/photos/10.jpg"
                         imgAlt="Samochody na murawie Polsat Plus Arena, Gdańsk, a na przodzie skłądane krzesełka z napisaem street meeting"
                         title="BILETY"
                     >
@@ -27,7 +27,7 @@ const EventSection = () => {
                         .
                     </Card>
                     <Card
-                        imgSrc="src/img/photos/6.jpg"
+                        imgSrc="/img/photos/6.jpg"
                         imgAlt="Czeno biały nissan"
                         title="STREFA POJAZDÓW SELECT"
                     >
@@ -37,7 +37,7 @@ const EventSection = () => {
                         poniżej.
                     </Card>
                     <Card
-                        imgSrc="src/img/photos/7.jpg"
+                        imgSrc="/img/photos/7.jpg"
                         imgAlt="Trzy driftujące samochody"
                         title="DRIFT TAXI ORAZ STREFA EXPO"
                     >

@@ -11,7 +11,7 @@ const Navbar = () => {
                 <Link className="navbar-brand" to="/">
                     <img
                         className="logo"
-                        src="src/img/Logo 2.0/SVG/Logo_4.svg"
+                        src="img/Logo 2.0/SVG/Logo_4.svg"
                         alt="Street Meeting Poland"
                     />
                 </Link>
