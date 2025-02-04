@@ -58,11 +58,4 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     });
-
-    const handleCurrentYear = () => {
-        const currentYear = new Date().getFullYear();
-        footerYear.innerText = currentYear;
-    };
-
-    handleCurrentYear();
 });
