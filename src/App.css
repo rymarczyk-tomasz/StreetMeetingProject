@@ -162,13 +162,13 @@ input.form-control {
     background-color: #f4f4f4;
 }
 .gallery img {
-    width: 200px; /* Szerokość w pikselach */
-    height: 200px; /* Wysokość w pikselach */
-    object-fit: cover; /* Dopasowanie zawartości bez zniekształceń */
-    border-radius: 8px; /* Opcjonalne: zaokrąglone rogi */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Opcjonalne: cień */
-    margin: 10px; /* Odstęp między obrazami */
-    cursor: pointer; /* Wskaźnik jako dłoń */
+    width: 200px; 
+    height: 200px; 
+    object-fit: cover; 
+    border-radius: 8px; 
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+    margin: 10px; 
+    cursor: pointer; 
 }
 
 .back-btn {
@@ -182,6 +182,10 @@ input.form-control {
     border-radius: 5px;
     text-decoration: none;
     cursor: pointer;
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    z-index: 1000; /* Upewnij się, że przycisk jest na wierzchu innych elementów */
 }
 
 /* Styl dla modala */
@@ -370,4 +374,14 @@ input.form-control {
     50% {
         opacity: 0;
     }
+}
+
+.fixed-bottom-left {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    z-index: 1000; /* Upewnij się, że przycisk jest na wierzchu innych elementów */
+    padding: 10px 20px; /* Opcjonalnie: dodaj padding */
+    border-radius: 5px; /* Opcjonalnie: dodaj zaokrąglenie rogów */
+    text-decoration: none; /* Usuń podkreślenie linku */
 }
