@@ -1,5 +1,3 @@
-import React from "react";
-
 const Modal = ({ photo, onClose, onNext, onPrev }) => {
     const handleClickOutside = (e) => {
         if (e.target.id === "imageModal") {
@@ -8,9 +6,21 @@ const Modal = ({ photo, onClose, onNext, onPrev }) => {
     };
 
     return (
-        <div id="imageModal" className="modal" style={{ display: "block" }} onClick={handleClickOutside}>
-            <span className="close" onClick={onClose}>&times;</span>
-            <img className="modal-content" id="modalImage" src={photo} alt="Modal" />
+        <div
+            id="imageModal"
+            className="modal"
+            style={{ display: "block" }}
+            onClick={handleClickOutside}
+        >
+            <span className="close" onClick={onClose}>
+                &times;
+            </span>
+            <img
+                className="modal-content"
+                id="modalImage"
+                src={photo}
+                alt="Modal"
+            />
             <div className="navigation">
                 <span className="prev" id="prevImage" onClick={onPrev}>
                     &#10094;

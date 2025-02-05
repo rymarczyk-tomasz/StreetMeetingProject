@@ -1,5 +1,3 @@
-import React from "react";
-
 const FormSection = () => {
     return (
         <section id="form" className="form bg-light text-dark py-5">
