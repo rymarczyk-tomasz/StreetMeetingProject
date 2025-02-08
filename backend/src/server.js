@@ -87,7 +87,7 @@ async function appendToSheet(data) {
                         data.licensePlate,
                         data.carBrand,
                         data.carDescription,
-                        data.photoUrl,
+                        data.photoUrls, // Zaktualizowane pole
                     ],
                 ],
             },
@@ -101,33 +101,44 @@ async function appendToSheet(data) {
     }
 }
 
-// Przesyłanie pliku do Google Drive
-async function uploadFileToDrive(filePath, fileName) {
-    const fileMetadata = {
-        name: fileName,
-        parents: [GOOGLE_DRIVE_FOLDER_ID],
-    };
-    const media = {
-        mimeType: "image/jpeg",
-        body: fs.createReadStream(filePath),
-    };
+// Przesyłanie plików do Google Drive
+async function uploadFilesToDrive(files) {
+    const fileLinks = [];
+    for (const file of files) {
+        const fileMetadata = {
+            name: file.originalname,
+            parents: [GOOGLE_DRIVE_FOLDER_ID],
+        };
+        const media = {
+            mimeType: file.mimetype,
+            body: fs.createReadStream(file.path),
+        };
 
-    try {
-        const file = await drive.files.create({
-            resource: fileMetadata,
-            media,
-            fields: "id, webViewLink",
-        });
-        return file.data.webViewLink; // Zwróci link do pliku na Google Drive
-    } catch (error) {
-        console.error("Błąd przy przesyłaniu pliku do Google Drive:", error);
-        throw error;
+        try {
+            const uploadedFile = await drive.files.create({
+                resource: fileMetadata,
+                media,
+                fields: "id, webViewLink",
+            });
+            fileLinks.push(uploadedFile.data.webViewLink);
+        } catch (error) {
+            console.error(
+                "Błąd przy przesyłaniu pliku do Google Drive:",
+                error
+            );
+            throw error;
+        } finally {
+            fs.unlink(file.path, (err) => {
+                if (err)
+                    console.error("Błąd przy usuwaniu pliku:", err.message);
+            });
+        }
     }
+    return fileLinks;
 }
 
 // Endpoint do przesyłania danych (formularz)
-app.post("/upload", upload.single("photo"), async (req, res) => {
-    let photoPath;
+app.post("/upload", upload.array("photos", 10), async (req, res) => {
     try {
         const {
             firstName,
@@ -147,15 +158,14 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
             !licensePlate ||
             !carBrand ||
             !carDescription ||
-            !req.file
+            !req.files
         ) {
             return res
                 .status(400)
                 .json({ message: "Wszystkie pola są wymagane." });
         }
 
-        photoPath = req.file.path;
-        const photoUrl = await uploadFileToDrive(photoPath, req.file.filename);
+        const photoUrls = await uploadFilesToDrive(req.files);
 
         await appendToSheet({
             firstName,
@@ -165,7 +175,7 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
             licensePlate,
             carBrand,
             carDescription,
-            photoUrl,
+            photoUrls: photoUrls.join(", "), // Zapisz linki jako ciąg znaków oddzielony przecinkami
         });
 
         res.json({
@@ -174,13 +184,6 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
     } catch (error) {
         console.error("Błąd na serwerze:", error.message);
         res.status(500).json({ message: "Wystąpił błąd serwera." });
-    } finally {
-        if (photoPath) {
-            fs.unlink(photoPath, (err) => {
-                if (err)
-                    console.error("Błąd przy usuwaniu pliku:", err.message);
-            });
-        }
     }
 });
 
