@@ -165,8 +165,11 @@ app.post("/upload", upload.array("photos", 10), async (req, res) => {
                 .json({ message: "Wszystkie pola są wymagane." });
         }
 
+        console.log("Przesyłanie plików do Google Drive...");
         const photoUrls = await uploadFilesToDrive(req.files);
+        console.log("Pliki przesłane do Google Drive:", photoUrls);
 
+        console.log("Dodawanie danych do Google Sheets...");
         await appendToSheet({
             firstName,
             lastName,
@@ -177,6 +180,7 @@ app.post("/upload", upload.array("photos", 10), async (req, res) => {
             carDescription,
             photoUrls: photoUrls.join(", "), // Zapisz linki jako ciąg znaków oddzielony przecinkami
         });
+        console.log("Dane dodane do Google Sheets");
 
         res.json({
             message: `Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)`,
