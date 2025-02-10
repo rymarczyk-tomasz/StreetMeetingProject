@@ -1,16 +1,17 @@
-
+import logo from "../assets/img/Logo 2.0/SVG/Logo_4.svg"
 const Navbar = () => {
   return (
-    <div className='px-4 flex flex-row  max-w-[1240px] mx-auto h-24 justify-end items-center text-black-100'>
-     
-      <h1 className="w-full text-3xl font-bold  text-[#141414] " >React</h1>
-      <ul className="flex uppercase ">
-        <li className=" p-4">Home</li>
-        <li className="p-4">Event</li>
-        <li className="p-4">Galeria</li>
-        <li className="p-4">Formularz</li>
-        <li className="p-4">Faq</li>
-        <li className="p-4">Regulamin</li>
+    <div className='px-4 flex flex-row  max-w-[1240px] mx-auto h-14 justify-between items-center text-black-100'>
+ <img src={logo} className=" h-7 w-28 object-scale-down ml-10" alt="logo" />
+      
+      <ul className="font-chakra  font text-black text-opacity-65 mr-10 flex uppercase gap-3  mr-20">
+        <li className="  hover:text-black">Home</li>
+        <li className=" hover:text-black ">Event</li>
+        <li className=" hover:text-black ">Galeria</li>
+        <li className=" hover:text-black ">Kontakt</li>
+        <li className=" hover:text-black">Formularz</li>
+        <li className=" hover:text-black ">Faq</li>
+        <li className=" hover:text-black">Regulamin</li>
       </ul>
     </div>
   )
