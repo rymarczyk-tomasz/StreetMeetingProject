@@ -1,14 +1,22 @@
-const path = require("path");
-require("dotenv").config({ path: path.join(__dirname, "../config/.env") });
+import multer from 'multer';
+import dotenv from 'dotenv';
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
+//import googleservice from 'google-service';
 
-const cors = require("cors");
-const express = require("express");
-const fs = require("fs");
-//require('./services/google-service')
-
-// Inicjalizacja aplikacji Express
 const app = express();
 const PORT = process.env.PORT || 33000;
+const env = process.env.NODE_ENV || 'development';
+
+const __dirname = path.resolve();
+
+if (env === 'development') {
+    dotenv.config();
+} else {
+    dotenv.config({ path: path.join(__dirname, "../config/.env") });
+}
 
 // Middleware
 app.use(cors());
@@ -16,7 +24,6 @@ app.use(express.static(path.join(__dirname, "../")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Endpoint do przesyłania danych (formularz)
 app.post("/upload", async (req, res) => {
     console.log(req.body);
 
@@ -81,7 +88,6 @@ app.post("/upload", async (req, res) => {
 //     }
 // });
 
-// Uruchomienie serwera
 app.listen(PORT, () => {
-    console.log(`Serwer nasłuchuje na porcie ${PORT}`);
+    console.log(`Listening on: ${PORT}`);
 });
