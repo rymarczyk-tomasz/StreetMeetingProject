@@ -24,9 +24,10 @@ app.use(express.static(path.join(__dirname, "../")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.post("/upload", async (req, res) => {
+app.post("/upload", multer({dest: "./uploads/"}).array("photo"), async (req, res) => {
     console.log(req.body);
 
+    console.log(req.files);
     res.status(200).send(req.body);
 });
 // app.post("/upload", upload.single("photo"), async (req, res) => {

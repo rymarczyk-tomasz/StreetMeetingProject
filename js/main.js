@@ -41,16 +41,11 @@ form.addEventListener("submit", async (event) => {
     // animateDots();
 
     const formData = new FormData(form);
-    const formDataObj = Object.fromEntries(formData.entries());
-    console.log('form request',formDataObj);
 
     try {
         const response = await fetch(window.ENV.API_BASE_URL, {
-            headers: {
-                "Content-Type": "application/json",
-            },
             method: "POST",
-            body: JSON.stringify(formDataObj),
+            body: formData,
         });
 
         conosle.log('response', response);
