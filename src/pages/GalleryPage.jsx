@@ -67,7 +67,6 @@ const Gallery = () => {
                     onPrev={showPrevImage}
                 />
             )}
-            <BackButton />
         </>
     );
 };

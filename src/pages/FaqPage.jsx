@@ -300,7 +300,6 @@ const FAQ = () => {
                     </div>
                 </div>
             </div>
-            <BackButton />
         </div>
     );
 };

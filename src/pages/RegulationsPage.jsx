@@ -677,7 +677,6 @@ const Regulations = () => {
                     </li>
                 </ol>
             </section>
-            <BackButton />
         </div>
     );
 };
