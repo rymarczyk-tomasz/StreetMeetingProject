@@ -2,6 +2,11 @@ const navLinks = document.querySelectorAll(".nav-link");
 const navbarCollapse = document.getElementById("navbarNavAltMarkup");
 const footerYear = document.querySelector(".footer-year");
 
+window.ENV = {
+    API_BASE_URL: "https://streetmeetingbackend.azurewebsites.net/upload",
+    // API_BASE_URL: "http://localhost:33000/upload",
+};
+
 navLinks.forEach((link) => {
     link.addEventListener("click", () => {
         if (navbarCollapse.classList.contains("show")) {
