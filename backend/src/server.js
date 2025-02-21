@@ -12,9 +12,9 @@ const env = process.env.NODE_ENV || "development";
 const __dirname = path.resolve();
 
 let envPath = "";
-env === 'development' ?
-    envPath = path.join(__dirname, "./.env.development") :
-    envPath = path.join(__dirname, "./.env");
+env === "development"
+    ? (envPath = path.join(__dirname, "./.env.development"))
+    : (envPath = path.join(__dirname, "./.env"));
 
 dotenv.config({ path: envPath });
 
@@ -62,7 +62,9 @@ app.post(
             !carDescription ||
             !req.files
         ) {
-            return res.status(400).json({ message: "Wszystkie pola są wymagane." });
+            return res
+                .status(400)
+                .json({ message: "Wszystkie pola są wymagane." });
         }
 
         const userFolder = await googleService.createUserFolder(
@@ -70,22 +72,23 @@ app.post(
             lastName
         );
         await googleService.uploadFilesToDrive(req.files, userFolder.id);
-        await googleService.appendToSheet({
-            firstName,
-            lastName,
-            email,
-            phone,
-            licensePlate,
-            carBrand,
-            carDescription,
-            photoUrls: userFolder.link, // Zapisujemy link do folderu
-        }).then((response) => response);
+        await googleService
+            .appendToSheet({
+                firstName,
+                lastName,
+                email,
+                phone,
+                licensePlate,
+                carBrand,
+                carDescription,
+                photoUrls: userFolder.link, // Zapisujemy link do folderu
+            })
+            .then((response) => response);
 
-        res.status(200)
-            .json({
-                message:
-                    "Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)",
-            });
+        res.status(200).json({
+            message:
+                "Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)",
+        });
         // TODO: Delete files from '/uploads'
     }
 );

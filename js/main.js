@@ -1,4 +1,3 @@
-
 const navLinks = document.querySelectorAll(".nav-link");
 const navbarCollapse = document.getElementById("navbarNavAltMarkup");
 const footerYear = document.querySelector(".footer-year");
@@ -44,12 +43,14 @@ form.addEventListener("submit", async (event) => {
     await fetch(window.ENV.API_BASE_URL, {
         method: "POST",
         body: formData,
-    }).then((_) => {
-        responseMessage.innerText = `Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)`;
-        responseMessage.style.color = "green";
-    }).catch((_) =>{
-        responseMessage.innerText =
-            "Wystąpił błąd przy wysyłaniu formularza. Spróbuj ponownie później.";
-        responseMessage.style.color = "red";
-    });
+    })
+        .then((_) => {
+            responseMessage.innerText = `Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)`;
+            responseMessage.style.color = "green";
+        })
+        .catch((_) => {
+            responseMessage.innerText =
+                "Wystąpił błąd przy wysyłaniu formularza. Spróbuj ponownie później.";
+            responseMessage.style.color = "red";
+        });
 });
