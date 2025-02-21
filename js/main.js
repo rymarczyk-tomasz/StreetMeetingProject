@@ -34,8 +34,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             clearInterval(dotsInterval); // Zatrzymanie animacji
             if (response.ok) {
-                responseMessage.innerText = `Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)`;
-                responseMessage.style.color = "green";
+                responseMessage.innerText = `Przepraszamy za probemy, ale formularz jest aktualnie w przebudowie i nie działa. Postaramy sie go naprawić jak najszybciej.`;
+                responseMessage.style.color = "red";
             } else {
                 const error = await response.json();
                 responseMessage.innerText = `Błąd: ${
