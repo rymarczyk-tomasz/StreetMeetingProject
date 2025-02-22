@@ -122,7 +122,7 @@ async function uploadFileToDrive(filePath, fileName) {
 }
 
 // Endpoint do przesyłania danych (formularz)
-app.post("/upload", upload.single("photo"), async (req, res) => {
+app.post("/upload", upload.single("photos"), async (req, res) => {
     let photoPath;
     try {
         const {
