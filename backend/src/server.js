@@ -7,7 +7,7 @@ const multer = require("multer");
 const fs = require("fs");
 const { google } = require("googleapis");
 
-// Inicjalizacja aplikacji Express
+// Inicjalizacja aplikacji Express dsdds
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -16,7 +16,6 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, "../")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 // Konfiguracja Multer (upload plików)
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -25,7 +24,7 @@ if (!fs.existsSync(uploadDir)) {
 
 const upload = multer({ dest: uploadDir });
 
-// Wczytanie danych uwierzytelniających z zmiennych środowiskowych
+// Wczytanie danych uwierzytelniających z zmiennych środowiskowych...
 const credentials = {
     type: "service_account",
     project_id: process.env.GOOGLE_PROJECT_ID,
@@ -90,7 +89,7 @@ async function appendToSheet(data) {
         });
     } catch (error) {
         console.error(
-            "Błąd podczas dodawania danych do Google Sheets:",
+            "Błąd podczas dodawania danych do Arkuszy Google:",
             error.message
         );
         throw new Error("Nie udało się dodać danych do arkusza.");
