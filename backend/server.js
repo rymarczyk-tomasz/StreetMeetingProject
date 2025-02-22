@@ -9,7 +9,7 @@ const { google } = require("googleapis");
 
 // Inicjalizacja aplikacji Express
 const app = express();
-const PORT = process.env.PORT || 33000; // Zaktualizowano na 33000, aby było zgodne z config.js
+const PORT = process.env.PORT || 33000;
 
 // Middleware
 app.use(cors());
@@ -66,6 +66,50 @@ const drive = google.drive({ version: "v3", auth });
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const GOOGLE_DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID;
 
+// Funkcja do tworzenia folderu na Google Drive
+async function createFolderOnDrive(folderName, parentFolderId) {
+    const fileMetadata = {
+        name: folderName,
+        mimeType: "application/vnd.google-apps.folder",
+        parents: [parentFolderId],
+    };
+
+    try {
+        const folder = await drive.files.create({
+            resource: fileMetadata,
+            fields: "id, webViewLink",
+        });
+        return folder.data; // Zwraca id i link do folderu
+    } catch (error) {
+        console.error("Błąd przy tworzeniu folderu na Google Drive:", error);
+        throw error;
+    }
+}
+
+// Funkcja do przesyłania pliku do Google Drive
+async function uploadFileToDrive(filePath, fileName, folderId) {
+    const fileMetadata = {
+        name: fileName,
+        parents: [folderId], // Folder osoby
+    };
+    const media = {
+        mimeType: "image/jpeg",
+        body: fs.createReadStream(filePath),
+    };
+
+    try {
+        const file = await drive.files.create({
+            resource: fileMetadata,
+            media,
+            fields: "id, webViewLink",
+        });
+        return file.data.webViewLink; // Zwraca link do pliku
+    } catch (error) {
+        console.error("Błąd przy przesyłaniu pliku do Google Drive:", error);
+        throw error;
+    }
+}
+
 // Funkcja do dodawania danych do Google Sheets
 async function appendToSheet(data) {
     try {
@@ -83,7 +127,7 @@ async function appendToSheet(data) {
                         data.licensePlate,
                         data.carBrand,
                         data.carDescription,
-                        data.photoUrl,
+                        data.folderUrl, // Link do folderu
                     ],
                 ],
             },
@@ -94,30 +138,6 @@ async function appendToSheet(data) {
             error.message
         );
         throw new Error("Nie udało się dodać danych do arkusza.");
-    }
-}
-
-// Przesyłanie pliku do Google Drive
-async function uploadFileToDrive(filePath, fileName) {
-    const fileMetadata = {
-        name: fileName,
-        parents: [GOOGLE_DRIVE_FOLDER_ID],
-    };
-    const media = {
-        mimeType: "image/jpeg",
-        body: fs.createReadStream(filePath),
-    };
-
-    try {
-        const file = await drive.files.create({
-            resource: fileMetadata,
-            media,
-            fields: "id, webViewLink",
-        });
-        return file.data.webViewLink; // Zwróci link do pliku na Google Drive
-    } catch (error) {
-        console.error("Błąd przy przesyłaniu pliku do Google Drive:", error);
-        throw error;
     }
 }
 
@@ -135,7 +155,7 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
             carDescription,
         } = req.body;
 
-        // Sprawdzenie, czy wszystkie pola tekstowe i przynajmniej jedno zdjęcie są obecne
+        // Walidacja danych
         if (
             !firstName ||
             !lastName ||
@@ -144,26 +164,31 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
             !licensePlate ||
             !carBrand ||
             !carDescription ||
-            !req.files || // Używamy req.files dla tablicy
+            !req.files ||
             req.files.length === 0
         ) {
-            return res
-                .status(400)
-                .json({
-                    message:
-                        "Wszystkie pola są wymagane, w tym przynajmniej jedno zdjęcie.",
-                });
+            return res.status(400).json({
+                message:
+                    "Wszystkie pola są wymagane, w tym przynajmniej jedno zdjęcie.",
+            });
         }
 
-        // Przesyłanie wszystkich zdjęć do Google Drive
+        // Tworzenie folderu o nazwie "Imię Nazwisko"
+        const folderName = `${firstName} ${lastName}`;
+        const folder = await createFolderOnDrive(
+            folderName,
+            GOOGLE_DRIVE_FOLDER_ID
+        );
+
+        // Przesyłanie zdjęć do folderu
         const photoUrls = await Promise.all(
             req.files.map((file) => {
-                photoPaths.push(file.path); // Zbieramy ścieżki do usunięcia później
-                return uploadFileToDrive(file.path, file.filename);
+                photoPaths.push(file.path); // Ścieżki do późniejszego usunięcia
+                return uploadFileToDrive(file.path, file.filename, folder.id);
             })
         );
 
-        // Zapis do Google Sheets (łączymy URL-e zdjęć w jeden string)
+        // Zapis do Google Sheets z linkiem do folderu
         await appendToSheet({
             firstName,
             lastName,
@@ -172,11 +197,12 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
             licensePlate,
             carBrand,
             carDescription,
-            photoUrl: photoUrls.join(", "), // Łączymy linki separatorami
+            folderUrl: folder.webViewLink, // Link do folderu
         });
 
         res.json({
-            message: `Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)`,
+            message:
+                "Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)",
         });
     } catch (error) {
         console.error("Błąd na serwerze:", error.message, error.stack);
@@ -185,7 +211,7 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
             error: error.message,
         });
     } finally {
-        // Usuwanie wszystkich tymczasowych plików
+        // Usuwanie tymczasowych plików
         photoPaths.forEach((photoPath) => {
             if (photoPath) {
                 fs.unlink(photoPath, (err) => {
