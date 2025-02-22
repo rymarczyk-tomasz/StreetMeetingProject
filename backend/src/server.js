@@ -17,9 +17,6 @@ app.use(express.static(path.join(__dirname, "../")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware do serwowania plików z folderu `downloads`
-app.use("/downloads", express.static(downloadsDir));
-
 // Konfiguracja Multer (upload plików)
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -68,7 +65,6 @@ const drive = google.drive({ version: "v3", auth });
 // ID arkusza kalkulacyjnego i folderu Google Drive z .env
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const GOOGLE_DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID;
-// const GOOGLE_DRIVE_GALLERY_FOLDER_ID = process.env.DRIVE_GALLERY_FOLDER_ID;
 
 // Funkcja do dodawania danych do Google Sheets
 async function appendToSheet(data) {
@@ -182,9 +178,4 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
             });
         }
     }
-});
-
-// Uruchomienie serwera
-app.listen(PORT, () => {
-    console.log(`Serwer nasłuchuje na porcie ${PORT}`);
 });
