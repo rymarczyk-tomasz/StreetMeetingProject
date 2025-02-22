@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
             clearInterval(dotsInterval); // Zatrzymanie animacji
             if (response.ok) {
                 responseMessage.innerText =
-                    "Formularz został pomyślnie wysłany!";
+                    "Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)";
                 responseMessage.style.color = "green";
                 form.reset(); // Opcjonalnie: wyczyszczenie formularza
             } else {
