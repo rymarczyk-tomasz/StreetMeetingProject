@@ -1,5 +1,5 @@
 const path = require("path");
-require("dotenv").config({ path: path.join(__dirname, "../config/.env") });
+require("dotenv").config({ path: path.join(__dirname, "config/.env") });
 
 const cors = require("cors");
 const express = require("express");
@@ -7,15 +7,16 @@ const multer = require("multer");
 const fs = require("fs");
 const { google } = require("googleapis");
 
-// Inicjalizacja aplikacji Express dsdds
+// Inicjalizacja aplikacji Express
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 33000; // Zaktualizowano na 33000, aby było zgodne z config.js
 
 // Middleware
 app.use(cors());
 app.use(express.static(path.join(__dirname, "../")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 // Konfiguracja Multer (upload plików)
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -24,7 +25,7 @@ if (!fs.existsSync(uploadDir)) {
 
 const upload = multer({ dest: uploadDir });
 
-// Wczytanie danych uwierzytelniających z zmiennych środowiskowych...
+// Wczytanie danych uwierzytelniających z zmiennych środowiskowych
 const credentials = {
     type: "service_account",
     project_id: process.env.GOOGLE_PROJECT_ID,
@@ -177,4 +178,9 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
             });
         }
     }
+});
+
+// Uruchomienie serwera
+app.listen(PORT, () => {
+    console.log(`Serwer działa na porcie ${PORT}`);
 });

@@ -34,8 +34,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
             clearInterval(dotsInterval); // Zatrzymanie animacji
             if (response.ok) {
-                responseMessage.innerText = `Przepraszamy za probemy, ale formularz jest aktualnie w przebudowie i nie działa. Postaramy sie go naprawić jak najszybciej.`;
-                responseMessage.style.color = "red";
+                responseMessage.innerText =
+                    "Formularz został pomyślnie wysłany!";
+                responseMessage.style.color = "green";
+                form.reset(); // Opcjonalnie: wyczyszczenie formularza
             } else {
                 const error = await response.json();
                 responseMessage.innerText = `Błąd: ${
