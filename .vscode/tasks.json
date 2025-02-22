@@ -11,6 +11,16 @@
             "label": "npm prune (functions)",
             "command": "npm prune --production",
             "problemMatcher": []
+        },
+        {
+            "type": "func",
+            "label": "func: host start",
+            "command": "host start",
+            "problemMatcher": "$func-node-watch",
+            "isBackground": true,
+            "options": {
+                "cwd": "${workspaceFolder}/backend\\config"
+            }
         }
     ]
 }
