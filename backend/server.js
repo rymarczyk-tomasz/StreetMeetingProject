@@ -122,8 +122,8 @@ async function uploadFileToDrive(filePath, fileName) {
 }
 
 // Endpoint do przesyłania danych (formularz)
-app.post("/upload", upload.single("photos"), async (req, res) => {
-    let photoPath;
+app.post("/upload", upload.array("photos", 5), async (req, res) => {
+    let photoPaths = [];
     try {
         const {
             firstName,
@@ -135,6 +135,7 @@ app.post("/upload", upload.single("photos"), async (req, res) => {
             carDescription,
         } = req.body;
 
+        // Sprawdzenie, czy wszystkie pola tekstowe i przynajmniej jedno zdjęcie są obecne
         if (
             !firstName ||
             !lastName ||
@@ -143,16 +144,26 @@ app.post("/upload", upload.single("photos"), async (req, res) => {
             !licensePlate ||
             !carBrand ||
             !carDescription ||
-            !req.file
+            !req.files || // Używamy req.files dla tablicy
+            req.files.length === 0
         ) {
             return res
                 .status(400)
-                .json({ message: "Wszystkie pola są wymagane." });
+                .json({
+                    message:
+                        "Wszystkie pola są wymagane, w tym przynajmniej jedno zdjęcie.",
+                });
         }
 
-        photoPath = req.file.path;
-        const photoUrl = await uploadFileToDrive(photoPath, req.file.filename);
+        // Przesyłanie wszystkich zdjęć do Google Drive
+        const photoUrls = await Promise.all(
+            req.files.map((file) => {
+                photoPaths.push(file.path); // Zbieramy ścieżki do usunięcia później
+                return uploadFileToDrive(file.path, file.filename);
+            })
+        );
 
+        // Zapis do Google Sheets (łączymy URL-e zdjęć w jeden string)
         await appendToSheet({
             firstName,
             lastName,
@@ -161,22 +172,28 @@ app.post("/upload", upload.single("photos"), async (req, res) => {
             licensePlate,
             carBrand,
             carDescription,
-            photoUrl,
+            photoUrl: photoUrls.join(", "), // Łączymy linki separatorami
         });
 
         res.json({
             message: `Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)`,
         });
     } catch (error) {
-        console.error("Błąd na serwerze:", error.message);
-        res.status(500).json({ message: "Wystąpił błąd serwera." });
+        console.error("Błąd na serwerze:", error.message, error.stack);
+        res.status(500).json({
+            message: "Wystąpił błąd serwera.",
+            error: error.message,
+        });
     } finally {
-        if (photoPath) {
-            fs.unlink(photoPath, (err) => {
-                if (err)
-                    console.error("Błąd przy usuwaniu pliku:", err.message);
-            });
-        }
+        // Usuwanie wszystkich tymczasowych plików
+        photoPaths.forEach((photoPath) => {
+            if (photoPath) {
+                fs.unlink(photoPath, (err) => {
+                    if (err)
+                        console.error("Błąd przy usuwaniu pliku:", err.message);
+                });
+            }
+        });
     }
 });
 
