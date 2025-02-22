@@ -20,8 +20,8 @@ document.addEventListener("DOMContentLoaded", () => {
         event.preventDefault();
 
         const files = document.getElementById("photos").files;
-        if (files.length > 10) {
-            responseMessage.innerText = "Możesz przesłać maksymalnie 10 zdjęć.";
+        if (files.length > 5) {
+            responseMessage.innerText = "Możesz przesłać maksymalnie 5 zdjęć.";
             responseMessage.style.color = "red";
             return;
         }

@@ -142,7 +142,7 @@ async function appendToSheet(data) {
 }
 
 // Endpoint do przesyłania danych (formularz)
-app.post("/upload", upload.array("photos", 10), async (req, res) => {
+app.post("/upload", upload.array("photos", 5), async (req, res) => {
     let photoPaths = [];
     try {
         const {
