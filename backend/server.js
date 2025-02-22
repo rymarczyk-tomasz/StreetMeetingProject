@@ -9,9 +9,8 @@ const { google } = require("googleapis");
 
 // Inicjalizacja aplikacji Express
 const app = express();
-const PORT = process.env.PORT || 33000; // Zaktualizowano na 33000, aby było zgodne z config.js
+const PORT = process.env.PORT || 33000;
 
-// Middleware
 app.use(cors());
 app.use(express.static(path.join(__dirname, "../")));
 app.use(express.json());
@@ -23,7 +22,7 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-const upload = multer({ dest: uploadDir });
+const upload = multer({ dest: uploadDir }).array("photos", 5);
 
 // Wczytanie danych uwierzytelniających z zmiennych środowiskowych
 const credentials = {
@@ -42,14 +41,12 @@ const credentials = {
     universe_domain: "googleapis.com",
 };
 
-// Sprawdzenie, czy wszystkie wymagane zmienne środowiskowe są zdefiniowane
 if (!credentials.private_key) {
     throw new Error(
         "GOOGLE_PRIVATE_KEY is not defined in environment variables."
     );
 }
 
-// Konfiguracja autoryzacji Google Auth
 const auth = new google.auth.GoogleAuth({
     credentials: credentials,
     scopes: [
@@ -58,13 +55,58 @@ const auth = new google.auth.GoogleAuth({
     ],
 });
 
-// Inicjalizacja Google Sheets i Google Drive
 const sheets = google.sheets({ version: "v4", auth });
 const drive = google.drive({ version: "v3", auth });
 
-// ID arkusza kalkulacyjnego i folderu Google Drive z .env
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const GOOGLE_DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID;
+
+// Funkcja do tworzenia folderu na Google Drive
+async function createFolderOnDrive(firstName, lastName) {
+    const folderMetadata = {
+        name: `${firstName}_${lastName}_${Date.now()}`, // Dodajemy timestamp, aby uniknąć duplikatów
+        mimeType: "application/vnd.google-apps.folder",
+        parents: [GOOGLE_DRIVE_FOLDER_ID],
+    };
+
+    try {
+        const folder = await drive.files.create({
+            resource: folderMetadata,
+            fields: "id, webViewLink",
+        });
+        return {
+            id: folder.data.id,
+            webViewLink: folder.data.webViewLink,
+        };
+    } catch (error) {
+        console.error("Błąd przy tworzeniu folderu na Google Drive:", error);
+        throw error;
+    }
+}
+
+// Funkcja do przesyłania pliku do określonego folderu na Google Drive
+async function uploadFileToDrive(filePath, fileName, folderId) {
+    const fileMetadata = {
+        name: fileName,
+        parents: [folderId], // Ustawiamy folder docelowy
+    };
+    const media = {
+        mimeType: "image/jpeg",
+        body: fs.createReadStream(filePath),
+    };
+
+    try {
+        const file = await drive.files.create({
+            resource: fileMetadata,
+            media,
+            fields: "id",
+        });
+        return file.data.id; // Zwracamy ID pliku (opcjonalne, jeśli nie potrzebujemy linku)
+    } catch (error) {
+        console.error("Błąd przy przesyłaniu pliku do Google Drive:", error);
+        throw error;
+    }
+}
 
 // Funkcja do dodawania danych do Google Sheets
 async function appendToSheet(data) {
@@ -83,7 +125,7 @@ async function appendToSheet(data) {
                         data.licensePlate,
                         data.carBrand,
                         data.carDescription,
-                        data.photoUrl,
+                        data.folderUrl, // Zmieniono z photoUrl na folderUrl
                     ],
                 ],
             },
@@ -97,34 +139,13 @@ async function appendToSheet(data) {
     }
 }
 
-// Przesyłanie pliku do Google Drive
-async function uploadFileToDrive(filePath, fileName) {
-    const fileMetadata = {
-        name: fileName,
-        parents: [GOOGLE_DRIVE_FOLDER_ID],
-    };
-    const media = {
-        mimeType: "image/jpeg",
-        body: fs.createReadStream(filePath),
-    };
-
-    try {
-        const file = await drive.files.create({
-            resource: fileMetadata,
-            media,
-            fields: "id, webViewLink",
-        });
-        return file.data.webViewLink; // Zwróci link do pliku na Google Drive
-    } catch (error) {
-        console.error("Błąd przy przesyłaniu pliku do Google Drive:", error);
-        throw error;
-    }
-}
-
 // Endpoint do przesyłania danych (formularz)
-app.post("/upload", upload.single("photo"), async (req, res) => {
-    let photoPath;
+app.post("/upload", upload, async (req, res) => {
+    let photoPaths = [];
     try {
+        console.log("Odebrano dane:", req.body); // Logowanie danych formularza
+        console.log("Odebrano pliki:", req.files); // Logowanie przesłanych plików
+
         const {
             firstName,
             lastName,
@@ -143,16 +164,30 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
             !licensePlate ||
             !carBrand ||
             !carDescription ||
-            !req.file
+            !req.files ||
+            req.files.length === 0
         ) {
-            return res
-                .status(400)
-                .json({ message: "Wszystkie pola są wymagane." });
+            console.log("Brak wymaganych pól lub plików");
+            return res.status(400).json({
+                message:
+                    "Wszystkie pola są wymagane, w tym co najmniej jedno zdjęcie.",
+            });
         }
 
-        photoPath = req.file.path;
-        const photoUrl = await uploadFileToDrive(photoPath, req.file.filename);
+        console.log("Tworzenie folderu...");
+        const folder = await createFolderOnDrive(firstName, lastName);
+        console.log("Utworzono folder:", folder);
 
+        photoPaths = req.files.map((file) => file.path);
+        console.log("Przesyłanie plików do folderu:", folder.id);
+        await Promise.all(
+            req.files.map((file) =>
+                uploadFileToDrive(file.path, file.filename, folder.id)
+            )
+        );
+        console.log("Pliki przesłane");
+
+        console.log("Zapisywanie danych do Google Sheets...");
         await appendToSheet({
             firstName,
             lastName,
@@ -161,22 +196,26 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
             licensePlate,
             carBrand,
             carDescription,
-            photoUrl,
+            folderUrl: folder.webViewLink,
         });
+        console.log("Dane zapisane");
 
         res.json({
             message: `Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)`,
         });
     } catch (error) {
-        console.error("Błąd na serwerze:", error.message);
-        res.status(500).json({ message: "Wystąpił błąd serwera." });
+        console.error("Błąd na serwerze:", error.stack); // Pełny stack trace
+        res.status(500).json({
+            message: "Wystąpił błąd serwera.",
+            error: error.message,
+        });
     } finally {
-        if (photoPath) {
+        photoPaths.forEach((photoPath) => {
             fs.unlink(photoPath, (err) => {
                 if (err)
                     console.error("Błąd przy usuwaniu pliku:", err.message);
             });
-        }
+        });
     }
 });
 
