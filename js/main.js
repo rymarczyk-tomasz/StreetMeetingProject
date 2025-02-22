@@ -19,13 +19,6 @@ document.addEventListener("DOMContentLoaded", () => {
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
 
-        const files = document.getElementById("photos").files;
-        if (files.length > 5) {
-            responseMessage.innerText = "Możesz przesłać maksymalnie 5 zdjęć.";
-            responseMessage.style.color = "red";
-            return;
-        }
-
         responseMessage.innerText = "Wysyłanie formularza, proszę czekać";
         responseMessage.style.color = "blue";
         animateDots();
