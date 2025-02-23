@@ -18,8 +18,14 @@
         />
         <meta name="author" content="Street Meeting Poland" />
 
-        <!-- Google Tag Manager -->
-        <script>
+        <script
+            id="Cookiebot"
+            src="https://consent.cookiebot.com/uc.js"
+            data-cbid="4d91eb21-cc96-4b01-aed6-6aefd69b12dc"
+            type="text/javascript"
+        ></script>
+        <!-- Google Tag Manager (zgodne z Cookiebot) -->
+        <script type="text/plain" data-cookieconsent="statistics">
             (function (w, d, s, l, i) {
                 w[l] = w[l] || [];
                 w[l].push({
@@ -36,8 +42,8 @@
         </script>
         <!-- End Google Tag Manager -->
 
-        <!-- Facebook Pixel Code -->
-        <script>
+        <!-- Facebook Pixel Code (zgodne z Cookiebot) -->
+        <script type="text/plain" data-cookieconsent="marketing">
             !(function (f, b, e, v, n, t, s) {
                 if (f.fbq) return;
                 n = f.fbq = function () {
@@ -55,39 +61,40 @@
                 t.src = v;
                 s = b.getElementsByTagName(e)[0];
                 s.parentNode.insertBefore(t, s);
-            })(
-                window,
-                document,
-                "script",
-                "https://connect.facebook.net/en_US/fbevents.js"
-            );
+            })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
+
             fbq("init", "2023117151421928");
             fbq("track", "PageView");
         </script>
-        <noscript>
+
+        <!-- NoScript dla Facebook Pixel -->
+        <noscript type="text/plain" data-cookieconsent="marketing">
             <img
                 height="1"
                 width="1"
-                src="https://www.facebook.com/tr?id=2023117151421928&ev=PageView
-&noscript=1"
+                src="https://www.facebook.com/tr?id=2023117151421928&ev=PageView&noscript=1"
             />
         </noscript>
         <!-- End Facebook Pixel Code -->
 
-        <!-- Google tag (gtag.js) -->
-        <script
-            async
-            src="https://www.googletagmanager.com/gtag/js?id=G-C740ZF1G1N"
-        ></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag() {
-                dataLayer.push(arguments);
-            }
-            gtag("js", new Date());
+        <!-- Google tag (gtag.js) - zgodne z Cookiebot -->
+        <script type="text/plain" data-cookieconsent="statistics">
+            (function () {
+                var gtagScript = document.createElement("script");
+                gtagScript.async = true;
+                gtagScript.src = "https://www.googletagmanager.com/gtag/js?id=G-C740ZF1G1N";
+                document.head.appendChild(gtagScript);
 
-            gtag("config", "G-C740ZF1G1N");
+                window.dataLayer = window.dataLayer || [];
+                function gtag() {
+                    dataLayer.push(arguments);
+                }
+                gtag("js", new Date());
+
+                gtag("config", "G-C740ZF1G1N");
+            })();
         </script>
+        <!-- End Google tag -->
 
         <!-- Favicons -->
         <link
@@ -188,15 +195,15 @@
         <link rel="canonical" href="https://www.streetshow.pl/" />
     </head>
     <body>
-        <!-- Google Tag Manager (noscript) -->
-        <noscript
-            ><iframe
+        <!-- Google Tag Manager (noscript) - zgodne z Cookiebot -->
+        <noscript type="text/plain" data-cookieconsent="statistics">
+            <iframe
                 src="https://www.googletagmanager.com/ns.html?id=GTM-WHCQDGMC"
                 height="0"
                 width="0"
                 style="display: none; visibility: hidden"
-            ></iframe
-        ></noscript>
+            ></iframe>
+        </noscript>
         <!-- End Google Tag Manager (noscript) -->
 
         <nav
