@@ -157,10 +157,12 @@ input.form-control {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
-    margin-top: 100px; /* Dodaj ten margines górny */
+    justify-items: center; /* Dodaj to, aby wyśrodkować zdjęcia */
+    margin-top: 100px;
     padding: 20px;
     background-color: #f4f4f4;
 }
+
 .gallery img {
     width: 200px; /* Szerokość w pikselach */
     height: 200px; /* Wysokość w pikselach */
@@ -173,32 +175,25 @@ input.form-control {
 
 /* Styl dla modala */
 .modal {
-    display: none; /* Ukryty domyślnie */
-    position: fixed;
+    display: flex;
     z-index: 1000;
-    padding-top: 10%;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
     overflow: auto;
-    background-color: rgba(0, 0, 0, 0.8); /* Przyciemnienie tła */
+    background-color: rgba(0, 0, 0, 0.8);
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
 }
-
 .modal[style*="display: block"] {
     opacity: 1; /* Pokaż modal z animacją */
 }
 
 .modal-content {
-    display: block;
-    margin: auto;
-    object-fit: contain; /* Zachowaj proporcje */
-    max-width: 80%; /* Maksymalny rozmiar powiększonego zdjęcia */
-    max-height: 80%; /* Maksymalny rozmiar powiększonego zdjęcia */
-    background-color: transparent; /* Przezroczyste tło pod zdjęciem */
-    box-shadow: none; /* Usuń cień wokół zdjęcia, jeśli jest niepotrzebny */
+    top: 50%;
+    transform: translate(0%, -50%);
+    object-fit: contain; /* Zachowuje proporcje zdjęcia */
+    max-width: 80%; /* Ogranicza szerokość zdjęcia */
+    max-height: 80%; /* Ogranicza wysokość zdjęcia */
+    background-color: transparent;
+    box-shadow: none;
 }
 
 .close {
