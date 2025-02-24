@@ -175,13 +175,20 @@ input.form-control {
 
 /* Styl dla modala */
 .modal {
-    display: flex;
+    display: none; /* Ukryty domyślnie */
+    position: fixed;
     z-index: 1000;
+    padding-top: 10%;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
     overflow: auto;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.8); /* Przyciemnienie tła */
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
 }
+
 .modal[style*="display: block"] {
     opacity: 1; /* Pokaż modal z animacją */
 }
