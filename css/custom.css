@@ -321,15 +321,6 @@ input.form-control {
     max-width: 600px; /* Maksymalna szerokość formularza */
 }
 
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
 @media (max-width: 768px) {
     .home {
         background-image: url("../img/photos/hero_image-mobile.webp");
@@ -344,6 +335,18 @@ input.form-control {
     }
     .event .card-img-top {
         height: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .home .display-3 {
+        font-size: 2.5rem; /* Mniejszy tekst na małych ekranach */
+    }
+    .gallery {
+        grid-template-columns: repeat(
+            auto-fit,
+            minmax(150px, 1fr)
+        ); /* Mniejsze obrazy */
     }
 }
 
