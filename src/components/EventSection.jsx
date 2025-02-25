@@ -10,7 +10,7 @@ const EventSection = () => {
                 </p>
                 <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
                     <Card
-                        imgSrc="/img/photos/10.jpg"
+                        imgSrc="/img/photos/10.webp"
                         imgAlt="Samochody na murawie Polsat Plus Arena, Gdańsk, a na przodzie skłądane krzesełka z napisaem street meeting"
                         title="BILETY"
                     >
@@ -31,7 +31,7 @@ const EventSection = () => {
                         na bilet. Formularz zapisu znajdziesz na dole strony!
                     </Card>
                     <Card
-                        imgSrc="/img/photos/6.jpg"
+                        imgSrc="/img/photos/6.webp"
                         imgAlt="Czeno biały nissan"
                         title="STREFA POJAZDÓW SELECT"
                     >
@@ -43,7 +43,7 @@ const EventSection = () => {
                         <strong>Select</strong>!
                     </Card>
                     <Card
-                        imgSrc="/img/photos/7.jpg"
+                        imgSrc="/img/photos/7.webp"
                         imgAlt="Trzy driftujące samochody"
                         title="DRIFT TAXI ORAZ STREFA EXPO"
                     >

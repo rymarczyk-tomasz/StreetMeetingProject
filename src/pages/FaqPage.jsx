@@ -1,5 +1,3 @@
-import BackButton from "../components/BackButton";
-
 const FAQ = () => {
     return (
         <div className="container my-5">

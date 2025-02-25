@@ -1,5 +1,3 @@
-import BackButton from "../components/BackButton";
-
 const Regulations = () => {
     return (
         <div className="container my-5">
