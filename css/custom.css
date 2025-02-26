@@ -338,18 +338,6 @@ input.form-control {
     }
 }
 
-@media (max-width: 576px) {
-    .home .display-3 {
-        font-size: 2.5rem; /* Mniejszy tekst na małych ekranach */
-    }
-    .gallery {
-        grid-template-columns: repeat(
-            auto-fit,
-            minmax(150px, 1fr)
-        ); /* Mniejsze obrazy */
-    }
-}
-
 @keyframes blink {
     0%,
     100% {
