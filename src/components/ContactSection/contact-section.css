@@ -1,0 +1,35 @@
+/* src/css/components/contact-section.css */
+.contact.bg-dark.text-light {
+    padding: 5rem 0;
+}
+
+.contact h3 {
+    font-size: 2rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.contact .submit-btn {
+    font-size: 1.6rem;
+}
+
+.contact-info {
+    padding-top: 1em;
+}
+
+.links {
+    font-size: 1.6rem;
+    text-decoration: none;
+    color: white;
+    padding-top: 1em;
+}
+
+.social-media {
+    color: white;
+    font-size: 2.5rem;
+    padding: 10px;
+}
+
+.contact-info a:hover {
+    color: rgb(16, 104, 237);
+}

@@ -1,6 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("registrationForm");
     const responseMessage = document.getElementById("responseMessage");
+    const navbarCollapse = document.getElementById("navbarNavAltMarkup");
+    const navLinks = document.querySelectorAll(".nav-link");
 
     let dotsInterval;
 
@@ -15,6 +17,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
+
+        const files = document.getElementById("photos").files;
+        if (files.length > 5) {
+            responseMessage.innerText = "Możesz przesłać maksymalnie 5 zdjęć.";
+            responseMessage.style.color = "red";
+            return;
+        }
 
         responseMessage.innerText = "Wysyłanie formularza, proszę czekać";
         responseMessage.style.color = "blue";
@@ -31,8 +40,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
             clearInterval(dotsInterval); // Zatrzymanie animacji
             if (response.ok) {
-                responseMessage.innerText = `Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)`;
+                responseMessage.innerText =
+                    "Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)";
                 responseMessage.style.color = "green";
+                form.reset(); // Opcjonalnie: wyczyszczenie formularza
             } else {
                 const error = await response.json();
                 responseMessage.innerText = `Błąd: ${
@@ -46,5 +57,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 "Wystąpił błąd przy wysyłaniu formularza. Spróbuj ponownie później.";
             responseMessage.style.color = "red";
         }
+    });
+
+    navLinks.forEach((link) => {
+        link.addEventListener("click", () => {
+            if (navbarCollapse.classList.contains("show")) {
+                new bootstrap.Collapse(navbarCollapse).toggle();
+            }
+        });
     });
 });

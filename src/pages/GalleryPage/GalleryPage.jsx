@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import Modal from "../components/Modal";
+import Modal from "../../components/Modal/Modal";
 
 const Gallery = () => {
     const [photos, setPhotos] = useState([]);
@@ -29,6 +29,7 @@ const Gallery = () => {
 
     const openModal = (index) => {
         setCurrentIndex(index);
+        preloadImages(index);
     };
 
     const closeModal = () => {
@@ -43,6 +44,17 @@ const Gallery = () => {
         setCurrentIndex(
             (prevIndex) => (prevIndex - 1 + photos.length) % photos.length
         );
+    };
+
+    const preloadImages = (index) => {
+        const nextIndex = (index + 1) % photos.length;
+        const prevIndex = (index - 1 + photos.length) % photos.length;
+
+        const nextImg = new Image();
+        nextImg.src = photos[nextIndex];
+
+        const prevImg = new Image();
+        prevImg.src = photos[prevIndex];
     };
 
     return (

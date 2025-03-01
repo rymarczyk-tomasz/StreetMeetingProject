@@ -1,0 +1,14 @@
+/* src/css/components/footer.css */
+footer.bg-dark.text-light {
+    padding: 0;
+}
+
+.newsletter {
+    margin: 0 auto;
+    max-width: 600px;
+}
+
+footer p {
+    margin-bottom: 0;
+    padding: 3rem 0;
+}

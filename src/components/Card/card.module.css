@@ -1,0 +1,21 @@
+/* src/css/components/card.css */
+.event .card-img-top {
+    height: 250px;
+    object-fit: cover;
+}
+
+.event .card-title {
+    font-size: 2rem;
+    padding: 1em;
+    font-weight: bold;
+}
+
+.card-title a:hover {
+    color: rgb(16, 104, 237);
+}
+
+@media (max-width: 768px) {
+    .event .card-img-top {
+        height: 100%;
+    }
+}
