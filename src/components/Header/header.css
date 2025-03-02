@@ -2,7 +2,7 @@
 .home {
     position: relative;
     height: 100vh;
-    background-image: url("../img/photos/Hero-image.jpg");
+    background-image: url("/img/photos/Hero-image.webp");
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -27,7 +27,7 @@
 
 @media (max-width: 768px) {
     .home {
-        background-image: url("../img/photos/hero_image-mobile.jpg");
+        background-image: url("/img/photos/hero_image-mobile.webp");
         background-size: cover;
         background-position: center;
         background-attachment: scroll;

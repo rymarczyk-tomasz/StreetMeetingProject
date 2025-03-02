@@ -59,20 +59,10 @@ const Navbar = () => {
                         <a className="nav-link" href="#form">
                             Formularz
                         </a>
-                        <a
-                            className="nav-link"
-                            href="/faq"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
+                        <a className="nav-link" href="/faq">
                             FAQ
                         </a>
-                        <a
-                            className="nav-link"
-                            href="/regulations"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
+                        <a className="nav-link" href="/regulations">
                             Regulamin
                         </a>
                     </div>

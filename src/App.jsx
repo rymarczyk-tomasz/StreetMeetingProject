@@ -1,16 +1,16 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
-import Navbar from "./components/Navbar";
-import Header from "./components/Header";
-import EventSection from "./components/EventSection";
-import GallerySection from "./components/GallerySection";
-import FormSection from "./components/FormSection";
-import Footer from "./components/Footer";
-import ContactSection from "./components/ContactSection";
+import Navbar from "./components/Navbar/Navbar";
+import Header from "./components/Header/Header";
+import EventSection from "./components/EventSection/EventSection";
+import GallerySection from "./components/GallerySection/GallerySection";
+import FormSection from "./components/FormSection/FormSection";
+import Footer from "./components/Footer/Footer";
+import ContactSection from "./components/ContactSection/ContactSection";
 import { Routes, Route } from "react-router-dom";
-import Regulations from "./pages/RegulationsPage";
-import FAQ from "./pages/FaqPage";
-import GalleryPage from "./pages/GalleryPage"; // Importuj GalleryPage
+import Regulations from "./pages/RegulationsPage/RegulationsPage";
+import FAQ from "./pages/FaqPage/FaqPage";
+import GalleryPage from "./pages/GalleryPage/GalleryPage"; // Importuj GalleryPage
 
 function App() {
     return (
