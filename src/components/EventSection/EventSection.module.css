@@ -1,0 +1,101 @@
+.event {
+    background-color: #212529;
+    color: #f8f9fa;
+    padding: 5rem 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.title {
+    font-size: 4rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+}
+
+.description {
+    font-size: 1.8rem;
+    line-height: 1.6;
+    margin-bottom: 3rem;
+}
+
+.eventLink {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.eventLink:hover,
+.eventLink:focus {
+    color: #1068ed;
+    text-decoration: underline;
+}
+
+.eventLink:focus {
+    outline: 2px solid #1068ed;
+    outline-offset: 2px;
+}
+
+.ctaWrapper {
+    text-align: center;
+    margin-top: 3rem;
+}
+
+.ctaButton {
+    display: inline-block;
+    padding: 1rem 2rem;
+    background-color: #007bff;
+    color: #fff;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 1.8rem;
+    font-weight: 500;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.ctaButton:hover,
+.ctaButton:focus {
+    background-color: #1068ed;
+}
+
+.ctaButton:focus {
+    outline: 2px solid #1068ed;
+    outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+    .event {
+        padding: 3rem 0;
+    }
+
+    .title {
+        font-size: 3rem;
+    }
+
+    .description {
+        font-size: 1.6rem;
+    }
+
+    .ctaButton {
+        font-size: 1.6rem;
+        padding: 0.8rem 1.6rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .title {
+        font-size: 2.5rem;
+    }
+
+    .description {
+        font-size: 1.4rem;
+    }
+
+    .ctaButton {
+        font-size: 1.4rem;
+        padding: 0.6rem 1.2rem;
+    }
+}

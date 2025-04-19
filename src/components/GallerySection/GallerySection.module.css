@@ -1,9 +1,9 @@
-/* src/css/components/gallery-section.css */
-.gallery.bg-light {
+.gallery {
+    background-color: #f8f9fa;
     padding: 5rem 0;
 }
 
-.gallery-btn {
+.galleryBtn {
     display: inline-block;
     padding: 15px 25px;
     margin-top: 50px;
@@ -17,6 +17,6 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.gallery-btn:hover {
+.galleryBtn:hover {
     background-color: #0056b3;
 }

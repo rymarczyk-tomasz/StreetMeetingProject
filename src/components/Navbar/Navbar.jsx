@@ -1,30 +1,26 @@
-import { useEffect } from "react";
+import { useRef } from "react";
 import { Link } from "react-router-dom";
+import styles from "./NavBar.module.css";
 
-const Navbar = () => {
-    useEffect(() => {
-        const navLinks = document.querySelectorAll(".nav-link");
-        const navbarCollapse = document.getElementById("navbarNavAltMarkup");
+const NavBar = () => {
+    const navbarCollapseRef = useRef(null);
 
-        navLinks.forEach((link) => {
-            link.addEventListener("click", () => {
-                if (navbarCollapse.classList.contains("show")) {
-                    new window.bootstrap.Collapse(navbarCollapse).toggle();
-                }
-            });
-        });
-    }, []);
+    const handleNavLinkClick = () => {
+        if (navbarCollapseRef.current?.classList.contains("show")) {
+            new window.bootstrap.Collapse(navbarCollapseRef.current).toggle();
+        }
+    };
 
     return (
         <nav
-            className="navbar navbar-expand-lg bg-body-tertiary py-4 fixed-top"
+            className={`${styles.navbar} navbar navbar-expand-lg bg-body-tertiary fixed-top`}
             id="navbar"
         >
             <div className="container">
                 <Link className="navbar-brand" to="/">
                     <img
-                        className="logo"
-                        src="img/Logo 2.0/SVG/Logo_4.svg"
+                        className={styles.logo}
+                        src="/img/Logo 2.0/SVG/Logo_4.svg"
                         alt="Street Meeting Poland"
                     />
                 </Link>
@@ -42,29 +38,58 @@ const Navbar = () => {
                 <div
                     className="collapse navbar-collapse"
                     id="navbarNavAltMarkup"
+                    ref={navbarCollapseRef}
                 >
                     <div className="navbar-nav ms-auto">
-                        <a className="nav-link" href="#home">
+                        <Link
+                            className="nav-link"
+                            to="/#home"
+                            onClick={handleNavLinkClick}
+                        >
                             Home
-                        </a>
-                        <a className="nav-link" href="#event">
+                        </Link>
+                        <Link
+                            className="nav-link"
+                            to="/#event"
+                            onClick={handleNavLinkClick}
+                        >
                             Event
-                        </a>
-                        <a className="nav-link" href="#gallery">
+                        </Link>
+                        <Link
+                            className="nav-link"
+                            to="/#gallery"
+                            onClick={handleNavLinkClick}
+                        >
                             Galeria
-                        </a>
-                        <a className="nav-link" href="#contact">
+                        </Link>
+                        <Link
+                            className="nav-link"
+                            to="/#contact"
+                            onClick={handleNavLinkClick}
+                        >
                             Kontakt
-                        </a>
-                        <a className="nav-link" href="#form">
+                        </Link>
+                        <Link
+                            className="nav-link"
+                            to="/#form"
+                            onClick={handleNavLinkClick}
+                        >
                             Formularz
-                        </a>
-                        <a className="nav-link" href="/faq">
+                        </Link>
+                        <Link
+                            className="nav-link"
+                            to="/faq"
+                            onClick={handleNavLinkClick}
+                        >
                             FAQ
-                        </a>
-                        <a className="nav-link" href="/regulations">
+                        </Link>
+                        <Link
+                            className="nav-link"
+                            to="/regulations"
+                            onClick={handleNavLinkClick}
+                        >
                             Regulamin
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </div>
@@ -72,4 +97,4 @@ const Navbar = () => {
     );
 };
 
-export default Navbar;
+export default NavBar;

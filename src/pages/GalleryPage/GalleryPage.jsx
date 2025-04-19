@@ -1,85 +1,76 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Modal from "../../components/Modal/Modal";
+import useMetaTags from "../../hooks/useMetaTags";
+import styles from "./GalleryPage.module.css";
 
-const Gallery = () => {
-    const [photos, setPhotos] = useState([]);
-    const [currentIndex, setCurrentIndex] = useState(null);
+const images = Array.from({ length: 13 }, (_, i) => ({
+    src: `/gallery/${i + 1}.webp`,
+    alt: `Zdjęcie z wydarzenia motoryzacyjnego ${i + 1}`,
+}));
 
-    useEffect(() => {
-        const imageFolder = "/img/gallery";
-        const imageNames = [
-            "1.webp",
-            "2.webp",
-            "3.webp",
-            "4.webp",
-            "5.webp",
-            "6.webp",
-            "7.webp",
-            "8.webp",
-            "9.webp",
-            "10.webp",
-            "11.webp",
-            "12.webp",
-            "13.webp",
-        ];
+const GalleryPage = () => {
+    const [selectedImage, setSelectedImage] = useState(null);
 
-        const loadedPhotos = imageNames.map((name) => `${imageFolder}/${name}`);
-        setPhotos(loadedPhotos);
-    }, []);
+    useMetaTags({
+        title: "Galeria - Street Meeting Poland 2025",
+        description:
+            "Galeria zdjęć z wydarzenia Street Meeting Poland 2025. Zobacz najlepsze momenty z Polsat Plus Arena w Gdańsku!",
+        keywords:
+            "Galeria, Street Meeting Poland, 2025, Polsat Plus Arena, Gdańsk, wydarzenie motoryzacyjne, zdjęcia",
+        ogTitle: "Galeria - Street Meeting Poland 2025",
+        ogDescription:
+            "Galeria zdjęć z wydarzenia Street Meeting Poland 2025. Zobacz najlepsze momenty z Polsat Plus Arena w Gdańsku!",
+        ogUrl: "https://www.streetshow.pl/gallery",
+        canonical: "https://www.streetshow.pl/gallery",
+    });
 
-    const openModal = (index) => {
-        setCurrentIndex(index);
-        preloadImages(index);
-    };
+    const openModal = (image) => setSelectedImage(image);
+    const closeModal = () => setSelectedImage(null);
 
-    const closeModal = () => {
-        setCurrentIndex(null);
-    };
-
-    const showNextImage = () => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % photos.length);
-    };
-
-    const showPrevImage = () => {
-        setCurrentIndex(
-            (prevIndex) => (prevIndex - 1 + photos.length) % photos.length
+    // Funkcja do przechodzenia do następnego zdjęcia
+    const handleNext = () => {
+        const currentIndex = images.findIndex(
+            (img) => img.src === selectedImage.src
         );
+        const nextIndex = (currentIndex + 1) % images.length; // Zapętlanie do pierwszego zdjęcia
+        setSelectedImage(images[nextIndex]);
     };
 
-    const preloadImages = (index) => {
-        const nextIndex = (index + 1) % photos.length;
-        const prevIndex = (index - 1 + photos.length) % photos.length;
-
-        const nextImg = new Image();
-        nextImg.src = photos[nextIndex];
-
-        const prevImg = new Image();
-        prevImg.src = photos[prevIndex];
+    // Funkcja do przechodzenia do poprzedniego zdjęcia
+    const handlePrev = () => {
+        const currentIndex = images.findIndex(
+            (img) => img.src === selectedImage.src
+        );
+        const prevIndex = (currentIndex - 1 + images.length) % images.length; // Zapętlanie do ostatniego zdjęcia
+        setSelectedImage(images[prevIndex]);
     };
 
     return (
-        <>
-            <div id="gallery-folder" className="gallery container">
-                {photos.map((photo, index) => (
+        <div className={styles.galleryContainer}>
+            <h1 className={styles.galleryTitle}>Galeria</h1>
+            <div className={styles.galleryGrid}>
+                {images.map((image, index) => (
                     <img
                         key={index}
-                        src={photo}
-                        alt={`Gallery image ${index + 1}`}
-                        style={{ maxWidth: "300px", margin: "10px" }}
-                        onClick={() => openModal(index)}
+                        src={image.src}
+                        alt={image.alt}
+                        className={styles.galleryImage}
+                        onClick={() => openModal(image)}
+                        loading="lazy"
                     />
                 ))}
             </div>
-            {currentIndex !== null && (
+            {selectedImage && (
                 <Modal
-                    photo={photos[currentIndex]}
+                    photo={selectedImage.src}
+                    altText={selectedImage.alt}
                     onClose={closeModal}
-                    onNext={showNextImage}
-                    onPrev={showPrevImage}
+                    onNext={handleNext}
+                    onPrev={handlePrev}
                 />
             )}
-        </>
+        </div>
     );
 };
 
-export default Gallery;
+export default GalleryPage;

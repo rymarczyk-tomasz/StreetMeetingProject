@@ -1,5 +1,6 @@
-/* src/css/components/footer.css */
-footer.bg-dark.text-light {
+.footer {
+    background-color: #212529;
+    color: #f8f9fa;
     padding: 0;
 }
 
@@ -8,7 +9,8 @@ footer.bg-dark.text-light {
     max-width: 600px;
 }
 
-footer p {
+.footerText {
     margin-bottom: 0;
     padding: 3rem 0;
+    text-align: center;
 }

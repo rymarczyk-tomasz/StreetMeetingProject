@@ -1,42 +1,25 @@
-import "bootstrap/dist/css/bootstrap.min.css";
-import "./App.css";
-import Navbar from "./components/Navbar/Navbar";
-import Header from "./components/Header/Header";
-import EventSection from "./components/EventSection/EventSection";
-import GallerySection from "./components/GallerySection/GallerySection";
-import FormSection from "./components/FormSection/FormSection";
-import Footer from "./components/Footer/Footer";
-import ContactSection from "./components/ContactSection/ContactSection";
 import { Routes, Route } from "react-router-dom";
-import Regulations from "./pages/RegulationsPage/RegulationsPage";
-import FAQ from "./pages/FaqPage/FaqPage";
-import GalleryPage from "./pages/GalleryPage/GalleryPage"; // Importuj GalleryPage
+import NavBar from "./components/NavBar/NavBar";
+import HomePage from "./pages/HomePage/HomePage";
+import FaqPage from "./pages/FaqPage/FaqPage";
+import GalleryPage from "./pages/GalleryPage/GalleryPage";
+import RegulationsPage from "./pages/RegulationsPage/RegulationsPage";
+import Footer from "./components/Footer/Footer";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 function App() {
     return (
         <>
-            <Navbar />
-            <Routes>
-                <Route
-                    path="/"
-                    element={
-                        <>
-                            <Header />
-                            <main>
-                                <EventSection />
-                                <GallerySection />
-                                <ContactSection />
-                                <FormSection />
-                            </main>
-                        </>
-                    }
-                />
-                <Route path="/regulations" element={<Regulations />} />
-                <Route path="/faq" element={<FAQ />} />
-                <Route path="/gallery" element={<GalleryPage />} />{" "}
-                {/* Dodaj trasę dla GalleryPage */}
-            </Routes>
-            <Footer />
+            <ErrorBoundary>
+                <NavBar />
+                <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/faq" element={<FaqPage />} />
+                    <Route path="/gallery" element={<GalleryPage />} />
+                    <Route path="/regulations" element={<RegulationsPage />} />
+                </Routes>
+                <Footer />
+            </ErrorBoundary>
         </>
     );
 }

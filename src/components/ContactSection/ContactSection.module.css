@@ -1,20 +1,17 @@
-/* src/css/components/contact-section.css */
-.contact.bg-dark.text-light {
+.contact {
+    background-color: #212529;
+    color: #f8f9fa;
     padding: 5rem 0;
 }
 
-.contact h3 {
+.contactInfo {
+    padding-top: 1em;
+}
+
+.contactInfo h3 {
     font-size: 2rem;
     font-weight: bold;
     text-transform: uppercase;
-}
-
-.contact .submit-btn {
-    font-size: 1.6rem;
-}
-
-.contact-info {
-    padding-top: 1em;
 }
 
 .links {
@@ -24,12 +21,13 @@
     padding-top: 1em;
 }
 
-.social-media {
+.socialMedia {
     color: white;
     font-size: 2.5rem;
     padding: 10px;
 }
 
-.contact-info a:hover {
+.links:hover,
+.socialMedia:hover {
     color: rgb(16, 104, 237);
 }
