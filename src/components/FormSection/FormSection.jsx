@@ -8,6 +8,7 @@ const FormSection = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [formErrors, setFormErrors] = useState({});
     const firstErrorFieldRef = useRef(null);
+    const [dots, setDots] = useState("");
 
     useEffect(() => {
         if (Object.keys(formErrors).length > 0 && firstErrorFieldRef.current) {
@@ -15,11 +16,24 @@ const FormSection = () => {
         }
     }, [formErrors]);
 
+    useEffect(() => {
+        let interval;
+        if (
+            isLoading &&
+            responseMessage === "Wysyłanie formularza, proszę czekać"
+        ) {
+            interval = setInterval(() => {
+                setDots((prev) => (prev.length < 3 ? prev + "." : ""));
+            }, 500);
+        }
+        return () => clearInterval(interval);
+    }, [isLoading, responseMessage]);
+
     const validateForm = (form) => {
         const errors = {};
         const email = form.email.value.trim();
         const phone = form.phone.value.trim();
-        const files = form.photo.files;
+        const files = form.photos.files;
         const firstName = form.firstName.value.trim();
         const lastName = form.lastName.value.trim();
         const licensePlate = form.licensePlate.value.trim();
@@ -47,23 +61,31 @@ const FormSection = () => {
         }
 
         if (files.length === 0) {
-            errors.photo = "Proszę przesłać co najmniej jedno zdjęcie.";
+            errors.photos = "Proszę przesłać co najmniej jedno zdjęcie.";
         } else {
+            // Sprawdzenie maksymalnej liczby zdjęć (5)
             if (files.length > 5) {
-                errors.photo = "Możesz przesłać maksymalnie 5 zdjęć.";
+                errors.photos = "Możesz przesłać maksymalnie 5 zdjęć.";
             }
+
+            // Sprawdzenie, czy pliki są obrazami
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 if (!file.type.startsWith("image/")) {
-                    errors.photo =
+                    errors.photos =
                         "Proszę przesłać tylko pliki graficzne (np. JPG, PNG).";
                     break;
                 }
-                if (file.size > 5 * 1024 * 1024) {
-                    errors.photo =
-                        "Każde zdjęcie musi mieć rozmiar mniejszy niż 5 MB.";
-                    break;
-                }
+            }
+
+            // Sprawdzenie łącznego rozmiaru zdjęć (maksymalnie 50 MB)
+            const totalSize = Array.from(files).reduce(
+                (sum, file) => sum + file.size,
+                0
+            );
+            if (totalSize > 50 * 1024 * 1024) {
+                errors.photos =
+                    "Łączny rozmiar zdjęć nie może przekraczać 50 MB.";
             }
         }
 
@@ -73,8 +95,8 @@ const FormSection = () => {
     const handleSubmit = async (event) => {
         event.preventDefault();
         setIsLoading(true);
-        setResponseMessage("");
-        setMessageColor("");
+        setResponseMessage("Wysyłanie formularza, proszę czekać");
+        setMessageColor("blue");
         setFormErrors({});
 
         const form = event.target;
@@ -83,11 +105,10 @@ const FormSection = () => {
         if (Object.keys(errors).length > 0) {
             setFormErrors(errors);
             setIsLoading(false);
+            setResponseMessage("");
+            setMessageColor("");
             return;
         }
-
-        setResponseMessage("Wysyłanie formularza, proszę czekać");
-        setMessageColor("blue");
 
         const formData = new FormData(form);
 
@@ -396,24 +417,25 @@ const FormSection = () => {
                         )}
                     </div>
                     <div className="mb-3">
-                        <label htmlFor="photo" className={styles.formLabel}>
-                            Zdjęcie:
+                        <label htmlFor="photos" className={styles.formLabel}>
+                            Zdjęcia (maksymalnie 5 o łącznej wadze do 50MB):
                         </label>
                         <input
                             type="file"
-                            id="photo"
-                            name="photo"
+                            id="photos"
+                            name="photos"
                             className={`form-control ${
-                                formErrors.photo ? "is-invalid" : ""
+                                formErrors.photos ? "is-invalid" : ""
                             }`}
                             accept="image/*"
+                            multiple
                             required
-                            aria-invalid={!!formErrors.photo}
+                            aria-invalid={!!formErrors.photos}
                             aria-describedby={
-                                formErrors.photo ? "photoError" : undefined
+                                formErrors.photos ? "photosError" : undefined
                             }
                             ref={
-                                formErrors.photo &&
+                                formErrors.photos &&
                                 !formErrors.firstName &&
                                 !formErrors.lastName &&
                                 !formErrors.email &&
@@ -425,9 +447,9 @@ const FormSection = () => {
                                     : null
                             }
                         />
-                        {formErrors.photo && (
-                            <div id="photoError" className="invalid-feedback">
-                                {formErrors.photo}
+                        {formErrors.photos && (
+                            <div id="photosError" className="invalid-feedback">
+                                {formErrors.photos}
                             </div>
                         )}
                     </div>
@@ -458,9 +480,11 @@ const FormSection = () => {
                         aria-live="polite"
                     >
                         {responseMessage}
-                        {isLoading && (
-                            <span className={styles.loadingSpinner}></span>
-                        )}
+                        {isLoading &&
+                            responseMessage ===
+                                "Wysyłanie formularza, proszę czekać" && (
+                                <span>{dots}</span>
+                            )}
                     </div>
                 )}
             </div>
