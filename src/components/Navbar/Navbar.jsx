@@ -83,13 +83,15 @@ const NavBar = () => {
                         >
                             FAQ
                         </Link>
-                        <Link
+                        <a
                             className="nav-link"
-                            to="/regulations"
+                            href="/documents/regulations.pdf"
                             onClick={handleNavLinkClick}
+                            target="_blank"
+                            rel="noopener noreferrer"
                         >
                             Regulamin
-                        </Link>
+                        </a>
                     </div>
                 </div>
             </div>
