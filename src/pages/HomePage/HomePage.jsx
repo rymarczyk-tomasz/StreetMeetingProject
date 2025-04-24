@@ -7,7 +7,7 @@ import GallerySection from "../../components/GallerySection/GallerySection";
 import ContactSection from "../../components/ContactSection/ContactSection";
 import FormSection from "../../components/FormSection/FormSection";
 import styles from "./HomePage.module.css";
-import { initializeAnalytics } from "../../analytics";
+import { initializeAnalytics } from "../../utils/analytics";
 
 const HomePage = () => {
     const location = useLocation();
