@@ -63,12 +63,10 @@ const FormSection = () => {
         if (files.length === 0) {
             errors.photos = "Proszę przesłać co najmniej jedno zdjęcie.";
         } else {
-            // Sprawdzenie maksymalnej liczby zdjęć (5)
             if (files.length > 5) {
                 errors.photos = "Możesz przesłać maksymalnie 5 zdjęć.";
             }
 
-            // Sprawdzenie, czy pliki są obrazami
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 if (!file.type.startsWith("image/")) {
@@ -78,7 +76,6 @@ const FormSection = () => {
                 }
             }
 
-            // Sprawdzenie łącznego rozmiaru zdjęć (maksymalnie 50 MB)
             const totalSize = Array.from(files).reduce(
                 (sum, file) => sum + file.size,
                 0
@@ -463,7 +460,7 @@ const FormSection = () => {
                     </button>
                     <div className={styles.privacyPolicy}>
                         <a
-                            href="https://download.filekitcdn.com/d/uzeDKvVKHexiMfMTdLbQ4G/74vzptpgRGHpp6EDxgX22B"
+                            href="/documents/regulations.pdf"
                             target="_blank"
                             rel="noopener noreferrer"
                         >

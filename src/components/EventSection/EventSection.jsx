@@ -1,9 +1,8 @@
 import { memo, useEffect } from "react";
 import Card from "../Card/Card";
 import styles from "./EventSection.module.css";
-import PropTypes from "prop-types"; // Dodaj ten import na górze pliku
+import PropTypes from "prop-types";
 
-// Wyodrębnione komponenty dla treści kart
 const TicketCardContent = ({ onLinkClick }) => (
     <>
         <strong>Zarezerwuj swoje miejsce już teraz!</strong> Bilety na
@@ -25,7 +24,6 @@ const TicketCardContent = ({ onLinkClick }) => (
     </>
 );
 
-// Dodaj definicję propTypes
 TicketCardContent.propTypes = {
     onLinkClick: PropTypes.func.isRequired,
 };
@@ -58,7 +56,6 @@ const EventSection = () => {
     };
 
     useEffect(() => {
-        // Dodanie danych strukturalnych
         const script = document.createElement("script");
         script.type = "application/ld+json";
         script.text = JSON.stringify({

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom"; // Dodano import
+import { useLocation } from "react-router-dom";
 import useMetaTags from "../../hooks/useMetaTags";
 import Header from "../../components/Header/Header";
 import EventSection from "../../components/EventSection/EventSection";
@@ -9,7 +9,7 @@ import FormSection from "../../components/FormSection/FormSection";
 import styles from "./HomePage.module.css";
 
 const HomePage = () => {
-    const location = useLocation(); // Dodano hook useLocation
+    const location = useLocation();
 
     useMetaTags({
         title: "Street Meeting Poland 2025",
@@ -91,7 +91,6 @@ const HomePage = () => {
         }
     }, []);
 
-    // Dodano useEffect do przewijania
     useEffect(() => {
         if (location.hash) {
             const element = document.querySelector(location.hash);

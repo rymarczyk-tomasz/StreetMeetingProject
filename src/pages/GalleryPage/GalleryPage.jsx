@@ -27,21 +27,19 @@ const GalleryPage = () => {
     const openModal = (image) => setSelectedImage(image);
     const closeModal = () => setSelectedImage(null);
 
-    // Funkcja do przechodzenia do następnego zdjęcia
     const handleNext = () => {
         const currentIndex = images.findIndex(
             (img) => img.src === selectedImage.src
         );
-        const nextIndex = (currentIndex + 1) % images.length; // Zapętlanie do pierwszego zdjęcia
+        const nextIndex = (currentIndex + 1) % images.length;
         setSelectedImage(images[nextIndex]);
     };
 
-    // Funkcja do przechodzenia do poprzedniego zdjęcia
     const handlePrev = () => {
         const currentIndex = images.findIndex(
             (img) => img.src === selectedImage.src
         );
-        const prevIndex = (currentIndex - 1 + images.length) % images.length; // Zapętlanie do ostatniego zdjęcia
+        const prevIndex = (currentIndex - 1 + images.length) % images.length;
         setSelectedImage(images[prevIndex]);
     };
 
