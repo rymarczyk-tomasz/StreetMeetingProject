@@ -6,7 +6,6 @@ import EventSection from "../../components/EventSection/EventSection";
 import GallerySection from "../../components/GallerySection/GallerySection";
 import ContactSection from "../../components/ContactSection/ContactSection";
 import FormSection from "../../components/FormSection/FormSection";
-import styles from "./HomePage.module.css";
 import { initializeAnalytics } from "../../utils/analytics";
 
 const HomePage = () => {
@@ -42,7 +41,6 @@ const HomePage = () => {
 
     return (
         <div
-            className={styles.pageWrapper}
             data-bs-spy="scroll"
             data-bs-target="#navbar"
         >
