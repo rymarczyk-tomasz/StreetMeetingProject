@@ -31,24 +31,24 @@
     top: 20px;
     right: 35px;
     margin-top: 50px;
-    color: #000; /* Czarny kolor */
-    background-color: #fff; /* Białe tło */
-    font-size: 50px; /* Większy rozmiar */
+    color: #000;
+    background-color: #fff;
+    font-size: 50px;
     font-weight: bold;
     cursor: pointer;
-    border-radius: 50%; /* Okrągły kształt */
+    border-radius: 50%;
     width: 60px;
     height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Cień */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .close:hover,
 .close:focus {
-    background-color: #e0e0e0; /* Jaśniejsze tło przy hover */
-    color: #000; /* Czarny kolor pozostaje */
+    background-color: #e0e0e0;
+    color: #000;
 }
 
 .navigation {
@@ -62,24 +62,24 @@
 
 .prev,
 .next {
-    color: #000; /* Czarny kolor */
-    background-color: #fff; /* Białe tło */
+    color: #000;
+    background-color: #fff;
     font-size: 40px;
     font-weight: bold;
     cursor: pointer;
     user-select: none;
     padding: 10px;
-    border-radius: 50%; /* Okrągły kształt */
+    border-radius: 50%;
     width: 60px;
     height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Cień */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .prev:hover,
 .next:hover {
-    background-color: #e0e0e0; /* Jaśniejsze tło przy hover */
-    color: #000; /* Czarny kolor pozostaje */
+    background-color: #e0e0e0;
+    color: #000;
 }

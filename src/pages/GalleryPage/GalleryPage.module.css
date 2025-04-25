@@ -14,7 +14,7 @@
 
 .galleryImage {
     width: 100%;
-    aspect-ratio: 16 / 9; /* Zachowuje proporcje obrazu */
+    aspect-ratio: 16 / 9;
     object-fit: cover;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -33,10 +33,9 @@
 
 .galleryTitle {
     text-align: center;
-    margin-bottom: 20px; /* Dodaje odstęp pod nagłówkiem */
+    margin-bottom: 20px;
 }
 
-/* Media queries dla mniejszych ekranów */
 @media (max-width: 768px) {
     .galleryContainer {
         padding: 10px;
