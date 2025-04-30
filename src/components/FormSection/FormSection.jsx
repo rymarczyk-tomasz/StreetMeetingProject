@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useForm } from "react-hook-form";
+import { useState, useEffect } from "react";
 import styles from "./FormSection.module.css";
 import { FORM_ACTION_URL } from "../../constants";
 
@@ -6,15 +7,25 @@ const FormSection = () => {
     const [responseMessage, setResponseMessage] = useState("");
     const [messageColor, setMessageColor] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const [formErrors, setFormErrors] = useState({});
-    const firstErrorFieldRef = useRef(null);
     const [dots, setDots] = useState("");
 
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+        reset,
+        setFocus,
+    } = useForm({
+        mode: "onSubmit",
+        reValidateMode: "onChange",
+    });
+
     useEffect(() => {
-        if (Object.keys(formErrors).length > 0 && firstErrorFieldRef.current) {
-            firstErrorFieldRef.current.focus();
+        const firstErrorField = Object.keys(errors)[0];
+        if (firstErrorField) {
+            setFocus(firstErrorField);
         }
-    }, [formErrors]);
+    }, [errors, setFocus]);
 
     useEffect(() => {
         let interval;
@@ -29,85 +40,48 @@ const FormSection = () => {
         return () => clearInterval(interval);
     }, [isLoading, responseMessage]);
 
-    const validateForm = (form) => {
-        const errors = {};
-        const email = form.email.value.trim();
-        const phone = form.phone.value.trim();
-        const files = form.photos.files;
-        const firstName = form.firstName.value.trim();
-        const lastName = form.lastName.value.trim();
-        const licensePlate = form.licensePlate.value.trim();
-        const carBrand = form.carBrand.value.trim();
-        const carDescription = form.carDescription.value.trim();
-
-        if (!firstName) errors.firstName = "Imię jest wymagane.";
-        if (!lastName) errors.lastName = "Nazwisko jest wymagane.";
-        if (!licensePlate)
-            errors.licensePlate = "Numer tablic rejestracyjnych jest wymagany.";
-        if (!carBrand) errors.carBrand = "Marka pojazdu jest wymagana.";
-        if (!carDescription)
-            errors.carDescription = "Opis pojazdu jest wymagany.";
-
-        if (!email) {
-            errors.email = "E-mail jest wymagany.";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            errors.email = "Proszę podać poprawny adres e-mail.";
-        }
-
-        if (!phone) {
-            errors.phone = "Numer telefonu jest wymagany.";
-        } else if (!/^\d{9}$/.test(phone)) {
-            errors.phone = "Proszę podać poprawny numer telefonu (9 cyfr).";
-        }
-
+    const validateFiles = (files) => {
         if (files.length === 0) {
-            errors.photos = "Proszę przesłać co najmniej jedno zdjęcie.";
-        } else {
-            if (files.length > 5) {
-                errors.photos = "Możesz przesłać maksymalnie 5 zdjęć.";
-            }
+            return "Proszę przesłać co najmniej jedno zdjęcie.";
+        }
+        if (files.length > 5) {
+            return "Możesz przesłać maksymalnie 5 zdjęć.";
+        }
 
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                if (!file.type.startsWith("image/")) {
-                    errors.photos =
-                        "Proszę przesłać tylko pliki graficzne (np. JPG, PNG).";
-                    break;
-                }
-            }
-
-            const totalSize = Array.from(files).reduce(
-                (sum, file) => sum + file.size,
-                0
-            );
-            if (totalSize > 50 * 1024 * 1024) {
-                errors.photos =
-                    "Łączny rozmiar zdjęć nie może przekraczać 50 MB.";
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (!file.type.startsWith("image/")) {
+                return "Proszę przesłać tylko pliki graficzne (np. JPG, PNG).";
             }
         }
 
-        return errors;
+        const totalSize = Array.from(files).reduce(
+            (sum, file) => sum + file.size,
+            0
+        );
+        if (totalSize > 50 * 1024 * 1024) {
+            return "Łączny rozmiar zdjęć nie może przekraczać 50 MB.";
+        }
+
+        return true;
     };
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
+    const onSubmit = async (data) => {
         setIsLoading(true);
         setResponseMessage("Wysyłanie formularza, proszę czekać");
         setMessageColor("blue");
-        setFormErrors({});
 
-        const form = event.target;
-        const errors = validateForm(form);
-
-        if (Object.keys(errors).length > 0) {
-            setFormErrors(errors);
-            setIsLoading(false);
-            setResponseMessage("");
-            setMessageColor("");
-            return;
-        }
-
-        const formData = new FormData(form);
+        const formData = new FormData();
+        formData.append("firstName", data.firstName);
+        formData.append("lastName", data.lastName);
+        formData.append("email", data.email);
+        formData.append("phone", data.phone);
+        formData.append("licensePlate", data.licensePlate);
+        formData.append("carBrand", data.carBrand);
+        formData.append("carDescription", data.carDescription);
+        Array.from(data.photos).forEach((file) =>
+            formData.append("photos", file)
+        );
 
         try {
             const controller = new AbortController();
@@ -126,8 +100,7 @@ const FormSection = () => {
                     "Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)"
                 );
                 setMessageColor("green");
-                form.reset();
-                setFormErrors({});
+                reset();
             } else {
                 const error = await response.json();
                 setResponseMessage(
@@ -164,7 +137,7 @@ const FormSection = () => {
                 </h2>
                 <form
                     id="registrationForm"
-                    onSubmit={handleSubmit}
+                    onSubmit={handleSubmit(onSubmit)}
                     encType="multipart/form-data"
                     className={styles.formContainer}
                 >
@@ -175,27 +148,23 @@ const FormSection = () => {
                         <input
                             type="text"
                             id="firstName"
-                            name="firstName"
                             className={`form-control ${
-                                formErrors.firstName ? "is-invalid" : ""
+                                errors.firstName ? "is-invalid" : ""
                             }`}
-                            required
-                            aria-invalid={!!formErrors.firstName}
+                            {...register("firstName", {
+                                required: "Imię jest wymagane.",
+                            })}
+                            aria-invalid={!!errors.firstName}
                             aria-describedby={
-                                formErrors.firstName
-                                    ? "firstNameError"
-                                    : undefined
-                            }
-                            ref={
-                                formErrors.firstName ? firstErrorFieldRef : null
+                                errors.firstName ? "firstNameError" : undefined
                             }
                         />
-                        {formErrors.firstName && (
+                        {errors.firstName && (
                             <div
                                 id="firstNameError"
                                 className="invalid-feedback"
                             >
-                                {formErrors.firstName}
+                                {errors.firstName.message}
                             </div>
                         )}
                     </div>
@@ -206,29 +175,23 @@ const FormSection = () => {
                         <input
                             type="text"
                             id="lastName"
-                            name="lastName"
                             className={`form-control ${
-                                formErrors.lastName ? "is-invalid" : ""
+                                errors.lastName ? "is-invalid" : ""
                             }`}
-                            required
-                            aria-invalid={!!formErrors.lastName}
+                            {...register("lastName", {
+                                required: "Nazwisko jest wymagane.",
+                            })}
+                            aria-invalid={!!errors.lastName}
                             aria-describedby={
-                                formErrors.lastName
-                                    ? "lastNameError"
-                                    : undefined
-                            }
-                            ref={
-                                formErrors.lastName && !formErrors.firstName
-                                    ? firstErrorFieldRef
-                                    : null
+                                errors.lastName ? "lastNameError" : undefined
                             }
                         />
-                        {formErrors.lastName && (
+                        {errors.lastName && (
                             <div
                                 id="lastNameError"
                                 className="invalid-feedback"
                             >
-                                {formErrors.lastName}
+                                {errors.lastName.message}
                             </div>
                         )}
                     </div>
@@ -239,26 +202,25 @@ const FormSection = () => {
                         <input
                             type="email"
                             id="email"
-                            name="email"
                             className={`form-control ${
-                                formErrors.email ? "is-invalid" : ""
+                                errors.email ? "is-invalid" : ""
                             }`}
-                            required
-                            aria-invalid={!!formErrors.email}
+                            {...register("email", {
+                                required: "E-mail jest wymagany.",
+                                pattern: {
+                                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                    message:
+                                        "Proszę podać poprawny adres e-mail.",
+                                },
+                            })}
+                            aria-invalid={!!errors.email}
                             aria-describedby={
-                                formErrors.email ? "emailError" : undefined
-                            }
-                            ref={
-                                formErrors.email &&
-                                !formErrors.firstName &&
-                                !formErrors.lastName
-                                    ? firstErrorFieldRef
-                                    : null
+                                errors.email ? "emailError" : undefined
                             }
                         />
-                        {formErrors.email && (
+                        {errors.email && (
                             <div id="emailError" className="invalid-feedback">
-                                {formErrors.email}
+                                {errors.email.message}
                             </div>
                         )}
                     </div>
@@ -269,27 +231,25 @@ const FormSection = () => {
                         <input
                             type="tel"
                             id="phone"
-                            name="phone"
                             className={`form-control ${
-                                formErrors.phone ? "is-invalid" : ""
+                                errors.phone ? "is-invalid" : ""
                             }`}
-                            required
-                            aria-invalid={!!formErrors.phone}
+                            {...register("phone", {
+                                required: "Numer telefonu jest wymagany.",
+                                pattern: {
+                                    value: /^\d{9}$/,
+                                    message:
+                                        "Proszę podać poprawny numer telefonu (9 cyfr).",
+                                },
+                            })}
+                            aria-invalid={!!errors.phone}
                             aria-describedby={
-                                formErrors.phone ? "phoneError" : undefined
-                            }
-                            ref={
-                                formErrors.phone &&
-                                !formErrors.firstName &&
-                                !formErrors.lastName &&
-                                !formErrors.email
-                                    ? firstErrorFieldRef
-                                    : null
+                                errors.phone ? "phoneError" : undefined
                             }
                         />
-                        {formErrors.phone && (
+                        {errors.phone && (
                             <div id="phoneError" className="invalid-feedback">
-                                {formErrors.phone}
+                                {errors.phone.message}
                             </div>
                         )}
                     </div>
@@ -303,33 +263,26 @@ const FormSection = () => {
                         <input
                             type="text"
                             id="licensePlate"
-                            name="licensePlate"
                             className={`form-control ${
-                                formErrors.licensePlate ? "is-invalid" : ""
+                                errors.licensePlate ? "is-invalid" : ""
                             }`}
-                            required
-                            aria-invalid={!!formErrors.licensePlate}
+                            {...register("licensePlate", {
+                                required:
+                                    "Numer tablic rejestracyjnych jest wymagany.",
+                            })}
+                            aria-invalid={!!errors.licensePlate}
                             aria-describedby={
-                                formErrors.licensePlate
+                                errors.licensePlate
                                     ? "licensePlateError"
                                     : undefined
                             }
-                            ref={
-                                formErrors.licensePlate &&
-                                !formErrors.firstName &&
-                                !formErrors.lastName &&
-                                !formErrors.email &&
-                                !formErrors.phone
-                                    ? firstErrorFieldRef
-                                    : null
-                            }
                         />
-                        {formErrors.licensePlate && (
+                        {errors.licensePlate && (
                             <div
                                 id="licensePlateError"
                                 className="invalid-feedback"
                             >
-                                {formErrors.licensePlate}
+                                {errors.licensePlate.message}
                             </div>
                         )}
                     </div>
@@ -340,34 +293,23 @@ const FormSection = () => {
                         <input
                             type="text"
                             id="carBrand"
-                            name="carBrand"
                             className={`form-control ${
-                                formErrors.carBrand ? "is-invalid" : ""
+                                errors.carBrand ? "is-invalid" : ""
                             }`}
-                            required
-                            aria-invalid={!!formErrors.carBrand}
+                            {...register("carBrand", {
+                                required: "Marka pojazdu jest wymagana.",
+                            })}
+                            aria-invalid={!!errors.carBrand}
                             aria-describedby={
-                                formErrors.carBrand
-                                    ? "carBrandError"
-                                    : undefined
-                            }
-                            ref={
-                                formErrors.carBrand &&
-                                !formErrors.firstName &&
-                                !formErrors.lastName &&
-                                !formErrors.email &&
-                                !formErrors.phone &&
-                                !formErrors.licensePlate
-                                    ? firstErrorFieldRef
-                                    : null
+                                errors.carBrand ? "carBrandError" : undefined
                             }
                         />
-                        {formErrors.carBrand && (
+                        {errors.carBrand && (
                             <div
                                 id="carBrandError"
                                 className="invalid-feedback"
                             >
-                                {formErrors.carBrand}
+                                {errors.carBrand.message}
                             </div>
                         )}
                     </div>
@@ -380,36 +322,26 @@ const FormSection = () => {
                         </label>
                         <textarea
                             id="carDescription"
-                            name="carDescription"
                             className={`form-control ${
-                                formErrors.carDescription ? "is-invalid" : ""
+                                errors.carDescription ? "is-invalid" : ""
                             }`}
                             rows="3"
-                            required
-                            aria-invalid={!!formErrors.carDescription}
+                            {...register("carDescription", {
+                                required: "Opis pojazdu jest wymagany.",
+                            })}
+                            aria-invalid={!!errors.carDescription}
                             aria-describedby={
-                                formErrors.carDescription
+                                errors.carDescription
                                     ? "carDescriptionError"
                                     : undefined
                             }
-                            ref={
-                                formErrors.carDescription &&
-                                !formErrors.firstName &&
-                                !formErrors.lastName &&
-                                !formErrors.email &&
-                                !formErrors.phone &&
-                                !formErrors.licensePlate &&
-                                !formErrors.carBrand
-                                    ? firstErrorFieldRef
-                                    : null
-                            }
-                        ></textarea>
-                        {formErrors.carDescription && (
+                        />
+                        {errors.carDescription && (
                             <div
                                 id="carDescriptionError"
                                 className="invalid-feedback"
                             >
-                                {formErrors.carDescription}
+                                {errors.carDescription.message}
                             </div>
                         )}
                     </div>
@@ -420,33 +352,24 @@ const FormSection = () => {
                         <input
                             type="file"
                             id="photos"
-                            name="photos"
                             className={`form-control ${
-                                formErrors.photos ? "is-invalid" : ""
+                                errors.photos ? "is-invalid" : ""
                             }`}
                             accept="image/*"
                             multiple
-                            required
-                            aria-invalid={!!formErrors.photos}
+                            {...register("photos", {
+                                required:
+                                    "Proszę przesłać co najmniej jedno zdjęcie.",
+                                validate: validateFiles,
+                            })}
+                            aria-invalid={!!errors.photos}
                             aria-describedby={
-                                formErrors.photos ? "photosError" : undefined
-                            }
-                            ref={
-                                formErrors.photos &&
-                                !formErrors.firstName &&
-                                !formErrors.lastName &&
-                                !formErrors.email &&
-                                !formErrors.phone &&
-                                !formErrors.licensePlate &&
-                                !formErrors.carBrand &&
-                                !formErrors.carDescription
-                                    ? firstErrorFieldRef
-                                    : null
+                                errors.photos ? "photosError" : undefined
                             }
                         />
-                        {formErrors.photos && (
+                        {errors.photos && (
                             <div id="photosError" className="invalid-feedback">
-                                {formErrors.photos}
+                                {errors.photos.message}
                             </div>
                         )}
                     </div>

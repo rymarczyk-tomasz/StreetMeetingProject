@@ -1,6 +1,6 @@
 .event {
     background-color: #212529;
-    color: #f8f9fa;
+    color: black;
     padding: 5rem 0;
 }
 
@@ -14,6 +14,7 @@
     font-size: 4rem;
     font-weight: bold;
     text-transform: uppercase;
+    color: #f8f9fa;
     margin-bottom: 2rem;
 }
 
@@ -21,6 +22,7 @@
     font-size: 1.8rem;
     line-height: 1.6;
     margin-bottom: 3rem;
+    color: #f8f9fa;
 }
 
 .eventLink {

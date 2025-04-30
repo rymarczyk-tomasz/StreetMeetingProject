@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import PropTypes from "prop-types";
+import DOMPurify from "dompurify";
 import styles from "./Card.module.css";
 
 const Card = ({
@@ -8,6 +9,8 @@ const Card = ({
     imgAlt,
     title = "",
     children = null,
+    content = "",
+    isHtml = false,
     link = "",
     className = "",
     imgHeight = "250px",
@@ -30,6 +33,26 @@ const Card = ({
                 event_label: title,
             });
         }
+    };
+
+    const renderContent = () => {
+        if (content) {
+            if (isHtml) {
+                return (
+                    <div
+                        dangerouslySetInnerHTML={{
+                            __html: DOMPurify.sanitize(content),
+                        }}
+                    />
+                );
+            }
+            return <p className={styles.cardText}>{content}</p>;
+        }
+
+        if (children) {
+            return <p className={styles.cardText}>{children}</p>;
+        }
+        return null;
     };
 
     return (
@@ -63,7 +86,7 @@ const Card = ({
                         />
                     </>
                 )}
-                {(title || children) && (
+                {(title || content || children) && (
                     <div className={styles.cardBody}>
                         {title &&
                             (link ? (
@@ -80,9 +103,7 @@ const Card = ({
                             ) : (
                                 <h3 className={styles.cardTitle}>{title}</h3>
                             ))}
-                        {children && (
-                            <p className={styles.cardText}>{children}</p>
-                        )}
+                        {renderContent()}
                     </div>
                 )}
             </div>
@@ -95,6 +116,8 @@ Card.propTypes = {
     imgAlt: PropTypes.string.isRequired,
     title: PropTypes.string,
     children: PropTypes.node,
+    content: PropTypes.string,
+    isHtml: PropTypes.bool,
     link: PropTypes.string,
     className: PropTypes.string,
     imgHeight: PropTypes.string,

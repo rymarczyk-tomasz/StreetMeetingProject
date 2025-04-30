@@ -10,7 +10,9 @@ const Footer = () => {
 
     useEffect(() => {
         setCurrentYear(new Date().getFullYear());
+    }, []);
 
+    useEffect(() => {
         if (location.pathname === "/" && !scriptRef.current) {
             const script = document.createElement("script");
             script.async = true;
