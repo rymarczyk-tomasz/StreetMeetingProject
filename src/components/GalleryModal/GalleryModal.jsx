@@ -2,7 +2,7 @@ import { useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
 import styles from "./GalleryModal.module.css";
 
-const Modal = ({
+const GalerryModal = ({
     photo,
     onClose,
     onNext,
@@ -71,7 +71,7 @@ const Modal = ({
     );
 };
 
-Modal.propTypes = {
+GalerryModal.propTypes = {
     photo: PropTypes.string.isRequired,
     onClose: PropTypes.func.isRequired,
     onNext: PropTypes.func.isRequired,
@@ -79,4 +79,4 @@ Modal.propTypes = {
     altText: PropTypes.string,
 };
 
-export default Modal;
+export default GalerryModal;
