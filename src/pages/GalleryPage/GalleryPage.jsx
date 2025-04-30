@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Modal from "../../components/Modal/Modal";
+import GalleryModal from "../../components/GalleryModal/GalleryModal";
 import useMetaTags from "../../hooks/useMetaTags";
 import styles from "./GalleryPage.module.css";
 
@@ -59,7 +59,7 @@ const GalleryPage = () => {
                 ))}
             </div>
             {selectedImage && (
-                <Modal
+                <GalleryModal
                     photo={selectedImage.src}
                     altText={selectedImage.alt}
                     onClose={closeModal}

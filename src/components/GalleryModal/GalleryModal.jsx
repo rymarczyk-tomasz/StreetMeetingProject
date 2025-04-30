@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
-import styles from "./Modal.module.css";
+import styles from "./GalleryModal.module.css";
 
 const Modal = ({
     photo,
