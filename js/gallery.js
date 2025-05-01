@@ -9,9 +9,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const photos = [];
     let currentIndex = 0;
 
-    // Funkcja ładująca galerię zdjęć
     function loadGallery() {
-        const imageFolder = "img/gallery"; // Ścieżka do folderu ze zdjęciami
+        const imageFolder = "img/gallery";
         const imageNames = [
             "1.webp",
             "2.webp",
@@ -26,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "11.webp",
             "12.webp",
             "13.webp",
-        ]; // Lista nazw zdjęć - dostosuj do swoich potrzeb
+        ];
 
         const fragment = document.createDocumentFragment();
 
@@ -36,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const img = document.createElement("img");
             img.src = photoPath;
-            img.loading = "lazy"; // Włączanie leniwego ładowania
+            img.loading = "lazy";
             img.style.maxWidth = "300px";
             img.style.margin = "10px";
 
@@ -50,7 +49,6 @@ document.addEventListener("DOMContentLoaded", () => {
         gallery.appendChild(fragment);
     }
 
-    // Funkcja otwierająca modal z wybranym zdjęciem
     function openModal(index) {
         currentIndex = index;
         modal.style.display = "block";
@@ -58,31 +56,26 @@ document.addEventListener("DOMContentLoaded", () => {
         preloadImages();
     }
 
-    // Funkcja zamykająca modal
     function closeModal() {
         modal.style.display = "none";
     }
 
-    // Funkcja aktualizująca zdjęcie w modalu
     function updateModal() {
         modalImg.src = photos[currentIndex];
         modalImg.style.display = "block";
-        modalImg.style.margin = "auto"; // Wyśrodkowanie zdjęcia w modalu
+        modalImg.style.margin = "auto";
     }
 
-    // Funkcja pokazująca następne zdjęcie
     function showNextImage() {
         currentIndex = (currentIndex + 1) % photos.length;
         updateModal();
     }
 
-    // Funkcja pokazująca poprzednie zdjęcie
     function showPrevImage() {
         currentIndex = (currentIndex - 1 + photos.length) % photos.length;
         updateModal();
     }
 
-    // Funkcja wstępnie ładująca sąsiednie zdjęcia
     function preloadImages() {
         const nextIndex = (currentIndex + 1) % photos.length;
         const prevIndex = (currentIndex - 1 + photos.length) % photos.length;
@@ -94,7 +87,6 @@ document.addEventListener("DOMContentLoaded", () => {
         prevImg.src = photos[prevIndex];
     }
 
-    // Funkcja debounce do opóźniania zdarzeń
     function debounce(func, wait) {
         let timeout;
         return function (...args) {
@@ -103,12 +95,10 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // Obsługa zdarzeń przycisków
     nextBtn.addEventListener("click", showNextImage);
     prevBtn.addEventListener("click", showPrevImage);
     closeBtn.addEventListener("click", closeModal);
 
-    // Obsługa nawigacji klawiaturą
     window.addEventListener(
         "keydown",
         debounce((e) => {
@@ -120,14 +110,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 100)
     );
 
-    // Zamykanie modala po kliknięciu w tło
     modal.addEventListener("click", (e) => {
         if (e.target === modal) {
             closeModal();
         }
     });
 
-    // Obsługa gestów przesunięcia palcem na urządzeniach mobilnych
     let touchStartX = 0;
     let touchEndX = 0;
 
@@ -140,11 +128,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function handleTouchEnd() {
-        const swipeThreshold = 50; // Próg przesunięcia w pikselach
+        const swipeThreshold = 50;
         if (touchStartX - touchEndX > swipeThreshold) {
-            showNextImage(); // Przesunięcie w lewo -> następne zdjęcie
+            showNextImage();
         } else if (touchEndX - touchStartX > swipeThreshold) {
-            showPrevImage(); // Przesunięcie w prawo -> poprzednie zdjęcie
+            showPrevImage();
         }
     }
 
@@ -152,6 +140,5 @@ document.addEventListener("DOMContentLoaded", () => {
     modal.addEventListener("touchmove", handleTouchMove, false);
     modal.addEventListener("touchend", handleTouchEnd, false);
 
-    // Uruchomienie galerii
     loadGallery();
 });

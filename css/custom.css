@@ -157,25 +157,24 @@ input.form-control {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
-    justify-items: center; /* Dodaj to, aby wyśrodkować zdjęcia */
+    justify-items: center;
     margin-top: 100px;
     padding: 20px;
     background-color: #f4f4f4;
 }
 
 .gallery img {
-    width: 200px; /* Szerokość w pikselach */
-    height: 200px; /* Wysokość w pikselach */
-    object-fit: cover; /* Dopasowanie zawartości bez zniekształceń */
-    border-radius: 8px; /* Opcjonalne: zaokrąglone rogi */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Opcjonalne: cień */
-    margin: 10px; /* Odstęp między obrazami */
-    cursor: pointer; /* Wskaźnik jako dłoń */
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 10px;
+    cursor: pointer;
 }
 
-/* Styl dla modala */
 .modal {
-    display: none; /* Ukryty domyślnie */
+    display: none;
     position: fixed;
     z-index: 1000;
     padding-top: 10%;
@@ -184,21 +183,21 @@ input.form-control {
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0, 0, 0, 0.8); /* Przyciemnienie tła */
+    background-color: rgba(0, 0, 0, 0.8);
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
 }
 
 .modal[style*="display: block"] {
-    opacity: 1; /* Pokaż modal z animacją */
+    opacity: 1;
 }
 
 .modal-content {
     top: 50%;
     transform: translate(0%, -50%);
-    object-fit: contain; /* Zachowuje proporcje zdjęcia */
-    max-width: 80%; /* Ogranicza szerokość zdjęcia */
-    max-height: 80%; /* Ogranicza wysokość zdjęcia */
+    object-fit: contain;
+    max-width: 80%;
+    max-height: 80%;
     background-color: transparent;
     box-shadow: none;
 }
@@ -256,37 +255,34 @@ input.form-control {
 }
 
 .form {
-    background-color: #f8f9fa; /* Kolor tła dla całej sekcji */
-    padding: 40px 0; /* Góra i dół sekcji */
+    background-color: #f8f9fa;
+    padding: 40px 0;
 }
 
 .form form {
-    max-width: 600px; /* Maksymalna szerokość formularza */
-    margin: 0 auto; /* Wyśrodkowanie formularza */
-    padding: 20px; /* Wewnętrzne odstępy */
-    background-color: #ffffff; /* Kolor tła tylko formularza */
-    border-radius: 8px; /* Zaokrąglone rogi formularza */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Opcjonalny cień */
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Wyśrodkowanie tytułu */
 .form h2 {
-    text-align: center; /* Wyśrodkowanie tytułu */
+    text-align: center;
     color: #333;
     font-weight: bold;
     text-transform: uppercase;
     margin-bottom: 20px;
 }
 
-/* Wyrównanie pozostałych elementów do lewej */
 .form .form-label,
 .form .form-control {
-    text-align: left; /* Wyrównanie etykiet i zawartości do lewej */
+    text-align: left;
 }
 
-/* Odstępy dla spójnego układu */
 .form .mb-3 {
-    text-align: left; /* Wyrównanie kontenerów pól formularza */
+    text-align: left;
 }
 
 .form h2 {
@@ -318,7 +314,7 @@ input.form-control {
 
 .newsletter {
     margin: 0 auto;
-    max-width: 600px; /* Maksymalna szerokość formularza */
+    max-width: 600px;
 }
 
 @media (max-width: 768px) {

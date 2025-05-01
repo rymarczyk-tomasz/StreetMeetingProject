@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let dotsInterval;
 
     function animateDots() {
-        clearInterval(dotsInterval); // Upewnij się, że poprzedni interwał został zatrzymany
+        clearInterval(dotsInterval);
         let dots = "";
         dotsInterval = setInterval(() => {
             dots = dots.length < 3 ? dots + "." : "";
@@ -33,18 +33,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const formData = new FormData(form);
 
         try {
-            const response = await fetch(window.ENV.API_BASE_URL, {
-                // Użyj API_BASE_URL z config.js
-                method: "POST",
-                body: formData,
-            });
+            const response = await fetch(window.ENV.API_BASE_URL);
 
-            clearInterval(dotsInterval); // Zatrzymanie animacji
+            clearInterval(dotsInterval);
             if (response.ok) {
                 responseMessage.innerText =
                     "Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)";
                 responseMessage.style.color = "green";
-                form.reset(); // Opcjonalnie: wyczyszczenie formularza
+                form.reset();
             } else {
                 const error = await response.json();
                 responseMessage.innerText = `Błąd: ${
@@ -53,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 responseMessage.style.color = "red";
             }
         } catch (error) {
-            clearInterval(dotsInterval); // Zatrzymanie animacji
+            clearInterval(dotsInterval);
             responseMessage.innerText =
                 "Wystąpił błąd przy wysyłaniu formularza. Spróbuj ponownie później.";
             responseMessage.style.color = "red";
