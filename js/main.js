@@ -33,7 +33,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const formData = new FormData(form);
 
         try {
-            const response = await fetch(window.ENV.API_BASE_URL);
+            const response = await fetch(window.ENV.API_BASE_URL, {
+                method: "POST",
+                body: formData,
+            });
 
             clearInterval(dotsInterval);
             if (response.ok) {
