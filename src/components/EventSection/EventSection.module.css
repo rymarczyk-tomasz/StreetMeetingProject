@@ -46,6 +46,10 @@
     margin-top: 3rem;
 }
 
+p {
+  margin-top: 1rem;
+}
+
 .ctaButton {
     display: inline-block;
     padding: 1rem 2rem;

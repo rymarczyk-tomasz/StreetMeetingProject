@@ -88,13 +88,13 @@ const EventSection = () => {
                         link="https://bkb.pl/151648-edcca"
                         imgHeight="300px"
                         content={`
-                        <strong>Zarezerwuj swoje miejsce już teraz!</strong> Bilety na wydarzenie kupisz 
-                        <a href="https://bkb.pl/151648-edcca" target="_blank" rel="noopener noreferrer" class="${styles.eventLink}" data-track="Kup bilety" aria-label="Kup bilety na Street Meeting Poland 2025">
-                        tutaj
-                        </a>.
-                        <p style="margin-top: 1rem;">
-                        <strong>Zyskaj 15% zniżki!</strong> Zapisz się do naszego newslettera i odbierz kod rabatowy na bilet. Formularz zapisu znajdziesz na dole strony!
-                        </p>
+                         <strong>Zarezerwuj swoje miejsce już teraz!</strong> Bilety na wydarzenie kupisz 
+  <a href="https://bkb.pl/151648-edcca" target="_blank" rel="noopener noreferrer" class="${styles.eventLink}" data-track="Kup bilety" aria-label="Kup bilety na Street Meeting Poland 2025">
+    tutaj
+  </a>.
+  <p>
+    <strong>Zyskaj 15% zniżki!</strong> Zapisz się do naszego newslettera i odbierz kod rabatowy na bilet. Formularz zapisu znajdziesz na dole strony!
+  </p>
                       `}
                         isHtml={true}
                     />
