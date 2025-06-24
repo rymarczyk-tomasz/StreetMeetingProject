@@ -1,0 +1,51 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 62.5%;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-size: 1.6rem;
+    font-family: "Chakra Petch", sans-serif;
+}
+
+[id] {
+    scroll-margin-top: 71.5px;
+}
+
+@media (min-width: 992px) {
+    [id] {
+        scroll-margin-top: 67px;
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes blink {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+}
+
+a:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}

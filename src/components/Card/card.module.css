@@ -1,0 +1,111 @@
+.cardWrapper {
+    margin-bottom: 2rem;
+}
+
+.card {
+    height: 100%;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    background-color: #fff;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.cardImgTop {
+    width: 100%;
+    object-fit: cover;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.imagePlaceholder {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f0f0f0;
+    color: #666;
+    font-size: 1.6rem;
+    font-weight: 500;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.imageLoading {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f0f0f0;
+}
+
+.spinner {
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid #007bff;
+    border-top: 3px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.cardBody {
+    padding: 1.5rem;
+}
+
+.cardTitle {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.cardLink {
+    color: #333;
+    text-decoration: none;
+}
+
+.cardLink:hover,
+.cardLink:focus {
+    color: #1068ed;
+    text-decoration: underline;
+}
+
+.cardLink:focus {
+    outline: 2px solid #1068ed;
+    outline-offset: 2px;
+}
+
+.cardText {
+    font-size: 1.6rem;
+    line-height: 1.6;
+    color: #555;
+}
+
+@media (max-width: 768px) {
+    .imageLoading {
+        height: 200px;
+    }
+
+    .cardTitle {
+        font-size: 1.8rem;
+    }
+
+    .cardText {
+        font-size: 1.4rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .imageLoading {
+        height: 150px;
+    }
+
+    .cardTitle {
+        font-size: 1.6rem;
+    }
+}

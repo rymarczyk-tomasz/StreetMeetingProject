@@ -1,0 +1,17 @@
+.navbar.fixed-top {
+    padding: 4rem 0;
+}
+
+.logo {
+    width: 80px;
+}
+
+.nav-link,
+.navbar-toggler-icon {
+    font-size: 1.8rem;
+    text-transform: uppercase;
+}
+
+.navbar-toggler {
+    padding: 0.5em 1em;
+}

@@ -1,0 +1,64 @@
+.form {
+    background-color: #f8f9fa;
+    padding: 5rem 0;
+}
+
+.formContainer {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.formTitle {
+    text-align: center;
+    color: #333;
+    font-weight: bold;
+}
+
+.formLabel {
+    font-size: 1.6rem;
+    font-weight: 500;
+    text-align: left;
+}
+
+.formContainer .form-control {
+    font-size: 1.4rem;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+
+.submitButton {
+    font-size: 1.6rem;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+}
+
+.submitButton:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.submitButton:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+.privacyPolicy {
+    margin-top: 20px;
+}
+
+.loadingSpinner {
+    display: inline-block;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 3px solid #007bff;
+    border-top: 3px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 0.5rem;
+}

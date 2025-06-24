@@ -1,0 +1,33 @@
+.contact {
+    background-color: #212529;
+    color: #f8f9fa;
+    padding: 5rem 0;
+}
+
+.contactInfo {
+    padding-top: 1em;
+}
+
+.contactInfo h3 {
+    font-size: 2rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.links {
+    font-size: 1.6rem;
+    text-decoration: none;
+    color: white;
+    padding-top: 1em;
+}
+
+.socialMedia {
+    color: white;
+    font-size: 2.5rem;
+    padding: 10px;
+}
+
+.links:hover,
+.socialMedia:hover {
+    color: rgb(16, 104, 237);
+}

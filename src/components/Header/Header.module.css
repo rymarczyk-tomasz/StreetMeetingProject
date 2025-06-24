@@ -1,0 +1,54 @@
+.home {
+    position: relative;
+    height: 100vh;
+    background-image: url("/photos/Hero-image.webp");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    z-index: 0;
+}
+
+.heroContent {
+    position: relative;
+    z-index: 1;
+}
+
+.heroShadow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    z-index: -1;
+}
+
+.ctaButton {
+    padding: 1em 2em;
+    font-size: 1.4rem;
+    text-transform: uppercase;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.ctaButton:hover {
+    background-color: #0056b3;
+}
+
+@media (max-width: 768px) {
+    .home {
+        background-image: url("/img/photos/hero_image-mobile.webp");
+        background-size: cover;
+        background-position: center;
+        background-attachment: scroll;
+        min-height: 100vh;
+    }
+
+    .heroShadow {
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+}

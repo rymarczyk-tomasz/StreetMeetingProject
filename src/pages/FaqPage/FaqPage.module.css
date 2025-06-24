@@ -1,0 +1,42 @@
+.faqContainer {
+    max-width: 1200px;
+    margin: 0 auto;
+    margin-top: 5rem;
+    margin-bottom: 5rem;
+}
+
+.faqTitle {
+    margin-top: 100px;
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.accordionButton {
+    padding: 1em;
+    font-size: 1.8rem;
+}
+
+.accordionButton:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+.searchInput {
+    width: 100%;
+    max-width: 500px;
+    padding: 0.75rem;
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+
+.searchInput:focus {
+    outline: 2px solid #007bff;
+    border-color: #007bff;
+}
+
+.highlight {
+    background-color: #ffeb3b;
+    font-weight: bold;
+}
