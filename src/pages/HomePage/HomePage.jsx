@@ -5,7 +5,6 @@ import Header from "../../components/Header/Header";
 import EventSection from "../../components/EventSection/EventSection";
 import GallerySection from "../../components/GallerySection/GallerySection";
 import ContactSection from "../../components/ContactSection/ContactSection";
-import FormSection from "../../components/FormSection/FormSection";
 import { initializeAnalytics } from "../../utils/analytics";
 
 const HomePage = () => {
@@ -48,7 +47,6 @@ const HomePage = () => {
             <EventSection id="event" />
             <GallerySection id="gallery" />
             <ContactSection id="contact" />
-            <FormSection id="form" />
         </div>
     );
 };
