@@ -1,30 +1,37 @@
-name: Deploy to GitHub Pages
+name: Build and Commit to dev
 
 on:
-  push:
-    branches:
-      - dev
+    push:
+        branches:
+            - dev
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    build-and-commit:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22.16.0"
+            - name: Setup Node.js
+              uses: actions/setup-node@v2
+              with:
+                  node-version: "22.16.0" # Dostosuj do swojej wersji Node.js
 
-      - name: Install dependencies
-        run: npm install
+            - name: Install dependencies
+              run: npm install
 
-      - name: Build project
-        run: npm run build
+            - name: Build
+              run: npm run build
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+            - name: Move dist to docs
+              run: |
+                  rm -rf docs
+                  mv dist docs
+
+            - name: Commit built files to dev
+              run: |
+                  git config user.name "GitHub Action"
+                  git config user.email "action@github.com"
+                  git add docs/
+                  git commit -m "Aktualizacja folderu docs z nowymi zbudowanymi plikami" || echo "Brak zmian do zacommitowania"
+                  git push origin dev
