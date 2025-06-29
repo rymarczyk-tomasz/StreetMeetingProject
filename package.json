@@ -3,7 +3,7 @@
     "private": true,
     "version": "0.0.0",
     "type": "module",
-    "homepage": "https://github.com/rymarczyk-tomasz/StreetMeetingProject/",
+    "homepage": "https://rymarczyk-tomasz.github.io/StreetMeetingProject/",
     "scripts": {
         "dev": "vite",
         "build": "vite build",
