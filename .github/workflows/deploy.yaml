@@ -3,7 +3,7 @@ name: Deploy to GitHub Pages
 on:
     push:
         branches:
-            - main
+            - dev
 
 jobs:
     deploy:
@@ -31,4 +31,4 @@ jobs:
                   git config --global user.email "actions@github.com"
                   git add docs
                   git commit -m "Deploy to GitHub Pages"
-                  git push origin main
+                  git push origin dev
