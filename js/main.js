@@ -22,7 +22,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const files = document.getElementById("photos").files;
 
-            // Walidacja liczby plików
             if (files.length > 5) {
                 responseMessage.innerText =
                     "Możesz przesłać maksymalnie 5 zdjęć.";
@@ -30,8 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Walidacja rozmiaru plików
-            const maxSize = 50 * 1024 * 1024; // 50MB
+            const maxSize = 50 * 1024 * 1024;
             let totalSize = 0;
             for (let file of files) {
                 totalSize += file.size;
@@ -44,7 +42,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Walidacja typu plików
             for (let file of files) {
                 if (!file.type.startsWith("image/")) {
                     responseMessage.innerText =
@@ -74,7 +71,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     responseMessage.style.color = "green";
                     form.reset();
 
-                    // Usuń klasę was-validated po zresetowaniu
                     form.classList.remove("was-validated");
                 } else {
                     const error = await response.json();
@@ -94,7 +90,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Zamykanie menu mobilnego po kliknięciu w link
     navLinks.forEach((link) => {
         link.addEventListener("click", () => {
             if (navbarCollapse && navbarCollapse.classList.contains("show")) {
@@ -105,7 +100,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Ustawienie aktualnego roku w stopce
     const handleCurrentYear = () => {
         const currentYear = new Date().getFullYear();
         if (footerYear) {

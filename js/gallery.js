@@ -6,7 +6,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const prevBtn = document.getElementById("prevImage");
     const nextBtn = document.getElementById("nextImage");
 
-    // Sprawdzenie czy wszystkie wymagane elementy istnieją
     if (!gallery || !modal || !modalImg) {
         console.error("Brak wymaganych elementów galerii");
         return;
@@ -51,7 +50,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 openModal(photos.indexOf(photoPath));
             });
 
-            // Obsługa błędów ładowania obrazów
             img.addEventListener("error", () => {
                 console.error(`Nie udało się załadować: ${photoPath}`);
                 img.style.display = "none";
@@ -66,14 +64,14 @@ document.addEventListener("DOMContentLoaded", () => {
     function openModal(index) {
         currentIndex = index;
         modal.style.display = "block";
-        document.body.style.overflow = "hidden"; // Zapobiega scrollowaniu w tle
+        document.body.style.overflow = "hidden";
         updateModal();
         preloadImages();
     }
 
     function closeModal() {
         modal.style.display = "none";
-        document.body.style.overflow = ""; // Przywraca scrollowanie
+        document.body.style.overflow = ""; 
     }
 
     function updateModal() {
@@ -114,7 +112,6 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // Event listeners z sprawdzeniem istnienia elementów
     if (nextBtn) {
         nextBtn.addEventListener("click", showNextImage);
     }
@@ -127,7 +124,6 @@ document.addEventListener("DOMContentLoaded", () => {
         closeBtn.addEventListener("click", closeModal);
     }
 
-    // Obsługa klawiatury
     window.addEventListener(
         "keydown",
         debounce((e) => {
@@ -139,14 +135,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 100),
     );
 
-    // Zamknięcie modala po kliknięciu w tło
     modal.addEventListener("click", (e) => {
         if (e.target === modal) {
             closeModal();
         }
     });
 
-    // Obsługa gestów dotykowych (swipe)
     let touchStartX = 0;
     let touchEndX = 0;
 
@@ -171,7 +165,6 @@ document.addEventListener("DOMContentLoaded", () => {
     modal.addEventListener("touchmove", handleTouchMove, { passive: true });
     modal.addEventListener("touchend", handleTouchEnd, { passive: true });
 
-    // Inicjalizacja galerii
     try {
         loadGallery();
     } catch (error) {

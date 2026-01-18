@@ -7,25 +7,20 @@ const multer = require("multer");
 const fs = require("fs");
 const { google } = require("googleapis");
 
-// Inicjalizacja aplikacji Express
 const app = express();
 const PORT = process.env.PORT || 33000;
 
-// Middleware
 app.use(cors());
 app.use(express.static(path.join(__dirname, "../")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Konfiguracja Multer (upload plików) z walidacją
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Walidacja plików
 const fileFilter = (req, file, cb) => {
-    // Sprawdzenie czy plik jest obrazem
     if (file.mimetype.startsWith("image/")) {
         cb(null, true);
     } else {
@@ -36,13 +31,12 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
     dest: uploadDir,
     limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB per file
-        files: 5, // maksymalnie 5 plików
+        fileSize: 10 * 1024 * 1024,
+        files: 5,
     },
     fileFilter: fileFilter,
 });
 
-// Wczytanie danych uwierzytelniających z zmiennych środowiskowych
 const credentials = {
     type: "service_account",
     project_id: process.env.GOOGLE_PROJECT_ID,
@@ -59,14 +53,12 @@ const credentials = {
     universe_domain: "googleapis.com",
 };
 
-// Sprawdzenie, czy wszystkie wymagane zmienne środowiskowe są zdefiniowane
 if (!credentials.private_key) {
     throw new Error(
         "GOOGLE_PRIVATE_KEY is not defined in environment variables.",
     );
 }
 
-// Konfiguracja autoryzacji Google Auth
 const auth = new google.auth.GoogleAuth({
     credentials: credentials,
     scopes: [
@@ -75,15 +67,12 @@ const auth = new google.auth.GoogleAuth({
     ],
 });
 
-// Inicjalizacja Google Sheets i Google Drive
 const sheets = google.sheets({ version: "v4", auth });
 const drive = google.drive({ version: "v3", auth });
 
-// ID arkusza kalkulacyjnego i folderu Google Drive z .env
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const GOOGLE_DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID;
 
-// Funkcja do tworzenia folderu na Google Drive
 async function createFolderOnDrive(folderName, parentFolderId) {
     const fileMetadata = {
         name: folderName,
@@ -103,7 +92,6 @@ async function createFolderOnDrive(folderName, parentFolderId) {
     }
 }
 
-// Funkcja do przesyłania pliku do Google Drive
 async function uploadFileToDrive(filePath, fileName, folderId) {
     const fileMetadata = {
         name: fileName,
@@ -127,7 +115,6 @@ async function uploadFileToDrive(filePath, fileName, folderId) {
     }
 }
 
-// Funkcja do dodawania danych do Google Sheets
 async function appendToSheet(data) {
     try {
         await sheets.spreadsheets.values.append({
@@ -158,7 +145,6 @@ async function appendToSheet(data) {
     }
 }
 
-// Endpoint do przesyłania danych (formularz)
 app.post("/upload", upload.array("photos", 5), async (req, res) => {
     let photoPaths = [];
 
@@ -173,7 +159,6 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
             carDescription,
         } = req.body;
 
-        // Walidacja danych
         if (
             !firstName ||
             !lastName ||
@@ -188,7 +173,6 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
             });
         }
 
-        // Walidacja email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             return res.status(400).json({
@@ -196,7 +180,6 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
             });
         }
 
-        // Walidacja telefonu (9-15 cyfr)
         const phoneRegex = /^[0-9]{9,15}$/;
         if (!phoneRegex.test(phone.replace(/\s/g, ""))) {
             return res.status(400).json({
@@ -204,7 +187,6 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
             });
         }
 
-        // Walidacja plików
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({
                 message: "Proszę dodać przynajmniej jedno zdjęcie.",
@@ -217,9 +199,8 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
             });
         }
 
-        // Sprawdzenie łącznego rozmiaru plików
         const totalSize = req.files.reduce((sum, file) => sum + file.size, 0);
-        const maxTotalSize = 50 * 1024 * 1024; // 50MB
+        const maxTotalSize = 50 * 1024 * 1024;
 
         if (totalSize > maxTotalSize) {
             return res.status(400).json({
@@ -227,14 +208,12 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
             });
         }
 
-        // Tworzenie folderu o nazwie "Imię Nazwisko"
         const folderName = `${firstName} ${lastName}`;
         const folder = await createFolderOnDrive(
             folderName,
             GOOGLE_DRIVE_FOLDER_ID,
         );
 
-        // Przesyłanie zdjęć do folderu
         const photoUrls = await Promise.all(
             req.files.map((file) => {
                 photoPaths.push(file.path);
@@ -246,7 +225,6 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
             }),
         );
 
-        // Zapis do Google Sheets z linkiem do folderu
         await appendToSheet({
             firstName,
             lastName,
@@ -265,7 +243,6 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
     } catch (error) {
         console.error("Błąd na serwerze:", error.message, error.stack);
 
-        // Zwróć bardziej szczegółowy błąd w zależności od typu
         if (error.message.includes("GOOGLE")) {
             return res.status(500).json({
                 message: "Błąd połączenia z Google Drive. Spróbuj ponownie.",
@@ -280,7 +257,6 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
                     : undefined,
         });
     } finally {
-        // Usuwanie tymczasowych plików
         photoPaths.forEach((photoPath) => {
             if (photoPath && fs.existsSync(photoPath)) {
                 fs.unlink(photoPath, (err) => {
@@ -293,7 +269,6 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
     }
 });
 
-// Obsługa błędów Multer
 app.use((error, req, res, next) => {
     if (error instanceof multer.MulterError) {
         if (error.code === "LIMIT_FILE_SIZE") {
@@ -322,12 +297,10 @@ app.use((error, req, res, next) => {
     next(error);
 });
 
-// Health check endpoint
 app.get("/health", (req, res) => {
     res.json({ status: "OK", timestamp: new Date().toISOString() });
 });
 
-// Uruchomienie serwera
 app.listen(PORT, () => {
     console.log(`Serwer działa na porcie ${PORT}`);
     console.log(`Health check: http://localhost:${PORT}/health`);
