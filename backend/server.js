@@ -7,25 +7,36 @@ const multer = require("multer");
 const fs = require("fs");
 const { google } = require("googleapis");
 
-// Inicjalizacja aplikacji Express
 const app = express();
 const PORT = process.env.PORT || 33000;
 
-// Middleware
 app.use(cors());
 app.use(express.static(path.join(__dirname, "../")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Konfiguracja Multer (upload plików)
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-const upload = multer({ dest: uploadDir });
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+        cb(null, true);
+    } else {
+        cb(new Error("Tylko pliki graficzne (obrazy) są dozwolone!"), false);
+    }
+};
 
-// Wczytanie danych uwierzytelniających z zmiennych środowiskowych
+const upload = multer({
+    dest: uploadDir,
+    limits: {
+        fileSize: 10 * 1024 * 1024,
+        files: 5,
+    },
+    fileFilter: fileFilter,
+});
+
 const credentials = {
     type: "service_account",
     project_id: process.env.GOOGLE_PROJECT_ID,
@@ -42,14 +53,12 @@ const credentials = {
     universe_domain: "googleapis.com",
 };
 
-// Sprawdzenie, czy wszystkie wymagane zmienne środowiskowe są zdefiniowane
 if (!credentials.private_key) {
     throw new Error(
-        "GOOGLE_PRIVATE_KEY is not defined in environment variables."
+        "GOOGLE_PRIVATE_KEY is not defined in environment variables.",
     );
 }
 
-// Konfiguracja autoryzacji Google Auth
 const auth = new google.auth.GoogleAuth({
     credentials: credentials,
     scopes: [
@@ -58,15 +67,12 @@ const auth = new google.auth.GoogleAuth({
     ],
 });
 
-// Inicjalizacja Google Sheets i Google Drive
 const sheets = google.sheets({ version: "v4", auth });
 const drive = google.drive({ version: "v3", auth });
 
-// ID arkusza kalkulacyjnego i folderu Google Drive z .env
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const GOOGLE_DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID;
 
-// Funkcja do tworzenia folderu na Google Drive
 async function createFolderOnDrive(folderName, parentFolderId) {
     const fileMetadata = {
         name: folderName,
@@ -79,18 +85,17 @@ async function createFolderOnDrive(folderName, parentFolderId) {
             resource: fileMetadata,
             fields: "id, webViewLink",
         });
-        return folder.data; // Zwraca id i link do folderu
+        return folder.data;
     } catch (error) {
         console.error("Błąd przy tworzeniu folderu na Google Drive:", error);
         throw error;
     }
 }
 
-// Funkcja do przesyłania pliku do Google Drive
 async function uploadFileToDrive(filePath, fileName, folderId) {
     const fileMetadata = {
         name: fileName,
-        parents: [folderId], // Folder osoby
+        parents: [folderId],
     };
     const media = {
         mimeType: "image/jpeg",
@@ -103,14 +108,13 @@ async function uploadFileToDrive(filePath, fileName, folderId) {
             media,
             fields: "id, webViewLink",
         });
-        return file.data.webViewLink; // Zwraca link do pliku
+        return file.data.webViewLink;
     } catch (error) {
         console.error("Błąd przy przesyłaniu pliku do Google Drive:", error);
         throw error;
     }
 }
 
-// Funkcja do dodawania danych do Google Sheets
 async function appendToSheet(data) {
     try {
         await sheets.spreadsheets.values.append({
@@ -127,7 +131,7 @@ async function appendToSheet(data) {
                         data.licensePlate,
                         data.carBrand,
                         data.carDescription,
-                        data.folderUrl, // Link do folderu
+                        data.folderUrl,
                     ],
                 ],
             },
@@ -135,15 +139,15 @@ async function appendToSheet(data) {
     } catch (error) {
         console.error(
             "Błąd podczas dodawania danych do Arkuszy Google:",
-            error.message
+            error.message,
         );
         throw new Error("Nie udało się dodać danych do arkusza.");
     }
 }
 
-// Endpoint do przesyłania danych (formularz)
 app.post("/upload", upload.array("photos", 5), async (req, res) => {
     let photoPaths = [];
+
     try {
         const {
             firstName,
@@ -155,7 +159,6 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
             carDescription,
         } = req.body;
 
-        // Walidacja danych
         if (
             !firstName ||
             !lastName ||
@@ -163,32 +166,65 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
             !phone ||
             !licensePlate ||
             !carBrand ||
-            !carDescription ||
-            !req.files ||
-            req.files.length === 0
+            !carDescription
         ) {
             return res.status(400).json({
-                message:
-                    "Wszystkie pola są wymagane, w tym przynajmniej jedno zdjęcie.",
+                message: "Wszystkie pola są wymagane.",
             });
         }
 
-        // Tworzenie folderu o nazwie "Imię Nazwisko"
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                message: "Nieprawidłowy adres e-mail.",
+            });
+        }
+
+        const phoneRegex = /^[0-9]{9,15}$/;
+        if (!phoneRegex.test(phone.replace(/\s/g, ""))) {
+            return res.status(400).json({
+                message: "Nieprawidłowy numer telefonu (wymagane 9-15 cyfr).",
+            });
+        }
+
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({
+                message: "Proszę dodać przynajmniej jedno zdjęcie.",
+            });
+        }
+
+        if (req.files.length > 5) {
+            return res.status(400).json({
+                message: "Można przesłać maksymalnie 5 zdjęć.",
+            });
+        }
+
+        const totalSize = req.files.reduce((sum, file) => sum + file.size, 0);
+        const maxTotalSize = 50 * 1024 * 1024;
+
+        if (totalSize > maxTotalSize) {
+            return res.status(400).json({
+                message: "Łączny rozmiar plików przekracza 50MB.",
+            });
+        }
+
         const folderName = `${firstName} ${lastName}`;
         const folder = await createFolderOnDrive(
             folderName,
-            GOOGLE_DRIVE_FOLDER_ID
+            GOOGLE_DRIVE_FOLDER_ID,
         );
 
-        // Przesyłanie zdjęć do folderu
         const photoUrls = await Promise.all(
             req.files.map((file) => {
-                photoPaths.push(file.path); // Ścieżki do późniejszego usunięcia
-                return uploadFileToDrive(file.path, file.filename, folder.id);
-            })
+                photoPaths.push(file.path);
+                return uploadFileToDrive(
+                    file.path,
+                    file.originalname,
+                    folder.id,
+                );
+            }),
         );
 
-        // Zapis do Google Sheets z linkiem do folderu
         await appendToSheet({
             firstName,
             lastName,
@@ -197,7 +233,7 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
             licensePlate,
             carBrand,
             carDescription,
-            folderUrl: folder.webViewLink, // Link do folderu
+            folderUrl: folder.webViewLink,
         });
 
         res.json({
@@ -206,24 +242,66 @@ app.post("/upload", upload.array("photos", 5), async (req, res) => {
         });
     } catch (error) {
         console.error("Błąd na serwerze:", error.message, error.stack);
+
+        if (error.message.includes("GOOGLE")) {
+            return res.status(500).json({
+                message: "Błąd połączenia z Google Drive. Spróbuj ponownie.",
+            });
+        }
+
         res.status(500).json({
             message: "Wystąpił błąd serwera.",
-            error: error.message,
+            error:
+                process.env.NODE_ENV === "development"
+                    ? error.message
+                    : undefined,
         });
     } finally {
-        // Usuwanie tymczasowych plików
         photoPaths.forEach((photoPath) => {
-            if (photoPath) {
+            if (photoPath && fs.existsSync(photoPath)) {
                 fs.unlink(photoPath, (err) => {
-                    if (err)
+                    if (err) {
                         console.error("Błąd przy usuwaniu pliku:", err.message);
+                    }
                 });
             }
         });
     }
 });
 
-// Uruchomienie serwera
+app.use((error, req, res, next) => {
+    if (error instanceof multer.MulterError) {
+        if (error.code === "LIMIT_FILE_SIZE") {
+            return res.status(400).json({
+                message: "Plik jest zbyt duży. Maksymalny rozmiar to 10MB.",
+            });
+        }
+        if (error.code === "LIMIT_FILE_COUNT") {
+            return res.status(400).json({
+                message: "Można przesłać maksymalnie 5 plików.",
+            });
+        }
+        if (error.code === "LIMIT_UNEXPECTED_FILE") {
+            return res.status(400).json({
+                message: "Nieoczekiwane pole pliku.",
+            });
+        }
+    }
+
+    if (error.message === "Tylko pliki graficzne (obrazy) są dozwolone!") {
+        return res.status(400).json({
+            message: error.message,
+        });
+    }
+
+    next(error);
+});
+
+app.get("/health", (req, res) => {
+    res.json({ status: "OK", timestamp: new Date().toISOString() });
+});
+
 app.listen(PORT, () => {
     console.log(`Serwer działa na porcie ${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/health`);
 });

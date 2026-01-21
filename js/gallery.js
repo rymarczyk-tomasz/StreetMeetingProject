@@ -6,6 +6,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const prevBtn = document.getElementById("prevImage");
     const nextBtn = document.getElementById("nextImage");
 
+    if (!gallery || !modal || !modalImg) {
+        console.error("Brak wymaganych elementów galerii");
+        return;
+    }
+
     const photos = [];
     let currentIndex = 0;
 
@@ -29,18 +34,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const fragment = document.createDocumentFragment();
 
-        imageNames.forEach((name) => {
+        imageNames.forEach((name, index) => {
             const photoPath = `${imageFolder}/${name}`;
             photos.push(photoPath);
 
             const img = document.createElement("img");
             img.src = photoPath;
             img.loading = "lazy";
+            img.alt = `Zdjęcie z galerii Street Show ${index + 1}`;
             img.style.maxWidth = "300px";
             img.style.margin = "10px";
+            img.style.cursor = "pointer";
 
             img.addEventListener("click", () => {
                 openModal(photos.indexOf(photoPath));
+            });
+
+            img.addEventListener("error", () => {
+                console.error(`Nie udało się załadować: ${photoPath}`);
+                img.style.display = "none";
             });
 
             fragment.appendChild(img);
@@ -52,16 +64,19 @@ document.addEventListener("DOMContentLoaded", () => {
     function openModal(index) {
         currentIndex = index;
         modal.style.display = "block";
+        document.body.style.overflow = "hidden";
         updateModal();
         preloadImages();
     }
 
     function closeModal() {
         modal.style.display = "none";
+        document.body.style.overflow = ""; 
     }
 
     function updateModal() {
         modalImg.src = photos[currentIndex];
+        modalImg.alt = `Powiększone zdjęcie ${currentIndex + 1} z ${photos.length}`;
         modalImg.style.display = "block";
         modalImg.style.margin = "auto";
     }
@@ -69,11 +84,13 @@ document.addEventListener("DOMContentLoaded", () => {
     function showNextImage() {
         currentIndex = (currentIndex + 1) % photos.length;
         updateModal();
+        preloadImages();
     }
 
     function showPrevImage() {
         currentIndex = (currentIndex - 1 + photos.length) % photos.length;
         updateModal();
+        preloadImages();
     }
 
     function preloadImages() {
@@ -95,9 +112,17 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    nextBtn.addEventListener("click", showNextImage);
-    prevBtn.addEventListener("click", showPrevImage);
-    closeBtn.addEventListener("click", closeModal);
+    if (nextBtn) {
+        nextBtn.addEventListener("click", showNextImage);
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener("click", showPrevImage);
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener("click", closeModal);
+    }
 
     window.addEventListener(
         "keydown",
@@ -107,7 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (e.key === "ArrowLeft") showPrevImage();
                 if (e.key === "Escape") closeModal();
             }
-        }, 100)
+        }, 100),
     );
 
     modal.addEventListener("click", (e) => {
@@ -136,9 +161,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    modal.addEventListener("touchstart", handleTouchStart, false);
-    modal.addEventListener("touchmove", handleTouchMove, false);
-    modal.addEventListener("touchend", handleTouchEnd, false);
+    modal.addEventListener("touchstart", handleTouchStart, { passive: true });
+    modal.addEventListener("touchmove", handleTouchMove, { passive: true });
+    modal.addEventListener("touchend", handleTouchEnd, { passive: true });
 
-    loadGallery();
+    try {
+        loadGallery();
+    } catch (error) {
+        console.error("Błąd podczas ładowania galerii:", error);
+    }
 });
