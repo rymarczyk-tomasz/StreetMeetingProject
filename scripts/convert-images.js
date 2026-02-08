@@ -29,15 +29,20 @@ async function processFile(filePath, destDir) {
     const outNameWebp = path.join(destDir, `${base}-${w}.webp`);
     const outNameAvif = path.join(destDir, `${base}-${w}.avif`);
 
+    // Always produce WebP
     await sharp(filePath)
       .resize({ width: w, withoutEnlargement: true })
       .toFile(outNameWebp)
       .catch((e) => console.error("sharp webp error", e));
 
-    await sharp(filePath)
-      .resize({ width: w, withoutEnlargement: true })
-      .toFile(outNameAvif)
-      .catch((e) => console.error("sharp avif error", e));
+    // Skip AVIF generation for hero images to preserve visual fidelity
+    const isHero = /(^Hero-image$|^hero_image-mobile$)/i.test(base);
+    if (!isHero) {
+      await sharp(filePath)
+        .resize({ width: w, withoutEnlargement: true })
+        .toFile(outNameAvif)
+        .catch((e) => console.error("sharp avif error", e));
+    }
   }
 }
 
