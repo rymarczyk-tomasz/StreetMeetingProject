@@ -6,7 +6,8 @@
     "start": "func start",
     "test": "echo \"No tests yet...\"",
     "build": "npm install",
-    "convert-images": "node scripts/convert-images.js"
+    "convert-images": "node scripts/convert-images.js",
+    "update-image-references": "node scripts/update-image-references.js"
   },
   "dependencies": {
     "@azure/functions": "^4.0.0"
