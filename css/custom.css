@@ -1,345 +1,382 @@
 *,
 *::before,
 *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html {
-    font-size: 62.5%;
-    scroll-behavior: smooth;
+  font-size: 62.5%;
+  scroll-behavior: smooth;
 }
 
 body {
-    font-size: 1.6rem;
-    font-family: "Chakra Petch", sans-serif;
+  font-size: 1.6rem;
+  font-family: "Chakra Petch", sans-serif;
 }
 
 [id] {
-    scroll-margin-top: 71.5px;
+  scroll-margin-top: 71.5px;
 }
 
 @media (min-width: 992px) {
-    [id] {
-        scroll-margin-top: 67px;
-    }
+  [id] {
+    scroll-margin-top: 67px;
+  }
 }
 
 .hero-shadow {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0);
-    z-index: -1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0);
+  z-index: -1;
 }
 
 .logo {
-    width: 80px;
+  width: 80px;
 }
 
 .nav-link,
 .navbar-toggler-icon {
-    font-size: 1.8rem;
-    text-transform: uppercase;
+  font-size: 1.8rem;
+  text-transform: uppercase;
 }
 
 .navbar-toggler {
-    padding: 0.5em 1em;
+  padding: 0.5em 1em;
 }
 
 .home {
-    position: relative;
-    height: 100vh;
-    background-image: url("../img/photos/Hero-image.webp");
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    z-index: 0;
+  position: relative;
+  height: 100vh;
+  background-image: url("../img/optimized/photos/Hero-image-800.webp");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  z-index: 0;
 }
 
 .home .btn {
-    padding: 1em 2em;
-    font-size: 1.4rem;
-    text-transform: uppercase;
+  padding: 1em 2em;
+  font-size: 1.4rem;
+  text-transform: uppercase;
 }
 
 .accordion-button {
-    padding: 1em;
-    font-size: 1.8rem;
+  padding: 1em;
+  font-size: 1.8rem;
 }
 
 .event {
-    background-color: rgb(248, 248, 248);
+  background-color: rgb(248, 248, 248);
 }
 
 .event .card-img-top {
-    height: 250px;
-    object-fit: cover;
+  height: 250px;
+  object-fit: cover;
 }
 
 .event .card-title {
-    font-size: 2rem;
-    padding: 1em;
-    font-weight: bold;
+  font-size: 2rem;
+  padding: 1em;
+  font-weight: bold;
 }
 
 .contact h3 {
-    font-size: 2rem;
-    font-weight: bold;
-    text-transform: uppercase;
+  font-size: 2rem;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
 .contact .submit-btn {
-    font-size: 1.6rem;
+  font-size: 1.6rem;
 }
 
 textarea.form-control,
 input.form-control {
-    font-size: 1.4rem;
+  font-size: 1.4rem;
 }
 
 .contact-info {
-    padding-top: 1em;
+  padding-top: 1em;
 }
 
 .event-boxes a {
-    text-transform: uppercase;
-    color: black;
+  text-transform: uppercase;
+  color: black;
 }
 
 .links {
-    font-size: 1.6rem;
-    text-decoration: none;
-    color: white;
-    padding-top: 1em;
+  font-size: 1.6rem;
+  text-decoration: none;
+  color: white;
+  padding-top: 1em;
 }
 
 .event-links {
-    font-size: 1.6rem;
-    text-decoration: none;
-    color: black;
-    padding-top: 1em;
+  font-size: 1.6rem;
+  text-decoration: none;
+  color: black;
+  padding-top: 1em;
 }
 
 .social-media {
-    color: white;
-    font-size: 2.5rem;
-    padding: 10px;
+  color: white;
+  font-size: 2.5rem;
+  padding: 10px;
 }
 
 .contact-info a:hover,
 .card-title a:hover,
 .event-link:hover {
-    color: rgb(16, 104, 237);
+  color: rgb(16, 104, 237);
 }
 
 .gallery-btn {
-    display: inline-block;
-    padding: 15px 25px;
-    margin-top: 50px;
-    font-size: 18px;
-    color: #fff;
-    background-color: #007bff;
-    border: none;
-    border-radius: 5px;
-    text-decoration: none;
-    cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: inline-block;
+  padding: 15px 25px;
+  margin-top: 50px;
+  font-size: 18px;
+  color: #fff;
+  background-color: #007bff;
+  border: none;
+  border-radius: 5px;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 .gallery-btn:hover {
-    background-color: #0056b3;
+  background-color: #0056b3;
 }
 
 .gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    justify-items: center;
-    margin-top: 100px;
-    padding: 20px;
-    background-color: #f4f4f4;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  justify-items: center;
+  margin-top: 100px;
+  padding: 20px;
+  background-color: #f4f4f4;
 }
 
 .gallery img {
-    width: 200px;
-    height: 200px;
-    object-fit: cover;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin: 10px;
-    cursor: pointer;
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin: 10px;
+  cursor: pointer;
 }
 
 .modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    padding-top: 10%;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.8);
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  padding-top: 10%;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.8);
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
 }
 
 .modal[style*="display: block"] {
-    opacity: 1;
+  opacity: 1;
 }
 
 .modal-content {
-    top: 50%;
-    transform: translate(0%, -50%);
-    object-fit: contain;
-    max-width: 80%;
-    max-height: 80%;
-    background-color: transparent;
-    box-shadow: none;
+  top: 50%;
+  transform: translate(0%, -50%);
+  object-fit: contain;
+  max-width: 80%;
+  max-height: 80%;
+  background-color: transparent;
+  box-shadow: none;
 }
 
 .close {
-    position: absolute;
-    top: 20px;
-    right: 35px;
-    color: white;
-    font-size: 40px;
-    font-weight: bold;
-    cursor: pointer;
+  position: absolute;
+  top: 20px;
+  right: 35px;
+  color: white;
+  font-size: 40px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 .close:hover,
 .close:focus {
-    color: #ccc;
-    text-decoration: none;
-    cursor: pointer;
+  color: #ccc;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 #caption {
-    text-align: center;
-    color: white;
-    padding: 10px;
-    font-size: 18px;
+  text-align: center;
+  color: white;
+  padding: 10px;
+  font-size: 18px;
 }
 
 .navigation {
-    position: absolute;
-    top: 50%;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    transform: translateY(-50%);
+  position: absolute;
+  top: 50%;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  transform: translateY(-50%);
 }
 
 .prev,
 .next {
-    color: white;
-    font-size: 40px;
-    font-weight: bold;
-    cursor: pointer;
-    user-select: none;
-    padding: 0 20px;
+  color: white;
+  font-size: 40px;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+  padding: 0 20px;
 }
 
 .prev:hover,
 .next:hover {
-    color: #ccc;
+  color: #ccc;
 }
 
 .arrow {
-    animation: blink 1s infinite;
+  animation: blink 1s infinite;
 }
 
 .form {
-    background-color: #f8f9fa;
-    padding: 40px 0;
+  background-color: #f8f9fa;
+  padding: 40px 0;
 }
 
 .form form {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .form h2 {
-    text-align: center;
-    color: #333;
-    font-weight: bold;
-    text-transform: uppercase;
-    margin-bottom: 20px;
+  text-align: center;
+  color: #333;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 20px;
 }
 
 .form .form-label,
 .form .form-control {
-    text-align: left;
+  text-align: left;
 }
 
 .form .mb-3 {
-    text-align: left;
+  text-align: left;
 }
 
 .form h2 {
-    color: #333;
-    font-weight: bold;
-    text-transform: uppercase;
-    margin-bottom: 20px;
+  color: #333;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 20px;
 }
 
 .form .form-label {
-    font-size: 1.6rem;
-    font-weight: 500;
+  font-size: 1.6rem;
+  font-weight: 500;
 }
 
 .form .form-control {
-    font-size: 1.4rem;
-    padding: 10px;
-    margin-bottom: 15px;
+  font-size: 1.4rem;
+  padding: 10px;
+  margin-bottom: 15px;
 }
 
 .form .btn {
-    font-size: 1.6rem;
-    padding: 10px 20px;
+  font-size: 1.6rem;
+  padding: 10px 20px;
 }
 
 .privacy-policy {
-    margin-top: 20px;
+  margin-top: 20px;
 }
 
 .newsletter {
-    margin: 0 auto;
-    max-width: 600px;
+  margin: 0 auto;
+  max-width: 600px;
 }
 
 @media (max-width: 768px) {
-    .home {
-        background-image: url("../img/photos/hero_image-mobile.webp");
-        background-size: cover;
-        background-position: center;
-        background-attachment: scroll;
-        min-height: 100vh;
-    }
+  .home {
+    background-image: url("../img/optimized/photos/hero_image-mobile-400.webp");
+    background-size: cover;
+    background-position: center;
+    background-attachment: scroll;
+    min-height: 100vh;
+  }
 
-    .hero-shadow {
-        background-color: rgba(0, 0, 0, 0.4);
-    }
-    .event .card-img-top {
-        height: 100%;
-    }
+  .hero-shadow {
+    background-color: rgba(0, 0, 0, 0.4);
+  }
+  .event .card-img-top {
+    height: 100%;
+  }
 }
 
 @keyframes blink {
-    0%,
-    100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0;
-    }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Message states for form responses */
+.msg-info {
+  color: #0d6efd; /* blue */
+}
+.msg-success {
+  color: #198754; /* green */
+}
+.msg-error {
+  color: #dc3545; /* red */
+}
+
+/* Gallery thumbnails */
+.gallery-thumb {
+  max-width: 300px;
+  margin: 10px;
+  cursor: pointer;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Modal image */
+.modal-image {
+  display: block;
+  margin: 0 auto;
+  max-width: 80%;
+  max-height: 80%;
+  object-fit: contain;
+}
+
+/* Button busy state */
+button[aria-busy="true"] {
+  opacity: 0.65;
+  pointer-events: none;
 }
