@@ -35,16 +35,11 @@ if (!htmlFiles.length) {
 htmlFiles.forEach((file) => {
   const p = path.join(root, file);
   let content = fs.readFileSync(p, "utf8");
-  let changed = false;
-
-  // Replace <img ... src="img/...."> with <picture> if optimized assets exist
+  let changed = false;
   content = content.replace(
     /<img\s+([^>]*?)src=(['"])(img\/[^'">]+)\2([^>]*)>/gi,
-    (match, preAttrs, q, src, postAttrs) => {
-      // Skip SVGs and data URIs
-      if (/\.svg($|\?)/i.test(src) || src.startsWith("data:")) return match;
-
-      // collect attributes (simple parsing)
+    (match, preAttrs, q, src, postAttrs) => {
+      if (/\.svg($|\?)/i.test(src) || src.startsWith("data:")) return match;
       const attrsStr = (preAttrs + " " + postAttrs).trim();
       const altMatch = attrsStr.match(/alt=(['"])(.*?)\1/i);
       const classMatch = attrsStr.match(/class=(['"])(.*?)\1/i);
@@ -54,9 +49,7 @@ htmlFiles.forEach((file) => {
         .trim();
 
       const alt = altMatch ? altMatch[2] : "";
-      const cls = classMatch ? classMatch[2] : "";
-
-      // derive folder and basename
+      const cls = classMatch ? classMatch[2] : "";
       const rel = src.replace(/^img\//, ""); // photos/foo.jpg or gallery/foo.jpg or Logo...
       const parts = rel.split("/");
       let folder = "photos";
@@ -65,9 +58,7 @@ htmlFiles.forEach((file) => {
         folder = parts[0];
         filename = parts.slice(1).join("/");
       }
-      const basename = filename.replace(/\.[^/.]+$/, "");
-
-      // Try to build srcsets
+      const basename = filename.replace(/\.[^/.]+$/, "");
       const avifSrcset = buildSrcset(folder, basename, "avif");
       const webpSrcset = buildSrcset(folder, basename, "webp");
 
@@ -83,8 +74,7 @@ htmlFiles.forEach((file) => {
       if (avifSrcset)
         picture += `\n  <source type="image/avif" srcset="${avifSrcset}" sizes="${sizes}">`;
       if (webpSrcset)
-        picture += `\n  <source type="image/webp" srcset="${webpSrcset}" sizes="${sizes}">`;
-      // fallback img uses original src and preserves alt/class and other attrs
+        picture += `\n  <source type="image/webp" srcset="${webpSrcset}" sizes="${sizes}">`;
       const other = otherAttrs ? " " + otherAttrs : "";
       const classAttr = cls ? ` class="${cls}"` : "";
       const altAttr = alt ? ` alt="${alt}"` : ' alt=""';

@@ -344,18 +344,18 @@ input.form-control {
   }
 }
 
-/* Message states for form responses */
+
 .msg-info {
-  color: #0d6efd; /* blue */
+  color: #0d6efd; 
 }
 .msg-success {
-  color: #198754; /* green */
+  color: #198754; 
 }
 .msg-error {
-  color: #dc3545; /* red */
+  color: #dc3545; 
 }
 
-/* Gallery thumbnails */
+
 .gallery-thumb {
   max-width: 300px;
   margin: 10px;
@@ -366,7 +366,7 @@ input.form-control {
   border-radius: 8px;
 }
 
-/* Modal image */
+
 .modal-image {
   display: block;
   margin: 0 auto;
@@ -375,7 +375,7 @@ input.form-control {
   object-fit: contain;
 }
 
-/* Button busy state */
+
 button[aria-busy="true"] {
   opacity: 0.65;
   pointer-events: none;

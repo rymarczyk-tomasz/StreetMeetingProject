@@ -30,20 +30,15 @@ async function regen() {
       const outWebp = path.join(outDir, `${base}-${w}.webp`);
       const outAvif = path.join(outDir, `${base}-${w}.avif`);
 
-      // WebP: higher-quality lossy compression
       await sharp(srcPath)
         .resize({ width: w, withoutEnlargement: true })
         .webp({ quality: 90 })
         .toFile(outWebp)
         .catch((e) => console.error("webp error", e));
-
-      // Do NOT generate AVIF for hero images to preserve original quality
-      // (only WebP is produced)
+      
     }
     console.log("Regenerated:", file);
-  }
-
-  // report sizes
+  }
   console.log("\nResulting files:");
   const outFiles = await fs.promises.readdir(outDir);
   outFiles
