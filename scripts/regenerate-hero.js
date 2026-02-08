@@ -35,10 +35,10 @@ async function regen() {
         .webp({ quality: 90 })
         .toFile(outWebp)
         .catch((e) => console.error("webp error", e));
-      
     }
     console.log("Regenerated:", file);
-  }
+  }
+
   console.log("\nResulting files:");
   const outFiles = await fs.promises.readdir(outDir);
   outFiles

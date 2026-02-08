@@ -33,7 +33,7 @@ async function processFile(filePath, destDir) {
       .resize({ width: w, withoutEnlargement: true })
       .toFile(outNameWebp)
       .catch((e) => console.error("sharp webp error", e));
-    
+
     const isHero = /(^Hero-image$|^hero_image-mobile$)/i.test(base);
     if (!isHero) {
       await sharp(filePath)
