@@ -47,7 +47,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const files = manifest.files.filter(
                 (entry) =>
                     typeof entry === "string" ||
-                    (entry && typeof entry === "object" && typeof entry.src === "string"),
+                    (entry &&
+                        typeof entry === "object" &&
+                        typeof entry.src === "string"),
             );
             return files.length ? files : fallback;
         } catch (error) {
@@ -63,7 +65,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         entries.forEach((entry, index) => {
             const isLegacyName = typeof entry === "string";
-            const name = isLegacyName ? entry : entry.name || `zdjecie-${index + 1}`;
+            const name = isLegacyName
+                ? entry
+                : entry.name || `zdjecie-${index + 1}`;
 
             const thumbPath = isLegacyName
                 ? `${imageFolder}/${name}`

@@ -199,12 +199,16 @@ async function syncGalleryFromDrive(folderInput) {
     let skippedCount = 0;
     let removedCount = 0;
 
-    console.log(`Znaleziono ${driveFiles.length} zdjęć. Trwa synchronizacja przyrostowa...`);
+    console.log(
+        `Znaleziono ${driveFiles.length} zdjęć. Trwa synchronizacja przyrostowa...`,
+    );
 
     for (const removedId of removedIds) {
         const previous = previousFiles[removedId];
         removedCount += 1;
-        console.log(`[remove] ${previous?.name || removedId} -> usunięto z manifestu`);
+        console.log(
+            `[remove] ${previous?.name || removedId} -> usunięto z manifestu`,
+        );
     }
 
     const nextStateFiles = {};
