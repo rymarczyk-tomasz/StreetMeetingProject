@@ -6,6 +6,7 @@ const express = require("express");
 const multer = require("multer");
 const fs = require("fs");
 const { google } = require("googleapis");
+const { syncGalleryFromDrive } = require("./scripts/sync-gallery-from-drive");
 
 const app = express();
 const PORT = process.env.PORT || 33000;
@@ -67,6 +68,90 @@ const drive = google.drive({ version: "v3", auth });
 
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const GOOGLE_DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID;
+const GALLERY_DRIVE_FOLDER_INPUT =
+    process.env.DRIVE_GALLERY_FOLDER_ID ||
+    process.env.GALLERY_DRIVE_FOLDER_ID ||
+    process.env.GALLERY_DRIVE_FOLDER_URL;
+
+const parsedDailyHour = Number(process.env.GALLERY_SYNC_DAILY_HOUR ?? "3");
+const GALLERY_SYNC_DAILY_HOUR = Number.isFinite(parsedDailyHour)
+    ? Math.min(23, Math.max(0, Math.trunc(parsedDailyHour)))
+    : 3;
+
+const parsedDailyMinute = Number(process.env.GALLERY_SYNC_DAILY_MINUTE ?? "0");
+const GALLERY_SYNC_DAILY_MINUTE = Number.isFinite(parsedDailyMinute)
+    ? Math.min(59, Math.max(0, Math.trunc(parsedDailyMinute)))
+    : 0;
+
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+let gallerySyncInProgress = false;
+
+async function runGallerySync(reason) {
+    if (!GALLERY_DRIVE_FOLDER_INPUT) {
+        console.log(
+            "[gallery-sync] Pominięto: brak DRIVE_GALLERY_FOLDER_ID lub GALLERY_DRIVE_FOLDER_ID.",
+        );
+        return;
+    }
+
+    if (gallerySyncInProgress) {
+        console.log(
+            `[gallery-sync] Pominięto (${reason}): poprzednia synchronizacja nadal trwa.`,
+        );
+        return;
+    }
+
+    gallerySyncInProgress = true;
+    console.log(`[gallery-sync] Start (${reason})...`);
+
+    try {
+        const result = await syncGalleryFromDrive(GALLERY_DRIVE_FOLDER_INPUT);
+        console.log(
+            `[gallery-sync] Zakończono (${reason}): ${result.filesCount} zdjęć, folder ${result.folderId}.`,
+        );
+    } catch (error) {
+        console.error(`[gallery-sync] Błąd (${reason}):`, error.message);
+    } finally {
+        gallerySyncInProgress = false;
+    }
+}
+
+function getNextDailySyncDate(now = new Date()) {
+    const nextRun = new Date(now);
+    nextRun.setHours(GALLERY_SYNC_DAILY_HOUR, GALLERY_SYNC_DAILY_MINUTE, 0, 0);
+
+    if (nextRun <= now) {
+        nextRun.setDate(nextRun.getDate() + 1);
+    }
+
+    return nextRun;
+}
+
+function scheduleDailyGallerySync() {
+    if (!GALLERY_DRIVE_FOLDER_INPUT) {
+        console.log(
+            "[gallery-sync] Harmonogram wyłączony: brak konfiguracji folderu galerii.",
+        );
+        return;
+    }
+
+    const now = new Date();
+    const nextRun = getNextDailySyncDate(now);
+    const delay = Math.max(1000, nextRun.getTime() - now.getTime());
+
+    console.log(
+        `[gallery-sync] Zaplanowano codziennie o ${String(GALLERY_SYNC_DAILY_HOUR).padStart(2, "0")}:${String(GALLERY_SYNC_DAILY_MINUTE).padStart(2, "0")}. Najbliższa synchronizacja: ${nextRun.toISOString()}.`,
+    );
+
+    setTimeout(async () => {
+        await runGallerySync("daily-schedule");
+
+        setInterval(() => {
+            runGallerySync("daily-interval").catch(() => {});
+        }, ONE_DAY_MS);
+    }, delay);
+}
 
 async function createFolderOnDrive(name, parentId) {
     const folder = await drive.files.create({
@@ -223,6 +308,36 @@ app.get("/health", (req, res) => {
     res.json({ status: "OK" });
 });
 
+app.post("/gallery/sync", async (req, res) => {
+    if (!GALLERY_DRIVE_FOLDER_INPUT) {
+        return res.status(400).json({
+            message:
+                "Brak konfiguracji folderu galerii (DRIVE_GALLERY_FOLDER_ID/GALLERY_DRIVE_FOLDER_ID).",
+        });
+    }
+
+    if (gallerySyncInProgress) {
+        return res.status(409).json({
+            message: "Synchronizacja galerii już trwa.",
+        });
+    }
+
+    try {
+        const result = await syncGalleryFromDrive(GALLERY_DRIVE_FOLDER_INPUT);
+        return res.json({
+            message: "Synchronizacja galerii zakończona.",
+            filesCount: result.filesCount,
+            folderId: result.folderId,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: "Błąd synchronizacji galerii.",
+            error: error.message,
+        });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Serwer działa na porcie ${PORT}`);
+    scheduleDailyGallerySync();
 });
