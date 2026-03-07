@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const photos = [];
     let currentIndex = 0;
 
-    async function getImageNames() {
+    async function getManifestEntries() {
         const fallback = [
             "1.webp",
             "2.webp",
@@ -45,7 +45,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!manifest || !Array.isArray(manifest.files)) return fallback;
 
             const files = manifest.files.filter(
-                (name) => typeof name === "string",
+                (entry) =>
+                    typeof entry === "string" ||
+                    (entry && typeof entry === "object" && typeof entry.src === "string"),
             );
             return files.length ? files : fallback;
         } catch (error) {
@@ -55,43 +57,60 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function loadGallery() {
         const imageFolder = "img/gallery";
-        const imageNames = await getImageNames();
+        const entries = await getManifestEntries();
 
         const fragment = document.createDocumentFragment();
 
-        imageNames.forEach((name, index) => {
-            const photoPath = `${imageFolder}/${name}`;
-            photos.push(photoPath);
+        entries.forEach((entry, index) => {
+            const isLegacyName = typeof entry === "string";
+            const name = isLegacyName ? entry : entry.name || `zdjecie-${index + 1}`;
 
-            const base = name.replace(/\.[^.]+$/, "");
+            const thumbPath = isLegacyName
+                ? `${imageFolder}/${name}`
+                : entry.src;
+            const modalPath = isLegacyName
+                ? thumbPath
+                : entry.modalSrc || entry.src;
+
+            photos.push(modalPath);
+
             const picture = document.createElement("picture");
 
-            const sourceAvif = document.createElement("source");
-            sourceAvif.type = "image/avif";
-            sourceAvif.dataset.srcset = `img/optimized/gallery/${base}-400.avif 400w, img/optimized/gallery/${base}-800.avif 800w, img/optimized/gallery/${base}-1200.avif 1200w`;
+            if (isLegacyName) {
+                const base = name.replace(/\.[^.]+$/, "");
 
-            const sourceWebp = document.createElement("source");
-            sourceWebp.type = "image/webp";
-            sourceWebp.dataset.srcset = `img/optimized/gallery/${base}-400.webp 400w, img/optimized/gallery/${base}-800.webp 800w, img/optimized/gallery/${base}-1200.webp 1200w`;
+                const sourceAvif = document.createElement("source");
+                sourceAvif.type = "image/avif";
+                sourceAvif.dataset.srcset = `img/optimized/gallery/${base}-400.avif 400w, img/optimized/gallery/${base}-800.avif 800w, img/optimized/gallery/${base}-1200.avif 1200w`;
+
+                const sourceWebp = document.createElement("source");
+                sourceWebp.type = "image/webp";
+                sourceWebp.dataset.srcset = `img/optimized/gallery/${base}-400.webp 400w, img/optimized/gallery/${base}-800.webp 800w, img/optimized/gallery/${base}-1200.webp 1200w`;
+
+                picture.appendChild(sourceAvif);
+                picture.appendChild(sourceWebp);
+            }
 
             const img = document.createElement("img");
-            img.dataset.src = photoPath;
+            img.dataset.src = thumbPath;
+            if (!isLegacyName && typeof entry.srcset === "string") {
+                img.dataset.srcset = entry.srcset;
+                img.sizes = "(max-width: 768px) 100vw, 33vw";
+            }
             img.loading = "lazy";
             img.alt = `Zdjęcie z galerii Street Show ${index + 1}`;
             img.className = "gallery-thumb";
 
             img.addEventListener("click", () => {
                 if (!img.src) img.src = img.dataset.src;
-                openModal(photos.indexOf(photoPath));
+                openModal(photos.indexOf(modalPath));
             });
 
             img.addEventListener("error", () => {
-                console.error(`Nie udało się załadować: ${photoPath}`);
+                console.error(`Nie udało się załadować: ${thumbPath}`);
                 img.style.display = "none";
             });
 
-            picture.appendChild(sourceAvif);
-            picture.appendChild(sourceWebp);
             picture.appendChild(img);
             fragment.appendChild(picture);
         });
@@ -100,6 +119,10 @@ document.addEventListener("DOMContentLoaded", () => {
             if (img.dataset.src) {
                 img.src = img.dataset.src;
                 img.removeAttribute("data-src");
+            }
+            if (img.dataset.srcset) {
+                img.srcset = img.dataset.srcset;
+                img.removeAttribute("data-srcset");
             }
             const picture = img.parentElement;
             if (picture) {

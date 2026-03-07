@@ -40,3 +40,10 @@ typings/
 
 # Credentials file
 credentials.json
+
+# Generated gallery assets (runtime only)
+img/gallery/*.webp
+img/gallery/*.avif
+img/optimized/gallery/*.webp
+img/optimized/gallery/*.avif
+img/gallery/.drive-sync-state.json

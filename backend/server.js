@@ -108,7 +108,7 @@ async function runGallerySync(reason) {
     try {
         const result = await syncGalleryFromDrive(GALLERY_DRIVE_FOLDER_INPUT);
         console.log(
-            `[gallery-sync] Zakończono (${reason}): ${result.filesCount} zdjęć, folder ${result.folderId}.`,
+            `[gallery-sync] Zakończono (${reason}): ${result.filesCount} zdjęć, pobrano/zaktualizowano ${result.downloadedCount}, bez zmian ${result.skippedCount}, usunięto ${result.removedCount}, folder ${result.folderId}.`,
         );
     } catch (error) {
         console.error(`[gallery-sync] Błąd (${reason}):`, error.message);
@@ -327,6 +327,9 @@ app.post("/gallery/sync", async (req, res) => {
         return res.json({
             message: "Synchronizacja galerii zakończona.",
             filesCount: result.filesCount,
+            downloadedCount: result.downloadedCount,
+            skippedCount: result.skippedCount,
+            removedCount: result.removedCount,
             folderId: result.folderId,
         });
     } catch (error) {

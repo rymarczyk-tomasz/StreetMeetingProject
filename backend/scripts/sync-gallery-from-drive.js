@@ -3,24 +3,13 @@ const path = require("path");
 const { google } = require("googleapis");
 const dotenv = require("dotenv");
 
-let sharp;
-try {
-    sharp = require("sharp");
-} catch (error) {
-    console.error(
-        "Missing dependency: run `npm install` in project root to install sharp.",
-    );
-    process.exit(1);
-}
-
 dotenv.config({
     path: path.join(__dirname, "../config/.env"),
 });
 
 const rootDir = path.resolve(__dirname, "../..");
 const galleryDir = path.join(rootDir, "img", "gallery");
-const optimizedGalleryDir = path.join(rootDir, "img", "optimized", "gallery");
-const sizes = [400, 800, 1200];
+const syncStatePath = path.join(galleryDir, ".drive-sync-state.json");
 
 function parseFolderId(value) {
     if (!value) return null;
@@ -65,24 +54,38 @@ async function ensureDir(dirPath) {
     await fs.promises.mkdir(dirPath, { recursive: true });
 }
 
-async function cleanDirFiles(dirPath) {
-    await ensureDir(dirPath);
-    const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
+async function loadSyncState() {
+    try {
+        const raw = await fs.promises.readFile(syncStatePath, "utf8");
+        const parsed = JSON.parse(raw);
 
-    await Promise.all(
-        entries
-            .filter((entry) => entry.isFile())
-            .map((entry) => fs.promises.unlink(path.join(dirPath, entry.name))),
-    );
+        if (
+            !parsed ||
+            typeof parsed !== "object" ||
+            !parsed.files ||
+            typeof parsed.files !== "object"
+        ) {
+            return { files: {} };
+        }
+
+        return parsed;
+    } catch (error) {
+        return { files: {} };
+    }
 }
 
-async function streamToBuffer(stream) {
-    return new Promise((resolve, reject) => {
-        const chunks = [];
-        stream.on("data", (chunk) => chunks.push(chunk));
-        stream.on("end", () => resolve(Buffer.concat(chunks)));
-        stream.on("error", reject);
-    });
+async function writeSyncState(folderId, files) {
+    const state = {
+        folderId,
+        syncedAt: new Date().toISOString(),
+        files,
+    };
+
+    await fs.promises.writeFile(
+        syncStatePath,
+        `${JSON.stringify(state, null, 2)}\n`,
+        "utf8",
+    );
 }
 
 async function listDriveImages(drive, folderId) {
@@ -92,7 +95,7 @@ async function listDriveImages(drive, folderId) {
     do {
         const response = await drive.files.list({
             q: `'${folderId}' in parents and trashed = false and mimeType contains 'image/'`,
-            fields: "nextPageToken, files(id, name, mimeType)",
+            fields: "nextPageToken, files(id, name, mimeType, modifiedTime, md5Checksum, size)",
             pageSize: 1000,
             pageToken,
             includeItemsFromAllDrives: true,
@@ -108,59 +111,32 @@ async function listDriveImages(drive, folderId) {
     );
 }
 
-async function downloadFileBuffer(drive, fileId) {
-    const response = await drive.files.get(
-        {
-            fileId,
-            alt: "media",
-            supportsAllDrives: true,
-        },
-        {
-            responseType: "stream",
-        },
-    );
-
-    return streamToBuffer(response.data);
+function buildDriveSignature(file) {
+    return `${file.modifiedTime || ""}|${file.md5Checksum || ""}|${file.size || ""}`;
 }
 
-async function saveOptimizedVariants(inputBuffer, baseName) {
-    const baseImage = sharp(inputBuffer).rotate();
+function buildHttpImageEntry(file) {
+    const id = file.id;
+    const small = `https://drive.google.com/thumbnail?id=${id}&sz=w400`;
+    const medium = `https://drive.google.com/thumbnail?id=${id}&sz=w800`;
+    const large = `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
+    const full = `https://drive.google.com/thumbnail?id=${id}&sz=w2000`;
 
-    await baseImage
-        .clone()
-        .webp({ quality: 82 })
-        .toFile(path.join(galleryDir, `${baseName}.webp`));
-
-    for (const width of sizes) {
-        const resized = baseImage
-            .clone()
-            .resize({ width, withoutEnlargement: true });
-
-        await resized
-            .clone()
-            .webp({ quality: 80 })
-            .toFile(
-                path.join(optimizedGalleryDir, `${baseName}-${width}.webp`),
-            );
-
-        await resized
-            .clone()
-            .avif({ quality: 50 })
-            .toFile(
-                path.join(optimizedGalleryDir, `${baseName}-${width}.avif`),
-            );
-    }
+    return {
+        id,
+        name: file.name,
+        src: medium,
+        modalSrc: full,
+        srcset: `${small} 400w, ${medium} 800w, ${large} 1200w`,
+    };
 }
 
-async function writeManifest(folderId, filesCount) {
+async function writeManifest(folderId, files) {
     const manifest = {
         source: "google-drive",
         folderId,
         generatedAt: new Date().toISOString(),
-        files: Array.from(
-            { length: filesCount },
-            (_, index) => `${index + 1}.webp`,
-        ),
+        files,
     };
 
     await fs.promises.writeFile(
@@ -192,37 +168,86 @@ async function syncGalleryFromDrive(folderInput) {
 
     const drive = google.drive({ version: "v3", auth });
 
-    await cleanDirFiles(galleryDir);
-    await cleanDirFiles(optimizedGalleryDir);
+    await ensureDir(galleryDir);
 
     const driveFiles = await listDriveImages(drive, folderId);
+
     if (!driveFiles.length) {
-        throw new Error(
-            "Nie znaleziono obrazów w podanym folderze Google Drive.",
-        );
+        await writeManifest(folderId, []);
+        await writeSyncState(folderId, {});
+        return {
+            folderId,
+            filesCount: 0,
+            downloadedCount: 0,
+            skippedCount: 0,
+            removedCount: 0,
+        };
     }
 
-    console.log(
-        `Znaleziono ${driveFiles.length} zdjęć. Trwa pobieranie i optymalizacja...`,
+    const previousState = await loadSyncState();
+    const hasPreviousState =
+        previousState.folderId === folderId &&
+        Object.keys(previousState.files || {}).length > 0;
+
+    const previousFiles = hasPreviousState ? previousState.files : {};
+    const currentById = new Map(driveFiles.map((file) => [file.id, file]));
+    const removedIds = Object.keys(previousFiles).filter(
+        (id) => !currentById.has(id),
     );
+
+    let downloadedCount = 0;
+    let skippedCount = 0;
+    let removedCount = 0;
+
+    console.log(`Znaleziono ${driveFiles.length} zdjęć. Trwa synchronizacja przyrostowa...`);
+
+    for (const removedId of removedIds) {
+        const previous = previousFiles[removedId];
+        removedCount += 1;
+        console.log(`[remove] ${previous?.name || removedId} -> usunięto z manifestu`);
+    }
+
+    const nextStateFiles = {};
+    const manifestFiles = [];
 
     for (let index = 0; index < driveFiles.length; index += 1) {
         const file = driveFiles[index];
-        const outputName = String(index + 1);
+        const previous = previousFiles[file.id];
+        const signature = buildDriveSignature(file);
+        const changed = !previous || previous.signature !== signature;
 
-        const fileBuffer = await downloadFileBuffer(drive, file.id);
-        await saveOptimizedVariants(fileBuffer, outputName);
+        if (changed) {
+            downloadedCount += 1;
+            console.log(
+                `[${index + 1}/${driveFiles.length}] ${file.name} -> zaktualizowano wpis HTTP`,
+            );
+        } else {
+            skippedCount += 1;
+            console.log(
+                `[${index + 1}/${driveFiles.length}] ${file.name} -> bez zmian`,
+            );
+        }
 
-        console.log(
-            `[${index + 1}/${driveFiles.length}] ${file.name} -> ${outputName}.webp`,
-        );
+        nextStateFiles[file.id] = {
+            id: file.id,
+            name: file.name,
+            signature,
+            modifiedTime: file.modifiedTime || null,
+            md5Checksum: file.md5Checksum || null,
+            size: file.size || null,
+        };
+        manifestFiles.push(buildHttpImageEntry(file));
     }
 
-    await writeManifest(folderId, driveFiles.length);
+    await writeManifest(folderId, manifestFiles);
+    await writeSyncState(folderId, nextStateFiles);
 
     return {
         folderId,
         filesCount: driveFiles.length,
+        downloadedCount,
+        skippedCount,
+        removedCount,
     };
 }
 
@@ -236,7 +261,7 @@ if (require.main === module) {
         try {
             const result = await syncGalleryFromDrive(process.argv[2]);
             console.log(
-                `Gotowe: galeria została zsynchronizowana i zoptymalizowana (${result.filesCount} zdjęć).`,
+                `Gotowe: galeria została zsynchronizowana (${result.filesCount} zdjęć, pobrano/zaktualizowano ${result.downloadedCount}, bez zmian ${result.skippedCount}, usunięto ${result.removedCount}).`,
             );
         } catch (error) {
             console.error("Błąd synchronizacji galerii:", error.message);
