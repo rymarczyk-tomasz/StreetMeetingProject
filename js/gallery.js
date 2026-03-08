@@ -247,16 +247,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let touchStartX = 0;
     let touchEndX = 0;
+    let touchMoved = false;
 
     function handleTouchStart(e) {
         touchStartX = e.changedTouches[0].screenX;
+        touchEndX = touchStartX;
+        touchMoved = false;
     }
 
     function handleTouchMove(e) {
         touchEndX = e.changedTouches[0].screenX;
+        touchMoved = true;
     }
 
     function handleTouchEnd() {
+        if (!touchMoved) return;
+
         const swipeThreshold = 50;
         if (touchStartX - touchEndX > swipeThreshold) {
             showNextImage();
