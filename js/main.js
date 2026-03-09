@@ -37,6 +37,12 @@ document.addEventListener("DOMContentLoaded", () => {
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
 
+            form.classList.add("was-validated");
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
             const submitBtn = form.querySelector('button[type="submit"]');
             if (submitBtn) {
                 submitBtn.disabled = true;

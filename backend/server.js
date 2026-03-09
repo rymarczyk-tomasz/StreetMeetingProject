@@ -84,8 +84,73 @@ const GALLERY_SYNC_DAILY_MINUTE = Number.isFinite(parsedDailyMinute)
     : 0;
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+const PHONE_REGEX = /^\+?[0-9]{9,15}$/;
+const UPLOAD_RATE_WINDOW_MS = 60 * 1000;
+const UPLOAD_RATE_MAX_REQUESTS = 5;
+const uploadRateTracker = new Map();
 
 let gallerySyncInProgress = false;
+
+function normalizeText(value) {
+    return String(value || "").trim();
+}
+
+function normalizePhone(value) {
+    return normalizeText(value).replace(/\s+/g, "");
+}
+
+function getClientIp(req) {
+    const forwardedFor = req.headers["x-forwarded-for"];
+    if (typeof forwardedFor === "string" && forwardedFor.length) {
+        return forwardedFor.split(",")[0].trim();
+    }
+
+    return req.ip || req.socket?.remoteAddress || "unknown";
+}
+
+function uploadRateLimit(req, res, next) {
+    const clientIp = getClientIp(req);
+    const now = Date.now();
+    const existingEntry = uploadRateTracker.get(clientIp) || [];
+    const recentAttempts = existingEntry.filter(
+        (timestamp) => now - timestamp < UPLOAD_RATE_WINDOW_MS,
+    );
+
+    recentAttempts.push(now);
+    uploadRateTracker.set(clientIp, recentAttempts);
+
+    if (recentAttempts.length > UPLOAD_RATE_MAX_REQUESTS) {
+        const oldestAttempt = recentAttempts[0];
+        const secondsUntilReset = Math.max(
+            1,
+            Math.ceil((UPLOAD_RATE_WINDOW_MS - (now - oldestAttempt)) / 1000),
+        );
+
+        res.set("Retry-After", String(secondsUntilReset));
+        return res.status(429).json({
+            message: "Za dużo prób wysyłki. Spróbuj ponownie za chwilę.",
+        });
+    }
+
+    next();
+}
+
+setInterval(() => {
+    const now = Date.now();
+
+    for (const [key, attempts] of uploadRateTracker.entries()) {
+        const recentAttempts = attempts.filter(
+            (timestamp) => now - timestamp < UPLOAD_RATE_WINDOW_MS,
+        );
+
+        if (recentAttempts.length) {
+            uploadRateTracker.set(key, recentAttempts);
+        } else {
+            uploadRateTracker.delete(key);
+        }
+    }
+}, UPLOAD_RATE_WINDOW_MS).unref();
 
 async function runGallerySync(reason) {
     if (!GALLERY_DRIVE_FOLDER_INPUT) {
@@ -204,89 +269,133 @@ async function appendToSheet(data) {
     });
 }
 
-app.post("/upload", upload.array("photos", 5), async (req, res) => {
-    let savedFiles = [];
+app.post(
+    "/upload",
+    uploadRateLimit,
+    upload.array("photos", 5),
+    async (req, res) => {
+        let savedFiles = [];
 
-    try {
-        const {
-            firstName,
-            lastName,
-            email,
-            phone,
-            licensePlate,
-            carBrand,
-            carDescription,
-        } = req.body;
+        try {
+            const {
+                firstName,
+                lastName,
+                email,
+                phone,
+                licensePlate,
+                carBrand,
+                carDescription,
+            } = req.body;
 
-        if (
-            !firstName ||
-            !lastName ||
-            !email ||
-            !phone ||
-            !licensePlate ||
-            !carBrand ||
-            !carDescription
-        ) {
-            return res.status(400).json({
-                message: "Wszystkie pola są wymagane.",
-            });
-        }
+            const normalizedFirstName = normalizeText(firstName);
+            const normalizedLastName = normalizeText(lastName);
+            const normalizedEmail = normalizeText(email);
+            const normalizedPhone = normalizePhone(phone);
+            const normalizedLicensePlate = normalizeText(licensePlate);
+            const normalizedCarBrand = normalizeText(carBrand);
+            const normalizedCarDescription = normalizeText(carDescription);
+            const honeypotField = normalizeText(req.body.website);
+            const hasRodoConsent =
+                String(req.body.rodoConsent || "").toLowerCase() === "on";
 
-        if (!req.files || req.files.length === 0) {
-            return res.status(400).json({
-                message: "Proszę dodać przynajmniej jedno zdjęcie.",
-            });
-        }
-
-        const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
-        const totalSize = req.files.reduce((sum, file) => sum + file.size, 0);
-
-        if (totalSize > MAX_TOTAL_SIZE) {
-            return res.status(400).json({
-                message: "Łączny rozmiar plików przekracza 50MB.",
-            });
-        }
-
-        const folder = await createFolderOnDrive(
-            `${firstName} ${lastName}`,
-            GOOGLE_DRIVE_FOLDER_ID,
-        );
-
-        await Promise.all(
-            req.files.map(async (file) => {
-                savedFiles.push(file.path);
-                await uploadFileToDrive(file, folder.id);
-            }),
-        );
-
-        await appendToSheet({
-            firstName,
-            lastName,
-            email,
-            phone,
-            licensePlate,
-            carBrand,
-            carDescription,
-            folderUrl: folder.webViewLink,
-        });
-
-        res.json({
-            message:
-                "Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)",
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            message: "Wystąpił błąd serwera.",
-        });
-    } finally {
-        savedFiles.forEach((filePath) => {
-            if (fs.existsSync(filePath)) {
-                fs.unlink(filePath, () => {});
+            if (honeypotField) {
+                return res.status(400).json({
+                    message: "Nieprawidłowe zgłoszenie.",
+                });
             }
-        });
-    }
-});
+
+            if (!hasRodoConsent) {
+                return res.status(400).json({
+                    message: "Wymagana jest akceptacja zgody RODO.",
+                });
+            }
+
+            if (
+                !normalizedFirstName ||
+                !normalizedLastName ||
+                !normalizedEmail ||
+                !normalizedPhone ||
+                !normalizedLicensePlate ||
+                !normalizedCarBrand ||
+                !normalizedCarDescription
+            ) {
+                return res.status(400).json({
+                    message: "Wszystkie pola są wymagane.",
+                });
+            }
+
+            if (!EMAIL_REGEX.test(normalizedEmail)) {
+                return res.status(400).json({
+                    message: "Proszę podać poprawny adres e-mail.",
+                });
+            }
+
+            if (!PHONE_REGEX.test(normalizedPhone)) {
+                return res.status(400).json({
+                    message:
+                        "Proszę podać poprawny numer telefonu (9-15 cyfr).",
+                });
+            }
+
+            if (!req.files || req.files.length === 0) {
+                return res.status(400).json({
+                    message: "Proszę dodać przynajmniej jedno zdjęcie.",
+                });
+            }
+
+            const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
+            const totalSize = req.files.reduce(
+                (sum, file) => sum + file.size,
+                0,
+            );
+
+            if (totalSize > MAX_TOTAL_SIZE) {
+                return res.status(400).json({
+                    message: "Łączny rozmiar plików przekracza 50MB.",
+                });
+            }
+
+            const folder = await createFolderOnDrive(
+                `${normalizedFirstName} ${normalizedLastName}`,
+                GOOGLE_DRIVE_FOLDER_ID,
+            );
+
+            await Promise.all(
+                req.files.map(async (file) => {
+                    savedFiles.push(file.path);
+                    await uploadFileToDrive(file, folder.id);
+                }),
+            );
+
+            await appendToSheet({
+                firstName: normalizedFirstName,
+                lastName: normalizedLastName,
+                email: normalizedEmail,
+                phone: normalizedPhone,
+                licensePlate: normalizedLicensePlate,
+                carBrand: normalizedCarBrand,
+                carDescription: normalizedCarDescription,
+                folderUrl: folder.webViewLink,
+            });
+
+            res.json({
+                message:
+                    "Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)",
+            });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                message: "Wystąpił błąd serwera.",
+            });
+        } finally {
+            savedFiles.forEach((filePath) => {
+                if (fs.existsSync(filePath)) {
+                    fs.unlink(filePath, () => {});
+                }
+            });
+        }
+    },
+);
 
 app.use((error, req, res, next) => {
     if (error instanceof multer.MulterError) {
