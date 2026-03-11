@@ -1,4 +1,5 @@
 const path = require("path");
+const os = require("os");
 require("dotenv").config({ path: path.join(__dirname, "../config/.env") });
 
 const cors = require("cors");
@@ -15,7 +16,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const uploadDir = "/tmp/uploads";
+const uploadDir = path.join(os.tmpdir(), "uploads");
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
