@@ -282,7 +282,7 @@
         </style>
     </head>
 
-    <body data-bs-spy="scroll" data-bs-target="#navbar">
+    <body>
         <noscript type="text/plain" data-cookieconsent="statistics">
             <iframe
                 src="https://www.googletagmanager.com/ns.html?id=GTM-WHCQDGMC"
@@ -649,6 +649,19 @@
                         enctype="multipart/form-data"
                         novalidate
                     >
+                        <div
+                            class="position-absolute top-0 start-0 translate-middle visually-hidden"
+                            aria-hidden="true"
+                        >
+                            <label for="website">Strona internetowa</label>
+                            <input
+                                type="text"
+                                id="website"
+                                name="website"
+                                tabindex="-1"
+                                autocomplete="off"
+                            />
+                        </div>
                         <div class="mb-3">
                             <label for="firstName" class="form-label"
                                 >Imię:</label
@@ -658,6 +671,7 @@
                                 id="firstName"
                                 name="firstName"
                                 class="form-control"
+                                autocomplete="given-name"
                                 required
                                 minlength="2"
                             />
@@ -674,6 +688,7 @@
                                 id="lastName"
                                 name="lastName"
                                 class="form-control"
+                                autocomplete="family-name"
                                 required
                                 minlength="2"
                             />
@@ -690,6 +705,7 @@
                                 id="email"
                                 name="email"
                                 class="form-control"
+                                autocomplete="email"
                                 required
                             />
                             <div class="invalid-feedback">
@@ -706,8 +722,10 @@
                                 name="phone"
                                 class="form-control"
                                 required
-                                pattern="[0-9]{9,15}"
-                                placeholder="np. 123456789"
+                                autocomplete="tel"
+                                inputmode="tel"
+                                pattern="\+?[0-9 ]{9,20}"
+                                placeholder="np. +48 123 456 789"
                             />
                             <div class="invalid-feedback">
                                 Proszę podać poprawny numer telefonu (9-15
@@ -723,6 +741,7 @@
                                 id="licensePlate"
                                 name="licensePlate"
                                 class="form-control"
+                                autocomplete="off"
                                 required
                                 placeholder="np. GD 12345"
                             />
@@ -739,6 +758,7 @@
                                 id="carBrand"
                                 name="carBrand"
                                 class="form-control"
+                                autocomplete="organization"
                                 required
                                 minlength="2"
                             />
@@ -755,6 +775,7 @@
                                 name="carDescription"
                                 class="form-control"
                                 rows="3"
+                                autocomplete="off"
                                 required
                                 minlength="10"
                             ></textarea>
@@ -780,7 +801,29 @@
                                 Proszę dodać zdjęcia pojazdu.
                             </div>
                         </div>
-                        <div id="responseMessage" class="mt-3"></div>
+                        <div
+                            id="responseMessage"
+                            class="mt-3"
+                            role="status"
+                            aria-live="polite"
+                            aria-atomic="true"
+                        ></div>
+                        <div class="form-check text-start mt-3">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                id="rodoConsent"
+                                name="rodoConsent"
+                                required
+                            />
+                            <label class="form-check-label" for="rodoConsent">
+                                Akceptuję przetwarzanie danych osobowych zgodnie
+                                z polityką prywatności (RODO).
+                            </label>
+                            <div class="invalid-feedback">
+                                Aby wysłać formularz, zaakceptuj zgodę RODO.
+                            </div>
+                        </div>
                         <button type="submit" class="btn btn-primary mt-3">
                             Wyślij formularz
                         </button>

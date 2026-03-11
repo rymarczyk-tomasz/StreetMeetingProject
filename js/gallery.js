@@ -1,225 +1,281 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const gallery = document.getElementById("gallery-folder");
-  const modal = document.getElementById("imageModal");
-  const modalImg = document.getElementById("modalImage");
-  const closeBtn = document.querySelector(".close");
-  const prevBtn = document.getElementById("prevImage");
-  const nextBtn = document.getElementById("nextImage");
+    const gallery = document.getElementById("gallery-folder");
+    const modal = document.getElementById("imageModal");
+    const modalImg = document.getElementById("modalImage");
+    const closeBtn = document.querySelector(".close");
+    const prevBtn = document.getElementById("prevImage");
+    const nextBtn = document.getElementById("nextImage");
 
-  if (!gallery || !modal || !modalImg) {
-    console.error("Brak wymaganych elementów galerii");
-    return;
-  }
+    if (!gallery || !modal || !modalImg) {
+        console.error("Brak wymaganych elementów galerii");
+        return;
+    }
 
-  const photos = [];
-  let currentIndex = 0;
+    const photos = [];
+    let currentIndex = 0;
 
-  function loadGallery() {
-    const imageFolder = "img/gallery";
-    const imageNames = [
-      "1.webp",
-      "2.webp",
-      "3.webp",
-      "4.webp",
-      "5.webp",
-      "6.webp",
-      "7.webp",
-      "8.webp",
-      "9.webp",
-      "10.webp",
-      "11.webp",
-      "12.webp",
-      "13.webp",
-    ];
+    async function getManifestEntries() {
+        const fallback = [
+            "1.webp",
+            "2.webp",
+            "3.webp",
+            "4.webp",
+            "5.webp",
+            "6.webp",
+            "7.webp",
+            "8.webp",
+            "9.webp",
+            "10.webp",
+            "11.webp",
+            "12.webp",
+            "13.webp",
+        ];
 
-    const fragment = document.createDocumentFragment();
+        try {
+            const response = await fetch(
+                `img/gallery/manifest.json?t=${Date.now()}`,
+                {
+                    cache: "no-store",
+                },
+            );
 
-    imageNames.forEach((name, index) => {
-      const photoPath = `${imageFolder}/${name}`;
-      photos.push(photoPath);
+            if (!response.ok) return fallback;
 
-      const base = name.replace(/\.[^.]+$/, "");
-      const picture = document.createElement("picture");
+            const manifest = await response.json();
+            if (!manifest || !Array.isArray(manifest.files)) return fallback;
 
-      const sourceAvif = document.createElement("source");
-      sourceAvif.type = "image/avif";
-      sourceAvif.dataset.srcset = `img/optimized/gallery/${base}-400.avif 400w, img/optimized/gallery/${base}-800.avif 800w, img/optimized/gallery/${base}-1200.avif 1200w`;
+            const files = manifest.files.filter(
+                (entry) =>
+                    typeof entry === "string" ||
+                    (entry &&
+                        typeof entry === "object" &&
+                        typeof entry.src === "string"),
+            );
+            return files.length ? files : fallback;
+        } catch (error) {
+            return fallback;
+        }
+    }
 
-      const sourceWebp = document.createElement("source");
-      sourceWebp.type = "image/webp";
-      sourceWebp.dataset.srcset = `img/optimized/gallery/${base}-400.webp 400w, img/optimized/gallery/${base}-800.webp 800w, img/optimized/gallery/${base}-1200.webp 1200w`;
+    async function loadGallery() {
+        const imageFolder = "img/gallery";
+        const entries = await getManifestEntries();
 
-      const img = document.createElement("img");
-      img.dataset.src = photoPath;
-      img.loading = "lazy";
-      img.alt = `Zdjęcie z galerii Street Show ${index + 1}`;
-      img.className = "gallery-thumb";
+        const fragment = document.createDocumentFragment();
 
-      img.addEventListener("click", () => {
-        if (!img.src) img.src = img.dataset.src;
-        openModal(photos.indexOf(photoPath));
-      });
+        entries.forEach((entry, index) => {
+            const isLegacyName = typeof entry === "string";
+            const name = isLegacyName
+                ? entry
+                : entry.name || `zdjecie-${index + 1}`;
 
-      img.addEventListener("error", () => {
-        console.error(`Nie udało się załadować: ${photoPath}`);
-        img.style.display = "none";
-      });
+            const thumbPath = isLegacyName
+                ? `${imageFolder}/${name}`
+                : entry.src;
+            const modalPath = isLegacyName
+                ? thumbPath
+                : entry.modalSrc || entry.src;
 
-      picture.appendChild(sourceAvif);
-      picture.appendChild(sourceWebp);
-      picture.appendChild(img);
-      fragment.appendChild(picture);
+            photos.push(modalPath);
+
+            const picture = document.createElement("picture");
+
+            if (isLegacyName) {
+                const base = name.replace(/\.[^.]+$/, "");
+
+                const sourceAvif = document.createElement("source");
+                sourceAvif.type = "image/avif";
+                sourceAvif.dataset.srcset = `img/optimized/gallery/${base}-400.avif 400w, img/optimized/gallery/${base}-800.avif 800w, img/optimized/gallery/${base}-1200.avif 1200w`;
+
+                const sourceWebp = document.createElement("source");
+                sourceWebp.type = "image/webp";
+                sourceWebp.dataset.srcset = `img/optimized/gallery/${base}-400.webp 400w, img/optimized/gallery/${base}-800.webp 800w, img/optimized/gallery/${base}-1200.webp 1200w`;
+
+                picture.appendChild(sourceAvif);
+                picture.appendChild(sourceWebp);
+            }
+
+            const img = document.createElement("img");
+            img.dataset.src = thumbPath;
+            if (!isLegacyName && typeof entry.srcset === "string") {
+                img.dataset.srcset = entry.srcset;
+                img.sizes = "(max-width: 768px) 100vw, 33vw";
+            }
+            img.loading = "lazy";
+            img.alt = `Zdjęcie z galerii Street Show ${index + 1}`;
+            img.className = "gallery-thumb";
+
+            img.addEventListener("click", () => {
+                if (!img.src) img.src = img.dataset.src;
+                openModal(photos.indexOf(modalPath));
+            });
+
+            img.addEventListener("error", () => {
+                console.error(`Nie udało się załadować: ${thumbPath}`);
+                img.style.display = "none";
+            });
+
+            picture.appendChild(img);
+            fragment.appendChild(picture);
+        });
+
+        const lazyLoad = (img) => {
+            if (img.dataset.src) {
+                img.src = img.dataset.src;
+                img.removeAttribute("data-src");
+            }
+            if (img.dataset.srcset) {
+                img.srcset = img.dataset.srcset;
+                img.removeAttribute("data-srcset");
+            }
+            const picture = img.parentElement;
+            if (picture) {
+                const sources = picture.querySelectorAll("source");
+                sources.forEach((s) => {
+                    if (s.dataset.srcset) {
+                        s.srcset = s.dataset.srcset;
+                        s.removeAttribute("data-srcset");
+                    }
+                });
+            }
+        };
+
+        if ("IntersectionObserver" in window) {
+            const observer = new IntersectionObserver(
+                (entries, obs) => {
+                    entries.forEach((entry) => {
+                        if (entry.isIntersecting) {
+                            lazyLoad(entry.target);
+                            obs.unobserve(entry.target);
+                        }
+                    });
+                },
+                { rootMargin: "200px" },
+            );
+            gallery.appendChild(fragment);
+            gallery
+                .querySelectorAll("img.gallery-thumb")
+                .forEach((img) => observer.observe(img));
+            return;
+        }
+
+        gallery.appendChild(fragment);
+        gallery
+            .querySelectorAll("img.gallery-thumb")
+            .forEach((img) => lazyLoad(img));
+    }
+
+    function openModal(index) {
+        currentIndex = index;
+        modal.style.display = "block";
+        document.body.style.overflow = "hidden";
+        updateModal();
+        preloadImages();
+    }
+
+    function closeModal() {
+        modal.style.display = "none";
+        document.body.style.overflow = "";
+        if (modalImg) modalImg.classList.remove("modal-image");
+    }
+
+    function updateModal() {
+        modalImg.src = photos[currentIndex];
+        modalImg.alt = `Powiększone zdjęcie ${currentIndex + 1} z ${photos.length}`;
+        modalImg.classList.add("modal-image");
+    }
+
+    function showNextImage() {
+        currentIndex = (currentIndex + 1) % photos.length;
+        updateModal();
+        preloadImages();
+    }
+
+    function showPrevImage() {
+        currentIndex = (currentIndex - 1 + photos.length) % photos.length;
+        updateModal();
+        preloadImages();
+    }
+
+    function preloadImages() {
+        const nextIndex = (currentIndex + 1) % photos.length;
+        const prevIndex = (currentIndex - 1 + photos.length) % photos.length;
+
+        const nextImg = new Image();
+        nextImg.src = photos[nextIndex];
+
+        const prevImg = new Image();
+        prevImg.src = photos[prevIndex];
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function (...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener("click", showNextImage);
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener("click", showPrevImage);
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener("click", closeModal);
+    }
+
+    window.addEventListener(
+        "keydown",
+        debounce((e) => {
+            if (modal.style.display === "block") {
+                if (e.key === "ArrowRight") showNextImage();
+                if (e.key === "ArrowLeft") showPrevImage();
+                if (e.key === "Escape") closeModal();
+            }
+        }, 100),
+    );
+
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
     });
 
-    const lazyLoad = (img) => {
-      if (img.dataset.src) {
-        img.src = img.dataset.src;
-        img.removeAttribute("data-src");
-      }
-      const picture = img.parentElement;
-      if (picture) {
-        const sources = picture.querySelectorAll("source");
-        sources.forEach((s) => {
-          if (s.dataset.srcset) {
-            s.srcset = s.dataset.srcset;
-            s.removeAttribute("data-srcset");
-          }
-        });
-      }
-    };
+    let touchStartX = 0;
+    let touchEndX = 0;
+    let touchMoved = false;
 
-    if ("IntersectionObserver" in window) {
-      const observer = new IntersectionObserver(
-        (entries, obs) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              lazyLoad(entry.target);
-              obs.unobserve(entry.target);
-            }
-          });
-        },
-        { rootMargin: "200px" },
-      );
-      gallery.appendChild(fragment);
-      gallery
-        .querySelectorAll("img.gallery-thumb")
-        .forEach((img) => observer.observe(img));
-      return;
+    function handleTouchStart(e) {
+        touchStartX = e.changedTouches[0].screenX;
+        touchEndX = touchStartX;
+        touchMoved = false;
     }
 
-    gallery.appendChild(fragment);
-    gallery
-      .querySelectorAll("img.gallery-thumb")
-      .forEach((img) => lazyLoad(img));
-  }
-
-  function openModal(index) {
-    currentIndex = index;
-    modal.style.display = "block";
-    document.body.style.overflow = "hidden";
-    updateModal();
-    preloadImages();
-  }
-
-  function closeModal() {
-    modal.style.display = "none";
-    document.body.style.overflow = "";
-    if (modalImg) modalImg.classList.remove("modal-image");
-  }
-
-  function updateModal() {
-    modalImg.src = photos[currentIndex];
-    modalImg.alt = `Powiększone zdjęcie ${currentIndex + 1} z ${photos.length}`;
-    modalImg.classList.add("modal-image");
-  }
-
-  function showNextImage() {
-    currentIndex = (currentIndex + 1) % photos.length;
-    updateModal();
-    preloadImages();
-  }
-
-  function showPrevImage() {
-    currentIndex = (currentIndex - 1 + photos.length) % photos.length;
-    updateModal();
-    preloadImages();
-  }
-
-  function preloadImages() {
-    const nextIndex = (currentIndex + 1) % photos.length;
-    const prevIndex = (currentIndex - 1 + photos.length) % photos.length;
-
-    const nextImg = new Image();
-    nextImg.src = photos[nextIndex];
-
-    const prevImg = new Image();
-    prevImg.src = photos[prevIndex];
-  }
-
-  function debounce(func, wait) {
-    let timeout;
-    return function (...args) {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-  }
-
-  if (nextBtn) {
-    nextBtn.addEventListener("click", showNextImage);
-  }
-
-  if (prevBtn) {
-    prevBtn.addEventListener("click", showPrevImage);
-  }
-
-  if (closeBtn) {
-    closeBtn.addEventListener("click", closeModal);
-  }
-
-  window.addEventListener(
-    "keydown",
-    debounce((e) => {
-      if (modal.style.display === "block") {
-        if (e.key === "ArrowRight") showNextImage();
-        if (e.key === "ArrowLeft") showPrevImage();
-        if (e.key === "Escape") closeModal();
-      }
-    }, 100),
-  );
-
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) {
-      closeModal();
+    function handleTouchMove(e) {
+        touchEndX = e.changedTouches[0].screenX;
+        touchMoved = true;
     }
-  });
 
-  let touchStartX = 0;
-  let touchEndX = 0;
+    function handleTouchEnd() {
+        if (!touchMoved) return;
 
-  function handleTouchStart(e) {
-    touchStartX = e.changedTouches[0].screenX;
-  }
-
-  function handleTouchMove(e) {
-    touchEndX = e.changedTouches[0].screenX;
-  }
-
-  function handleTouchEnd() {
-    const swipeThreshold = 50;
-    if (touchStartX - touchEndX > swipeThreshold) {
-      showNextImage();
-    } else if (touchEndX - touchStartX > swipeThreshold) {
-      showPrevImage();
+        const swipeThreshold = 50;
+        if (touchStartX - touchEndX > swipeThreshold) {
+            showNextImage();
+        } else if (touchEndX - touchStartX > swipeThreshold) {
+            showPrevImage();
+        }
     }
-  }
 
-  modal.addEventListener("touchstart", handleTouchStart, { passive: true });
-  modal.addEventListener("touchmove", handleTouchMove, { passive: true });
-  modal.addEventListener("touchend", handleTouchEnd, { passive: true });
+    modal.addEventListener("touchstart", handleTouchStart, { passive: true });
+    modal.addEventListener("touchmove", handleTouchMove, { passive: true });
+    modal.addEventListener("touchend", handleTouchEnd, { passive: true });
 
-  try {
-    loadGallery();
-  } catch (error) {
-    console.error("Błąd podczas ładowania galerii:", error);
-  }
+    loadGallery().catch((error) => {
+        console.error("Błąd podczas ładowania galerii:", error);
+    });
 });
