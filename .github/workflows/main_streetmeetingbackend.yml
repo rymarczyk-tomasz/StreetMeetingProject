@@ -4,61 +4,72 @@
 name: Build and deploy Node.js app to Azure Web App - streetmeetingbackend
 
 on:
-    push:
-        branches:
-            - main
-        paths:
-            - backend/**
-            - .github/workflows/main_streetmeetingbackend.yml
-    workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - backend/**
+      - .github/workflows/main_streetmeetingbackend.yml
+  workflow_dispatch:
 
 jobs:
-    build:
-        runs-on: windows-latest
-        permissions:
-            contents: read # This is required for actions/checkout
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: read # This is required for actions/checkout
 
-        steps:
-            - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-            - name: Set up Node.js version
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "16.x"
-                  cache: "npm"
-                  cache-dependency-path: backend/package-lock.json
+      - name: Set up Node.js version
+        uses: actions/setup-node@v4
+        with:
+          node-version: "16.x"
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
 
-            - name: npm install, build, and test
-              working-directory: ./backend
-              run: |
-                  npm ci
-                  npm run build --if-present
-                  npm run test --if-present
+      - name: npm install, build, and test
+        working-directory: ./backend
+        run: |
+          npm ci
+          npm run build --if-present
+          npm run test --if-present
 
-    deploy:
-        runs-on: ubuntu-latest
-        needs: build
-        environment:
-            name: "Production"
-            url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-        permissions:
-            id-token: write # This is required for requesting the JWT
-            contents: read # This is required for actions/checkout
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: "Production"
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    permissions:
+      id-token: write # This is required for requesting the JWT
+      contents: read # This is required for actions/checkout
 
-        steps:
-            - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-            - name: Login to Azure
-              uses: azure/login@v2
-              with:
-                  client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_B35359B263D84481BBA59FF9DE2F8175 }}
-                  tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_2D1F3443158F43A8B6B9C06F59BDED0A }}
-                  subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_4730E5B2DEAC4C20ACF8C4D8F8C0AD39 }}
+      - name: Set up Node.js version (deploy)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "16.x"
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
 
-            - name: Deploy to Azure Web App
-              id: deploy-to-webapp
-              uses: azure/webapps-deploy@v3
-              with:
-                  app-name: "streetmeetingbackend"
-                  slot-name: "Production"
-                  package: ./backend
+      - name: Install production dependencies
+        working-directory: ./backend
+        run: npm ci --omit=dev
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_B35359B263D84481BBA59FF9DE2F8175 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_2D1F3443158F43A8B6B9C06F59BDED0A }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_4730E5B2DEAC4C20ACF8C4D8F8C0AD39 }}
+
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: "streetmeetingbackend"
+          slot-name: "Production"
+          package: ./backend
