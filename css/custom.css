@@ -176,7 +176,7 @@ input.form-control {
 .modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: 2000;
     padding-top: 0;
     left: 0;
     top: 0;
