@@ -1,7 +1,10 @@
-const fs = require("fs");
-const path = require("path");
-const { google } = require("googleapis");
-const dotenv = require("dotenv");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { google } from "googleapis";
+import dotenv from "dotenv";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 dotenv.config({
     path: path.join(__dirname, "../config/.env"),
@@ -69,7 +72,7 @@ async function loadSyncState() {
         }
 
         return parsed;
-    } catch (error) {
+    } catch {
         return { files: {} };
     }
 }
@@ -255,12 +258,11 @@ async function syncGalleryFromDrive(folderInput) {
     };
 }
 
-module.exports = {
-    syncGalleryFromDrive,
-    parseFolderId,
-};
+export { syncGalleryFromDrive, parseFolderId };
 
-if (require.main === module) {
+const isMain = process.argv[1] === fileURLToPath(import.meta.url);
+
+if (isMain) {
     (async () => {
         try {
             const result = await syncGalleryFromDrive(process.argv[2]);
