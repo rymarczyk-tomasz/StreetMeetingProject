@@ -166,17 +166,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    const applyNavbarOffset = () => {
-        if (!navbar || !navbar.classList.contains("fixed-top")) return;
+const applyNavbarOffset = () => {
+    if (!navbar || !navbar.classList.contains("fixed-top")) return;
 
-        const isHomePage = Boolean(document.querySelector(".home"));
-        if (isHomePage) {
-            document.body.style.paddingTop = "";
-            return;
-        }
+    const navbarHeight = navbar.offsetHeight;
+    const isHomePage = Boolean(document.querySelector(".home"));
 
-        document.body.style.paddingTop = `${navbar.offsetHeight}px`;
-    };
+    if (isHomePage) {
+        const home = document.querySelector(".home");
+        home.style.marginTop = `${navbarHeight}px`;
+        home.style.height = `calc(100vh - ${navbarHeight}px)`;
+        document.body.style.paddingTop = "";
+    } else {
+        document.body.style.paddingTop = `${navbarHeight}px`;
+    }
+};
 
     const initHomepageNavHighlight = () => {
         const isHomePage = Boolean(document.querySelector(".home"));
