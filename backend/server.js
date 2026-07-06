@@ -91,6 +91,29 @@ const UPLOAD_RATE_WINDOW_MS = 60 * 1000;
 const UPLOAD_RATE_MAX_REQUESTS = 5;
 const uploadRateTracker = new Map();
 
+function getMissingUploadConfiguration() {
+    const missing = [];
+
+    if (!SPREADSHEET_ID) missing.push("SPREADSHEET_ID");
+    if (!GOOGLE_DRIVE_FOLDER_ID) missing.push("DRIVE_FOLDER_ID");
+
+    return missing;
+}
+
+function getGoogleApiErrorDetails(error) {
+    const responseData = error?.response?.data;
+    const apiMessage =
+        responseData?.error?.message ||
+        responseData?.message ||
+        error?.message ||
+        "Nieznany błąd integracji Google.";
+
+    return {
+        status: error?.response?.status,
+        message: apiMessage,
+    };
+}
+
 let gallerySyncInProgress = false;
 
 function normalizeText(value) {
@@ -278,6 +301,15 @@ app.post(
         let savedFiles = [];
 
         try {
+            const missingConfig = getMissingUploadConfiguration();
+            if (missingConfig.length) {
+                return res.status(503).json({
+                    message:
+                        "Brakuje konfiguracji backendu w Azure App Service.",
+                    details: `Ustaw zmienne środowiskowe: ${missingConfig.join(", ")}.`,
+                });
+            }
+
             const {
                 firstName,
                 lastName,
@@ -384,9 +416,35 @@ app.post(
                     "Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)",
             });
         } catch (error) {
-            console.error(error);
+            const googleError = getGoogleApiErrorDetails(error);
+            console.error("[upload] Błąd wysyłki formularza:", {
+                message: error.message,
+                status: googleError.status,
+                googleMessage: googleError.message,
+                stack: error.stack,
+            });
+
+            if (googleError.status === 401 || googleError.status === 403) {
+                return res.status(502).json({
+                    message:
+                        "Backend nie ma dostępu do Google Drive lub Google Sheets.",
+                    details:
+                        "Sprawdź, czy folder i arkusz są udostępnione kontu serwisowemu oraz czy sekrety Google w Azure są poprawne.",
+                });
+            }
+
+            if (googleError.status === 404) {
+                return res.status(502).json({
+                    message:
+                        "Nie znaleziono folderu Google Drive albo arkusza Google Sheets.",
+                    details:
+                        "Sprawdź SPREADSHEET_ID i DRIVE_FOLDER_ID w ustawieniach produkcyjnych.",
+                });
+            }
+
             res.status(500).json({
-                message: "Wystąpił błąd serwera.",
+                message: "Wystąpił błąd serwera podczas wysyłki formularza.",
+                details: googleError.message,
             });
         } finally {
             savedFiles.forEach((filePath) => {
