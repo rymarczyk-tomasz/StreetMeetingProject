@@ -5,16 +5,39 @@ require("dotenv").config({ path: path.join(__dirname, "../config/.env") });
 const cors = require("cors");
 const express = require("express");
 const multer = require("multer");
+const cookieParser = require("cookie-parser");
 const fs = require("fs");
 const { google } = require("googleapis");
 const { syncGalleryFromDrive } = require("./scripts/sync-gallery-from-drive");
+const authRoutes = require("./src/auth/routes");
+const adminRoutes = require("./src/admin/routes");
+const { router: submissionsRoutes } = require("./src/submissions/routes");
 
 const app = express();
 const PORT = process.env.PORT || 33000;
 
-app.use(cors());
+const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:5173")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+app.use(
+    cors({
+        origin: allowedOrigins,
+        credentials: true,
+    }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+app.use(
+    "/uploads/submissions",
+    express.static(path.join(__dirname, "uploads/submissions")),
+);
+app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/submissions", submissionsRoutes);
 
 const uploadDir = path.join(os.tmpdir(), "uploads");
 if (!fs.existsSync(uploadDir)) {

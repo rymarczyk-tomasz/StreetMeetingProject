@@ -41,6 +41,12 @@ typings/
 # Credentials file
 credentials.json
 
+# SQLite auth database (runtime data, per-environment)
+backend/data/
+
+# User-submitted photos (runtime data, per-environment)
+backend/uploads/submissions/
+
 # Generated gallery assets (runtime only)
 img/gallery/*.webp
 img/gallery/*.avif

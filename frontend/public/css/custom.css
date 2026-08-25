@@ -1,0 +1,396 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 62.5%;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-size: 1.6rem;
+    font-family: "Chakra Petch", sans-serif;
+}
+
+[id] {
+    scroll-margin-top: 71.5px;
+}
+
+@media (min-width: 992px) {
+    [id] {
+        scroll-margin-top: 67px;
+    }
+}
+
+.hero-shadow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    z-index: -1;
+}
+
+.logo {
+    width: 80px;
+}
+
+.nav-link,
+.navbar-toggler-icon {
+    font-size: 1.8rem;
+    text-transform: uppercase;
+}
+
+.navbar-toggler {
+    padding: 0.5em 1em;
+}
+
+.home {
+    position: relative;
+    height: 100vh;
+    background-image: url("../img/photos/Hero-image.webp");
+    background-size: cover;
+    background-position: top center; 
+    background-attachment: fixed;
+    z-index: 0;
+}
+
+.home .btn {
+    padding: 1em 2em;
+    font-size: 1.4rem;
+    text-transform: uppercase;
+}
+
+.accordion-button {
+    padding: 1em;
+    font-size: 1.8rem;
+}
+
+.event {
+    background-color: rgb(248, 248, 248);
+}
+
+.event .card-img-top {
+    height: 250px;
+    object-fit: cover;
+}
+
+.event .card-title {
+    font-size: 2rem;
+    padding: 1em;
+    font-weight: bold;
+}
+
+.contact h3 {
+    font-size: 2rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.contact .submit-btn {
+    font-size: 1.6rem;
+}
+
+textarea.form-control,
+input.form-control {
+    font-size: 1.4rem;
+}
+
+.contact-info {
+    padding-top: 1em;
+}
+
+.event-boxes a {
+    text-transform: uppercase;
+    color: black;
+}
+
+.links {
+    font-size: 1.6rem;
+    text-decoration: none;
+    color: white;
+    padding-top: 1em;
+}
+
+.event-links,
+.event-link {
+    font-size: 1.6rem;
+    text-decoration: none;
+    color: black;
+    padding-top: 1em;
+}
+
+.social-media {
+    color: white;
+    font-size: 2.5rem;
+    padding: 10px;
+}
+
+.contact-info a:hover,
+.card-title a:hover,
+.event-link:hover {
+    color: rgb(16, 104, 237);
+}
+
+.gallery-btn {
+    display: inline-block;
+    padding: 15px 25px;
+    margin-top: 50px;
+    font-size: 18px;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.gallery-btn:hover {
+    background-color: #0056b3;
+}
+
+.gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    justify-items: center;
+    margin-top: 0;
+    padding: 20px;
+    background-color: #f4f4f4;
+}
+
+.gallery img {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 10px;
+    cursor: pointer;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    padding-top: 0;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.8);
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.modal[style*="display: block"] {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+}
+
+#imageModal #modalImage {
+    display: block;
+    margin: 0 auto;
+    max-width: min(92vw, 1400px);
+    max-height: 90vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+
+.close {
+    position: absolute;
+    top: 20px;
+    right: 35px;
+    color: white;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+    color: #ccc;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#caption {
+    text-align: center;
+    color: white;
+    padding: 10px;
+    font-size: 18px;
+}
+
+.navigation {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    transform: translateY(-50%);
+}
+
+.prev,
+.next {
+    color: white;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+    padding: 0 20px;
+}
+
+.prev:hover,
+.next:hover {
+    color: #ccc;
+}
+
+.arrow {
+    animation: blink 1s infinite;
+}
+
+.form {
+    background-color: #f8f9fa;
+    padding: 40px 0;
+}
+
+.form form {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.form h2 {
+    text-align: center;
+    color: #333;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+
+.form .form-label,
+.form .form-control {
+    text-align: left;
+}
+
+.form .mb-3 {
+    text-align: left;
+}
+
+.form h2 {
+    color: #333;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+
+.form .form-label {
+    font-size: 1.6rem;
+    font-weight: 500;
+}
+
+.form .form-control {
+    font-size: 1.4rem;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+
+.form .btn {
+    font-size: 1.6rem;
+    padding: 10px 20px;
+}
+
+.privacy-policy {
+    margin-top: 20px;
+}
+
+.newsletter {
+    margin: 0 auto;
+    max-width: 600px;
+}
+
+@media (max-width: 768px) {
+    .home {
+        background-image: none;
+        background-attachment: scroll;
+        min-height: 100vh;
+        overflow: hidden;
+    }
+
+    .home::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 100vh;
+        height: 100vw;
+        background-image: url("../img/photos/Hero-image.webp");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        transform: translate(-50%, -50%) rotate(90deg);
+        transform-origin: center;
+        z-index: -1;
+    }
+
+    .hero-shadow {
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+    .event .card-img-top {
+        height: 100%;
+    }
+}
+
+@keyframes blink {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+}
+
+.msg-info {
+    color: #0d6efd;
+}
+.msg-success {
+    color: #198754;
+}
+.msg-error {
+    color: #dc3545;
+}
+
+.gallery-thumb {
+    max-width: 300px;
+    margin: 10px;
+    cursor: pointer;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.modal-image {
+    display: block;
+}
+
+button[aria-busy="true"] {
+    opacity: 0.65;
+    pointer-events: none;
+}

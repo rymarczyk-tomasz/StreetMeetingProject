@@ -1,0 +1,17 @@
+/* Real styling comes from Bootstrap + /css/custom.css (loaded in frontend/index.html). */
+
+/* Sticky footer: keeps the footer at the bottom on short pages (login, register, etc.). */
+html,
+body {
+    height: 100%;
+}
+
+#root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#root > .app-page-content {
+    flex: 1;
+}
