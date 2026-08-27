@@ -196,36 +196,253 @@
         <link rel="stylesheet" href="css/custom.css" />
         <link rel="canonical" href="https://www.streetshow.pl/regulamin.html" />
         <style>
-            body {
-                font-family: Arial, sans-serif;
-                line-height: 1.6;
-                margin: 20px;
+            :root {
+                --reg-page: rgb(248, 248, 248);
+                --reg-text: #111111;
+                --reg-muted: #333333;
+                --reg-line: rgba(0, 0, 0, 0.08);
             }
+
+            body {
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 16px;
+                line-height: 1.55;
+                background: var(--reg-page);
+                color: var(--reg-text);
+                margin: 0;
+            }
+
+            .regulations-page {
+                padding-bottom: 40px;
+            }
+
+            .regulations-shell {
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                padding: 2.2rem 2.6rem 1.5rem;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+
             h1,
             h2,
-            h3 {
-                color: #333;
+            h3,
+            h4 {
+                color: var(--reg-text);
+                font-weight: 700;
+                margin: 0;
             }
+
             h1,
             h2 {
                 text-align: center;
-                margin-bottom: 40px;
-                font-weight: bold;
             }
+
+            h1 {
+                font-size: clamp(24px, 1.9vw + 14px, 28px);
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+                margin-bottom: 0.25rem;
+            }
+
+            h2 {
+                font-size: clamp(18px, 1.2vw + 12px, 20px);
+                line-height: 1.4;
+                margin-bottom: 2.3rem;
+                letter-spacing: 0.03em;
+                text-transform: uppercase;
+                color: var(--reg-text);
+            }
+
             section {
-                margin-bottom: 30px;
+                margin-bottom: 1.4rem;
+                padding: 0;
+                border: none;
+                border-radius: 0;
+                background: transparent;
             }
-            ul {
-                padding-left: 40px;
+
+            section h3 {
+                font-size: clamp(16px, 0.8vw + 13px, 18px);
+                text-transform: uppercase;
+                letter-spacing: 0.02em;
+                margin: 1.1rem 0 0.75rem;
+                color: #111111;
             }
+
+            section h4 {
+                font-size: clamp(15px, 0.6vw + 12px, 16px);
+                text-transform: uppercase;
+                letter-spacing: 0.01em;
+                margin: 1rem 0 0.7rem;
+                color: #111111;
+            }
+
+            section > ol,
+            section > ul {
+                padding-left: 0;
+                margin: 0 0 0.5rem;
+                list-style: none;
+            }
+
+            section > ol > li,
+            section > ul > li {
+                position: relative;
+                margin-bottom: 0.45rem;
+                color: var(--reg-text);
+                font-size: clamp(15px, 0.3vw + 14px, 16px);
+                padding-left: 2.7rem;
+            }
+
+            section > ol > li::before,
+            section > ul > li::before {
+                content: var(--item-number, "");
+                position: absolute;
+                left: 0;
+                top: 0;
+                font-weight: 700;
+                color: var(--reg-text);
+            }
+
+            ol.nested-numbered {
+                list-style: none;
+                padding-left: 0;
+                margin-top: 0.35rem;
+                counter-reset: nested-regulation;
+            }
+
+            ol.nested-numbered > li {
+                position: relative;
+                padding-left: 4rem;
+                counter-increment: nested-regulation;
+            }
+
+            ol.nested-numbered > li::before {
+                content: var(--reg-prefix, "")
+                    counter(nested-regulation, decimal);
+                position: absolute;
+                left: 0;
+                top: 0;
+                font-weight: 700;
+            }
+
             li {
-                margin-bottom: 10px;
+                margin-bottom: 0.4rem;
+                color: var(--reg-text);
+                font-size: clamp(15px, 0.3vw + 14px, 16px);
             }
+
+            ol > li::marker,
+            ul > li::marker {
+                color: var(--reg-text);
+                font-weight: 700;
+            }
+
             .alphanumeric {
                 list-style-type: lower-alpha;
             }
+
             .underline {
                 text-decoration: underline;
+            }
+
+            .muted-note {
+                color: var(--reg-muted);
+                font-size: 0.8rem;
+                letter-spacing: 0.02em;
+                text-transform: uppercase;
+            }
+
+            .annex {
+                margin-top: 2.8rem;
+                padding-top: 1.2rem;
+                border-top: 1px solid rgba(17, 17, 17, 0.15);
+            }
+
+            .annex-header {
+                text-align: center;
+                margin-bottom: 1.2rem;
+            }
+
+            .annex-kicker {
+                margin: 0.2rem 0 0.7rem;
+                color: var(--reg-muted);
+                font-size: 0.76rem;
+                letter-spacing: 0.03em;
+                text-transform: uppercase;
+            }
+
+            .annex-header h3 {
+                font-size: clamp(1.7rem, 1.5vw + 1.1rem, 2.5rem);
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                margin-bottom: 0.2rem;
+            }
+
+            .annex-subtitle {
+                margin: 0;
+                font-size: clamp(1.15rem, 1vw + 0.8rem, 1.8rem);
+                font-weight: 700;
+                text-transform: uppercase;
+                color: #0d5fae;
+                line-height: 1.3;
+            }
+
+            .annex-context {
+                margin: 0.3rem 0 0;
+                font-size: 1rem;
+                font-style: italic;
+                font-weight: 600;
+                color: var(--reg-text);
+            }
+
+            .annex-intro {
+                margin: 1.2rem 0 1rem;
+                font-size: 0.98rem;
+                line-height: 1.6;
+            }
+
+            .annex h4 {
+                font-size: 1.05rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                color: #0d5fae;
+                margin: 1.5rem 0 0.8rem;
+            }
+
+            .annex-list {
+                padding-left: 2rem;
+                margin: 0 0 0.75rem;
+                list-style: decimal;
+            }
+
+            .annex-list > li {
+                margin-bottom: 0.7rem;
+                padding-left: 0.2rem;
+            }
+
+            .annex-list > li::marker,
+            .annex-sublist > li::marker {
+                font-weight: 700;
+            }
+
+            .annex-list > li strong,
+            .annex-sublist > li strong {
+                font-weight: 700;
+            }
+
+            .annex-sublist {
+                padding-left: 1.5rem;
+                list-style: lower-alpha;
+            }
+
+            @media (max-width: 767.98px) {
+                .regulations-shell {
+                    padding: 1.5rem 1rem 1rem;
+                }
+
+
             }
         </style>
     </head>
@@ -286,833 +503,978 @@
                 </div>
             </div>
         </nav>
-        <div class="container">
-            <h1>Regulamin Wydarzenia „STREET SHOW 2026”</h1>
+        <div class="container regulations-page">
+            <div class="regulations-shell">
+                <h1>REGULAMIN</h1>
+                <h2>
+                    DLA WYSTAWCÓW STREFY SELECT I EXPO WYDARZENIA STREET SHOW
+                    2026
+                </h2>
 
-            <section>
-                <h2 class="text-uppercase">
-                    §1<br />
-                    postanowienia ogólne
-                </h2>
-                <ol>
-                    <li>
-                        Organizatorem wydarzenia pn.: „Street Meeting Poland”,
-                        zwanego dalej „<strong>Imprezą</strong>”, jest Street
-                        Meeting Poland Sp. z o.o. z siedzibą w Elblągu (82-300),
-                        przy ul. Królewiecka 205/15, NIP 5783153201, zwana dalej
-                        „<strong>Organizatorem</strong>”.
-                    </li>
-                    <li>
-                        Impreza odbywa się w dniach
-                        <strong>29 sierpnia 2026 roku</strong> na terenie
-                        stadionu Polsat Plus Arena Gdańsk, przy ul. Pokoleń
-                        Lechii Gdańsk 1, zwanym dalej „<strong
-                            >Terenem Wydarzenia</strong
-                        >”.
-                    </li>
-                    <li>
-                        Impreza ma charakter odpłatny. Dzieci
-                        <strong>do lat 6</strong> wchodzą
-                        <strong> za darmo</strong> za okazaniem dokumentu
-                        potwierdzającego wiek.
-                    </li>
-                    <li>
-                        Zakup biletu lub wejście na teren Wydarzenia jest
-                        równoznaczne z akceptacją Regulaminu przez każdą osobę
-                        korzystającą z biletu. Osoba dokonująca zakupu biletu
-                        zobowiązana jest do poinformowania osób, którym
-                        przekazuje bilet, o konieczności przestrzegania
-                        Regulaminu. Każda osoba korzystająca z biletu wchodzi na
-                        teren Wydarzenia na własną odpowiedzialność i
-                        zobowiązuje się do przestrzegania zasad Regulaminu.
-                    </li>
-                    <li>
-                        Osoby przebywające na terenie Imprezy w dalszej części
-                        Regulaminu zwane są „<strong>Uczestnikami</strong>”.
-                    </li>
-                    <li>
-                        Regulamin skierowany jest do każdej osoby przebywającej
-                        na terenie Imprezy w trakcie jej trwania. Osoby
-                        przebywające na terenie Imprezy w trakcie jej trwania
-                        obowiązane są do bezwzględnego przestrzegania
-                        postanowień w nim zawartych. Każdy Uczestnik jest
-                        zobowiązany zachowywać się w sposób niezagrażający
-                        bezpieczeństwu innych Uczestników, a w szczególności
-                        przestrzegać postanowień Regulaminu Wydarzenia,
-                        Regulaminu obiektu oraz przepisów prawa, jak również
-                        stosować się do poleceń Służb Porządkowych i Służb
-                        Organizatora.
-                    </li>
-                    <li>
-                        Celem Regulaminu jest zapewnienie bezpieczeństwa
-                        Wydarzenia poprzez określenie zasad zachowania się
-                        Uczestników Imprezy, uregulowanie ich praw i obowiązków
-                        oraz zasad organizacyjnych.
-                    </li>
-                    <li>
-                        Poprzez „<strong>Bilet</strong>” należy rozumieć zgodę
-                        Organizatora na uczestnictwo w Wydarzeniu. Bilet
-                        upoważnia do wstępu na teren Wydarzenia.
-                    </li>
-                    <li>
-                        Poprzez dowód tożsamości należy rozumieć dowód osobisty,
-                        paszport, prawo jazdy, legitymację studencką, dokument
-                        stwierdzający tożsamość cudzoziemca albo inny dokument
-                        potwierdzający tożsamość zaopatrzony w wizerunek twarzy
-                        i adres zamieszkania osoby nim się posługującej.
-                    </li>
-                    <li>
-                        Poprzez „<strong>Służby Porządkowe</strong>” i „<strong
-                            >Służby Organizatora</strong
-                        >” należy rozumieć osoby, legitymujące się
-                        identyfikatorem lub jednolitym strojem ochrony (Służby
-                        Porządkowe), powołane przez Organizatora do dbania o ład
-                        organizacyjny oraz bezpieczeństwo Uczestników
-                        przebywających na terenie Wydarzenia.
-                    </li>
-                </ol>
-            </section>
+                <section>
+                    <h3>1. POSTANOWIENIA OGÓLNE</h3>
+                    <ol>
+                        <li>
+                            Przepisy niniejszego Regulaminu obowiązują wystawców
+                            Strefy Select oraz Strefy Expo, organizowanych przez
+                            Street Meeting Poland spółka z ograniczoną
+                            odpowiedzialnością z siedzibą w Elblągu, ul.
+                            Królewiecka 205/15, 82-3010 Elbląg, wpisane do
+                            rejestru przedsiębiorców pod numerem KRS 0000961733,
+                            NIP 5783153201, REGON 521533960, zwane dalej „SM”.
+                        </li>
+                        <li>
+                            Wystawcy wydarzenia organizowanego przez SM są
+                            zobowiązani także do przestrzegania poniższych
+                            regulaminów, które stanowią integralną część:
+                            <ol type="a">
+                                <li>
+                                    „Regulaminu dla uczestników Street Meeting
+                                    Poland”
+                                </li>
+                                <li>
+                                    „Przepisów technicznych i
+                                    przeciwpożarowych”.
+                                </li>
+                            </ol>
+                        </li>
+                        <li>
+                            W wydarzeniu mogą uczestniczyć wyłącznie podmioty
+                            zaakceptowane wcześniej przez organizatora.
+                            Każdorazowo SM wystawia zgodę na uczestnictwo danego
+                            podmiotu w wydarzeniu.
+                        </li>
+                        <li>
+                            Przystąpienie do udziału w wydarzeniu jako wystawca,
+                            w tym pojawienie się na jego terenie z przygotowanym
+                            stoiskiem lub ekspozycją, jest równoznaczne z
+                            akceptacją niniejszego Regulaminu oraz wszystkich
+                            jego postanowień, w szczególności dotyczących
+                            odpowiedzialności cywilnej, porządkowej.
+                        </li>
+                        <li>
+                            W ramach wydarzenia Street Show 2026 organizowany
+                            jest konkurs „Najlepszy pojazd Strefy Select –
+                            Street Show 2026”. Udział w konkursie biorą
+                            właściciele pojazdów zakwalifikowanych do Strefy
+                            Select. Zwycięzca, wyłoniony przez komisję
+                            konkursową powołaną przez organizatora, otrzyma
+                            nagrodę pieniężną w wysokości 2000 zł brutto.
+                            Szczegółowy regulamin konkursu dostępny jest w
+                            biurze organizacyjnym w trakcie trwania wydarzenia.
+                        </li>
+                    </ol>
+                </section>
 
-            <section>
-                <h2 class="text-uppercase">
-                    §2<br />
-                    sprzedaż biletów
-                </h2>
-                <ol>
-                    <li>
-                        <strong>Bilety sprzedawane</strong> są wyłącznie w
-                        autoryzowanych punktach sprzedaży
-                        <strong>(podczas Imprezy)</strong> oraz na stronie
-                        <a
-                            href="https://www.kupbilecik.pl/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            >www.kupbilecik.pl</a
-                        >. Bilety mogą być sprzedawane wyłącznie po cenie
-                        określonej przez Organizatora.
-                    </li>
-                    <li>
-                        Każdy uczestnik posiadający Bilet lub dokonujący jego
-                        zakupu przed Wydarzeniem, przy
-                        <strong>pierwszym wejściu</strong> na teren Wydarzenia,
-                        <strong>otrzyma</strong> na trwałe
-                        <strong>Opaskę identyfikującą</strong> (zapinaną na
-                        nadgarstku). Z jednej opaski może korzystać wyłącznie
-                        jeden Uczestnik.
-                        <strong
-                            >W przypadku jej uszkodzenia traci ona
-                            ważność</strong
-                        >, a tym samym Uczestnik
-                        <strong
-                            >traci prawo do uczestniczenia w Wydarzeniu</strong
-                        >.
-                    </li>
-                    <li>
-                        Zamianie na Opaskę podlega wyłącznie Bilet oryginalny,
-                        nabyty zgodnie z postanowieniami niniejszego Regulaminu.
-                        Bilet nabyty z naruszeniem postanowień Regulaminu może
-                        być unieważniony przez Organizatora. Organizator
-                        ostrzega, że kupno Biletów od osób postronnych niesie
-                        ryzyko zakupu biletu podrobionego, co w konsekwencji
-                        powoduje odmowę wymiany Biletu na Opaskę i wstępu na
-                        Wydarzenie.
-                    </li>
-                    <li>
-                        Zakupiony bilet nie może być bez zgody Organizatora
-                        przedmiotem jakichkolwiek akcji reklamowych,
-                        promocyjnych lub wykorzystywany do innych celów
-                        komercyjnych.
-                    </li>
-                    <li>Zakupiony bilet nie podlega zwrotowi ani wymianie.</li>
-                    <li>
-                        Każdy z biletów występuje w opcji:
-                        <ol class="alphanumeric">
-                            <li>Normalnej</li>
-                            <li>
-                                Ulgowej - przysługuje dzieciom, młodzieży
-                                szkolnej od 7 do 16 roku życia
-                            </li>
-                            <li>Bilet VIP</li>
-                        </ol>
-                    </li>
-                </ol>
-            </section>
+                <section>
+                    <h3>2. ZASADY UCZESTNICTWA</h3>
+                    <ol>
+                        <li>
+                            SM zastrzegają sobie prawo odmowy przyjęcia
+                            zgłoszenia jako wystawca w wydarzeniu, o czym
+                            poinformują drogą elektroniczną (e-mail).
+                        </li>
+                        <li>
+                            W przypadku nieuregulowania wszelkich należności
+                            przed rozpoczęciem wydarzenia, dany podmiot nie
+                            zostanie dopuszczony do uczestnictwa w wydarzeniu
+                            jako wystawca.
+                        </li>
+                    </ol>
+                </section>
 
-            <section>
-                <h2 class="text-uppercase">
-                    §3<br />
-                    Warunki uczestnictwa
-                </h2>
-                <ol>
-                    <li>
-                        Wstęp na Teren Wydarzenia, przysługuje wyłącznie osobie
-                        posiadającej dowód tożsamości oraz Bilet lub zaproszenie
-                        wydane przez Organizatora, które przy pierwszym wejściu
-                        na Teren Wydarzenia zostanie wymienione na Opaskę.
-                        <span class="underline"
-                            >Każdorazowe wejście na Teren Wydarzenia(w ramach
-                            ważności Biletu) przysługuje tylko Uczestnikowi z
-                            nieuszkodzoną Opaską umocowaną trwałe na ręku.</span
-                        >
-                    </li>
-                    <li>
-                        W przypadku, gdy
-                        <strong
-                            >Uczestnikiem Wydarzenia chce być małoletni w wieku
-                            poniżej 15 lat</strong
-                        >, może on uczestniczyć w Imprezie wyłącznie
-                        <span class="underline"
-                            >pod opieką osoby dorosłej, która w pełni ponosi
-                            odpowiedzialność za podopiecznego.</span
-                        >
-                    </li>
-                    <li>
-                        <strong>Zabrania się:</strong>
-                        <ul class="alphanumeric">
-                            <li>
-                                wprowadzania psów i innych zwierząt na Teren
-                                Imprezy, za wyjątkiem psów przewodników
-                            </li>
-                            <li>
-                                wnoszenia napojów i jedzenia, z wyłączeniem osób
-                                których stan zdrowia wymaga specjalistycznej
-                                diety potwierdzonej orzeczeniem lekarskim.
-                            </li>
-                            <li>
-                                wnoszenia, posiadania, a także używania nad
-                                terenem imprezy, oraz w jego bliskim kontakcie
-                                bezzałogowych statków powietrznych, dronów, oraz
-                                innych obiektów unoszących się w powietrzu.
-                                Pojazdów kołowych w tym hulajnóg, deskorolek,
-                                urządzeń transportu osobistego (UTO) i innych w
-                                tym urządzeń z napędem.
-                            </li>
-                            <li>
-                                wnoszenia alkoholu nie zakupionego na terenie
-                                Wydarzenia,
-                            </li>
-                            <li>
-                                <span class="underline"
-                                    >prowadzenia sprzedaży, reklamy, roznoszenia
-                                    materiałów reklamowych, tworzenia cyfrowych
-                                    materiałów marketingowych pod kara grzywny
-                                    <strong>(50.000 zł.)</strong>
-                                    bez wcześniejszej zgody Organizatora.</span
-                                >
-                            </li>
-                            <li>
-                                prowadzenie przez Uczestników jakichkolwiek
-                                działań komercyjnych, akwizycyjnych,
-                                reklamowych, promocyjnych, a także agitacyjnych
-                                oraz zbiórek pieniężnych nieuzgodnionych z
-                                Organizatorem, jak również działań niezgodnych z
-                                obowiązującymi przepisami prawa
-                                <span class="underline"
-                                    >pod kara grzywny
-                                    <strong>(50.000 zł.)</strong></span
-                                >
-                            </li>
-                            <li>
-                                W przypadku złamania zakazu prowadzenia działań
-                                promocyjnych, komercyjnych lub reklamowych na
-                                terenie Wydarzenia przez osoby lub firmy bez
-                                wcześniejszej zgody Organizatora, Organizator
-                                zastrzega sobie prawo do:
-                                <ul>
-                                    <li>
-                                        Natychmiastowego usunięcia tych osób z
-                                        terenu Wydarzenia.
-                                    </li>
-                                    <li>
-                                        Nałożenia kary umownej w wysokości 50
-                                        000 zł, w celu pokrycia strat
-                                        organizacyjnych i wizerunkowych.
-                                    </li>
-                                    <li>
-                                        Skierowania sprawy na drogę sądową w
-                                        przypadku nieuregulowania kary w
-                                        terminie 14 dni od wezwania do zapłaty.
-                                    </li>
-                                    <li>
-                                        Zawiadomienia odpowiednich służb, w
-                                        przypadku podejrzenia naruszenia
-                                        obowiązującego prawa.
-                                    </li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </li>
-                    <li>
-                        <strong
-                            >Organizator zastrzega sobie prawo odmówić wstępu na
-                            Teren Wydarzenia osobie:</strong
-                        >
-                        <ul class="alphanumeric">
-                            <li>
-                                znajdującej się pod widocznym wpływem alkoholu,
-                                środków odurzających, psychotropowych lub innych
-                                podobnie działających środków,
-                            </li>
-                            <li>
-                                osobie posiadającej broń lub inne niebezpieczne
-                                przedmioty, materiały wybuchowe, wyroby
-                                pirotechniczne, materiały pożarowo
-                                niebezpieczne, środki odurzające lub substancje
-                                psychotropowe,
-                            </li>
-                            <li>
-                                osobie zachowującej się agresywnie,
-                                prowokacyjnie albo w inny sposób stwarzającej
-                                zagrożenie dla bezpieczeostwa lub porządku
-                                publicznego,
-                            </li>
-                            <li>nie posiadającym Biletu-Opaski</li>
-                            <li>
-                                nie posiadającym dokumentu tożsamości
-                                umożliwiającego ustalenie m.in. prawa do ulgi.
-                            </li>
-                            <li>
-                                osobom, które odmawiają poddania się
-                                czynnościom, o których mowa w §4
-                            </li>
-                        </ul>
-                    </li>
-                    <li>
-                        <strong
-                            >Ocena przedmiotów i kwalifikowanie ich, jako
-                            niebezpiecznych należy do Służb
-                            Porządkowych.</strong
-                        >
-                    </li>
-                    <li>
-                        <strong
-                            >Każde wejście na teren Wydarzenia, niezależnie od
-                            sposobu uzyskania biletu, oznacza akceptację
-                            Regulaminu przez osobę wchodzącą. Uczestnik
-                            zobowiązuje się przestrzegać zasad określonych w
-                            Regulaminie, który jest dostępny w punkcie sprzedaży
-                            oraz na stronie internetowej Organizatora.</strong
-                        >
-                    </li>
-                </ol>
-            </section>
+                <section>
+                    <h3>3. ZGŁOSZENIE – STREFA SELECT</h3>
+                    <ol>
+                        <li>
+                            Zgłoszenie uczestnictwa w Strefie Select należy
+                            dokonać poprzez nadesłanie formularza zgłoszeniowego
+                            za pośrednictwem strony internetowej, w którym
+                            zawrzeć należy wszelkie niezbędne informacje
+                            określone w formularzu zgłoszeniowym.
+                        </li>
+                        <li>
+                            Zgłoszenia uczestnictwa należy dokonać do dnia
+                            określonego jako „termin zgłoszeń uczestnictwa na
+                            Strefę Select”. Zgłoszenia uczestnictwa dokonane po
+                            tym terminie będą rozpatrywane przez SM w miarę
+                            dostępności powierzchni wystawienniczej oraz
+                            możliwości czasowych i logistycznych. SM zastrzega
+                            możliwość rozpatrywania zgłoszeń z pominięciem ich
+                            kolejności wpływu.
+                        </li>
+                        <li>
+                            Potwierdzenie uczestnictwa przyjmuje się za dokonane
+                            w dniu, w którym zostaną spełnione powyższe warunki.
+                            SM potwierdza uczestnictwo poprzez przesłanie do
+                            osoby wysyłającej zgłoszenie dokumentu drogą
+                            elektroniczną pt. „Akceptacja na Strefę Select”.
+                        </li>
+                    </ol>
+                </section>
 
-            <section>
-                <h2 class="text-uppercase">
-                    §4<br />
-                    zasady organizacyjne
-                </h2>
-                <ol>
-                    <li>
-                        Organizator zapewnia Uczestnikom Wydarzenia
-                        bezpieczeństwo oraz porządek poprzez m.in.:
-                        <ul class="alphanumeric">
-                            <li>
-                                Służby Porządkowe wyróżniające się elementami
-                                ubioru;
-                            </li>
-                            <li>
-                                udostępnienie pomocy medycznej oraz zaplecza
-                                higieniczno-sanitarnego.
-                            </li>
-                        </ul>
-                    </li>
-                    <li>
-                        Uczestnicy Wydarzenia zobowiązani są stosować się do
-                        poleceń Służb Porządkowych oraz Służb Organizatora.
-                        Odmowa zastosowania się do tych poleceń może wynikać
-                        wyłącznie z uwagi na ich sprzeczność z powszechnie
-                        obowiązującymi przepisami prawa w innych przypadkach nie
-                        jest to akceptowane i może skutkować usunięciem z terenu
-                        Wydarzenia.
-                    </li>
-                    <li>
-                        Uczestnicy Wydarzenia zobowiązani są zachowywać się w
-                        sposób niezagrażający bezpieczeństwu innych, a w
-                        szczególności
-                        <strong
-                            >przestrzegać postanowień niniejszego regulaminu
-                            oraz regulaminu obiektu</strong
-                        >, w którym odbywa się Wydarzenie. Zakazane jest
-                        niszczenie oznaczeń i tablic informacyjnych, elementów
-                        obiektu, nośników reklamowych, urządzeń i sprzętu
-                        znajdującego się na Terenie Wydarzenia, itp., a
-                        Uczestnicy Wydarzenia zobowiązani są korzystać z
-                        pomieszczeń sanitarnych wyłącznie zgodnie z ich
-                        przeznaczeniem.
-                    </li>
-                    <li>
-                        Organizator nie ponosi odpowiedzialności za żadne szkody
-                        poniesione przez Uczestników wskutek niestosowania się
-                        do regulaminów, poleceń wydawanych przez służby
-                        Organizatora, w tym również w sytuacjach zagrożeń
-                        bezpieczeństwa osób i mienia.
-                    </li>
-                    <li>
-                        <strong
-                            >Uczestnicy zobowiązani są bezwzględnie do:</strong
-                        >
-                        <ul class="alphanumeric">
-                            <li>
-                                respektowania oznaczeń, ciągów komunikacyjnych
-                                oraz stref wydzielonych z ruchu podlegających
-                                ochronie.
-                            </li>
-                            <li>
-                                przestrzegania przepisów o ruchu drogowym, które
-                                obowiązują w strefie ruchu ( każda strefa
-                                Wydarzenia, gdzie zaistnieje ruch kołowy).
-                            </li>
-                        </ul>
-                    </li>
-                    <li>
-                        <strong>Uczestnikom zabrania się</strong> (chyba, że
-                        właściciel obecny na miejscu zadecyduje inaczej):
-                        <ul class="alphanumeric">
-                            <li>dotykania aut wystawowych,</li>
-                            <li>wsiadania do aut,</li>
-                            <li>opierania się o karoserię,</li>
-                            <li>Innych czynności mogących uszkodzić pojazd.</li>
-                        </ul>
-                    </li>
-                    <li>
-                        Uczestnik ponosi pełną odpowiedzialność za spowodowanie
-                        lub wyrządzenie szkód na terenie Wydarzenia (np.
-                        uszkodzenie mienia Street Meeting Poland lub wystawców).
-                        Oceny szkód dokonuje Organizator, jeżeli to możliwe w
-                        obecności Uczestnika lub jego przedstawiciela, co
-                        zostanie potwierdzone w stosownym protokole.
-                    </li>
-                    <li>
-                        O wystąpieniu szkody w mieniu lub na osobie Uczestnika
-                        należy niezwłocznie powiadomić Służby Organizatora, co
-                        zostanie potwierdzone stosownym protokołem.
-                    </li>
-                    <li>
-                        <strong
-                            >Opiekunowie osób niepełnoletnich
-                            zobowiązani</strong
-                        >
-                        są do pełnej kontroli osób pozostających pod ich opieką
-                        i ponoszą za nich pełną odpowiedzialność (w tym
-                        finansową).
-                    </li>
-                    <li>
-                        Uczestnicy oraz wszystkie osoby znajdujące się na
-                        Terenie Wydarzenia zobowiązani są posiadać na ręku ważną
-                        Opaskę. Brak Opaski identyfikującej lub posiadanie
-                        Opaski
-                        <span class="underline">zerwanej lub uszkodzonej</span>,
-                        <span class="underline">jak również nie zapiętej</span>
-                        na ręce jest jednoznaczną
-                        <span class="underline"
-                            >podstawą do usunięcia uczestnika z Terenu
-                            Wydarzenia</span
-                        >.
-                        <strong
-                            >Samowolne opuszczenie terenu Wydarzenia z
-                            uszkodzoną lub zerwaną Opaską jest równoznaczne z
-                            rezygnacją z uczestnictwa w Wydarzeniu i innych
-                            związanych.</strong
-                        >
-                    </li>
-                    <li>
-                        Wszyscy Uczestnicy Wydarzenia, w trakcie trwania
-                        Wydarzenia, zobowiązani są do posiadania i każdorazowego
-                        okazywania Opaski Identyfikującej, legitymacji lub
-                        dowodu tożsamości na żądania Organizatora.
-                    </li>
-                    <li>
-                        <strong>Służby Porządkowe są uprawnione do:</strong>
-                        <ul class="alphanumeric">
-                            <li>
-                                sprawdzania uprawnień do przebywania na
-                                Wydarzeniu, a w przypadku stwierdzenia braku
-                                takich uprawnień - wezwania do opuszczenia
-                                Wydarzenia,
-                            </li>
-                            <li>egzekwowania zapisów §3</li>
-                            <li>
-                                przeglądania zawartości bagaży, odzieży osób, w
-                                przypadku podejrzenia, że osoby te wnoszą lub
-                                posiadają przedmioty, o których mowa w §3,
-                            </li>
-                            <li>
-                                legitymowania osób w celu ustalenia ich
-                                tożsamości i prawa do ulg.
-                            </li>
-                            <li>
-                                wydawania poleceń porządkowych Uczestnikom
-                                zakłócającym porządek publiczny lub zachowującym
-                                się niezgodnie z Regulaminem Wydarzenia lub
-                                obiektu, a w przypadku niewykonania tych poleceń
-                                – wezwania ich do opuszczenia Wydarzenia,
-                            </li>
-                            <li>
-                                stosowania siły fizycznej w postaci chwytów
-                                obezwładniających oraz podobnych technik obrony
-                                w przypadku zagrożenia dóbr powierzonych
-                                ochronie lub odparcia ataku na członka Służb
-                                Porządkowych, lub inną osobę, na zasadach
-                                określonych w art. 38 ustawy z dnia 22 sierpnia
-                                1997 r. o ochronie osób i mienia (Dz. U. Nr 114,
-                                poz. 740, z późn. zm.),
-                            </li>
-                            <li>
-                                ujęcia, w celu niezwłocznego przekazania
-                                Policji, osób stwarzających bezpośrednie
-                                zagrożenie dla życia lub zdrowia ludzkiego, a
-                                także chronionego mienia.
-                            </li>
-                        </ul>
-                    </li>
-                    <li>
-                        Członkowie Służb Porządkowych, w zależności od
-                        potencjalnego ryzyka i potrzeb, mogą być wyposażeni
-                        m.in. w niezbędne i prawnie dozwolone środki ochrony
-                        osobistej.
-                    </li>
-                    <li>
-                        Organizator nie ponosi odpowiedzialności za jakiekolwiek
-                        przedmioty zgubione przez Uczestników na terenie
-                        Wydarzenia. Organizator nie prowadzi depozytu.
-                    </li>
-                    <li>
-                        Na terenie Wydarzenia,
-                        <strong>wewnątrz budynku</strong>, obowiązuje surowy
-                        <strong>zakaz palenia wyrobów tytoniowych</strong>.
-                        Palenie może obywać się jedynie w miejscach do tego
-                        wyznaczonych.
-                    </li>
-                    <li>
-                        <strong
-                            >Biorąc udział w Wydarzeniu Uczestnik wyraża zgodę
-                            na korzystanie przez Organizatora z wizerunku
-                            utrwalonego</strong
-                        >
-                        w związku z realizacją Wydarzenia oraz przenosi na
-                        Organizatora w zakresie nieograniczonym czasowo i
-                        terytorialnie wszelkie prawa do korzystania i
-                        rozporządzania wizerunkiem Uczestnika i jego nagraniami
-                        (fotograficznymi, audiowizualnymi, dźwiękowymi)
-                        zarejestrowanymi w związku z Wydarzeniem. Wizerunek
-                        Uczestnika, który został w ww. sposób utrwalony i
-                        wykorzystany nie przysługują jakiekolwiek (w tym
-                        finansowe) roszczenia z tego tytułu. Organizator
-                        zastrzega sobie prawo do udzielenia sublicencji na
-                        wykorzystanie utrwalonego wizerunku Uczestnika
-                        oficjalnym partnerom oraz sponsorom.
-                    </li>
-                    <li>
-                        Na terenie wydarzenia obowiązuje bezwzględny zakaz
-                        wchodzenia na murawę stadionu.
-                        <ul class="alphanumeric">
-                            <li>
-                                Uczestnicy mogą poruszać się wyłącznie na
-                                wyznaczonych ciągach komunikacyjnych wokół
-                                murawy oraz w oznaczonych strefach wydarzenia.
-                            </li>
-                            <li>
-                                Każde wejście na murawę bez zgody Organizatora
-                                skutkuje nałożeniem kary umownej w wysokości 15
-                                000 PLN za każdą osobę naruszającą ten zakaz.
-                            </li>
-                            <li>
-                                Uczestnik, biorąc udział w wydarzeniu i
-                                akceptując niniejszy regulamin, zobowiązuje się
-                                do zapłaty kary umownej w przypadku złamania
-                                tego zakazu.
-                            </li>
-                            <li>
-                                W przypadku odmowy zapłaty Organizator ma prawo
-                                dochodzić należności na drodze postępowania
-                                cywilnego.
-                            </li>
-                            <li>
-                                Uczestnicy zobowiązani są do bezwzględnego
-                                stosowania się do poleceń Służb Porządkowych
-                                oraz Służb Organizatora, które będą oznaczone
-                                kamizelkami.
-                            </li>
-                            <li>
-                                Osoby naruszające zakaz mogą zostać
-                                natychmiastowo usunięte z wydarzenia bez prawa
-                                do zwrotu biletu.
-                            </li>
-                            <li>
-                                Organizator zastrzega sobie prawo do wezwania
-                                odpowiednich służb porządkowych lub Policji w
-                                przypadku naruszenia zakazu.
-                            </li>
-                            <li>
-                                Organizator nie ponosi odpowiedzialności za
-                                jakiekolwiek szkody wyrządzone przez
-                                uczestników, którzy naruszyli zakaz wchodzenia
-                                na murawę, ani za konsekwencje ich działań.
-                                Uczestnicy wchodzący na murawę ponoszą pełną
-                                odpowiedzialność cywilnoprawną za ewentualne
-                                szkody wyrządzone Organizatorowi, właścicielowi
-                                stadionu lub osobom trzecim.
-                            </li>
-                            <li>
-                                Uczestnicy wydarzenia wchodzą na teren imprezy
-                                na własną odpowiedzialność i zobowiązują się do
-                                przestrzegania zasad regulaminu. Organizator nie
-                                odpowiada za jakiekolwiek konsekwencje
-                                zdrowotne, finansowe czy prawne wynikające z
-                                naruszenia zakazu wchodzenia na murawę.
-                            </li>
-                            <li>
-                                Organizator zastrzega sobie prawo do dochodzenia
-                                roszczeń od uczestnika, który poprzez wejście na
-                                murawę wyrządził szkodę materialną lub
-                                niematerialną. W takim przypadku Organizator
-                                może żądać pokrycia strat oraz wszelkich kosztów
-                                wynikających z naruszenia regulaminu, w tym
-                                kosztów postępowań prawnych.
-                            </li>
-                            <li>
-                                Organizator nie ponosi odpowiedzialności za
-                                ewentualne roszczenia właściciela stadionu w
-                                związku z naruszeniem zakazu wchodzenia na
-                                murawę przez uczestników. Wszelkie kary nałożone
-                                przez właściciela obiektu na Organizatora w
-                                wyniku działań uczestników mogą zostać
-                                przeniesione na osoby, które naruszyły ten
-                                zakaz.
-                            </li>
-                        </ul>
-                    </li>
-                    <li>
-                        Użycie drona w trakcie wydarzenia:
-                        <ul class="alphanumeric">
-                            <li>
-                                Na terenie wydarzenia Street Show 2026 będzie
-                                używany dron rejestrujący zdjęcia i nagrania
-                                wideo z lotu nad przestrzenią publiczną, również
-                                w pobliżu lub nad uczestnikami wydarzenia. Dron
-                                będzie obsługiwany przez uprawnionego operatora
-                                działającego na zlecenie Organizatora, zgodnie z
-                                obowiązującymi przepisami prawa, w tym
-                                przepisami Urzędu Lotnictwa Cywilnego oraz Unii
-                                Europejskiej dotyczącymi lotów bezzałogowych
-                                statków powietrznych.
-                            </li>
-                            <li>
-                                Materiały zarejestrowane z użyciem drona będą
-                                wykorzystywane w celach dokumentacyjnych,
-                                informacyjnych i promocyjnych wydarzenia, w tym
-                                m.in. na stronach internetowych, w mediach
-                                społecznościowych, materiałach reklamowych i
-                                prasowych.
-                            </li>
-                            <li>
-                                Biorąc udział w wydarzeniu, Uczestnik wyraża
-                                zgodę na możliwość utrwalenia jego wizerunku w
-                                ramach rejestracji grupowej (np. jako część
-                                tłumu) i jego nieodpłatne wykorzystanie przez
-                                Organizatora oraz jego oficjalnych partnerów i
-                                sponsorów.
-                            </li>
-                        </ul>
-                    </li>
-                </ol>
-            </section>
+                <section>
+                    <h3>4. ZGŁOSZENIE – STREFA EXPO</h3>
+                    <ol>
+                        <li>
+                            Zgłoszenie uczestnictwa w Strefie Expo należy
+                            dokonać za pośrednictwem poczty elektronicznej bądź
+                            numerów telefonów podanych na stronie internetowej
+                            www.streetshow.pl.
+                        </li>
+                        <li>
+                            Zgłoszenia są każdorazowo rozpatrywane przez SM.
+                            Warunki uczestnictwa oraz dokładne powierzchnie
+                            wystawiennicze w Strefie Expo określa Oferta
+                            Sponsorska – Street Show. Zamówienie powierzchni
+                            wystawienniczej, będące elementem zgłoszenia
+                            uczestnictwa w danym wydarzeniu, polega na wskazaniu
+                            rodzaju i wielkości powierzchni wybranej z Oferty
+                            Sponsorskiej Street Show.
+                        </li>
+                        <li>
+                            Uczestnictwo uznaje się za potwierdzone w dniu
+                            zaksięgowania na rachunku bankowym SM stosownej
+                            opłaty tytułem uczestnictwa jako wystawca.
+                        </li>
+                        <li>
+                            Po otrzymaniu ww. opłaty SM wysyła potwierdzenie
+                            drogą e-mail: „Potwierdzenie uczestnictwa w Strefie
+                            Expo”, zawierające wielkość i rodzaj przydzielonej
+                            powierzchni wystawienniczej oraz jej przybliżoną
+                            lokalizację. Dokument jest potwierdzeniem
+                            uczestnictwa w Strefie Expo.
+                        </li>
+                        <li>
+                            Przekazanie powierzchni wystawienniczej w
+                            użytkowanie wystawcy nastąpi pod warunkiem
+                            uregulowania wymagalnych należności.
+                        </li>
+                        <li>
+                            Wszelkie zmiany danych wynikających ze zgłoszenia
+                            uczestnictwa w Strefie Expo, w szczególności danych
+                            wskazanych w „Potwierdzeniu uczestnictwa w Strefie
+                            Expo” wymagają każdorazowej pisemnej akceptacji SM
+                            (via e-mail).
+                        </li>
+                    </ol>
+                </section>
 
-            <section>
-                <h2 class="text-uppercase">
-                    §5<br />
-                    dane osobowe
-                </h2>
-                <ol>
-                    <li>
-                        Street Meeting Poland Sp. z o.o. z siedzibą w Elblągu
-                        (82-300), przy ul. Królewiecka 205/15, NIP 5783153201,
-                        (dane do kontaktu: e-mail,
-                        streetmeetingpolska@gmail.com) informuje, że jest
-                        administratorem danych osobowych Uczestników. Dane
-                        osobowe Uczestników przetwarzane są zgodnie z
-                        Rozporządzeniem Parlamentu Europejskiego i Rady (UE)
-                        2016/679 z dnia 27 kwietnia 2016 r. (RODO). Podstawą
-                        prawną przetwarzania danych osobowych jest:
-                        <ul class="alphanumeric">
-                            <li>
-                                art. 6 ust. 1 lit. b RODO – przetwarzanie
-                                niezbędne do wykonania umowy związanej z
-                                uczestnictwem w Wydarzeniu,
-                            </li>
-                            <li>
-                                art. 6 ust. 1 lit. c RODO – wypełnienie
-                                obowiązków prawnych ciążących na
-                                Administratorze,
-                            </li>
-                            <li>
-                                art. 6 ust. 1 lit. f RODO – prawnie uzasadniony
-                                interes Administratora polegający na organizacji
-                                wydarzenia, zapewnieniu bezpieczeństwa oraz
-                                dochodzeniu roszczeń.
-                            </li>
-                        </ul>
-                    </li>
-                    <li>
-                        Dane osobowe Uczestników będą przechowywane przez okres
-                        niezbędny do realizacji celów związanych z organizacją
-                        Wydarzenia, a następnie przez okres wymagany przepisami
-                        prawa lub do czasu przedawnienia ewentualnych roszczeń
-                        wynikających z udziału w Wydarzeniu.
-                    </li>
-                    <li>
-                        Dane osobowe Uczestnika przetwarzane są w celu:
-                        <ul class="alphanumeric">
-                            <li>
-                                uczestnictwa w Wydarzeniu, konkursach, zgodnie z
-                                Regulaminem,
-                            </li>
-                            <li>
-                                rozpatrywania reklamacji zgłoszonych przez
-                                Uczestnika,
-                            </li>
-                            <li>
-                                wypełnienia obowiązków prawnych wynikających w
-                                szczególności z prawa podatkowego,
-                            </li>
-                            <li>dochodzenia roszczeń.</li>
-                            <li>statystycznym</li>
-                            <li>oferowania produktów handlowych,</li>
-                            <li>marketingowym</li>
-                        </ul>
-                        Dane osobowe Uczestników mogą być przekazywane podmiotom
-                        współpracującym z Organizatorem przy realizacji
-                        Wydarzenia, w szczególności:
-                        <ul class="alphanumeric">
-                            <li>podmiotom obsługującym sprzedaż biletów,</li>
-                            <li>
-                                podmiotom świadczącym usługi informatyczne i
-                                hostingowe,
-                            </li>
-                            <li>
-                                podmiotom świadczącym usługi księgowe i prawne,
-                            </li>
-                            <li>
-                                służbom porządkowym oraz podmiotom
-                                odpowiedzialnym za bezpieczeństwo wydarzenia,
-                            </li>
-                            <li>
-                                organom publicznym uprawnionym do uzyskania
-                                danych na podstawie przepisów prawa.
-                            </li>
-                        </ul>
-                    </li>
-                    <li>
-                        Uczestnikowi przysługuje prawo do żądania od Firmy
-                        Street Meeting Poland sp. z o.o. dostępu do podanych
-                        danych osobowych, ich sprostowania np. w sytuacji, gdy
-                        są nieprawidłowe lub niekompletne, a także ich usunięcia
-                        lub ograniczenia przetwarzania, jak również prawo do
-                        wniesienia sprzeciwu wobec przetwarzania danych oraz
-                        prawo do przeniesienia danych do innego administratora,
-                        a także prawo do odwołania wyrażonej wcześniej zgody na
-                        przetwarzanie danych w każdym momencie.
-                        <span class="underline"
-                            >Odwołanie zgody nie wpłynie na zgodność
-                            przetwarzania danych Uczestnika, którego dokonano na
-                            podstawie zgody udzielonej przed jej
-                            cofnięciem.</span
-                        >
-                    </li>
-                    <li>
-                        Uczestnikowi przysługuje prawo do wniesienia skargi do
-                        Prezesa Urzędu Ochrony Danych Osobowych.
-                    </li>
-                    <li>
-                        Podanie przez Uczestnika danych osobowych jest niezbędne
-                        do realizacji usługi, w tym obsługi procesu reklamacji.
-                        <span class="underline"
-                            >Odmowa podania przez Uczestnika danych osobowych
-                            uniemożliwi udział w Wydarzeniu</span
-                        >, a także realizację reklamacji zgłoszonej przez
-                        Uczestnika czy realizację obowiązków ustawowych przez
-                        Firmę Street Meeting Poland.
-                    </li>
-                    <li>
-                        Podczas Wydarzenia mogą być wykonywane zdjęcia oraz
-                        nagrania wideo w celach dokumentacyjnych i promocyjnych.
-                        Materiały te mogą zostać opublikowane w szczególności na
-                        stronach internetowych, w mediach społecznościowych oraz
-                        w materiałach promocyjnych Organizatora.
-                    </li>
-                </ol>
-            </section>
-            <section>
-                <h2 class="text-uppercase">
-                    §6<br />
-                    Postanowienia końcowe
-                </h2>
-                <ol>
-                    <li>
-                        Wszelkie prawa do nazwy i logo Wydarzenia są zastrzeżone
-                        na rzecz Organizatora.
-                    </li>
-                    <li>
-                        Organizator zastrzega sobie prawo do zmiany regulaminu i
-                        programu wydarzenia, w każdym momencie bez podawania
-                        przyczyny, o czym poinformuje na stronie
-                        <a
-                            href="http://streetshow.pl"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            >www.streetshow.pl</a
-                        >
-                        lub/i na profilu społecznościowym wydarzenia.
-                        Uczestnikom nie przysługuje prawo roszczeń z tego
-                        tytułu.
-                    </li>
-                    <li>
-                        Każda osoba przebywająca na terenie Wydarzenia
-                        zobowiązana jest do przestrzegania niniejszego
-                        Regulaminu, niezależnie od tego, czy osobiście zakupiła
-                        bilet, czy otrzymała go od innej osoby. Organizator nie
-                        ponosi odpowiedzialności za brak znajomości regulaminu
-                        przez Uczestników.
-                    </li>
-                    <li>
-                        Niniejszy Regulamin jest dostępny na stronie
-                        internetowej Imprezy:
-                        <a
-                            href="http://streetshow.pl"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            >www.streetshow.pl</a
-                        >
-                        oraz w kasach na Terenie Wydarzenia.
-                    </li>
-                    <li>
-                        Gadżety dotyczące Wydarzenia będą sprzedawane wyłącznie
-                        na Terenie Wydarzenia w dedykowanym Sklepiku.
-                    </li>
-                    <li>
-                        Organizator nie ponosi odpowiedzialności za skutki
-                        działania siły wyższej oraz niezależną od Organizatora
-                        przerwą w dostawie wody, prądu w wyniku, której nastąpi
-                        przerwanie Wydarzenia.
-                    </li>
-                    <li>
-                        Organizator informuje, iż Uczestnicy Wydarzenia mogą
-                        podczas jej trwania znajdować się pod wpływem silnych
-                        bodźców zewnętrznych w tym świetlnych, dźwiękowych o
-                        natężeniu dopuszczonym prawem, jednak znacząco wyższym,
-                        niż normalnie spotykane w codziennym życiu. Osoby
-                        samodzielnie podejmują decyzję o uczestnictwie w
-                        Wydarzeniu i nie mogą z tego tytułu zgłaszać względem
-                        Organizatora jakichkolwiek roszczeń.
-                    </li>
-                    <li>
-                        W sprawach nieuregulowanych w Regulaminie, decyzje
-                        podejmuje Organizator oraz stosuje się odpowiednie
-                        przepisy Prawa.
-                    </li>
-                </ol>
-            </section>
+                <section>
+                    <h3>
+                        5. ODSTĄPIENIE OD UCZESTNICTWA JAKO WYSTAWCA (STREFA
+                        EXPO)
+                    </h3>
+                    <ol>
+                        <li>
+                            Odstąpienie od uczestnictwa jako wystawca wymaga
+                            formy pisemnej pod rygorem nieważności. Oświadczenie
+                            o odstąpieniu należy przesłać listownie na adres
+                            spółki Street Meeting Poland.
+                        </li>
+                        <li>
+                            Podmiotom, które odstąpią od umowy uczestnictwa w
+                            terminie do 14 dni od dnia wysłania przez SM
+                            Potwierdzenia uczestnictwa w Strefie Expo,
+                            przysługuje zwrot opłaty, o której mowa w punkcie
+                            4.3. SM dokona zwrotu opłat na rachunek bankowy
+                            podmiotu, z którego została dokonana dana opłata.
+                        </li>
+                        <li>
+                            W przypadku odstąpienia od uczestnictwa po terminie
+                            wskazanym powyżej, wpłacona opłata nie podlega
+                            zwrotowi.
+                        </li>
+                    </ol>
+                </section>
+
+                <section>
+                    <h3>
+                        6. WŁASNOŚĆ INTELEKTUALNA I NORMY BEZPIECZEŃSTWA
+                        EKSPONATÓW
+                    </h3>
+                    <ol>
+                        <li>
+                            SM zobowiązuje uczestników do posiadania na własny
+                            koszt i we własnym zakresie niezbędnych świadectw
+                            dotyczących oceny zgodności z wymaganymi normami
+                            wyrobów prezentowanych na wydarzeniu (w
+                            szczególności maszyny i urządzenia), zwłaszcza
+                            dotyczących bezpieczeństwa, określonymi w stosownych
+                            przepisach prawa.
+                        </li>
+                        <li>
+                            Wystawcy, przed wystawieniem własnych produktów na
+                            wydarzeniu, zobowiązani są we własnym zakresie i na
+                            własny koszt, do zebrania informacji na temat
+                            przepisów obowiązujących w zakresie ochrony
+                            własności przemysłowej, praw autorskich, ochrony
+                            konkurencji i zwalczaniu nieuczciwej konkurencji.
+                            Nadto, zaleca się wystawcom dysponowanie podczas
+                            wydarzenia kompletną dokumentacją potwierdzającą
+                            uprawnienie do korzystania z przedmiotów praw
+                            własności intelektualnej wykorzystywanych w związku
+                            z uczestnictwem w wydarzeniu, w szczególności w
+                            towarach lub usługach wystawcy będących przedmiotem
+                            ekspozycji oraz wykorzystywanych w materiałach
+                            reklamowych, promocyjnych lub będących elementem
+                            wystroju lub zabudowy stoiska.
+                        </li>
+                        <li>
+                            Każdy wystawca, we własnym zakresie i na własny
+                            koszt, zobowiązany jest do uzyskania zgody
+                            organizacji powołanych do zbiorowego zarządzania
+                            prawami twórców i do zapłaty na ich rzecz stosownego
+                            wynagrodzenia (tantiem), zgodnie z aktualnie
+                            obowiązującym przepisami prawa.
+                        </li>
+                        <li>
+                            SM nie ponosi odpowiedzialności za szkody i krzywdy
+                            wyrządzone danemu wystawcy przez innych wystawców
+                            lub uczestników wydarzenia, a w szczególności
+                            wynikających z naruszenia praw wystawców m. in. praw
+                            własności intelektualnej lub dóbr osobistych, a
+                            także za szkody wynikające z czynów nieuczciwej
+                            konkurencji.
+                        </li>
+                        <li>
+                            SM nie ponosi odpowiedzialności, w przypadku
+                            zgłoszenia przez osoby trzecie wobec SM
+                            jakichkolwiek roszczeń z tytułu naruszenia przez
+                            Wystawcę praw osób trzecich, w tym praw własności
+                            intelektualnej i dóbr osobistych, lub z tytułu
+                            popełnienia przez Wystawcę czynu nieuczciwej
+                            konkurencji. Wystawca wyraża zgodę na przekazanie
+                            przez SM jego danych, tak aby zapewnić należytą
+                            ochronę prawną. Ponadto, Wystawca zobowiązuje się do
+                            podjęcia na swój koszt i ryzyko wszelkich kroków
+                            prawnych zapewniających należytą ochronę SM przed
+                            takimi roszczeniami osób trzecich.
+                        </li>
+                    </ol>
+                </section>
+
+                <section>
+                    <h3>7. PRZEPISY PORZĄDKOWE I BEZPIECZEŃSTWA</h3>
+                    <ol>
+                        <li>
+                            Terminy i godziny otwarcia wydarzenia, okresy
+                            montażu i demontażu stoiska oraz godziny otwarcia
+                            pawilonów i terenów wydarzenia, a także zasady
+                            wjazdu i parkowania pojazdów, zostaną przedstawione
+                            wystawcy drogą elektroniczną. Wystawca zobowiązany
+                            jest do bezwzględnego stosowania się do tych
+                            warunków. Przebywanie i postój na terenach SM poza
+                            terminami i godzinami ich otwarcia (oraz dniem
+                            poprzedzającym wydarzeniem) każdorazowo wymaga
+                            pisemnej zgody SM. Godziny montażu oraz demontażu
+                            zostaną przedstawione Wystawcy w formie wiadomości
+                            e-mail, po potwierdzeniu uczestnictwa jako wystawca
+                            w wydarzeniu.
+                        </li>
+                        <li>
+                            W godzinach otwarcia wydarzenia stoiska powinny być
+                            dostępne dla zwiedzających. Okresowe zamknięcie
+                            stoiska wymaga uprzedniej pisemnej zgody SM.
+                        </li>
+                        <li>
+                            Niedozwolone jest:
+                            <ol
+                                class="nested-numbered"
+                                style="--reg-prefix: &quot;7.3.&quot;"
+                            >
+                                <li>
+                                    Podejmowanie wszelkich działań niezgodnych z
+                                    obowiązującymi przepisami prawa.
+                                </li>
+                                <li>
+                                    Umieszczanie cen na wystawionych eksponatach
+                                    oraz sprzedaż detaliczna na stoisku
+                                    wystawienniczym w czasie wydarzenia, chyba
+                                    że ustalenia z SM stanowią inaczej.
+                                </li>
+                                <li>
+                                    Prowadzenie działań komercyjnych,
+                                    reklamowych, promocyjnych, akwizycyjnych
+                                    poza stoiskiem, chyba że wcześniej uzyskano
+                                    zgodę SM. Reklama poza stoiskiem jest
+                                    odpłatna.
+                                </li>
+                                <li>
+                                    Prowadzenie działań agitacyjnych, aukcji i
+                                    zbiórek pieniężnych bez uzyskania zgody SM.
+                                </li>
+                                <li>
+                                    Wnoszenie na tereny wydarzenia broni,
+                                    amunicji, materiałów wybuchowych i innych
+                                    przedmiotów, których użycie może zagrażać
+                                    bezpieczeństwu osób przebywających na
+                                    terenach wydarzenia i mienia znajdującego
+                                    się na tym terenie.
+                                </li>
+                            </ol>
+                        </li>
+                        <li>
+                            Maksymalne natężenie dźwięku na stoisku, związane na
+                            przykład z wykonywaniem lub odtwarzaniem utworów
+                            muzycznych podczas trwania wydarzenia, nie może
+                            przekroczyć 70 dB, ponadto na każdorazowe żądanie
+                            SM, wystawca zobowiązany jest obniżyć poziom
+                            natężenia hałasu oraz dokonać właściwego ustawienia
+                            aparatury nagłośnieniowej lub innych urządzeń. W
+                            przypadku niewykonania poleceń, BMS zaprzestanie
+                            dostarczać na stoisko energię elektryczną / sprężone
+                            powietrze albo dokonają zamknięcia stoiska na koszt
+                            i ryzyko wystawcy.
+                        </li>
+                        <li>
+                            Zabronione jest kierowanie kolumn głośnikowych w
+                            stronę ciągów komunikacyjnych i sąsiednich stoisk.
+                        </li>
+                        <li>
+                            Ograniczenie progu dźwięku do 70 dB, o którym mowa w
+                            punkcie 7.4, nie dotyczy przypadków prezentowania
+                            podczas wydarzenia, zgodnie z ich zakresem
+                            tematycznym, maszyn, urządzeń i narzędzi w ruchu,
+                            lub innych wydarzeń z podkładem muzycznym po
+                            wcześniejszym uzgodnieniu z SM. Na każdorazowe
+                            wezwanie wystawca zobowiązany jest obniżyć poziom
+                            natężenia hałasu.
+                        </li>
+                        <li>
+                            Wystawcy są zobowiązani:
+                            <ol type="a">
+                                <li>
+                                    do właściwego i ostrożnego wykonywania
+                                    czynności montażu / demontażu stoisk i
+                                    eksponatów (maszyn, urządzeń itp.) oraz
+                                    czynności prezentacji eksponatów podczas
+                                    wydarzenia, aby nie dokonać uszkodzeń
+                                    infrastruktury SM ani stoisk i mienia innych
+                                    uczestników wydarzenia;
+                                </li>
+                                <li>
+                                    przed rozpoczęciem wydarzenia - do usunięcia
+                                    ze stoiska i okolicznego terenu opakowań i
+                                    odpadów pozostałych po wyposażeniu stoiska i
+                                    wykonaniu aranżacji ekspozycji;
+                                </li>
+                                <li>
+                                    po zakończeniu wydarzenia - do usunięcia ze
+                                    stoiska eksponatów, zdemontowania zabudowy i
+                                    wyposażenia stoiska oraz przywrócenia
+                                    zajmowanej powierzchni wystawienniczej do
+                                    pierwotnego stanu.
+                                </li>
+                            </ol>
+                        </li>
+                        <li>
+                            Odpady wygenerowane w związku z montażem i
+                            demontażem stoisk, a także w czasie trwania
+                            wydarzenia, należy wrzucać do pojemników
+                            zlokalizowanych zgodnie z oznakowaniem.
+                        </li>
+                        <li>
+                            Zabronione jest wyrzucanie, pozostawianie na terenie
+                            wydarzenia i w okolicy wydarzenia odpadów
+                            niebezpiecznych dla zdrowia i środowiska. Należy je
+                            usunąć we własnym zakresie i na własny koszt.
+                        </li>
+                        <li>
+                            Usunięcie eksponatów ze stoiska lub innej ekspozycji
+                            oraz demontaż stoiska lub innej aranżacji (przede
+                            wszystkim przestawiania aut) przed zakończeniem
+                            wydarzenia są zabronione.
+                        </li>
+                        <li>
+                            Pozostawione elementy obudowy i wyposażenia stoiska
+                            lub aranżacji powierzchni innej ekspozycji, nie
+                            usunięte ze stoiska lub innej ekspozycji i terenu
+                            przyległego przez wystawcę okresie demontażu, uważa
+                            się za mienie porzucone z zamiarem wyzbycia się
+                            własności, a SM postąpią z nimi według własnego
+                            uznania. W takim przypadku SM, w razie potrzeby,
+                            dokona stosownych czynności na koszt i ryzyko
+                            wystawcy, a w razie konieczności obciąży wystawcę
+                            powstałymi kosztami.
+                        </li>
+                        <li>
+                            Zabronione jest pozostawianie bez nadzoru wszelkich
+                            przedmiotów, w tym bagażu lub innego mienia.
+                            Przedmioty pozostawione bez nadzoru poza stoiskiem
+                            lub inną ekspozycją na terenie SM lub w innym
+                            miejscu organizacji wydarzenia, w czasie montażu,
+                            trwania wydarzenia i demontażu, mogą ze względów
+                            bezpieczeństwa zostać przez SM albo specjalistyczne
+                            służby usunięte lub zniszczone na koszt wystawcy lub
+                            innej osoby pozostawiającej przedmioty. SM nie
+                            ponoszą z tego tytułu odpowiedzialności. Jeżeli w
+                            związku z pozostawionymi bez nadzoru przedmiotami
+                            konieczna będzie ewakuacja osób z pawilonów lub
+                            terenów targowych, to kosztami tej ewakuacji zostaną
+                            obciążone osoby, które pozostawiły przedmioty.
+                        </li>
+                        <li>
+                            Wszyscy uczestnicy wydarzenia, wystawcy i inne
+                            podmioty wspierające wystawców są zobowiązani do:
+                            <ol type="a">
+                                <li>
+                                    nieingerowania swoimi działaniami w
+                                    przestrzenie ciągów komunikacyjnych i stref
+                                    ochrony przeciwpożarowej w pawilonach i na
+                                    terenach otwartych (poza pawilonami)
+                                    wydarzenia i okolicy;
+                                </li>
+                                <li>
+                                    przestrzegania przepisów o ruchu drogowym,
+                                    które obowiązują w strefie ruchu na terenach
+                                    SM lub w innych miejscach organizacji
+                                    wydarzenia przez BMS oraz oznaczeń
+                                    dotyczących wyłączenia niektórych
+                                    przestrzeni ze strefy ruchu;
+                                </li>
+                                <li>
+                                    wykonywania poleceń porządkowych wydawanych
+                                    przez służby SM ze względów organizacyjnych
+                                    i bezpieczeństwa;
+                                </li>
+                                <li>
+                                    wykonywania poleceń funkcjonariuszy Straży
+                                    Pożarnej lub innych służb państwowych
+                                    podczas ewakuacji, akcji ratowniczych albo
+                                    czynności kontrolno-rozpoznawczych;
+                                </li>
+                                <li>
+                                    regulowania mandatów nałożonych przez
+                                    funkcjonariuszy Straży Pożarnej lub innych
+                                    służb państwowych zgodnie z obowiązującymi w
+                                    Rzeczypospolitej Polskiej przepisami
+                                    dotyczącymi ochrony przeciwpożarowej oraz
+                                    bezpieczeństwa.
+                                </li>
+                            </ol>
+                        </li>
+                        <li>
+                            Poruszanie się pojazdów po drogach komunikacyjnych i
+                            ewakuacyjnych na terenie otwartym, zarówno w czasie
+                            wydarzenia, jak i w czasie montażu i demontażu
+                            wymaga szczególnej ostrożności, zwłaszcza pieszych,
+                            którzy powinni zwracać uwagę na sygnały dźwiękowe i
+                            świetlne pojazdów wykorzystywanych do prac
+                            montażowych, demontażowych, transportowych,
+                            serwisowych.
+                        </li>
+                        <li>
+                            Maksymalna prędkość wszystkich pojazdów znajdujących
+                            się na terenie wydarzenia SM wynosi 5 km/h.
+                        </li>
+                        <li>
+                            Wszystkie pojazdy znajdujące się w Strefach
+                            pokazowych pozostają w niej bezwzględnie do końca
+                            trwania wydarzenia. Opuszczenie terenu wydarzenia SM
+                            będzie możliwe wyłącznie za zgodą SM.
+                        </li>
+                        <li>
+                            W przypadku niedostosowania się wystawcy (lub jego
+                            pracowników, osoby, za które jest odpowiedzialny lub
+                            współpracujące z nim) do powyższych wskazanych
+                            zasad, SM dokona zamknięcia stoiska na koszt i
+                            ryzyko wystawcy, bez uprzedniego poinformowania.
+                        </li>
+                        <li>
+                            SM nie ponosi odpowiedzialności za żadne szkody i
+                            krzywdy powstałe z tytułu niezastosowania się do
+                            powyższego. Ponadto, SM obciąży wystawcę powstałymi
+                            kosztami, wynikłymi w związku z niedostosowaniem się
+                            wystawcy lub innych osób do zasad wynikających z
+                            Regulaminu.
+                        </li>
+                        <li>
+                            Na terenie stadionu obowiązuje całkowity i
+                            bezwzględny zakaz wchodzenia oraz wjeżdżania
+                            pojazdami na murawę, zarówno przez wystawców, jak i
+                            osoby towarzyszące.
+                            <ol type="a">
+                                <li>
+                                    Wystawcy mogą poruszać się pojazdami
+                                    wyłącznie po wyznaczonych ciągach
+                                    komunikacyjnych wokół murawy oraz w strefach
+                                    do tego przeznaczonych, wyłącznie za zgodą i
+                                    w asyście służb porządkowych SM.
+                                </li>
+                                <li>
+                                    Każde wejście lub wjazd na murawę stanowi
+                                    rażące naruszenie Regulaminu i skutkuje
+                                    obowiązkiem zapłaty kary umownej w wysokości
+                                    10 000 PLN za każde takie zdarzenie.
+                                </li>
+                                <li>
+                                    Wystawca, akceptując niniejszy regulamin,
+                                    zobowiązuje się do pokrycia kosztów
+                                    związanych z usunięciem szkód spowodowanych
+                                    naruszeniem zakazu oraz do poniesienia
+                                    pełnej odpowiedzialności cywilnej.
+                                </li>
+                                <li>
+                                    SM zastrzega sobie prawo do usunięcia ze
+                                    strefy wydarzenia wystawcy lub jego
+                                    przedstawicieli, którzy naruszą zakaz.
+                                </li>
+                                <li>
+                                    W przypadku naruszenia zakazu przez osobę
+                                    współpracującą z wystawcą (np. kierowcę,
+                                    pomocnika, członka zespołu),
+                                    odpowiedzialność ponosi wystawca.
+                                </li>
+                                <li>
+                                    W przypadku nieuiszczenia kary umownej w
+                                    terminie 14 dni od wezwania, SM przysługuje
+                                    prawo dochodzenia należności na drodze
+                                    postępowania sądowego, z doliczeniem odsetek
+                                    ustawowych oraz kosztów windykacyjnych i
+                                    sądowych.
+                                </li>
+                            </ol>
+                        </li>
+                        <li>
+                            Strefa VIP (loże VIP):
+                            <ol type="a">
+                                <li>
+                                    Pojazdy wystawowe ze Strefy Select,
+                                    znajdujące się na murawie stadionu, mogą
+                                    opuścić teren dopiero po zakończeniu
+                                    oficjalnej części wydarzenia, w tym po
+                                    ceremonii wręczenia nagród.
+                                </li>
+                                <li>
+                                    Wyjazd z murawy odbywa się wyłącznie za
+                                    zgodą i w asyście organizatora oraz służb
+                                    porządkowych.
+                                </li>
+                                <li>
+                                    Organizator będzie kontaktować się z
+                                    wystawcami osobiście lub telefonicznie w
+                                    celu uzgodnienia dokładnej godziny wyjazdu.
+                                </li>
+                                <li>
+                                    W przypadku braku kontaktu z wystawcą lub
+                                    nieodebrania pojazdu w wyznaczonym czasie,
+                                    organizator zastrzega sobie prawo do
+                                    odholowania pojazdu na koszt i ryzyko
+                                    wystawcy. Koszt odholowania wynosi 1000 PLN
+                                    brutto za każdy pojazd.
+                                </li>
+                                <li>
+                                    Po opuszczeniu murawy, pojazdy mogą zostać
+                                    przestawione na parking P1, gdzie mogą
+                                    pozostać maksymalnie do niedzieli do godziny
+                                    12:00, chyba że organizator postanowi
+                                    inaczej.
+                                </li>
+                                <li>
+                                    Pozostawienie pojazdu po wskazanym czasie
+                                    może skutkować dodatkowymi kosztami
+                                    postojowymi, które zostaną doliczone do
+                                    wystawcy.
+                                </li>
+                            </ol>
+                        </li>
+                    </ol>
+                </section>
+
+                <section>
+                    <h3>8. ZABEZPIECZENIE TERENU</h3>
+                    <ol>
+                        <li>
+                            Tereny SM i inne miejsca organizacji wydarzenia są
+                            zabezpieczane przez służby ochrony oraz posiadają
+                            zabezpieczenia techniczne (np. monitoring wizyjny).
+                        </li>
+                        <li>
+                            Wystawca jest zobowiązany, zarówno w okresie trwania
+                            wydarzenia, jak i w okresach montażu i demontażu
+                            stoiska, do zabezpieczenia na własny koszt i ryzyko
+                            eksponatów, sprzętu i urządzeń przed ewentualnymi
+                            zdarzeniami mogącymi powodować w szczególności
+                            szkody lub krzywdy innym podmiotom, osobom
+                            przebywającym na terenie wydarzenia lub w jego
+                            obrębie.
+                        </li>
+                    </ol>
+                </section>
+
+                <section>
+                    <h3>9. ODPOWIEDZIALNOŚĆ I UBEZPIECZENIE</h3>
+                    <ol>
+                        <li>
+                            SM nie ponosi odpowiedzialności za szkody lub
+                            krzywdy doznane przez podmioty lub osoby
+                            przebywające na terenie wydarzenia lub w jego
+                            obrębie, a w szczególności za szkody lub krzywdy
+                            spowodowane przez wystawców (jego pracowników albo
+                            osoby, za które wystawca jest odpowiedzialny lub
+                            współpracujące z nim) innym wystawcom, podmiotom lub
+                            innym osobom trzecim.
+                        </li>
+                        <li>
+                            SM nie ponosi odpowiedzialności za szkody lub
+                            krzywdy uczestników wydarzenia albo wystawców
+                            spowodowane siłą wyższą, np. pożarem, eksplozją,
+                            uderzeniem pioruna, wichurą, zalaniem wodą oraz
+                            niezależną od SM przerwą w dostawie wody, prądu lub
+                            gazu (sprężonego powietrza).
+                        </li>
+                        <li>
+                            SM nie ponosi odpowiedzialności za przedmioty
+                            pozostawione bez nadzoru na terenie wydarzenia lub w
+                            innym miejscu wydarzenia organizowanego przez SM.
+                            Wystawcom nie przysługują żadne roszczenia z tytułu
+                            usunięcia lub zniszczenia przedmiotów pozostawionych
+                            bez nadzoru. SM postąpią z nimi według własnego
+                            uznania. W takim przypadku SM, w razie potrzeby,
+                            dokona stosownych czynności na koszt i ryzyko
+                            wystawcy, a w razie konieczności obciąży wystawcę
+                            powstałymi kosztami.
+                        </li>
+                        <li>
+                            SM nie ponoszą odpowiedzialności za żadne szkody lub
+                            krzywdy poniesione przez wystawców wskutek
+                            niestosowania się do poleceń wydawanych przez służby
+                            SM w sytuacjach zagrożeń bezpieczeństwa osób i
+                            mienia, np. w związku z zarządzeniem ewakuacji osób
+                            z pawilonu wydarzenia.
+                        </li>
+                        <li>
+                            Wystawcy ponoszą odpowiedzialność za szkody powstałe
+                            w wyniku działań lub zaniechań swoich pracowników.
+                        </li>
+                        <li>
+                            Wystawca wydarzenia ponosi odpowiedzialność za
+                            spowodowanie szkód lub krzywd w mieniu SM
+                            (uszkodzenie, zniszczenie, ubytki). Odpowiedzialność
+                            taka dotyczy również, gdy za szkodę lub krzywdę
+                            odpowiedzialna jest firma budując stoisko /
+                            wykonujących aranżację przestrzeni (wykonawców).
+                        </li>
+                        <li>
+                            Wystawcy wydarzenia powinni we własnym zakresie
+                            ubezpieczyć się z tytułu odpowiedzialności cywilnej,
+                            a także ubezpieczyć swoje mienie wnoszone na tereny
+                            SM (eksponaty, sprzęt i urządzenia na stoisku,
+                            elementy budowy i wyposażenia stoisk, mienie
+                            prywatne pojazdy służbowe itp.), zarówno na okres
+                            trwania wydarzenia, jak i na okres montażu i
+                            demontażu.
+                        </li>
+                        <li>
+                            O powstaniu szkody wystawca jest zobowiązany
+                            niezwłocznie powiadomić SM, w celu sporządzenia
+                            protokołu zdarzenia.
+                        </li>
+                        <li>
+                            W przypadku powstania szkód na terenie wydarzenia, w
+                            tym w szczególności w wyniku wycieków płynów
+                            eksploatacyjnych (np. oleju, paliwa, płynów
+                            chłodniczych) lub innych działań lub zaniechań
+                            wystawcy (w tym jego pracowników, współpracowników
+                            lub osób przez niego odpowiedzialnych), organizator
+                            (SM) ma prawo do niezwłocznego usunięcia powstałych
+                            szkód na koszt wystawcy.
+                        </li>
+                        <li>
+                            Wystawca, którego działania lub zaniechania
+                            doprowadziły do powstania szkód, zobowiązany jest do
+                            pokrycia pełnych kosztów związanych z ich usunięciem
+                            w terminie 7 dni od dnia doręczenia wystawcy
+                            rachunku lub faktury dokumentującej poniesione przez
+                            organizatora koszty. Koszty te obejmują m.in.:
+                            czyszczenie powierzchni, naprawę uszkodzeń
+                            infrastruktury oraz inne działania konieczne do
+                            przywrócenia terenu do stanu pierwotnego.
+                        </li>
+                        <li>
+                            W przypadku nieuregulowania należności w terminie
+                            określonym w §9.10, organizator zastrzega sobie
+                            prawo do dochodzenia roszczeń na drodze postępowania
+                            sądowego, z doliczeniem odsetek ustawowych za
+                            opóźnienie oraz kosztów windykacji.
+                        </li>
+                    </ol>
+                </section>
+
+                <section>
+                    <h3>10. UTRWALANIE I WYKORZYSTANIE WIZERUNKU</h3>
+                    <ol>
+                        <li>
+                            Wystawca, biorąc udział w wydarzeniu Street Show
+                            2026, wyraża zgodę na utrwalanie swojego wizerunku
+                            oraz wizerunku osób reprezentujących wystawcę (w tym
+                            pracowników, współpracowników i przedstawicieli) w
+                            formie fotografii, nagrań wideo lub nagrań
+                            dźwiękowych wykonanych w trakcie trwania wydarzenia.
+                        </li>
+                        <li>
+                            Zgoda obejmuje nieodpłatne, nieograniczone czasowo i
+                            terytorialnie wykorzystanie utrwalonego wizerunku do
+                            celów promocyjnych, marketingowych i informacyjnych
+                            wydarzenia, w szczególności na stronach
+                            internetowych, mediach społecznościowych, w
+                            materiałach drukowanych i audiowizualnych
+                            Organizatora oraz jego oficjalnych partnerów i
+                            sponsorów.
+                        </li>
+                        <li>
+                            Wystawcy nie przysługują jakiekolwiek roszczenia (w
+                            tym finansowe) z tytułu wykorzystania wizerunku, o
+                            którym mowa powyżej. Organizator ma prawo udzielić
+                            sublicencji na wykorzystanie utrwalonego wizerunku
+                            podmiotom współpracującym przy wydarzeniu.
+                        </li>
+                    </ol>
+                </section>
+
+                <section>
+                    <h3>11. POSTANOWIENIA KOŃCOWE</h3>
+                    <ol>
+                        <li>
+                            SM zastrzega sobie, w przypadkach zaistnienia
+                            okoliczności od nich niezależnych, prawo do
+                            odwołania, częściowego zamknięcia, skrócenia albo
+                            przełożenia terminu wydarzenia. W takich przypadkach
+                            podmiotom, które dokonały zgłoszenia uczestnictwa w
+                            wydarzeniu jako wystawca nie przysługuje prawo do
+                            odszkodowania lub zmniejszenia opłat związanych z
+                            tym zgłoszeniem (za zgłoszenie wystawcy, z tytułu
+                            zamówienia i udostępnienia powierzchni
+                            wystawienniczej).
+                        </li>
+                        <li>
+                            Wystawcy wydarzenia są zobowiązani respektować
+                            przepisy prawa powszechnie obowiązującego na terenie
+                            Rzeczypospolitej Polskiej.
+                        </li>
+                        <li>
+                            Wszelkie spory mogące wyniknąć pomiędzy SM, a
+                            wystawcami wydarzenia, których polubowne rozwiązanie
+                            okaże się niemożliwe, będą rozstrzygane przez sąd
+                            powszechny właściwy miejscowo dla siedziby SM.
+                        </li>
+                        <li>
+                            Dla rozstrzygania ewentualnych sporów z
+                            zagranicznymi uczestnikami wydarzenia przyjmuje się
+                            jako obowiązujący tekst regulaminu w języku polskim,
+                            a prawem właściwym jest prawo polskie.
+                        </li>
+                    </ol>
+                </section>
+
+                <div class="mt-5 text-center small text-muted">
+                    Załącznik do Regulaminu wydarzenia Street Show 2026
+                </div>
+
+                <section class="annex">
+                    <div class="annex-header">
+                        <div class="annex-kicker">
+                            Załącznik do Regulaminu wydarzenia Street Show 2026
+                        </div>
+                        <h3>ANEKS NR 1</h3>
+                        <p class="annex-subtitle">
+                            DOTYCZĄCY SPONSORINGU NAGRÓD GULF
+                        </p>
+                        <p class="annex-context">
+                            do Regulaminu Strefy Select i Expo - Street Show
+                            2026
+                        </p>
+                    </div>
+
+                    <p class="annex-intro">
+                        Niniejszy Aneks (zwany dalej „Aneksem”) stanowi
+                        integralną część Regulaminu Strefy Select i Expo -
+                        Street Show 2026 (zwanego dalej „Regulaminem”) i
+                        precyzuje warunki uczestnictwa, zasady marketingu oraz
+                        ochrony własności intelektualnej związane z udziałem
+                        marki GULF w Wydarzeniu.
+                    </p>
+
+                    <h4>§ 1. SPONSORING NAGRÓD ORAZ WYŁANIANIE LAUREATÓW</h4>
+                    <ol class="annex-list">
+                        <li>
+                            <strong>1. Sponsor nagród:</strong> Wyłącznym
+                            fundatorem (Sponsorem) nagród rzeczowych dla
+                            wystawców w Strefie Select i Expo, w tym w ramach
+                            wyróżnienia „Nagroda dla 10 Najlepszych Pojazdów”
+                            (Top 10 Vehicles Award), jest grupa spółek Gulf,
+                            reprezentowana w Europie przez Gulf Oil Europe Sp.
+                            z o.o. z siedzibą w Szczecinie (ul.
+                            Storrady-Świętosławy 1/119, 71-602 Szczecin).
+                        </li>
+                        <li>
+                            <strong>2. Procedura oceny:</strong> Wyróżnienie
+                            „Top 10 Vehicles Award” zostanie przyznane 10
+                            najlepszym pojazdom obecnym w Strefie Select i Expo
+                            w dniu 29 sierpnia 2026 r. Wyboru laureatów dokona
+                            Komisja Konkursowa powołana przez Organizatora
+                            (Street Meeting Poland Sp. z o.o.) we współpracy z
+                            przedstawicielami Sponsora (Gulf). Wybór ma
+                            charakter uznaniowy i opiera się na kryteriach
+                            unikalności, stanu wizualnego, wkładu pracy w
+                            modyfikacje oraz zgodności z duchem motoryzacyjnym.
+                        </li>
+                        <li>
+                            <strong>3. Charakter nagród:</strong> Nagrody mają
+                            charakter rzeczowy (oficjalna odzież oraz gadżety
+                            marki Gulf) i nie podlegają wymianie na ekwiwalent
+                            pieniężny ani inne produkty.
+                        </li>
+                    </ol>
+
+                    <h4>§ 2. OGRANICZENIE ODPOWIEDZIALNOŚCI</h4>
+                    <ol class="annex-list">
+                        <li>
+                            <strong>1. Limit odpowiedzialności:</strong>
+                            Odpowiedzialność Organizatora (Street Meeting
+                            Poland) oraz Sponsora (Gulf) wobec wystawców i
+                            uczestników biorących udział w rywalizacji o nagrody
+                            rzeczowe w Strefie Select i Expo, w tym za ewentualne
+                            opóźnienia w wysyłce nagród, uszkodzenia przesyłek
+                            lub wady fizyczne, jest ograniczona do jednostkowej
+                            wartości detalicznej danej nagrody.
+                        </li>
+                        <li>
+                            <strong>2. Wycena referencyjna nagród:</strong>
+                            Dla celów ograniczenia odpowiedzialności przyjmuje
+                            się następujące przybliżone wartości detaliczne
+                            nagród (zgodnie z cenami w oficjalnym sklepie
+                            Williams F1):
+                            <ol class="annex-sublist">
+                                <li>
+                                    oficjalna koszulka Williams F1 – ok. 85 EUR
+                                    (lub równowartość w PLN);
+                                </li>
+                                <li>
+                                    oficjalna czapka z daszkiem Williams F1 –
+                                    ok. 40 EUR (lub równowartość w PLN).
+                                </li>
+                            </ol>
+                        </li>
+                        <li>
+                            <strong>3. Wyłączenie ustawowe:</strong>
+                            Ograniczenie to nie ma zastosowania w sytuacjach,
+                            w których na mocy bezwzględnie obowiązujących
+                            przepisów prawa polskiego odpowiedzialności nie
+                            można wyłączyć ani ograniczyć (w szczególności w
+                            przypadku szkód wyrządzonych umyślnie).
+                        </li>
+                    </ol>
+
+                    <h4>§ 3. WYKORZYSTANIE WIZERUNKU ORAZ MATERIAŁÓW WIDEO</h4>
+                    <ol class="annex-list">
+                        <li>
+                            <strong>1. Zgoda na rejestrację i publikację:</strong>
+                            Każdy wystawca i uczestnik Strefy Select i Expo, w
+                            szczególności laureaci wyróżnienia „Top 10 Vehicles
+                            Award”, przyjmuje do wiadomości i wyraża nieodwołalną,
+                            nieodpłatną, nieograniczoną czasowo oraz
+                            terytorialnie zgodę na to, że proces oceny pojazdów,
+                            prezentacja pojazdów, ogłoszenie wyników oraz moment
+                            wręczania nagród na scenie głównej będą rejestrowane
+                            za pomocą urządzeń rejestrujących obraz i dźwięk
+                            (zdjęcia, filmy wideo, transmisje na żywo).
+                        </li>
+                        <li>
+                            <strong>2. Wykorzystanie w marketingu:</strong>
+                            Zgoda, o której mowa w ust. 1, obejmuje prawo
+                            Sponsora (Gulf) oraz Organizatora do bezwarunkowego
+                            i nieograniczonego wykorzystania wykonanych zdjęć,
+                            nagrań wideo, wywiadów oraz wypowiedzi uczestników
+                            w ich przyszłych materiałach promocyjnych,
+                            reklamowych, w mediach społecznościowych, serwisach
+                            internetowych oraz prezentacjach korporacyjnych na
+                            całym świecie, bez prawa uczestnika do
+                            jakiegokolwiek dodatkowego wynagrodzenia.
+                        </li>
+                    </ol>
+
+                    <h4>
+                        § 4. OCHRONA ZNAKÓW TOWAROWYCH I PREZENTACJA POJAZDÓW
+                    </h4>
+                    <ol class="annex-list">
+                        <li>
+                            <strong>1. Własność znaków towarowych:</strong>
+                            Wystawcy przyjmują do wiadomości, że wszelkie znaki
+                            towarowe, logotypy, barwy firmowe (tzw. Gulf Livery
+                            / barwy wyścigowe Gulf) oraz nazwy handlowe grupy
+                            Gulf są wyłączną własnością intelektualną koncernu
+                            Gulf i podlegają ścisłej ochronie prawnej na mocy
+                            prawa polskiego oraz prawa Anglii i Walii.
+                        </li>
+                        <li>
+                            <strong>2. Prezentacja pojazdów w barwach Gulf (Top 10):</strong>
+                            Wystawcy prezentujący w Strefie Select i Expo
+                            pojazdy stylizowane, oklejone lub w jakikolwiek inny
+                            sposób wykorzystujące barwy i znaki towarowe Gulf (w
+                            szczególności w ramach ubiegania się o wyróżnienie
+                            Top 10), oświadczają, że ich pojazdy nie służą celom
+                            komercyjnym konkurencyjnym wobec Gulf, a ich
+                            prezentacja ma charakter wyłącznie hobbystyczny lub
+                            estetyczny.
+                        </li>
+                        <li>
+                            <strong>3. Zakaz komercjalizacji:</strong> Zabrania
+                            się wystawcom odsprzedaży, powielania,
+                            licencjonowania lub komercyjnego wykorzystywania
+                            barw Gulf (livery) umieszczonych na samochodach,
+                            motocyklach lub innych pojazdach w celach
+                            zarobkowych bez uprzedniej, wyraźnej i pisemnej
+                            zgody (licencji) wydanej bezpośrednio przez
+                            uprawniony podmiot z grupy Gulf.
+                        </li>
+                        <li>
+                            <strong>4. Zabezpieczenie przed roszczeniami (Indemnification):</strong>
+                            Wystawca zobowiązuje się zabezpieczyć, bronić i
+                            zwolnić z wszelkiej odpowiedzialności Organizatora
+                            oraz grupę Gulf przed jakimikolwiek roszczeniami
+                            osób trzecich wynikającymi z nieuprawnionego użycia
+                            przez wystawcę praw autorskich, patentów, wzorów
+                            przemysłowych lub znaków towarowych na prezentowanym
+                            pojeździe, w tym z tytułu naruszenia praw osób
+                            trzecich przy tworzeniu okleiny pojazdu.
+                        </li>
+                    </ol>
+
+                    <h4>§ 5. POSTANOWIENIA KOŃCOWE</h4>
+                    <ol class="annex-list">
+                        <li>
+                            <strong>1. Poufność:</strong> Wystawcy zobowiązują się
+                            do zachowania w poufności wszelkich niepublicznych
+                            informacji o charakterze biznesowym, marketingowym lub
+                            organizacyjnym dotyczącym grupy Gulf oraz Street
+                            Meeting Poland, które powzięli przy okazji
+                            uczestnictwa w wydarzeniu i ubiegania się o nagrody
+                            Sponsora.
+                        </li>
+                        <li>
+                            <strong>2. Prawo właściwe:</strong> W sprawach
+                            nieuregulowanych niniejszym Aneksem stosuje się
+                            postanowienia Regulaminu oraz przepisy polskiego
+                            Kodeksu Cywilnego. W zakresie praw własności
+                            intelektualnej i znaków towarowych Gulf zastosowanie
+                            mają właściwe przepisy prawa brytyjskiego (Anglii i
+                            Walii).
+                        </li>
+                        <li>
+                            <strong>3. Wejście w życie:</strong> Aneks wchodzi w
+                            życie z dniem opublikowania i ma zastosowanie do
+                            wszystkich zgłoszeń i uczestników Strefy Select i
+                            Expo - Street Show 2026.
+                        </li>
+                    </ol>
+                </section>
+
+                <div class="mt-5 text-center muted-note">
+                    Załącznik do Regulaminu wydarzenia Street Show 2026
+                </div>
+            </div>
         </div>
         <div id="regulations-folder" class="regulations"></div>
         <footer class="footer bg-dark text-light border-top">
@@ -1128,5 +1490,47 @@
         <script src="js/config.js"></script>
         <script src="js/main.js"></script>
         <script src="scripts/set-image-decoding.js" defer></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const sections = document.querySelectorAll(
+                    ".regulations-shell > section:not(.annex)",
+                );
+
+                sections.forEach((section, sectionIndex) => {
+                    const mainList = section.querySelector(":scope > ol");
+                    if (!mainList) return;
+
+                    Array.from(mainList.children).forEach((item, itemIndex) => {
+                        if (item.tagName !== "LI") return;
+                        const number = `${sectionIndex + 1}.${itemIndex + 1}`;
+                        item.style.setProperty("--item-number", `"${number}"`);
+                    });
+                });
+
+                const sectionSeven = Array.from(
+                    document.querySelectorAll(
+                        ".regulations-shell section:not(.annex)",
+                    ),
+                ).find(
+                    (section) =>
+                        section.querySelector("h3")?.textContent.trim() ===
+                        "7. PRZEPISY PORZĄDKOWE I BEZPIECZEŃSTWA",
+                );
+
+                if (sectionSeven) {
+                    const forbiddenItem = Array.from(
+                        sectionSeven.querySelectorAll("li"),
+                    ).find((li) =>
+                        li.textContent.includes("Niedozwolone jest:"),
+                    );
+
+                    const nestedList = forbiddenItem?.querySelector("ol");
+                    if (nestedList) {
+                        nestedList.classList.add("nested-numbered");
+                        nestedList.style.setProperty("--reg-prefix", '"7.3."');
+                    }
+                }
+            });
+        </script>
     </body>
 </html>
