@@ -85,7 +85,9 @@ export default function RegisterPage() {
                         <button
                             type="button"
                             className="password-toggle"
-                            onClick={() => setIsPasswordVisible((value) => !value)}
+                            onClick={() =>
+                                setIsPasswordVisible((value) => !value)
+                            }
                             aria-pressed={isPasswordVisible}
                         >
                             {isPasswordVisible ? "Ukryj" : "Pokaż"}

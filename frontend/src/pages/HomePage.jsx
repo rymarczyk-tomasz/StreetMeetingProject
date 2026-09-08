@@ -184,7 +184,10 @@ export default function HomePage() {
                                             motoryzacyjne oraz renomowane marki
                                             z Polski i Europy.
                                         </p>
-                                        <a className="card-action" href="#contact">
+                                        <a
+                                            className="card-action"
+                                            href="#contact"
+                                        >
                                             Sprawdź atrakcje
                                         </a>
                                     </div>

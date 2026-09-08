@@ -397,7 +397,9 @@ export default function AdminPage() {
                                         .join(" ") || "—"}
                                 </td>
                                 <td>{u.role}</td>
-                                <td>{u.is_active ? "aktywny" : "zablokowany"}</td>
+                                <td>
+                                    {u.is_active ? "aktywny" : "zablokowany"}
+                                </td>
                                 <td>
                                     <button
                                         type="button"
