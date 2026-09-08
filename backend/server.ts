@@ -1,6 +1,8 @@
 const path = require("path");
 const os = require("os");
-require("dotenv").config({ path: path.join(__dirname, "../config/.env") });
+// process.cwd() is backend/ (npm scripts run from there); __dirname would point
+// into dist/ once compiled and miss backend/config/.env.
+require("dotenv").config({ path: path.join(process.cwd(), "config/.env") });
 
 const cors = require("cors");
 const express = require("express");
@@ -34,7 +36,7 @@ app.use(cookieParser());
 
 app.use(
     "/uploads/submissions",
-    express.static(path.join(__dirname, "uploads/submissions")),
+    express.static(path.join(process.cwd(), "uploads/submissions")),
 );
 app.use("/api/auth", authRoutes);
 app.get("/api/event", (req, res) => {

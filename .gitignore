@@ -44,6 +44,9 @@ credentials.json
 # SQLite auth database (runtime data, per-environment)
 backend/data/
 
+# Compiled TypeScript output
+backend/dist/
+
 # User-submitted photos (runtime data, per-environment)
 backend/uploads/submissions/
 

@@ -47,7 +47,11 @@ function findUserById(id) {
     return findByIdStmt.get(id);
 }
 
-function listUsers({ search, role, active } = {}) {
+function listUsers({
+    search,
+    role,
+    active,
+}: { search?: string; role?: string; active?: string | number } = {}) {
     const conditions = [];
     const parameters = [];
 

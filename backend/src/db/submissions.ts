@@ -50,7 +50,11 @@ function listSubmissionsByUser(userId) {
     return listByUserStmt.all(userId);
 }
 
-function listAllSubmissions({ status, paymentStatus, search } = {}) {
+function listAllSubmissions({
+    status,
+    paymentStatus,
+    search,
+}: { status?: string; paymentStatus?: string; search?: string } = {}) {
     const conditions = [];
     const parameters = [];
 

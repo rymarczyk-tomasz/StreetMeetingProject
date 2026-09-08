@@ -190,7 +190,7 @@ export default function AccountSettingsPage() {
                             Nowe hasło
                             <input
                                 type="password"
-                                minLength="8"
+                                minLength={8}
                                 value={passwords.newPassword}
                                 onChange={(event) =>
                                     setPasswords({
@@ -205,7 +205,7 @@ export default function AccountSettingsPage() {
                             Powtórz nowe hasło
                             <input
                                 type="password"
-                                minLength="8"
+                                minLength={8}
                                 value={passwords.confirmPassword}
                                 onChange={(event) =>
                                     setPasswords({

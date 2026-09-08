@@ -13,7 +13,7 @@ function useNavbarOffset() {
         function applyOffset() {
             if (!navbar) return;
             const navbarHeight = navbar.offsetHeight;
-            const home = document.querySelector(".home");
+            const home = document.querySelector<HTMLElement>(".home");
             document.documentElement.style.setProperty(
                 "--navbar-height",
                 `${navbarHeight}px`,
@@ -22,9 +22,9 @@ function useNavbarOffset() {
             if (home) {
                 home.style.marginTop = `${navbarHeight}px`;
                 home.style.height = `calc(100vh - ${navbarHeight}px)`;
-                if (content) content.style.paddingTop = "";
+                if (content) (content as HTMLElement).style.paddingTop = "";
             } else if (content) {
-                content.style.paddingTop = `${navbarHeight}px`;
+                (content as HTMLElement).style.paddingTop = `${navbarHeight}px`;
             }
         }
 

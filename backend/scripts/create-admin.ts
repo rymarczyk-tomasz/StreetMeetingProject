@@ -1,6 +1,6 @@
 // Usage: node scripts/create-admin.js <email> <password> [firstName] [lastName]
 require("dotenv").config({
-    path: require("path").join(__dirname, "../config/.env"),
+    path: require("path").join(process.cwd(), "config/.env"),
 });
 
 const bcrypt = require("bcryptjs");

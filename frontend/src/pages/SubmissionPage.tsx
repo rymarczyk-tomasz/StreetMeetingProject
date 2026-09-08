@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { ChangeEvent } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/client";
 
@@ -12,7 +13,7 @@ export default function SubmissionPage() {
         carBrand: user.carBrand || "",
         carDescription: "",
     });
-    const [photos, setPhotos] = useState(null);
+    const [photos, setPhotos] = useState<FileList | null>(null);
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -49,7 +50,7 @@ export default function SubmissionPage() {
             }));
     }
 
-    function handlePhotosChange(event) {
+    function handlePhotosChange(event: ChangeEvent<HTMLInputElement>) {
         const selectedPhotos = Array.from(event.target.files || []);
         const totalSize = selectedPhotos.reduce(
             (sum, photo) => sum + photo.size,

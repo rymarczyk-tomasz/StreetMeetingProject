@@ -10,7 +10,7 @@ const { createRateLimiter } = require("../utils/rateLimiter");
 const router = express.Router();
 
 const EMAIL_LIKE_FILENAME = /[^a-zA-Z0-9._-]/g;
-const uploadsRoot = path.join(__dirname, "../../uploads/submissions");
+const uploadsRoot = path.join(process.cwd(), "uploads/submissions");
 if (!fs.existsSync(uploadsRoot)) {
     fs.mkdirSync(uploadsRoot, { recursive: true });
 }
@@ -89,6 +89,12 @@ router.patch("/:id/payment-status", (req, res) => {
 
     if (!submission || Number(submission.user_id) !== Number(req.user.sub)) {
         return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+    }
+
+    if (submission.status !== "approved") {
+        return res.status(400).json({
+            message: "Możesz zgłosić opłatę dopiero po akceptacji zgłoszenia.",
+        });
     }
 
     if (submission.payment_status === "paid") {

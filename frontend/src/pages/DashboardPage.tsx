@@ -85,6 +85,7 @@ export default function DashboardPage() {
                 <ul className="submission-list">
                     {submissions.map((s) => {
                         const isExpanded = expandedSubmissionId === s.id;
+                        const canManagePayment = s.status === "approved";
 
                         return (
                             <li className="submission-card" key={s.id}>
@@ -145,30 +146,34 @@ export default function DashboardPage() {
                                             <strong>Opis pojazdu:</strong>{" "}
                                             {s.carDescription}
                                         </p>
-                                        <p>
-                                            <strong>Status opłaty:</strong>{" "}
-                                            <span
-                                                className={`status-badge payment-status-${s.paymentStatus || "unpaid"}`}
-                                            >
-                                                {
-                                                    PAYMENT_STATUS_LABELS[
-                                                        s.paymentStatus ||
-                                                            "unpaid"
-                                                    ]
-                                                }
-                                            </span>
-                                        </p>
-                                        {(!s.paymentStatus ||
-                                            s.paymentStatus === "unpaid") && (
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    reportPayment(s.id)
-                                                }
-                                            >
-                                                Zgłoś opłacenie
-                                            </button>
+                                        {canManagePayment && (
+                                            <p>
+                                                <strong>Status opłaty:</strong>{" "}
+                                                <span
+                                                    className={`status-badge payment-status-${s.paymentStatus || "unpaid"}`}
+                                                >
+                                                    {
+                                                        PAYMENT_STATUS_LABELS[
+                                                            s.paymentStatus ||
+                                                                "unpaid"
+                                                        ]
+                                                    }
+                                                </span>
+                                            </p>
                                         )}
+                                        {canManagePayment &&
+                                            (!s.paymentStatus ||
+                                                s.paymentStatus ===
+                                                    "unpaid") && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        reportPayment(s.id)
+                                                    }
+                                                >
+                                                    Zgłoś opłacenie
+                                                </button>
+                                            )}
                                         {s.adminNote && (
                                             <p className="submission-note">
                                                 <strong>

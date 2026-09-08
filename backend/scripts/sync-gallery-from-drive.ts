@@ -4,10 +4,10 @@ const { google } = require("googleapis");
 const dotenv = require("dotenv");
 
 dotenv.config({
-    path: path.join(__dirname, "../config/.env"),
+    path: path.join(process.cwd(), "config/.env"),
 });
 
-const rootDir = path.resolve(__dirname, "../..");
+const rootDir = path.resolve(process.cwd(), "..");
 const galleryDir = path.join(rootDir, "img", "gallery");
 const syncStatePath = path.join(galleryDir, ".drive-sync-state.json");
 

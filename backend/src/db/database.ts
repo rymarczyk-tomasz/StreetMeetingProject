@@ -4,7 +4,9 @@ const Database = require("better-sqlite3");
 
 // SQLite keeps the whole backend self-contained in one file, so moving between
 // mikrus (VPS) and hostinger.pl later only requires copying this data folder.
-const dataDir = path.join(__dirname, "../../data");
+// Resolved from process.cwd() (always backend/ via npm scripts) so it stays correct
+// whether running compiled dist/ output or the TS source directly.
+const dataDir = path.join(process.cwd(), "data");
 if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
 }

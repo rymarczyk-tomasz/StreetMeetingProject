@@ -140,7 +140,8 @@ export default function GalleryPage() {
                     aria-label="Podgląd zdjęcia galerii"
                     style={{ display: "block" }}
                     onClick={(e) => {
-                        if (e.target.id === "imageModal") closeModal();
+                        if ((e.target as HTMLElement).id === "imageModal")
+                            closeModal();
                     }}
                     onTouchStart={handleTouchStart}
                     onTouchEnd={handleTouchEnd}
