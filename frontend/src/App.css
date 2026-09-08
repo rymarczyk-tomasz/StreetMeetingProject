@@ -132,6 +132,80 @@
     margin: 1.5rem 0;
 }
 
+.admin-page {
+    max-width: 1100px;
+}
+
+.admin-page-header,
+.admin-section-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.admin-page-header {
+    margin-bottom: 1.5rem;
+}
+
+.admin-page-header h1,
+.admin-section-heading h2 {
+    margin: 0;
+}
+
+.admin-page-status,
+.admin-result-count {
+    color: #666;
+    font-size: 0.85rem;
+}
+
+.admin-navigation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.35rem;
+    margin-bottom: 2rem;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+}
+
+.admin-navigation button {
+    flex: 1 1 150px;
+    padding: 0.75rem 1rem;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+}
+
+.admin-navigation button:hover,
+.admin-navigation button.is-active {
+    border-color: #2a2a2a;
+    background: #2a2a2a;
+    color: #fff;
+}
+
+.admin-section {
+    min-height: 260px;
+}
+
+.admin-section-heading {
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.admin-section-heading p {
+    margin: 0.35rem 0 0;
+    color: #666;
+}
+
+.admin-section-heading > button {
+    flex-shrink: 0;
+}
+
 .admin-stat-card {
     display: flex;
     min-height: 100px;
@@ -187,6 +261,15 @@
 
     .account-grid {
         grid-template-columns: 1fr;
+    }
+
+    .admin-page-header,
+    .admin-section-heading {
+        flex-direction: column;
+    }
+
+    .admin-navigation button {
+        flex-basis: calc(50% - 0.5rem);
     }
 }
 
@@ -274,6 +357,16 @@
 
 .user-filters {
     grid-template-columns: minmax(0, 2fr) repeat(2, minmax(150px, 1fr));
+}
+
+.submission-filters {
+    grid-template-columns: minmax(0, 2fr) repeat(2, minmax(180px, 1fr)) auto;
+    align-items: end;
+}
+
+.admin-export-button {
+    min-height: 2.4rem;
+    white-space: nowrap;
 }
 
 .admin-filters label {
@@ -410,6 +503,27 @@
 .status-rejected {
     background: #e5484d;
     color: #fff;
+}
+
+.payment-status-unpaid {
+    background: #e5e7eb;
+    color: #1f2937;
+}
+
+.payment-status-verification {
+    background: #f5a623;
+    color: #1a1a1a;
+}
+
+.payment-status-paid {
+    background: #2ecc71;
+    color: #0a2e1a;
+}
+
+.payment-alert {
+    padding: 0.75rem 1rem;
+    border-left: 3px solid #f5a623;
+    background: #fff8e8;
 }
 
 @media (max-width: 700px) {

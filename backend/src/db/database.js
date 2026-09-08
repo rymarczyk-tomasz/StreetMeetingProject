@@ -51,6 +51,7 @@ db.exec(`
         car_description TEXT NOT NULL,
         photos TEXT NOT NULL DEFAULT '[]',
         status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+        payment_status TEXT NOT NULL DEFAULT 'unpaid' CHECK (payment_status IN ('unpaid', 'verification', 'paid')),
         admin_note TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -82,6 +83,19 @@ for (const column of ["phone", "license_plate", "car_brand"]) {
     if (!userColumns.has(column)) {
         db.exec(`ALTER TABLE users ADD COLUMN ${column} TEXT`);
     }
+}
+
+const submissionColumns = new Set(
+    db
+        .prepare("PRAGMA table_info(submissions)")
+        .all()
+        .map((column) => column.name),
+);
+
+if (!submissionColumns.has("payment_status")) {
+    db.exec(
+        "ALTER TABLE submissions ADD COLUMN payment_status TEXT NOT NULL DEFAULT 'unpaid'",
+    );
 }
 
 module.exports = db;

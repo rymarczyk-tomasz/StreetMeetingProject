@@ -135,6 +135,7 @@ router.patch("/users/:id/active", (req, res) => {
 
 router.get("/submissions", (req, res) => {
     const status = String(req.query.status || "").trim();
+    const paymentStatus = String(req.query.paymentStatus || "").trim();
     const search = String(req.query.search || "").trim();
 
     if (status && !["pending", "approved", "rejected"].includes(status)) {
@@ -143,7 +144,20 @@ router.get("/submissions", (req, res) => {
             .json({ message: "Nieprawidłowy filtr statusu." });
     }
 
-    const rows = submissionsDb.listAllSubmissions({ status, search });
+    if (
+        paymentStatus &&
+        !["unpaid", "verification", "paid"].includes(paymentStatus)
+    ) {
+        return res
+            .status(400)
+            .json({ message: "Nieprawidłowy status płatności." });
+    }
+
+    const rows = submissionsDb.listAllSubmissions({
+        status,
+        paymentStatus,
+        search,
+    });
     res.json({ submissions: rows.map(toPublicSubmission) });
 });
 
@@ -212,6 +226,39 @@ router.patch("/submissions/:id/status", (req, res) => {
             );
         });
     }
+
+    res.json({ submission: toPublicSubmission(updated) });
+});
+
+router.patch("/submissions/:id/payment-status", (req, res) => {
+    const id = Number(req.params.id);
+    const paymentStatus = req.body.paymentStatus;
+
+    if (!["unpaid", "verification", "paid"].includes(paymentStatus)) {
+        return res
+            .status(400)
+            .json({ message: "Nieprawidłowy status płatności." });
+    }
+
+    const existing = submissionsDb.findSubmissionById(id);
+    if (!existing) {
+        return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+    }
+
+    const updated = submissionsDb.updateSubmissionPaymentStatus(
+        id,
+        paymentStatus,
+    );
+    auditLogDb.createAuditEntry({
+        adminId: req.user.sub,
+        action: `submission.payment_${paymentStatus}`,
+        targetType: "submission",
+        targetId: id,
+        details: {
+            previousPaymentStatus: existing.payment_status || "unpaid",
+            paymentStatus,
+        },
+    });
 
     res.json({ submission: toPublicSubmission(updated) });
 });

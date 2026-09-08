@@ -20,6 +20,11 @@ const listAllStmt = db.prepare(`
     JOIN users ON users.id = submissions.user_id
     ORDER BY submissions.created_at DESC
 `);
+const updatePaymentStatusStmt = db.prepare(`
+    UPDATE submissions
+    SET payment_status = ?, updated_at = datetime('now')
+    WHERE id = ?
+`);
 const updateStatusStmt = db.prepare(`
     UPDATE submissions
     SET status = ?, admin_note = ?, updated_at = datetime('now')
@@ -45,13 +50,18 @@ function listSubmissionsByUser(userId) {
     return listByUserStmt.all(userId);
 }
 
-function listAllSubmissions({ status, search } = {}) {
+function listAllSubmissions({ status, paymentStatus, search } = {}) {
     const conditions = [];
     const parameters = [];
 
     if (status) {
         conditions.push("submissions.status = ?");
         parameters.push(status);
+    }
+
+    if (paymentStatus) {
+        conditions.push("submissions.payment_status = ?");
+        parameters.push(paymentStatus);
     }
 
     if (search) {
@@ -73,6 +83,11 @@ function listAllSubmissions({ status, search } = {}) {
 
 function updateSubmissionStatus(id, status, adminNote) {
     updateStatusStmt.run(status, adminNote || null, id);
+    return findByIdStmt.get(id);
+}
+
+function updateSubmissionPaymentStatus(id, paymentStatus) {
+    updatePaymentStatusStmt.run(paymentStatus, id);
     return findByIdStmt.get(id);
 }
 
@@ -101,6 +116,7 @@ module.exports = {
     listSubmissionsByUser,
     listAllSubmissions,
     updateSubmissionStatus,
+    updateSubmissionPaymentStatus,
     countPendingForUser,
     getSubmissionStats,
 };

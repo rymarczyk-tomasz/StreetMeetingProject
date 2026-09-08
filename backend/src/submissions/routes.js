@@ -68,6 +68,7 @@ function toPublicSubmission(row) {
         carDescription: row.car_description,
         photos: JSON.parse(row.photos || "[]"),
         status: row.status,
+        paymentStatus: row.payment_status || "unpaid",
         adminNote: row.admin_note,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
@@ -80,6 +81,27 @@ router.use(authenticate);
 router.get("/", (req, res) => {
     const rows = submissionsDb.listSubmissionsByUser(req.user.sub);
     res.json({ submissions: rows.map(toPublicSubmission) });
+});
+
+router.patch("/:id/payment-status", (req, res) => {
+    const id = Number(req.params.id);
+    const submission = submissionsDb.findSubmissionById(id);
+
+    if (!submission || Number(submission.user_id) !== Number(req.user.sub)) {
+        return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+    }
+
+    if (submission.payment_status === "paid") {
+        return res
+            .status(400)
+            .json({ message: "Ta opłata jest już potwierdzona." });
+    }
+
+    const updated = submissionsDb.updateSubmissionPaymentStatus(
+        id,
+        "verification",
+    );
+    res.json({ submission: toPublicSubmission(updated) });
 });
 
 router.post("/", submissionRateLimit, upload.array("photos", 5), (req, res) => {

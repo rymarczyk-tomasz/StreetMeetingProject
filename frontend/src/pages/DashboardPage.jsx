@@ -9,6 +9,12 @@ const STATUS_LABELS = {
     rejected: "Odrzucone",
 };
 
+const PAYMENT_STATUS_LABELS = {
+    unpaid: "Do opłacenia",
+    verification: "Opłata w weryfikacji",
+    paid: "Opłacone",
+};
+
 export default function DashboardPage() {
     const { user } = useAuth();
     const [submissions, setSubmissions] = useState([]);
@@ -33,6 +39,21 @@ export default function DashboardPage() {
     useEffect(() => {
         loadSubmissions();
     }, [loadSubmissions]);
+
+    async function reportPayment(submissionId) {
+        try {
+            await api.patch(`/submissions/${submissionId}/payment-status`);
+            await loadSubmissions();
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                    (err.response
+                        ? `Błąd serwera (${err.response.status}).`
+                        : "Brak połączenia z serwerem.") ||
+                    "Nie udało się zgłosić opłaty do weryfikacji.",
+            );
+        }
+    }
 
     return (
         <section className="page">
@@ -124,6 +145,30 @@ export default function DashboardPage() {
                                             <strong>Opis pojazdu:</strong>{" "}
                                             {s.carDescription}
                                         </p>
+                                        <p>
+                                            <strong>Status opłaty:</strong>{" "}
+                                            <span
+                                                className={`status-badge payment-status-${s.paymentStatus || "unpaid"}`}
+                                            >
+                                                {
+                                                    PAYMENT_STATUS_LABELS[
+                                                        s.paymentStatus ||
+                                                            "unpaid"
+                                                    ]
+                                                }
+                                            </span>
+                                        </p>
+                                        {(!s.paymentStatus ||
+                                            s.paymentStatus === "unpaid") && (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    reportPayment(s.id)
+                                                }
+                                            >
+                                                Zgłoś opłacenie
+                                            </button>
+                                        )}
                                         {s.adminNote && (
                                             <p className="submission-note">
                                                 <strong>
