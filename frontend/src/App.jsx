@@ -8,6 +8,8 @@ import RegulaminPage from "./pages/RegulaminPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
+import AccountSettingsPage from "./pages/AccountSettingsPage";
+import SubmissionPage from "./pages/SubmissionPage";
 import AdminPage from "./pages/AdminPage";
 import "./App.css";
 
@@ -26,6 +28,22 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <DashboardPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="ustawienia-konta"
+                    element={
+                        <ProtectedRoute>
+                            <AccountSettingsPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="formularz"
+                    element={
+                        <ProtectedRoute>
+                            <SubmissionPage />
                         </ProtectedRoute>
                     }
                 />

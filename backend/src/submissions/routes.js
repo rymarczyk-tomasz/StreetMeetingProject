@@ -70,6 +70,7 @@ function toPublicSubmission(row) {
         status: row.status,
         adminNote: row.admin_note,
         createdAt: row.created_at,
+        updatedAt: row.updated_at,
         userEmail: row.user_email,
     };
 }
@@ -116,13 +117,6 @@ router.post("/", submissionRateLimit, upload.array("photos", 5), (req, res) => {
             throw Object.assign(
                 new Error("Proszę dodać przynajmniej jedno zdjęcie."),
                 { status: 400 },
-            );
-        }
-
-        if (submissionsDb.countPendingForUser(req.user.sub) > 0) {
-            throw Object.assign(
-                new Error("Masz już zgłoszenie oczekujące na rozpatrzenie."),
-                { status: 409 },
             );
         }
 

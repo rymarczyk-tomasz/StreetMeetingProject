@@ -106,26 +106,12 @@ export default function Layout() {
                             >
                                 Kontakt
                             </a>
-                            <a
-                                className="nav-link"
-                                href={isHome ? "#form" : "/#form"}
-                                onClick={closeMobileNav}
-                            >
-                                Formularz
-                            </a>
                             <NavLink
                                 className="nav-link"
                                 to="/faq"
                                 onClick={closeMobileNav}
                             >
                                 FAQ
-                            </NavLink>
-                            <NavLink
-                                className="nav-link"
-                                to="/regulamin"
-                                onClick={closeMobileNav}
-                            >
-                                Regulamin
                             </NavLink>
                             {user ? (
                                 <>
@@ -134,7 +120,7 @@ export default function Layout() {
                                         to="/panel"
                                         onClick={closeMobileNav}
                                     >
-                                        Panel
+                                        Panel konta
                                     </NavLink>
                                     {user.role === "admin" && (
                                         <NavLink
@@ -160,14 +146,7 @@ export default function Layout() {
                                         to="/logowanie"
                                         onClick={closeMobileNav}
                                     >
-                                        Logowanie
-                                    </NavLink>
-                                    <NavLink
-                                        className="nav-link"
-                                        to="/rejestracja"
-                                        onClick={closeMobileNav}
-                                    >
-                                        Rejestracja
+                                        Zaloguj się
                                     </NavLink>
                                 </>
                             )}
@@ -183,6 +162,10 @@ export default function Layout() {
             <footer className="bg-dark text-light">
                 <p className="text-center mb-0 py-3">
                     &copy; {new Date().getFullYear()} Street Meeting Poland
+                    <span className="mx-2">|</span>
+                    <Link className="text-light" to="/regulamin">
+                        Regulamin
+                    </Link>
                 </p>
             </footer>
         </>

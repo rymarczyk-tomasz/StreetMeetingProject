@@ -22,6 +22,9 @@ db.exec(`
         password_hash TEXT NOT NULL,
         first_name TEXT,
         last_name TEXT,
+        phone TEXT,
+        license_plate TEXT,
+        car_brand TEXT,
         role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
         is_active INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -54,6 +57,31 @@ db.exec(`
     );
 
     CREATE INDEX IF NOT EXISTS idx_submissions_user_id ON submissions(user_id);
+
+    CREATE TABLE IF NOT EXISTS audit_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        admin_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        action TEXT NOT NULL,
+        target_type TEXT NOT NULL,
+        target_id INTEGER,
+        details TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at);
 `);
+
+const userColumns = new Set(
+    db
+        .prepare("PRAGMA table_info(users)")
+        .all()
+        .map((column) => column.name),
+);
+
+for (const column of ["phone", "license_plate", "car_brand"]) {
+    if (!userColumns.has(column)) {
+        db.exec(`ALTER TABLE users ADD COLUMN ${column} TEXT`);
+    }
+}
 
 module.exports = db;

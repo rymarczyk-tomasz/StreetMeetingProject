@@ -75,20 +75,30 @@ const credentials = {
     client_x509_cert_url: process.env.GOOGLE_CLIENT_X509_CERT_URL,
 };
 
-if (!credentials.private_key) {
-    throw new Error("GOOGLE_PRIVATE_KEY is not defined");
+const hasGoogleCredentials = Boolean(credentials.private_key);
+
+if (!hasGoogleCredentials) {
+    console.warn(
+        "[google] Brak GOOGLE_PRIVATE_KEY w backend/config/.env — funkcje Google Sheets/Drive (stary formularz /upload i synchronizacja galerii) są wyłączone.",
+    );
 }
 
-const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive",
-    ],
-});
+const auth = hasGoogleCredentials
+    ? new google.auth.GoogleAuth({
+          credentials,
+          scopes: [
+              "https://www.googleapis.com/auth/spreadsheets",
+              "https://www.googleapis.com/auth/drive",
+          ],
+      })
+    : null;
 
-const sheets = google.sheets({ version: "v4", auth });
-const drive = google.drive({ version: "v3", auth });
+const sheets = hasGoogleCredentials
+    ? google.sheets({ version: "v4", auth })
+    : null;
+const drive = hasGoogleCredentials
+    ? google.drive({ version: "v3", auth })
+    : null;
 
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const GOOGLE_DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID;
@@ -117,6 +127,7 @@ const uploadRateTracker = new Map();
 function getMissingUploadConfiguration() {
     const missing = [];
 
+    if (!hasGoogleCredentials) missing.push("GOOGLE_PRIVATE_KEY");
     if (!SPREADSHEET_ID) missing.push("SPREADSHEET_ID");
     if (!GOOGLE_DRIVE_FOLDER_ID) missing.push("DRIVE_FOLDER_ID");
 

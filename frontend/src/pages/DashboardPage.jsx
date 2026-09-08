@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/client";
 
@@ -8,136 +9,10 @@ const STATUS_LABELS = {
     rejected: "Odrzucone",
 };
 
-function SubmissionForm({ user, onCreated }) {
-    const [form, setForm] = useState({
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        phone: "",
-        licensePlate: "",
-        carBrand: "",
-        carDescription: "",
-    });
-    const [photos, setPhotos] = useState(null);
-    const [error, setError] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    function updateField(field) {
-        return (event) =>
-            setForm((prev) => ({ ...prev, [field]: event.target.value }));
-    }
-
-    async function handleSubmit(event) {
-        event.preventDefault();
-        setError("");
-
-        if (!photos || photos.length === 0) {
-            setError("Proszę dodać przynajmniej jedno zdjęcie.");
-            return;
-        }
-
-        setIsSubmitting(true);
-        try {
-            const formData = new FormData();
-            Object.entries(form).forEach(([key, value]) =>
-                formData.append(key, value),
-            );
-            Array.from(photos).forEach((file) =>
-                formData.append("photos", file),
-            );
-
-            const { data } = await api.post("/submissions", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-            onCreated(data.submission);
-        } catch (err) {
-            setError(
-                err.response?.data?.message ||
-                    "Nie udało się wysłać zgłoszenia.",
-            );
-        } finally {
-            setIsSubmitting(false);
-        }
-    }
-
-    return (
-        <form onSubmit={handleSubmit} className="auth-form">
-            <label>
-                Imię
-                <input
-                    value={form.firstName}
-                    onChange={updateField("firstName")}
-                    required
-                    minLength={2}
-                />
-            </label>
-            <label>
-                Nazwisko
-                <input
-                    value={form.lastName}
-                    onChange={updateField("lastName")}
-                    required
-                    minLength={2}
-                />
-            </label>
-            <label>
-                Numer telefonu
-                <input
-                    type="tel"
-                    value={form.phone}
-                    onChange={updateField("phone")}
-                    placeholder="np. +48 123 456 789"
-                    required
-                />
-            </label>
-            <label>
-                Numer tablic rejestracyjnych
-                <input
-                    value={form.licensePlate}
-                    onChange={updateField("licensePlate")}
-                    placeholder="np. GD 12345"
-                    required
-                />
-            </label>
-            <label>
-                Marka pojazdu
-                <input
-                    value={form.carBrand}
-                    onChange={updateField("carBrand")}
-                    required
-                    minLength={2}
-                />
-            </label>
-            <label>
-                Opis pojazdu
-                <textarea
-                    value={form.carDescription}
-                    onChange={updateField("carDescription")}
-                    rows={3}
-                    required
-                    minLength={10}
-                />
-            </label>
-            <label>
-                Zdjęcia (maksymalnie 5, łącznie do 50MB)
-                <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    required
-                    onChange={(e) => setPhotos(e.target.files)}
-                />
-            </label>
-            {error && <p className="form-error">{error}</p>}
-            <button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Wysyłanie..." : "Wyślij zgłoszenie"}
-            </button>
-        </form>
-    );
-}
-
 export default function DashboardPage() {
     const { user } = useAuth();
     const [submissions, setSubmissions] = useState([]);
+    const [expandedSubmissionId, setExpandedSubmissionId] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -159,16 +34,27 @@ export default function DashboardPage() {
         loadSubmissions();
     }, [loadSubmissions]);
 
-    const hasPendingOrApproved = submissions.some((s) =>
-        ["pending", "approved"].includes(s.status),
-    );
-
     return (
         <section className="page">
-            <h1>Panel użytkownika</h1>
-            <p>Witaj, {user.firstName || user.email}!</p>
+            <div className="page-heading-row">
+                <div>
+                    <p className="page-eyebrow">Panel użytkownika</p>
+                    <h1>Witaj, {user.firstName || user.email}!</h1>
+                </div>
+                <Link
+                    className="account-settings-button"
+                    to="/ustawienia-konta"
+                >
+                    Ustawienia konta
+                </Link>
+            </div>
 
             <h2>Twoje zgłoszenia do strefy Select</h2>
+            <p>
+                <Link className="account-settings-button" to="/formularz">
+                    Złóż zgłoszenie
+                </Link>
+            </p>
             {isLoading && <p className="page-status">Ładowanie...</p>}
             {error && <p className="form-error">{error}</p>}
             {!isLoading && submissions.length === 0 && (
@@ -176,31 +62,109 @@ export default function DashboardPage() {
             )}
             {submissions.length > 0 && (
                 <ul className="submission-list">
-                    {submissions.map((s) => (
-                        <li key={s.id}>
-                            <strong>
-                                {s.carBrand} — {s.licensePlate}
-                            </strong>{" "}
-                            <span className={`status-badge status-${s.status}`}>
-                                {STATUS_LABELS[s.status] || s.status}
-                            </span>
-                            {s.adminNote && <p>Komentarz: {s.adminNote}</p>}
-                        </li>
-                    ))}
-                </ul>
-            )}
+                    {submissions.map((s) => {
+                        const isExpanded = expandedSubmissionId === s.id;
 
-            {!isLoading && !hasPendingOrApproved && (
-                <>
-                    <h2>Zgłoś swój pojazd</h2>
-                    <SubmissionForm
-                        user={user}
-                        onCreated={(submission) =>
-                            setSubmissions((prev) => [submission, ...prev])
-                        }
-                    />
-                </>
+                        return (
+                            <li className="submission-card" key={s.id}>
+                                <div className="submission-summary">
+                                    <div>
+                                        <strong>
+                                            {s.carBrand} — {s.licensePlate}
+                                        </strong>
+                                        <span
+                                            className={`status-badge status-${s.status}`}
+                                        >
+                                            {STATUS_LABELS[s.status] ||
+                                                s.status}
+                                        </span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className="submission-details-button"
+                                        onClick={() =>
+                                            setExpandedSubmissionId(
+                                                isExpanded ? null : s.id,
+                                            )
+                                        }
+                                        aria-expanded={isExpanded}
+                                    >
+                                        {isExpanded
+                                            ? "Ukryj szczegóły"
+                                            : "Zobacz szczegóły"}
+                                    </button>
+                                </div>
+                                {isExpanded && (
+                                    <div className="submission-details">
+                                        <dl className="submission-meta">
+                                            <div>
+                                                <dt>Dodano</dt>
+                                                <dd>
+                                                    {formatDate(s.createdAt)}
+                                                </dd>
+                                            </div>
+                                            <div>
+                                                <dt>Ostatnia zmiana</dt>
+                                                <dd>
+                                                    {formatDate(s.updatedAt)}
+                                                </dd>
+                                            </div>
+                                            <div>
+                                                <dt>Uczestnik</dt>
+                                                <dd>
+                                                    {s.firstName} {s.lastName}
+                                                </dd>
+                                            </div>
+                                            <div>
+                                                <dt>Telefon</dt>
+                                                <dd>{s.phone}</dd>
+                                            </div>
+                                        </dl>
+                                        <p>
+                                            <strong>Opis pojazdu:</strong>{" "}
+                                            {s.carDescription}
+                                        </p>
+                                        {s.adminNote && (
+                                            <p className="submission-note">
+                                                <strong>
+                                                    Komentarz administratora:
+                                                </strong>{" "}
+                                                {s.adminNote}
+                                            </p>
+                                        )}
+                                        {s.photos?.length > 0 && (
+                                            <div className="submission-photos">
+                                                {s.photos.map((photo) => (
+                                                    <a
+                                                        href={photo}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        key={photo}
+                                                    >
+                                                        <img
+                                                            src={photo}
+                                                            alt={`Zdjęcie ${s.carBrand}`}
+                                                        />
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </li>
+                        );
+                    })}
+                </ul>
             )}
         </section>
     );
+}
+
+function formatDate(value) {
+    if (!value) return "Brak danych";
+
+    return new Intl.DateTimeFormat("pl-PL", {
+        dateStyle: "medium",
+        timeStyle: "short",
+    }).format(new Date(`${value.replace(" ", "T")}Z`));
 }

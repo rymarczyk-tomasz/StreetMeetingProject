@@ -17,6 +17,7 @@ const { createRateLimiter } = require("../utils/rateLimiter");
 const router = express.Router();
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+const PHONE_REGEX = /^\+?[0-9]{9,15}$/;
 const PASSWORD_MIN_LENGTH = 8;
 const BCRYPT_ROUNDS = 12;
 
@@ -38,6 +39,9 @@ function toPublicUser(user) {
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
+        phone: user.phone,
+        licensePlate: user.license_plate,
+        carBrand: user.car_brand,
         role: user.role,
     };
 }
@@ -169,5 +173,76 @@ router.get("/me", authenticate, (req, res) => {
     }
     res.json({ user: toPublicUser(user) });
 });
+
+router.patch("/me", authenticate, (req, res) => {
+    const firstName = String(req.body.firstName || "").trim();
+    const lastName = String(req.body.lastName || "").trim();
+    const phone = String(req.body.phone || "")
+        .trim()
+        .replace(/\s+/g, "");
+    const licensePlate = String(req.body.licensePlate || "").trim();
+    const carBrand = String(req.body.carBrand || "").trim();
+
+    if (phone && !PHONE_REGEX.test(phone)) {
+        return res.status(400).json({
+            message: "Podaj poprawny numer telefonu (9-15 cyfr).",
+        });
+    }
+
+    if (licensePlate.length > 20 || carBrand.length > 100) {
+        return res.status(400).json({
+            message: "Numer rejestracyjny lub marka pojazdu są zbyt długie.",
+        });
+    }
+
+    const user = usersDb.updateUserProfile(req.user.sub, {
+        firstName,
+        lastName,
+        phone,
+        licensePlate,
+        carBrand,
+    });
+
+    res.json({ user: toPublicUser(user) });
+});
+
+router.post(
+    "/change-password",
+    authenticate,
+    authRateLimit,
+    async (req, res) => {
+        const currentPassword = String(req.body.currentPassword || "");
+        const newPassword = String(req.body.newPassword || "");
+        const user = usersDb.findUserById(req.user.sub);
+
+        if (
+            !user ||
+            !(await bcrypt.compare(currentPassword, user.password_hash))
+        ) {
+            return res
+                .status(400)
+                .json({ message: "Aktualne hasło jest nieprawidłowe." });
+        }
+
+        if (newPassword.length < PASSWORD_MIN_LENGTH) {
+            return res.status(400).json({
+                message: `Nowe hasło musi mieć co najmniej ${PASSWORD_MIN_LENGTH} znaków.`,
+            });
+        }
+
+        if (newPassword === currentPassword) {
+            return res.status(400).json({
+                message: "Nowe hasło musi różnić się od aktualnego.",
+            });
+        }
+
+        const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+        usersDb.updateUserPassword(user.id, passwordHash);
+        refreshTokensDb.revokeAllUserTokens(user.id);
+        await issueSession(res, user);
+
+        res.json({ message: "Hasło zostało zmienione." });
+    },
+);
 
 module.exports = router;

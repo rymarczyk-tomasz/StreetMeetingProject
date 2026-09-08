@@ -325,17 +325,6 @@ export default function HomePage() {
                         </div>
                     </div>
                 </section>
-
-                <section id="form" className="form bg-light text-dark py-5">
-                    <div className="container text-center">
-                        <h2 className="display-3 pb-lg-3 text-uppercase">
-                            Formularz Strefa Select
-                        </h2>
-                        <p className="lead mb-0">
-                            Zgłoszenia do strefy Select są obecnie zamknięte.
-                        </p>
-                    </div>
-                </section>
             </main>
         </>
     );

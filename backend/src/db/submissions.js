@@ -45,8 +45,30 @@ function listSubmissionsByUser(userId) {
     return listByUserStmt.all(userId);
 }
 
-function listAllSubmissions() {
-    return listAllStmt.all();
+function listAllSubmissions({ status, search } = {}) {
+    const conditions = [];
+    const parameters = [];
+
+    if (status) {
+        conditions.push("submissions.status = ?");
+        parameters.push(status);
+    }
+
+    if (search) {
+        conditions.push(`(
+            submissions.license_plate LIKE ? OR
+            submissions.car_brand LIKE ? OR
+            submissions.first_name LIKE ? OR
+            submissions.last_name LIKE ? OR
+            users.email LIKE ?
+        )`);
+        const pattern = `%${search}%`;
+        parameters.push(pattern, pattern, pattern, pattern, pattern);
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+    const query = listAllStmt.source.replace("ORDER BY", `${where} ORDER BY`);
+    return db.prepare(query).all(...parameters);
 }
 
 function updateSubmissionStatus(id, status, adminNote) {
@@ -58,6 +80,21 @@ function countPendingForUser(userId) {
     return countPendingForUserStmt.get(userId).count;
 }
 
+function getSubmissionStats() {
+    return db
+        .prepare(
+            `
+            SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
+                SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) AS approved,
+                SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) AS rejected
+            FROM submissions
+        `,
+        )
+        .get();
+}
+
 module.exports = {
     createSubmission,
     findSubmissionById,
@@ -65,4 +102,5 @@ module.exports = {
     listAllSubmissions,
     updateSubmissionStatus,
     countPendingForUser,
+    getSubmissionStats,
 };
