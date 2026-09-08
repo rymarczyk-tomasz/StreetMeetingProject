@@ -215,9 +215,29 @@
     color: #e5484d;
 }
 
+.password-field {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.password-field input {
+    min-width: 0;
+    flex: 1;
+}
+
+.password-toggle {
+    flex-shrink: 0;
+    padding: 0.4rem 0.65rem;
+}
+
 .admin-table {
     width: 100%;
     border-collapse: collapse;
+}
+
+.admin-table-wrapper {
+    overflow-x: auto;
+    margin: 1rem 0;
 }
 
 .admin-table th,

@@ -17,13 +17,7 @@ body {
 }
 
 [id] {
-    scroll-margin-top: 71.5px;
-}
-
-@media (min-width: 992px) {
-    [id] {
-        scroll-margin-top: 67px;
-    }
+    scroll-margin-top: var(--navbar-height, 71.5px);
 }
 
 .hero-shadow {
@@ -32,8 +26,48 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0);
-    z-index: -1;
+    background-color: rgba(0, 0, 0, 0.42);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.home > .container-fluid {
+    position: relative;
+    z-index: 1;
+}
+
+.home h1,
+.home h2,
+.hero-actions {
+    position: relative;
+    z-index: 2;
+}
+
+.hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.hero-button,
+.card-action {
+    display: inline-block;
+    padding: 0.75rem 1.25rem;
+    border: 2px solid #f4c542;
+    border-radius: 4px;
+    background: #f4c542;
+    color: #171717;
+    font-weight: 700;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.hero-link {
+    color: #fff;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
 }
 
 .logo {
@@ -72,11 +106,26 @@ body {
 }
 
 .event {
-    background-color: rgb(248, 248, 248);
+    background-color: #171717;
+}
+
+.event .card {
+    color: #171717;
+}
+
+.event .card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.card-action {
+    margin-top: auto;
 }
 
 .event .card-img-top {
-    height: 250px;
+    width: 100%;
+    aspect-ratio: 16 / 10;
     object-fit: cover;
 }
 
@@ -154,6 +203,16 @@ input.form-control {
     background-color: #0056b3;
 }
 
+.hero-button:hover,
+.card-action:hover {
+    background-color: #ffd968;
+    color: #171717;
+}
+
+.hero-link:hover {
+    color: #f4c542;
+}
+
 .gallery {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -214,6 +273,8 @@ input.form-control {
     top: 20px;
     right: 35px;
     color: white;
+    border: 0;
+    background: transparent;
     font-size: 40px;
     font-weight: bold;
     cursor: pointer;
@@ -244,6 +305,8 @@ input.form-control {
 
 .prev,
 .next {
+    border: 0;
+    background: transparent;
     color: white;
     font-size: 40px;
     font-weight: bold;
@@ -326,33 +389,29 @@ input.form-control {
 
 @media (max-width: 768px) {
     .home {
-        background-image: none;
-        background-attachment: scroll;
-        min-height: 100vh;
-        overflow: hidden;
-    }
-
-    .home::before {
-        content: "";
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 100vh;
-        height: 100vw;
         background-image: url("../img/photos/Hero-image.webp");
-        background-size: cover;
+        background-attachment: scroll;
         background-position: center;
-        background-repeat: no-repeat;
-        transform: translate(-50%, -50%) rotate(90deg);
-        transform-origin: center;
-        z-index: -1;
+        min-height: 100vh;
     }
 
     .hero-shadow {
         background-color: rgba(0, 0, 0, 0.4);
     }
-    .event .card-img-top {
-        height: 100%;
+    .hero-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .admin-stats-grid,
+    .admin-filters,
+    .user-filters {
+        grid-template-columns: 1fr;
+    }
+
+    .submission-summary {
+        align-items: flex-start;
+        flex-direction: column;
     }
 }
 
@@ -381,13 +440,44 @@ input.form-control {
     margin: 10px;
     cursor: pointer;
     width: 100%;
-    height: auto;
+    aspect-ratio: 1;
     object-fit: cover;
     border-radius: 8px;
 }
 
+.gallery-thumb-button {
+    display: block;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
 .modal-image {
     display: block;
+    max-width: min(92vw, 1400px);
+    max-height: 90vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
+
+.lightbox-counter {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    left: 1rem;
+    margin: 0;
+    color: #fff;
+    text-align: center;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+    outline: 3px solid #f4c542;
+    outline-offset: 3px;
 }
 
 button[aria-busy="true"] {

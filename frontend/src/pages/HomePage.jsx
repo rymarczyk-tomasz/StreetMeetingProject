@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 
+const TICKET_URL = "https://bkb.pl/197944-209dd";
+
 export default function HomePage() {
     return (
         <>
@@ -10,6 +12,19 @@ export default function HomePage() {
                     <h2 className="mb-2 text-uppercase">
                         Polsat Plus Arena, Gdańsk
                     </h2>
+                    <div className="hero-actions">
+                        <a
+                            className="hero-button"
+                            href={TICKET_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Kup bilety
+                        </a>
+                        <a className="hero-link" href="#event">
+                            Poznaj atrakcje
+                        </a>
+                    </div>
                     <div className="hero-shadow"></div>
                 </div>
             </header>
@@ -63,7 +78,7 @@ export default function HomePage() {
                                             <br />
                                             Bilety na wydarzenie kupisz{" "}
                                             <a
-                                                href="https://bkb.pl/197944-209dd"
+                                                href={TICKET_URL}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                             >
@@ -71,6 +86,14 @@ export default function HomePage() {
                                             </a>
                                             .
                                         </p>
+                                        <a
+                                            className="card-action"
+                                            href={TICKET_URL}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            Kup bilety
+                                        </a>
                                     </div>
                                 </article>
                             </div>
@@ -114,6 +137,12 @@ export default function HomePage() {
                                             </strong>{" "}
                                             w strefie <strong>Select</strong>!
                                         </p>
+                                        <Link
+                                            className="card-action"
+                                            to="/formularz"
+                                        >
+                                            Zgłoś pojazd
+                                        </Link>
                                     </div>
                                 </article>
                             </div>
@@ -155,6 +184,9 @@ export default function HomePage() {
                                             motoryzacyjne oraz renomowane marki
                                             z Polski i Europy.
                                         </p>
+                                        <a className="card-action" href="#contact">
+                                            Sprawdź atrakcje
+                                        </a>
                                     </div>
                                 </article>
                             </div>

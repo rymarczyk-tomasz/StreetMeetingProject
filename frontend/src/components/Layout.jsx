@@ -14,6 +14,10 @@ function useNavbarOffset() {
             if (!navbar) return;
             const navbarHeight = navbar.offsetHeight;
             const home = document.querySelector(".home");
+            document.documentElement.style.setProperty(
+                "--navbar-height",
+                `${navbarHeight}px`,
+            );
 
             if (home) {
                 home.style.marginTop = `${navbarHeight}px`;

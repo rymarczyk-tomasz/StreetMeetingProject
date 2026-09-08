@@ -376,47 +376,49 @@ export default function AdminPage() {
                     </select>
                 </label>
             </div>
-            <table className="admin-table">
-                <thead>
-                    <tr>
-                        <th>E-mail</th>
-                        <th>Imię i nazwisko</th>
-                        <th>Rola</th>
-                        <th>Status</th>
-                        <th>Akcje</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {users.map((u) => (
-                        <tr key={u.id}>
-                            <td>{u.email}</td>
-                            <td>
-                                {[u.first_name, u.last_name]
-                                    .filter(Boolean)
-                                    .join(" ") || "—"}
-                            </td>
-                            <td>{u.role}</td>
-                            <td>{u.is_active ? "aktywny" : "zablokowany"}</td>
-                            <td>
-                                <button
-                                    type="button"
-                                    onClick={() => toggleRole(u)}
-                                >
-                                    {u.role === "admin"
-                                        ? "Odbierz admina"
-                                        : "Nadaj admina"}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => toggleActive(u)}
-                                >
-                                    {u.is_active ? "Zablokuj" : "Odblokuj"}
-                                </button>
-                            </td>
+            <div className="admin-table-wrapper">
+                <table className="admin-table">
+                    <thead>
+                        <tr>
+                            <th>E-mail</th>
+                            <th>Imię i nazwisko</th>
+                            <th>Rola</th>
+                            <th>Status</th>
+                            <th>Akcje</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {users.map((u) => (
+                            <tr key={u.id}>
+                                <td>{u.email}</td>
+                                <td>
+                                    {[u.first_name, u.last_name]
+                                        .filter(Boolean)
+                                        .join(" ") || "—"}
+                                </td>
+                                <td>{u.role}</td>
+                                <td>{u.is_active ? "aktywny" : "zablokowany"}</td>
+                                <td>
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleRole(u)}
+                                    >
+                                        {u.role === "admin"
+                                            ? "Odbierz admina"
+                                            : "Nadaj admina"}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleActive(u)}
+                                    >
+                                        {u.is_active ? "Zablokuj" : "Odblokuj"}
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
 
             <h2>Zgłoszenia do strefy Select</h2>
             <SubmissionsPanel

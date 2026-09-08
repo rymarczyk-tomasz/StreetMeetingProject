@@ -13,6 +13,7 @@ export default function RegisterPage() {
     });
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
     function updateField(field) {
         return (event) =>
@@ -45,6 +46,9 @@ export default function RegisterPage() {
                     <input
                         value={form.firstName}
                         onChange={updateField("firstName")}
+                        autoComplete="given-name"
+                        required
+                        minLength={2}
                     />
                 </label>
                 <label>
@@ -52,6 +56,9 @@ export default function RegisterPage() {
                     <input
                         value={form.lastName}
                         onChange={updateField("lastName")}
+                        autoComplete="family-name"
+                        required
+                        minLength={2}
                     />
                 </label>
                 <label>
@@ -60,20 +67,36 @@ export default function RegisterPage() {
                         type="email"
                         value={form.email}
                         onChange={updateField("email")}
+                        autoComplete="email"
                         required
                     />
                 </label>
                 <label>
                     Hasło (min. 8 znaków)
-                    <input
-                        type="password"
-                        value={form.password}
-                        onChange={updateField("password")}
-                        minLength={8}
-                        required
-                    />
+                    <span className="password-field">
+                        <input
+                            type={isPasswordVisible ? "text" : "password"}
+                            value={form.password}
+                            onChange={updateField("password")}
+                            autoComplete="new-password"
+                            minLength={8}
+                            required
+                        />
+                        <button
+                            type="button"
+                            className="password-toggle"
+                            onClick={() => setIsPasswordVisible((value) => !value)}
+                            aria-pressed={isPasswordVisible}
+                        >
+                            {isPasswordVisible ? "Ukryj" : "Pokaż"}
+                        </button>
+                    </span>
                 </label>
-                {error && <p className="form-error">{error}</p>}
+                {error && (
+                    <p className="form-error" role="alert">
+                        {error}
+                    </p>
+                )}
                 <button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? "Tworzenie konta..." : "Zarejestruj się"}
                 </button>

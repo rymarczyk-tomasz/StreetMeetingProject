@@ -49,6 +49,29 @@ export default function SubmissionPage() {
             }));
     }
 
+    function handlePhotosChange(event) {
+        const selectedPhotos = Array.from(event.target.files || []);
+        const totalSize = selectedPhotos.reduce(
+            (sum, photo) => sum + photo.size,
+            0,
+        );
+
+        if (selectedPhotos.length > 5) {
+            setPhotos(null);
+            setError("Możesz dodać maksymalnie 5 zdjęć.");
+            return;
+        }
+
+        if (totalSize > 50 * 1024 * 1024) {
+            setPhotos(null);
+            setError("Łączny rozmiar zdjęć nie może przekraczać 50 MB.");
+            return;
+        }
+
+        setError("");
+        setPhotos(event.target.files);
+    }
+
     async function handleSubmit(event) {
         event.preventDefault();
         setError("");
@@ -180,12 +203,19 @@ export default function SubmissionPage() {
                                 accept="image/*"
                                 multiple
                                 required
-                                onChange={(event) =>
-                                    setPhotos(event.target.files)
-                                }
+                                onChange={handlePhotosChange}
                             />
                         </label>
-                        {error && <p className="form-error">{error}</p>}
+                        {photos?.length > 0 && (
+                            <p className="file-selection-info">
+                                Wybrano {photos.length} zdjęć.
+                            </p>
+                        )}
+                        {error && (
+                            <p className="form-error" role="alert">
+                                {error}
+                            </p>
+                        )}
                         <button type="submit" disabled={isSubmitting}>
                             {isSubmitting
                                 ? "Wysyłanie..."

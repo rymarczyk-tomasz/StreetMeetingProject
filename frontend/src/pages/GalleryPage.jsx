@@ -108,19 +108,25 @@ export default function GalleryPage() {
             <div className="gallery container">
                 {photos.map((photo, index) => (
                     <picture key={photo.name + index}>
-                        <img
-                            loading="lazy"
-                            src={photo.src}
-                            srcSet={photo.srcSet}
-                            sizes={
-                                photo.srcSet
-                                    ? "(max-width: 768px) 100vw, 33vw"
-                                    : undefined
-                            }
-                            alt={`Zdjęcie z galerii Street Show ${index + 1}`}
-                            className="gallery-thumb"
+                        <button
+                            type="button"
+                            className="gallery-thumb-button"
                             onClick={() => setActiveIndex(index)}
-                        />
+                            aria-label={`Powiększ zdjęcie ${index + 1}`}
+                        >
+                            <img
+                                loading="lazy"
+                                src={photo.src}
+                                srcSet={photo.srcSet}
+                                sizes={
+                                    photo.srcSet
+                                        ? "(max-width: 768px) 100vw, 33vw"
+                                        : undefined
+                                }
+                                alt={`Zdjęcie z galerii Street Show ${index + 1}`}
+                                className="gallery-thumb"
+                            />
+                        </button>
                     </picture>
                 ))}
             </div>
@@ -129,6 +135,9 @@ export default function GalleryPage() {
                 <div
                     id="imageModal"
                     className="modal"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Podgląd zdjęcia galerii"
                     style={{ display: "block" }}
                     onClick={(e) => {
                         if (e.target.id === "imageModal") closeModal();
@@ -136,33 +145,39 @@ export default function GalleryPage() {
                     onTouchStart={handleTouchStart}
                     onTouchEnd={handleTouchEnd}
                 >
-                    <span
+                    <button
+                        type="button"
                         className="close"
                         aria-label="Zamknij galerię"
                         onClick={closeModal}
                     >
                         &times;
-                    </span>
+                    </button>
                     <img
                         className="modal-image"
                         src={activePhoto.modalSrc}
                         alt={`Powiększone zdjęcie ${activeIndex + 1} z ${photos.length}`}
                     />
+                    <p className="lightbox-counter" aria-live="polite">
+                        {activeIndex + 1} / {photos.length}
+                    </p>
                     <div className="navigation">
-                        <span
+                        <button
+                            type="button"
                             className="prev"
                             aria-label="Poprzednie zdjęcie"
                             onClick={showPrev}
                         >
                             &#10094;
-                        </span>
-                        <span
+                        </button>
+                        <button
+                            type="button"
                             className="next"
                             aria-label="Następne zdjęcie"
                             onClick={showNext}
                         >
                             &#10095;
-                        </span>
+                        </button>
                     </div>
                 </div>
             )}
