@@ -12,6 +12,7 @@ const { syncGalleryFromDrive } = require("./scripts/sync-gallery-from-drive");
 const authRoutes = require("./src/auth/routes");
 const adminRoutes = require("./src/admin/routes");
 const { router: submissionsRoutes } = require("./src/submissions/routes");
+const eventContentDb = require("./src/db/eventContent");
 
 const app = express();
 const PORT = process.env.PORT || 33000;
@@ -36,6 +37,9 @@ app.use(
     express.static(path.join(__dirname, "uploads/submissions")),
 );
 app.use("/api/auth", authRoutes);
+app.get("/api/event", (req, res) => {
+    res.json({ event: eventContentDb.getEventContent() });
+});
 app.use("/api/admin", adminRoutes);
 app.use("/api/submissions", submissionsRoutes);
 

@@ -4,6 +4,7 @@ const usersDb = require("../db/users");
 const refreshTokensDb = require("../db/refreshTokens");
 const submissionsDb = require("../db/submissions");
 const auditLogDb = require("../db/auditLog");
+const eventContentDb = require("../db/eventContent");
 const { authenticate, requireRole } = require("../auth/middleware");
 const { toPublicSubmission } = require("../submissions/routes");
 const { sendSubmissionStatusEmail } = require("../notifications/email");
@@ -11,6 +12,65 @@ const { sendSubmissionStatusEmail } = require("../notifications/email");
 const router = express.Router();
 
 router.use(authenticate, requireRole("admin"));
+
+router.get("/event", (req, res) => {
+    res.json({ event: eventContentDb.getEventContent() });
+});
+
+router.patch("/event", (req, res) => {
+    const event = req.body.event;
+    if (
+        !event ||
+        typeof event.intro !== "string" ||
+        !Array.isArray(event.cards) ||
+        event.cards.length !== 3
+    ) {
+        return res
+            .status(400)
+            .json({
+                message: "Treść Eventu musi zawierać opis i trzy kafelki.",
+            });
+    }
+
+    const cards = event.cards.map((card) => ({
+        id: String(card.id || "").trim(),
+        title: String(card.title || "").trim(),
+        description: String(card.description || "").trim(),
+        image: String(card.image || "").trim(),
+        alt: String(card.alt || "").trim(),
+        actionLabel: String(card.actionLabel || "").trim(),
+        actionHref: String(card.actionHref || "").trim(),
+        actionExternal: Boolean(card.actionExternal),
+    }));
+
+    if (
+        !event.intro.trim() ||
+        cards.some(
+            (card) =>
+                !card.title || !card.description || !card.image || !card.alt,
+        )
+    ) {
+        return res
+            .status(400)
+            .json({
+                message:
+                    "Uzupełnij opis, tytuł, treść, zdjęcie i tekst alternatywny każdego kafelka.",
+            });
+    }
+
+    const saved = eventContentDb.saveEventContent({
+        intro: event.intro.trim(),
+        cards,
+    });
+    auditLogDb.createAuditEntry({
+        adminId: req.user.sub,
+        action: "event.content_updated",
+        targetType: "event",
+        targetId: 1,
+        details: { cards: cards.length },
+    });
+    res.json({ event: saved });
+});
 
 router.get("/users", (req, res) => {
     const role = String(req.query.role || "").trim();

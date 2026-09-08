@@ -14,6 +14,164 @@ const PAYMENT_STATUS_LABELS = {
     paid: "Opłacone",
 };
 
+function EventEditor({ onAction }) {
+    const [event, setEvent] = useState(null);
+    const [error, setError] = useState("");
+    const [message, setMessage] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        api.get("/admin/event")
+            .then(({ data }) => setEvent(data.event))
+            .catch((err) =>
+                setError(
+                    err.response?.data?.message ||
+                        "Nie udało się pobrać treści Eventu.",
+                ),
+            );
+    }, []);
+
+    function updateCard(index, field, value) {
+        setEvent((current) => ({
+            ...current,
+            cards: current.cards.map((card, cardIndex) =>
+                cardIndex === index ? { ...card, [field]: value } : card,
+            ),
+        }));
+    }
+
+    async function save(eventSubmit) {
+        eventSubmit.preventDefault();
+        setIsSaving(true);
+        setError("");
+        setMessage("");
+        try {
+            await api.patch("/admin/event", { event });
+            setMessage("Treść Eventu została zapisana.");
+            onAction();
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                    "Nie udało się zapisać treści Eventu.",
+            );
+        } finally {
+            setIsSaving(false);
+        }
+    }
+
+    if (!event)
+        return <p className="page-status">Ładowanie treści Eventu...</p>;
+
+    return (
+        <form className="event-editor" onSubmit={save}>
+            {error && <p className="form-error">{error}</p>}
+            {message && <p className="form-success">{message}</p>}
+            <label>
+                Opis sekcji Event
+                <textarea
+                    rows={3}
+                    value={event.intro}
+                    onChange={(eventInput) =>
+                        setEvent({ ...event, intro: eventInput.target.value })
+                    }
+                />
+            </label>
+            <div className="event-editor-grid">
+                {event.cards.map((card, index) => (
+                    <fieldset className="event-editor-card" key={card.id}>
+                        <legend>Kafelek {index + 1}</legend>
+                        <label>
+                            Tytuł
+                            <input
+                                value={card.title}
+                                onChange={(input) =>
+                                    updateCard(
+                                        index,
+                                        "title",
+                                        input.target.value,
+                                    )
+                                }
+                            />
+                        </label>
+                        <label>
+                            Treść
+                            <textarea
+                                rows={6}
+                                value={card.description}
+                                onChange={(input) =>
+                                    updateCard(
+                                        index,
+                                        "description",
+                                        input.target.value,
+                                    )
+                                }
+                            />
+                        </label>
+                        <label>
+                            Ścieżka lub URL zdjęcia
+                            <input
+                                type="text"
+                                value={card.image}
+                                onChange={(input) =>
+                                    updateCard(
+                                        index,
+                                        "image",
+                                        input.target.value,
+                                    )
+                                }
+                                placeholder="/img/photos/nazwa.webp"
+                            />
+                        </label>
+                        <img
+                            className="event-editor-preview"
+                            src={card.image}
+                            alt="Podgląd kafelka"
+                        />
+                        <label>
+                            Tekst alternatywny
+                            <input
+                                value={card.alt}
+                                onChange={(input) =>
+                                    updateCard(index, "alt", input.target.value)
+                                }
+                            />
+                        </label>
+                        <label>
+                            Tekst przycisku
+                            <input
+                                value={card.actionLabel}
+                                onChange={(input) =>
+                                    updateCard(
+                                        index,
+                                        "actionLabel",
+                                        input.target.value,
+                                    )
+                                }
+                            />
+                        </label>
+                        <label>
+                            Link przycisku
+                            <input
+                                value={card.actionHref}
+                                onChange={(input) =>
+                                    updateCard(
+                                        index,
+                                        "actionHref",
+                                        input.target.value,
+                                    )
+                                }
+                            />
+                        </label>
+                    </fieldset>
+                ))}
+            </div>
+            <button type="submit" disabled={isSaving}>
+                {isSaving ? "Zapisywanie..." : "Zapisz zmiany Eventu"}
+            </button>
+        </form>
+    );
+}
+
 function SubmissionsPanel({ onAction }) {
     const [submissions, setSubmissions] = useState([]);
     const [adminNotes, setAdminNotes] = useState({});
@@ -280,6 +438,7 @@ const ACTION_LABELS = {
     "user.role_changed": "zmienił rolę użytkownika",
     "user.blocked": "zablokował użytkownika",
     "user.unblocked": "odblokował użytkownika",
+    "event.content_updated": "zaktualizował treść Eventu",
 };
 
 function AuditLog({ refreshKey }) {
@@ -456,6 +615,7 @@ export default function AdminPage() {
             >
                 {[
                     ["dashboard", "Dashboard"],
+                    ["event", "Event"],
                     ["users", "Użytkownicy"],
                     ["submissions", "Zgłoszenia"],
                     ["audit", "Dziennik działań"],
@@ -602,6 +762,25 @@ export default function AdminPage() {
                             </tbody>
                         </table>
                     </div>
+                </div>
+            )}
+
+            {activeSection === "event" && (
+                <div className="admin-section">
+                    <div className="admin-section-heading">
+                        <div>
+                            <h2>Treść sekcji Event</h2>
+                            <p>
+                                Edytuj teksty i zdjęcia widoczne na stronie
+                                głównej.
+                            </p>
+                        </div>
+                    </div>
+                    <EventEditor
+                        onAction={() =>
+                            setAuditRefreshKey((value) => value + 1)
+                        }
+                    />
                 </div>
             )}
 

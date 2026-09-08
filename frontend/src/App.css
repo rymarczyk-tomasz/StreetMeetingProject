@@ -192,6 +192,46 @@
     min-height: 260px;
 }
 
+.event-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.event-editor label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.event-editor-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.event-editor-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+}
+
+.event-editor-card legend {
+    padding: 0 0.35rem;
+    font-weight: 700;
+}
+
+.event-editor-preview {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
 .admin-section-heading {
     align-items: center;
     margin-bottom: 1rem;
@@ -270,6 +310,10 @@
 
     .admin-navigation button {
         flex-basis: calc(50% - 0.5rem);
+    }
+
+    .event-editor-grid {
+        grid-template-columns: 1fr;
     }
 }
 
