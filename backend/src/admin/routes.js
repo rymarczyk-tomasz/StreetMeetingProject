@@ -6,6 +6,7 @@ const submissionsDb = require("../db/submissions");
 const auditLogDb = require("../db/auditLog");
 const { authenticate, requireRole } = require("../auth/middleware");
 const { toPublicSubmission } = require("../submissions/routes");
+const { sendSubmissionStatusEmail } = require("../notifications/email");
 
 const router = express.Router();
 
@@ -193,6 +194,25 @@ router.patch("/submissions/:id/status", (req, res) => {
             adminNote,
         },
     });
+
+    if (
+        existing.status !== status &&
+        ["approved", "rejected"].includes(status)
+    ) {
+        const user = usersDb.findUserById(existing.user_id);
+        void sendSubmissionStatusEmail({
+            submission: updated,
+            user,
+            status,
+            adminNote,
+        }).catch((error) => {
+            console.error(
+                `[email] Nie udało się wysłać powiadomienia dla zgłoszenia ${id}:`,
+                error.message,
+            );
+        });
+    }
+
     res.json({ submission: toPublicSubmission(updated) });
 });
 

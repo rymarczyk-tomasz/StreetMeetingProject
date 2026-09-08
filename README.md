@@ -62,6 +62,20 @@ npm run start        # startuje na http://localhost:33000
 
 Backend czyta konfigurację z `backend/config/.env` (Google Sheets/Drive dla starego `/upload` i galerii, oraz `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `CORS_ORIGINS`). Plik już istnieje lokalnie z wygenerowanymi sekretami — **nie commitować** (jest w `.gitignore`).
 
+Powiadomienia e-mail o zaakceptowaniu lub odrzuceniu zgłoszenia wymagają konfiguracji SMTP w tym samym pliku:
+
+```env
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=adres@example.com
+SMTP_PASSWORD=haslo-aplikacji
+SMTP_FROM=Street Show <adres@example.com>
+SELECT_FEE_AMOUNT=150 zł
+```
+
+Brak konfiguracji SMTP nie blokuje zmiany statusu zgłoszenia — powiadomienie zostanie pominięte i zapisane w logu backendu.
+
 ### Frontend
 
 ```bash
