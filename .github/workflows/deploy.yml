@@ -1,0 +1,42 @@
+name: Deploy Street Show
+
+on:
+  push:
+    branches:
+      - newProject
+  workflow_dispatch:
+
+concurrency:
+  group: streetshow-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Mikrus
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.MIKRUS_HOST }}
+          username: root
+          key: ${{ secrets.MIKRUS_SSH_KEY }}
+          port: 22
+          script: |
+            set -eu
+
+            cd /root/streetshow
+            git restore backend/package-lock.json frontend/package-lock.json
+            git pull --ff-only origin newProject
+
+            cd /root/streetshow/backend
+            npm ci
+            npm run build
+
+            cd /root/streetshow/frontend
+            npm ci
+            npm run build
+
+            pm2 restart streetshow-api --update-env
+            pm2 save
+
+            curl --fail --silent --show-error http://127.0.0.1:4001/api/event >/dev/null
