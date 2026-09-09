@@ -6,6 +6,16 @@
     padding: 0;
 }
 
+:root {
+    --street-yellow: #f4c542;
+    --street-yellow-soft: #ffd968;
+    --street-ink: #171717;
+    --street-muted: #68707a;
+    --street-surface: #f5f6f7;
+    --street-border: #dfe3e8;
+    --street-shadow: 0 0.75rem 2rem rgba(23, 23, 23, 0.12);
+}
+
 html {
     font-size: 62.5%;
     scroll-behavior: smooth;
@@ -14,6 +24,9 @@ html {
 body {
     font-size: 1.6rem;
     font-family: "Chakra Petch", sans-serif;
+    color: var(--street-ink);
+    background: var(--street-surface);
+    line-height: 1.55;
 }
 
 [id] {
@@ -54,13 +67,17 @@ body {
 .card-action {
     display: inline-block;
     padding: 0.75rem 1.25rem;
-    border: 2px solid #f4c542;
+    border: 2px solid var(--street-yellow);
     border-radius: 4px;
-    background: #f4c542;
-    color: #171717;
+    background: var(--street-yellow);
+    color: var(--street-ink);
     font-weight: 700;
     text-decoration: none;
     text-transform: uppercase;
+    transition:
+        background-color 160ms ease,
+        transform 160ms ease,
+        box-shadow 160ms ease;
 }
 
 .hero-link {
@@ -72,6 +89,33 @@ body {
 
 .logo {
     width: 80px;
+}
+
+.navbar {
+    border-bottom: 1px solid rgba(23, 23, 23, 0.1);
+    box-shadow: 0 0.35rem 1.25rem rgba(23, 23, 23, 0.08);
+}
+
+.navbar .nav-link {
+    position: relative;
+    color: var(--street-ink);
+    font-weight: 600;
+    transition: color 160ms ease;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link.active {
+    color: #9a7100;
+}
+
+.navbar .nav-link.active::after {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.2rem;
+    left: 0.75rem;
+    height: 2px;
+    background: var(--street-yellow);
+    content: "";
 }
 
 .nav-link,
@@ -111,6 +155,16 @@ body {
 
 .event .card {
     color: #171717;
+    border: 0;
+    box-shadow: var(--street-shadow);
+    transition:
+        transform 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.event .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 1rem 2.5rem rgba(23, 23, 23, 0.2);
 }
 
 .event .card-body {
@@ -205,32 +259,48 @@ input.form-control {
 
 .hero-button:hover,
 .card-action:hover {
-    background-color: #ffd968;
-    color: #171717;
+    background-color: var(--street-yellow-soft);
+    color: var(--street-ink);
+    box-shadow: 0 0.4rem 1rem rgba(244, 197, 66, 0.28);
+    transform: translateY(-2px);
 }
 
 .hero-link:hover {
-    color: #f4c542;
+    color: var(--street-yellow);
 }
 
 .gallery {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
+    gap: 1.25rem;
     justify-items: center;
-    margin-top: 0;
-    padding: 20px;
-    background-color: #f4f4f4;
+    margin-top: 2rem;
+    padding: 1.25rem;
+    background-color: var(--street-surface);
 }
 
 .gallery img {
-    width: 200px;
-    height: 200px;
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
     object-fit: cover;
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin: 10px;
+    box-shadow: var(--street-shadow);
     cursor: pointer;
+    transition:
+        transform 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.gallery-thumb-button {
+    width: 100%;
+    max-width: 360px;
+}
+
+.gallery img:hover {
+    transform: scale(1.02);
+    box-shadow: 0 1rem 2rem rgba(23, 23, 23, 0.2);
 }
 
 .modal {
@@ -476,7 +546,7 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-    outline: 3px solid #f4c542;
+    outline: 3px solid var(--street-yellow);
     outline-offset: 3px;
 }
 

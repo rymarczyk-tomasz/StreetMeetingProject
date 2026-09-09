@@ -74,6 +74,17 @@ export default function LoginPage() {
                 <button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? "Logowanie..." : "Zaloguj się"}
                 </button>
+
+                <p className="auth-switch-text">
+                    Nie masz jeszcze konta?{" "}
+                    <button
+                        type="button"
+                        className="text-button"
+                        onClick={() => navigate("/rejestracja")}
+                    >
+                        Zarejestruj się
+                    </button>
+                </p>
             </form>
         </section>
     );

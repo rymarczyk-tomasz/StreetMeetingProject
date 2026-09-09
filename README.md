@@ -81,8 +81,8 @@ Brak konfiguracji SMTP nie blokuje zmiany statusu zgłoszenia — powiadomienie 
 ```bash
 cd frontend
 npm install
-npm run dev           # http://localhost:5173, proxy /api i /uploads -> backend :33000
-npm run build          # build produkcyjny do frontend/dist
+npm run dev           
+npm run build          
 ```
 
 ### Utworzenie/nadanie roli administratora

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -43,12 +43,53 @@ function closeMobileNav() {
     }
 }
 
+function useActiveHomeSection(isHome: boolean) {
+    const [activeSection, setActiveSection] = useState("home");
+
+    useEffect(() => {
+        if (!isHome) return;
+
+        const sections = ["home", "event", "gallery", "contact"]
+            .map((id) => document.getElementById(id))
+            .filter((section): section is HTMLElement => Boolean(section));
+
+        if (!sections.length) return;
+
+        const navbarHeight =
+            document.documentElement.style.getPropertyValue(
+                "--navbar-height",
+            ) || "0px";
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const visibleSections = entries
+                    .filter((entry) => entry.isIntersecting)
+                    .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+                if (visibleSections[0]) {
+                    setActiveSection(visibleSections[0].target.id);
+                }
+            },
+            {
+                rootMargin: `-${navbarHeight} 0px -45% 0px`,
+                threshold: [0.15, 0.35, 0.6],
+            },
+        );
+
+        sections.forEach((section) => observer.observe(section));
+        return () => observer.disconnect();
+    }, [isHome]);
+
+    return isHome ? activeSection : "";
+}
+
 export default function Layout() {
     const { user, logout } = useAuth();
     const location = useLocation();
     const isHome = location.pathname === "/";
 
     useNavbarOffset();
+    const activeHomeSection = useActiveHomeSection(isHome);
 
     return (
         <>
@@ -81,30 +122,45 @@ export default function Layout() {
                     >
                         <div className="navbar-nav ms-auto">
                             <a
-                                className={
-                                    isHome ? "nav-link active" : "nav-link"
-                                }
+                                className={`nav-link ${
+                                    activeHomeSection === "home" ? "active" : ""
+                                }`}
                                 href={isHome ? "#home" : "/#home"}
                                 onClick={closeMobileNav}
                             >
                                 Home
                             </a>
                             <a
-                                className="nav-link"
+                                className={`nav-link ${
+                                    activeHomeSection === "event"
+                                        ? "active"
+                                        : ""
+                                }`}
                                 href={isHome ? "#event" : "/#event"}
                                 onClick={closeMobileNav}
                             >
                                 Event
                             </a>
                             <NavLink
-                                className="nav-link"
+                                className={({ isActive }) =>
+                                    `nav-link ${
+                                        isActive ||
+                                        activeHomeSection === "gallery"
+                                            ? "active"
+                                            : ""
+                                    }`
+                                }
                                 to="/galeria"
                                 onClick={closeMobileNav}
                             >
                                 Galeria
                             </NavLink>
                             <a
-                                className="nav-link"
+                                className={`nav-link ${
+                                    activeHomeSection === "contact"
+                                        ? "active"
+                                        : ""
+                                }`}
                                 href={isHome ? "#contact" : "/#contact"}
                                 onClick={closeMobileNav}
                             >
