@@ -81,7 +81,7 @@ Brak konfiguracji SMTP nie blokuje zmiany statusu zgłoszenia — powiadomienie 
 ```bash
 cd frontend
 npm install
-npm run dev           
+npm run dev
 npm run build          
 ```
 

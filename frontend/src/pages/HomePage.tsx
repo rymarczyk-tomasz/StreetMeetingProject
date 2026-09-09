@@ -43,6 +43,50 @@ const DEFAULT_EVENT = {
     ],
 };
 
+const DEFAULT_HOME = {
+    heroTitle: "Street Show",
+    heroDate: "29 sierpnia 2026",
+    heroLocation: "Polsat Plus Arena, Gdańsk",
+    heroImage: "/img/photos/Hero-image.webp",
+    ticketLabel: "Kup bilety",
+    ticketUrl: TICKET_URL,
+    exploreLabel: "Poznaj atrakcje",
+};
+
+const DEFAULT_GALLERY_PHOTOS = [
+    {
+        id: "default-1",
+        url: "/img/photos/Street Meeting Poland 2024-139.webp",
+        alt: "Samochód wystawowy na Street Show 2024",
+    },
+    {
+        id: "default-2",
+        url: "/img/photos/Street Meeting Poland 2024-252.webp",
+        alt: "Widok z wydarzenia Street Meeting Poland 2024",
+    },
+    {
+        id: "default-3",
+        url: "/img/photos/2024.03.29 Street Meeting 2-13.webp",
+        alt: "Samochody na murawie podczas Street Meeting 2024",
+    },
+];
+
+const DEFAULT_GALLERY = {
+    intro: "",
+    linkLabel: "Przejdź do galerii",
+    photos: DEFAULT_GALLERY_PHOTOS,
+};
+
+const DEFAULT_CONTACT = {
+    facebookUrl: "https://www.facebook.com/streetmeetingpoland/",
+    instagramUrl: "https://www.instagram.com/streetmeetingpoland/",
+    addressName: "Street Meeting Poland",
+    addressLine1: "ul. Pokoleń Lechii Gdańsk 1",
+    addressLine2: "80-560 Gdańsk",
+    mapUrl: "http://maps.app.goo.gl/PePJY3TXBjM7t4v37",
+    email: "streetmeetingpolska@gmail.com",
+};
+
 function EventCards({ event }) {
     return (
         <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
@@ -101,33 +145,53 @@ function EventCards({ event }) {
 
 export default function HomePage() {
     const [event, setEvent] = useState(DEFAULT_EVENT);
+    const [home, setHome] = useState(DEFAULT_HOME);
+    const [gallery, setGallery] = useState(DEFAULT_GALLERY);
+    const [contact, setContact] = useState(DEFAULT_CONTACT);
 
     useEffect(() => {
         api.get("/event")
             .then(({ data }) => setEvent(data.event))
             .catch(() => {});
+        api.get("/home")
+            .then(({ data }) => setHome(data.home))
+            .catch(() => {});
+        api.get("/gallery")
+            .then(({ data }) => setGallery(data.gallery))
+            .catch(() => {});
+        api.get("/contact")
+            .then(({ data }) => setContact(data.contact))
+            .catch(() => {});
     }, []);
 
     return (
         <>
-            <header id="home" className="home">
+            <header
+                id="home"
+                className="home"
+                style={
+                    home.heroImage
+                        ? { backgroundImage: `url("${home.heroImage}")` }
+                        : undefined
+                }
+            >
                 <div className="container-fluid h-100 d-flex flex-column justify-content-center align-items-center text-light text-center">
-                    <h1 className="display-3 text-uppercase">Street Show</h1>
-                    <h2 className="mb-2 text-uppercase">29 sierpnia 2026</h2>
-                    <h2 className="mb-2 text-uppercase">
-                        Polsat Plus Arena, Gdańsk
-                    </h2>
+                    <h1 className="display-3 text-uppercase">
+                        {home.heroTitle}
+                    </h1>
+                    <h2 className="mb-2 text-uppercase">{home.heroDate}</h2>
+                    <h2 className="mb-2 text-uppercase">{home.heroLocation}</h2>
                     <div className="hero-actions">
                         <a
                             className="hero-button"
-                            href={TICKET_URL}
+                            href={home.ticketUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            Kup bilety
+                            {home.ticketLabel}
                         </a>
                         <a className="hero-link" href="#event">
-                            Poznaj atrakcje
+                            {home.exploreLabel}
                         </a>
                     </div>
                     <div className="hero-shadow"></div>
@@ -308,90 +372,35 @@ export default function HomePage() {
                         <h2 className="display-3 pb-lg-3 text-uppercase">
                             Galeria
                         </h2>
+                        {gallery.intro && (
+                            <p className="py-3">{gallery.intro}</p>
+                        )}
                         <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
-                            <div className="col">
-                                <article className="card h-100">
-                                    <picture>
-                                        <source
-                                            type="image/avif"
-                                            srcSet="/img/optimized/photos/Street%20Meeting%20Poland%202024-139-400.avif   400w,
-                                            /img/optimized/photos/Street%20Meeting%20Poland%202024-139-800.avif   800w,
-                                            /img/optimized/photos/Street%20Meeting%20Poland%202024-139-1200.avif 1200w"
-                                            sizes="(max-width:576px) 100vw, (max-width:992px) 50vw, 33vw"
-                                        />
-                                        <source
-                                            type="image/webp"
-                                            srcSet="/img/optimized/photos/Street%20Meeting%20Poland%202024-139-400.webp   400w,
-                                            /img/optimized/photos/Street%20Meeting%20Poland%202024-139-800.webp   800w,
-                                            /img/optimized/photos/Street%20Meeting%20Poland%202024-139-1200.webp 1200w"
-                                            sizes="(max-width:576px) 100vw, (max-width:992px) 50vw, 33vw"
-                                        />
-                                        <img
-                                            loading="lazy"
-                                            src="/img/photos/Street Meeting Poland 2024-139.webp"
-                                            className="card-img-top"
-                                            alt="Samochód wystawowy na Street Show 2024"
-                                        />
-                                    </picture>
-                                </article>
-                            </div>
-                            <div className="col">
-                                <article className="card h-100">
-                                    <picture>
-                                        <source
-                                            type="image/avif"
-                                            srcSet="/img/optimized/photos/Street%20Meeting%20Poland%202024-252-400.avif   400w,
-                                            /img/optimized/photos/Street%20Meeting%20Poland%202024-252-800.avif   800w,
-                                            /img/optimized/photos/Street%20Meeting%20Poland%202024-252-1200.avif 1200w"
-                                            sizes="(max-width:576px) 100vw, (max-width:992px) 50vw, 33vw"
-                                        />
-                                        <source
-                                            type="image/webp"
-                                            srcSet="/img/optimized/photos/Street%20Meeting%20Poland%202024-252-400.webp   400w,
-                                            /img/optimized/photos/Street%20Meeting%20Poland%202024-252-800.webp   800w,
-                                            /img/optimized/photos/Street%20Meeting%20Poland%202024-252-1200.webp 1200w"
-                                            sizes="(max-width:576px) 100vw, (max-width:992px) 50vw, 33vw"
-                                        />
-                                        <img
-                                            loading="lazy"
-                                            src="/img/photos/Street Meeting Poland 2024-252.webp"
-                                            className="card-img-top"
-                                            alt="Widok z wydarzenia Street Meeting Poland 2024"
-                                        />
-                                    </picture>
-                                </article>
-                            </div>
-                            <div className="col">
-                                <article className="card h-100">
-                                    <picture>
-                                        <source
-                                            type="image/avif"
-                                            srcSet="/img/optimized/photos/2024.03.29%20Street%20Meeting%202-13-400.avif   400w,
-                                            /img/optimized/photos/2024.03.29%20Street%20Meeting%202-13-800.avif   800w,
-                                            /img/optimized/photos/2024.03.29%20Street%20Meeting%202-13-1200.avif 1200w"
-                                            sizes="(max-width:576px) 100vw, (max-width:992px) 50vw, 33vw"
-                                        />
-                                        <source
-                                            type="image/webp"
-                                            srcSet="/img/optimized/photos/2024.03.29%20Street%20Meeting%202-13-400.webp   400w,
-                                            /img/optimized/photos/2024.03.29%20Street%20Meeting%202-13-800.webp   800w,
-                                            /img/optimized/photos/2024.03.29%20Street%20Meeting%202-13-1200.webp 1200w"
-                                            sizes="(max-width:576px) 100vw, (max-width:992px) 50vw, 33vw"
-                                        />
-                                        <img
-                                            loading="lazy"
-                                            src="/img/photos/2024.03.29 Street Meeting 2-13.webp"
-                                            className="card-img-top"
-                                            alt="Samochody na murawie podczas Street Meeting 2024"
-                                        />
-                                    </picture>
-                                </article>
-                            </div>
+                            {(gallery.photos?.length
+                                ? gallery.photos
+                                : DEFAULT_GALLERY_PHOTOS
+                            )
+                                .slice(0, 3)
+                                .map((photo) => (
+                                    <div className="col" key={photo.id}>
+                                        <article className="card h-100">
+                                            <img
+                                                loading="lazy"
+                                                src={photo.url}
+                                                className="card-img-top"
+                                                alt={
+                                                    photo.alt ||
+                                                    "Zdjęcie z galerii Street Show"
+                                                }
+                                            />
+                                        </article>
+                                    </div>
+                                ))}
                         </div>
                     </div>
                     <div className="container text-center">
                         <Link to="/galeria" className="gallery-btn">
-                            Przejdź do galerii
+                            {gallery.linkLabel}
                         </Link>
                     </div>
                 </section>
@@ -407,36 +416,40 @@ export default function HomePage() {
                         <div className="row">
                             <div className="col-lg-6 mt-4 m-lg-0 contact-info">
                                 <h3>Social media:</h3>
-                                <a
-                                    className="social-media"
-                                    href="https://www.facebook.com/streetmeetingpoland/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    aria-label="Facebook Street Meeting Poland"
-                                >
-                                    <i
-                                        className="bi bi-facebook"
-                                        aria-hidden="true"
-                                    ></i>
-                                </a>
-                                <a
-                                    className="social-media"
-                                    href="https://www.instagram.com/streetmeetingpoland/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    aria-label="Instagram Street Meeting Poland"
-                                >
-                                    <i
-                                        className="bi bi-instagram"
-                                        aria-hidden="true"
-                                    ></i>
-                                </a>
+                                {contact.facebookUrl && (
+                                    <a
+                                        className="social-media"
+                                        href={contact.facebookUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label="Facebook Street Meeting Poland"
+                                    >
+                                        <i
+                                            className="bi bi-facebook"
+                                            aria-hidden="true"
+                                        ></i>
+                                    </a>
+                                )}
+                                {contact.instagramUrl && (
+                                    <a
+                                        className="social-media"
+                                        href={contact.instagramUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label="Instagram Street Meeting Poland"
+                                    >
+                                        <i
+                                            className="bi bi-instagram"
+                                            aria-hidden="true"
+                                        ></i>
+                                    </a>
+                                )}
                             </div>
                             <div className="col-lg-6 mt-4 m-lg-0 contact-info">
                                 <h3>Adres:</h3>
-                                <p>Street Meeting Poland</p>
+                                <p>{contact.addressName}</p>
                                 <a
-                                    href="http://maps.app.goo.gl/PePJY3TXBjM7t4v37"
+                                    href={contact.mapUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="links"
@@ -446,12 +459,12 @@ export default function HomePage() {
                                             className="bi bi-geo-alt"
                                             aria-hidden="true"
                                         ></i>
-                                        ul. Pokoleń Lechii Gdańsk 1 <br />
-                                        80-560 Gdańsk
+                                        {contact.addressLine1} <br />
+                                        {contact.addressLine2}
                                     </p>
                                 </a>
                                 <a
-                                    href="mailto:streetmeetingpolska@gmail.com"
+                                    href={`mailto:${contact.email}`}
                                     className="links"
                                 >
                                     <p>
@@ -459,7 +472,7 @@ export default function HomePage() {
                                             className="bi bi-at"
                                             aria-hidden="true"
                                         ></i>
-                                        streetmeetingpolska@gmail.com
+                                        {contact.email}
                                     </p>
                                 </a>
                             </div>

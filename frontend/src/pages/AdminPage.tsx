@@ -14,11 +14,21 @@ const PAYMENT_STATUS_LABELS = {
     paid: "Opłacone",
 };
 
+async function uploadContentImage(file) {
+    const formData = new FormData();
+    formData.append("image", file);
+    // Let the browser set the multipart Content-Type (with boundary) itself;
+    // forcing it manually breaks upload parsing on the server.
+    const { data } = await api.post("/admin/upload-image", formData);
+    return data.url;
+}
+
 function EventEditor({ onAction }) {
     const [event, setEvent] = useState(null);
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+    const [uploadingIndex, setUploadingIndex] = useState(null);
 
     useEffect(() => {
         api.get("/admin/event")
@@ -38,6 +48,23 @@ function EventEditor({ onAction }) {
                 cardIndex === index ? { ...card, [field]: value } : card,
             ),
         }));
+    }
+
+    async function handleImageFile(index, file) {
+        if (!file) return;
+        setUploadingIndex(index);
+        setError("");
+        try {
+            const url = await uploadContentImage(file);
+            updateCard(index, "image", url);
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                    "Nie udało się przesłać zdjęcia.",
+            );
+        } finally {
+            setUploadingIndex(null);
+        }
     }
 
     async function save(eventSubmit) {
@@ -122,6 +149,23 @@ function EventEditor({ onAction }) {
                                 placeholder="/img/photos/nazwa.webp"
                             />
                         </label>
+                        <label>
+                            Prześlij zdjęcie z komputera
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(input) =>
+                                    handleImageFile(
+                                        index,
+                                        input.target.files?.[0],
+                                    )
+                                }
+                                disabled={uploadingIndex === index}
+                            />
+                        </label>
+                        {uploadingIndex === index && (
+                            <p className="page-status">Przesyłanie...</p>
+                        )}
                         <img
                             className="event-editor-preview"
                             src={card.image}
@@ -167,6 +211,496 @@ function EventEditor({ onAction }) {
             </div>
             <button type="submit" disabled={isSaving}>
                 {isSaving ? "Zapisywanie..." : "Zapisz zmiany Eventu"}
+            </button>
+        </form>
+    );
+}
+
+function HomeEditor({ onAction }) {
+    const [home, setHome] = useState(null);
+    const [error, setError] = useState("");
+    const [message, setMessage] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+    const [isUploadingHero, setIsUploadingHero] = useState(false);
+
+    useEffect(() => {
+        api.get("/admin/home")
+            .then(({ data }) => setHome(data.home))
+            .catch((err) =>
+                setError(
+                    err.response?.data?.message ||
+                        "Nie udało się pobrać treści Home.",
+                ),
+            );
+    }, []);
+
+    async function save(formEvent) {
+        formEvent.preventDefault();
+        setIsSaving(true);
+        setError("");
+        setMessage("");
+        try {
+            await api.patch("/admin/home", { home });
+            setMessage("Treść Home została zapisana.");
+            onAction();
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                    "Nie udało się zapisać treści Home.",
+            );
+        } finally {
+            setIsSaving(false);
+        }
+    }
+
+    if (!home) return <p className="page-status">Ładowanie treści Home...</p>;
+
+    async function handleHeroImageFile(file) {
+        if (!file) return;
+        setIsUploadingHero(true);
+        setError("");
+        try {
+            const url = await uploadContentImage(file);
+            setHome((current) => ({ ...current, heroImage: url }));
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                    "Nie udało się przesłać zdjęcia hero.",
+            );
+        } finally {
+            setIsUploadingHero(false);
+        }
+    }
+
+    return (
+        <form className="event-editor" onSubmit={save}>
+            {error && <p className="form-error">{error}</p>}
+            {message && <p className="form-success">{message}</p>}
+            <label>
+                Tytuł
+                <input
+                    value={home.heroTitle}
+                    onChange={(input) =>
+                        setHome({ ...home, heroTitle: input.target.value })
+                    }
+                />
+            </label>
+            <label>
+                Data wydarzenia
+                <input
+                    value={home.heroDate}
+                    onChange={(input) =>
+                        setHome({ ...home, heroDate: input.target.value })
+                    }
+                />
+            </label>
+            <label>
+                Miejsce wydarzenia
+                <input
+                    value={home.heroLocation}
+                    onChange={(input) =>
+                        setHome({ ...home, heroLocation: input.target.value })
+                    }
+                />
+            </label>
+            <label>
+                Ścieżka lub URL zdjęcia hero
+                <input
+                    type="text"
+                    value={home.heroImage}
+                    onChange={(input) =>
+                        setHome({ ...home, heroImage: input.target.value })
+                    }
+                    placeholder="/img/photos/nazwa.webp"
+                />
+            </label>
+            <label>
+                Prześlij zdjęcie hero z komputera
+                <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(input) =>
+                        handleHeroImageFile(input.target.files?.[0])
+                    }
+                    disabled={isUploadingHero}
+                />
+            </label>
+            {isUploadingHero && <p className="page-status">Przesyłanie...</p>}
+            {home.heroImage && (
+                <img
+                    className="event-editor-preview"
+                    src={home.heroImage}
+                    alt="Podgląd zdjęcia hero"
+                />
+            )}
+            <label>
+                Tekst przycisku biletów
+                <input
+                    value={home.ticketLabel}
+                    onChange={(input) =>
+                        setHome({ ...home, ticketLabel: input.target.value })
+                    }
+                />
+            </label>
+            <label>
+                Link do biletów
+                <input
+                    value={home.ticketUrl}
+                    onChange={(input) =>
+                        setHome({ ...home, ticketUrl: input.target.value })
+                    }
+                />
+            </label>
+            <label>
+                Tekst linku "Poznaj atrakcje"
+                <input
+                    value={home.exploreLabel}
+                    onChange={(input) =>
+                        setHome({ ...home, exploreLabel: input.target.value })
+                    }
+                />
+            </label>
+            <button type="submit" disabled={isSaving}>
+                {isSaving ? "Zapisywanie..." : "Zapisz zmiany Home"}
+            </button>
+        </form>
+    );
+}
+
+function GalleryEditor({ onAction }) {
+    const [gallery, setGallery] = useState(null);
+    const [error, setError] = useState("");
+    const [message, setMessage] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+    const [uploadingId, setUploadingId] = useState(null);
+
+    useEffect(() => {
+        api.get("/admin/gallery")
+            .then(({ data }) => setGallery(data.gallery))
+            .catch((err) =>
+                setError(
+                    err.response?.data?.message ||
+                        "Nie udało się pobrać treści Galerii.",
+                ),
+            );
+    }, []);
+
+    function updatePhoto(id, field, value) {
+        setGallery((current) => ({
+            ...current,
+            photos: (current.photos || []).map((photo) =>
+                photo.id === id ? { ...photo, [field]: value } : photo,
+            ),
+        }));
+    }
+
+    async function addPhoto(file) {
+        if (!file) return;
+        setUploadingId("new");
+        setError("");
+        try {
+            const url = await uploadContentImage(file);
+            setGallery((current) => ({
+                ...current,
+                photos: [
+                    ...(current.photos || []),
+                    { id: `photo-${Date.now()}`, url, alt: "" },
+                ],
+            }));
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                    "Nie udało się przesłać zdjęcia.",
+            );
+        } finally {
+            setUploadingId(null);
+        }
+    }
+
+    async function replacePhoto(id, file) {
+        if (!file) return;
+        setUploadingId(id);
+        setError("");
+        try {
+            const url = await uploadContentImage(file);
+            updatePhoto(id, "url", url);
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                    "Nie udało się przesłać zdjęcia.",
+            );
+        } finally {
+            setUploadingId(null);
+        }
+    }
+
+    function removePhoto(id) {
+        setGallery((current) => ({
+            ...current,
+            photos: (current.photos || []).filter((photo) => photo.id !== id),
+        }));
+    }
+
+    async function save(formEvent) {
+        formEvent.preventDefault();
+        setIsSaving(true);
+        setError("");
+        setMessage("");
+        try {
+            await api.patch("/admin/gallery", { gallery });
+            setMessage("Treść Galerii została zapisana.");
+            onAction();
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                    "Nie udało się zapisać treści Galerii.",
+            );
+        } finally {
+            setIsSaving(false);
+        }
+    }
+
+    if (!gallery)
+        return <p className="page-status">Ładowanie treści Galerii...</p>;
+
+    return (
+        <form className="event-editor" onSubmit={save}>
+            {error && <p className="form-error">{error}</p>}
+            {message && <p className="form-success">{message}</p>}
+            <p className="admin-hint">
+                Te zdjęcia widać w podglądzie sekcji "Galeria" na stronie
+                głównej (maks. 3). Pełna galeria pod adresem /galeria nadal
+                synchronizuje się automatycznie z Dysku Google i nie jest tu
+                edytowana.
+            </p>
+            <label>
+                Opis nad podglądem galerii (opcjonalny)
+                <textarea
+                    rows={3}
+                    value={gallery.intro}
+                    onChange={(input) =>
+                        setGallery({ ...gallery, intro: input.target.value })
+                    }
+                />
+            </label>
+            <label>
+                Tekst przycisku "Przejdź do galerii"
+                <input
+                    value={gallery.linkLabel}
+                    onChange={(input) =>
+                        setGallery({
+                            ...gallery,
+                            linkLabel: input.target.value,
+                        })
+                    }
+                />
+            </label>
+            <div className="event-editor-grid">
+                {(gallery.photos || []).map((photo, index) => (
+                    <fieldset className="event-editor-card" key={photo.id}>
+                        <legend>Zdjęcie {index + 1}</legend>
+                        <label>
+                            Ścieżka lub URL zdjęcia
+                            <input
+                                type="text"
+                                value={photo.url}
+                                onChange={(input) =>
+                                    updatePhoto(
+                                        photo.id,
+                                        "url",
+                                        input.target.value,
+                                    )
+                                }
+                                placeholder="/img/photos/nazwa.webp"
+                            />
+                        </label>
+                        <label>
+                            Prześlij zdjęcie z komputera
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(input) =>
+                                    replacePhoto(
+                                        photo.id,
+                                        input.target.files?.[0],
+                                    )
+                                }
+                                disabled={uploadingId === photo.id}
+                            />
+                        </label>
+                        {uploadingId === photo.id && (
+                            <p className="page-status">Przesyłanie...</p>
+                        )}
+                        <img
+                            className="event-editor-preview"
+                            src={photo.url}
+                            alt={photo.alt || "Podgląd zdjęcia galerii"}
+                        />
+                        <label>
+                            Tekst alternatywny
+                            <input
+                                value={photo.alt}
+                                onChange={(input) =>
+                                    updatePhoto(
+                                        photo.id,
+                                        "alt",
+                                        input.target.value,
+                                    )
+                                }
+                            />
+                        </label>
+                        <button
+                            type="button"
+                            onClick={() => removePhoto(photo.id)}
+                        >
+                            Usuń zdjęcie
+                        </button>
+                    </fieldset>
+                ))}
+            </div>
+            <label>
+                Dodaj nowe zdjęcie z komputera
+                <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(input) => addPhoto(input.target.files?.[0])}
+                    disabled={uploadingId === "new"}
+                />
+            </label>
+            {uploadingId === "new" && (
+                <p className="page-status">Przesyłanie...</p>
+            )}
+            <button type="submit" disabled={isSaving}>
+                {isSaving ? "Zapisywanie..." : "Zapisz zmiany Galerii"}
+            </button>
+        </form>
+    );
+}
+
+function ContactEditor({ onAction }) {
+    const [contact, setContact] = useState(null);
+    const [error, setError] = useState("");
+    const [message, setMessage] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        api.get("/admin/contact")
+            .then(({ data }) => setContact(data.contact))
+            .catch((err) =>
+                setError(
+                    err.response?.data?.message ||
+                        "Nie udało się pobrać treści Kontaktu.",
+                ),
+            );
+    }, []);
+
+    async function save(formEvent) {
+        formEvent.preventDefault();
+        setIsSaving(true);
+        setError("");
+        setMessage("");
+        try {
+            await api.patch("/admin/contact", { contact });
+            setMessage("Treść Kontaktu została zapisana.");
+            onAction();
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                    "Nie udało się zapisać treści Kontaktu.",
+            );
+        } finally {
+            setIsSaving(false);
+        }
+    }
+
+    if (!contact)
+        return <p className="page-status">Ładowanie treści Kontaktu...</p>;
+
+    return (
+        <form className="event-editor" onSubmit={save}>
+            {error && <p className="form-error">{error}</p>}
+            {message && <p className="form-success">{message}</p>}
+            <label>
+                Link do Facebooka
+                <input
+                    value={contact.facebookUrl}
+                    onChange={(input) =>
+                        setContact({
+                            ...contact,
+                            facebookUrl: input.target.value,
+                        })
+                    }
+                />
+            </label>
+            <label>
+                Link do Instagrama
+                <input
+                    value={contact.instagramUrl}
+                    onChange={(input) =>
+                        setContact({
+                            ...contact,
+                            instagramUrl: input.target.value,
+                        })
+                    }
+                />
+            </label>
+            <label>
+                Nazwa
+                <input
+                    value={contact.addressName}
+                    onChange={(input) =>
+                        setContact({
+                            ...contact,
+                            addressName: input.target.value,
+                        })
+                    }
+                />
+            </label>
+            <label>
+                Adres — linia 1
+                <input
+                    value={contact.addressLine1}
+                    onChange={(input) =>
+                        setContact({
+                            ...contact,
+                            addressLine1: input.target.value,
+                        })
+                    }
+                />
+            </label>
+            <label>
+                Adres — linia 2
+                <input
+                    value={contact.addressLine2}
+                    onChange={(input) =>
+                        setContact({
+                            ...contact,
+                            addressLine2: input.target.value,
+                        })
+                    }
+                />
+            </label>
+            <label>
+                Link do mapy
+                <input
+                    value={contact.mapUrl}
+                    onChange={(input) =>
+                        setContact({ ...contact, mapUrl: input.target.value })
+                    }
+                />
+            </label>
+            <label>
+                E-mail kontaktowy
+                <input
+                    type="email"
+                    value={contact.email}
+                    onChange={(input) =>
+                        setContact({ ...contact, email: input.target.value })
+                    }
+                />
+            </label>
+            <button type="submit" disabled={isSaving}>
+                {isSaving ? "Zapisywanie..." : "Zapisz zmiany Kontaktu"}
             </button>
         </form>
     );
@@ -439,6 +973,9 @@ const ACTION_LABELS = {
     "user.blocked": "zablokował użytkownika",
     "user.unblocked": "odblokował użytkownika",
     "event.content_updated": "zaktualizował treść Eventu",
+    "home.content_updated": "zaktualizował treść Home",
+    "gallery.content_updated": "zaktualizował treść Galerii",
+    "contact.content_updated": "zaktualizował treść Kontaktu",
 };
 
 function AuditLog({ refreshKey }) {
@@ -534,6 +1071,7 @@ function AdminStats({ refreshKey }) {
 
 export default function AdminPage() {
     const [activeSection, setActiveSection] = useState("dashboard");
+    const [contentTab, setContentTab] = useState("event");
     const [users, setUsers] = useState([]);
     const [userFilters, setUserFilters] = useState({
         search: "",
@@ -615,7 +1153,7 @@ export default function AdminPage() {
             >
                 {[
                     ["dashboard", "Dashboard"],
-                    ["event", "Event"],
+                    ["content", "Treści strony"],
                     ["users", "Użytkownicy"],
                     ["submissions", "Zgłoszenia"],
                     ["audit", "Dziennik działań"],
@@ -765,22 +1303,67 @@ export default function AdminPage() {
                 </div>
             )}
 
-            {activeSection === "event" && (
+            {activeSection === "content" && (
                 <div className="admin-section">
                     <div className="admin-section-heading">
                         <div>
-                            <h2>Treść sekcji Event</h2>
-                            <p>
-                                Edytuj teksty i zdjęcia widoczne na stronie
-                                głównej.
-                            </p>
+                            <h2>Treści strony</h2>
+                            <p>Wybierz sekcję strony, którą chcesz edytować.</p>
                         </div>
                     </div>
-                    <EventEditor
-                        onAction={() =>
-                            setAuditRefreshKey((value) => value + 1)
-                        }
-                    />
+                    <nav
+                        className="admin-navigation admin-subnavigation"
+                        aria-label="Sekcje treści strony"
+                    >
+                        {[
+                            ["event", "Event"],
+                            ["gallery", "Galeria"],
+                            ["home", "Home"],
+                            ["contact", "Kontakt"],
+                        ].map(([tab, label]) => (
+                            <button
+                                className={
+                                    contentTab === tab ? "is-active" : ""
+                                }
+                                key={tab}
+                                type="button"
+                                onClick={() => setContentTab(tab)}
+                                aria-current={
+                                    contentTab === tab ? "page" : undefined
+                                }
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </nav>
+                    {contentTab === "event" && (
+                        <EventEditor
+                            onAction={() =>
+                                setAuditRefreshKey((value) => value + 1)
+                            }
+                        />
+                    )}
+                    {contentTab === "gallery" && (
+                        <GalleryEditor
+                            onAction={() =>
+                                setAuditRefreshKey((value) => value + 1)
+                            }
+                        />
+                    )}
+                    {contentTab === "home" && (
+                        <HomeEditor
+                            onAction={() =>
+                                setAuditRefreshKey((value) => value + 1)
+                            }
+                        />
+                    )}
+                    {contentTab === "contact" && (
+                        <ContactEditor
+                            onAction={() =>
+                                setAuditRefreshKey((value) => value + 1)
+                            }
+                        />
+                    )}
                 </div>
             )}
 

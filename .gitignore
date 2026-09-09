@@ -49,6 +49,7 @@ backend/dist/
 
 # User-submitted photos (runtime data, per-environment)
 backend/uploads/submissions/
+backend/uploads/content/
 
 # Generated gallery assets (runtime only)
 img/gallery/*.webp

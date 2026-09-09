@@ -15,6 +15,7 @@ const authRoutes = require("./src/auth/routes");
 const adminRoutes = require("./src/admin/routes");
 const { router: submissionsRoutes } = require("./src/submissions/routes");
 const eventContentDb = require("./src/db/eventContent");
+const siteContentDb = require("./src/db/siteContent");
 
 const app = express();
 const PORT = process.env.PORT || 33000;
@@ -38,9 +39,22 @@ app.use(
     "/uploads/submissions",
     express.static(path.join(process.cwd(), "uploads/submissions")),
 );
+app.use(
+    "/uploads/content",
+    express.static(path.join(process.cwd(), "uploads/content")),
+);
 app.use("/api/auth", authRoutes);
 app.get("/api/event", (req, res) => {
     res.json({ event: eventContentDb.getEventContent() });
+});
+app.get("/api/home", (req, res) => {
+    res.json({ home: siteContentDb.getContent("home") });
+});
+app.get("/api/gallery", (req, res) => {
+    res.json({ gallery: siteContentDb.getContent("gallery") });
+});
+app.get("/api/contact", (req, res) => {
+    res.json({ contact: siteContentDb.getContent("contact") });
 });
 app.use("/api/admin", adminRoutes);
 app.use("/api/submissions", submissionsRoutes);
