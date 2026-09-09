@@ -20,7 +20,7 @@ jobs:
                   host: ${{ secrets.MIKRUS_HOST }}
                   username: root
                   key: ${{ secrets.MIKRUS_SSH_KEY }}
-                  port: 22
+                  port: 10192
                   script: |
                       set -eu
 
