@@ -46,6 +46,7 @@
 .page {
     max-width: 720px;
     margin: 0 auto;
+    padding: 2rem 0 4rem;
 }
 
 .page-heading-row {
@@ -62,7 +63,7 @@
 
 .page-eyebrow {
     margin: 0 0 0.35rem;
-    color: #666;
+    color: #9a7100;
     font-size: 0.8rem;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -70,14 +71,37 @@
 }
 
 .account-settings-button,
-.account-back-link {
+.account-back-link,
+.page button {
     display: inline-block;
-    padding: 0.65rem 0.9rem;
-    border: 1px solid currentColor;
+    padding: 0.7rem 1rem;
+    border: 2px solid var(--street-yellow);
     border-radius: 4px;
-    color: inherit;
+    background: var(--street-yellow);
+    color: var(--street-ink);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
     text-decoration: none;
+    transition:
+        background-color 160ms ease,
+        box-shadow 160ms ease,
+        transform 160ms ease;
     white-space: nowrap;
+}
+
+.account-settings-button:hover,
+.account-back-link:hover,
+.page button:hover:not(:disabled) {
+    background: var(--street-yellow-soft);
+    color: var(--street-ink);
+    box-shadow: 0 0.4rem 1rem rgba(244, 197, 66, 0.28);
+    transform: translateY(-2px);
+}
+
+.page button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
 }
 
 .account-settings-page {
@@ -103,9 +127,12 @@
 }
 
 .account-card {
-    border: 1px solid #2a2a2a;
-    border-radius: 6px;
-    padding: 1.25rem;
+    border: 1px solid var(--street-border);
+    border-top: 4px solid var(--street-yellow);
+    border-radius: 4px;
+    padding: 1.5rem;
+    background: #fff;
+    box-shadow: var(--street-shadow);
 }
 
 .account-card h2 {
@@ -118,7 +145,25 @@
 }
 
 .account-card input {
+    width: 100%;
+    min-height: 2.6rem;
     padding: 0.55rem 0.65rem;
+    border: 1px solid var(--street-border);
+    border-radius: 3px;
+    background: #fff;
+    color: var(--street-ink);
+    font: inherit;
+}
+
+.account-card input:focus,
+.admin-filters input:focus,
+.admin-filters select:focus,
+.admin-note-field textarea:focus,
+.event-editor input:focus,
+.event-editor textarea:focus {
+    border-color: var(--street-yellow);
+    outline: 2px solid rgba(244, 197, 66, 0.35);
+    outline-offset: 1px;
 }
 
 .form-success {
@@ -134,6 +179,12 @@
 
 .admin-page {
     max-width: 1100px;
+}
+
+.admin-page,
+.account-settings-page,
+.page:not(.auth-page) {
+    color: var(--street-ink);
 }
 
 .admin-page-header,
@@ -155,7 +206,7 @@
 
 .admin-page-status,
 .admin-result-count {
-    color: #666;
+    color: var(--street-muted);
     font-size: 0.85rem;
 }
 
@@ -165,8 +216,10 @@
     gap: 0.5rem;
     padding: 0.35rem;
     margin-bottom: 2rem;
-    border: 1px solid #2a2a2a;
+    border: 1px solid #2d2d2d;
     border-radius: 6px;
+    background: #202020;
+    box-shadow: 0 0.5rem 1.5rem rgba(23, 23, 23, 0.12);
 }
 
 .admin-navigation button {
@@ -175,7 +228,7 @@
     border: 1px solid transparent;
     border-radius: 4px;
     background: transparent;
-    color: inherit;
+    color: #fff;
     cursor: pointer;
     font: inherit;
     font-weight: 700;
@@ -183,9 +236,11 @@
 
 .admin-navigation button:hover,
 .admin-navigation button.is-active {
-    border-color: #2a2a2a;
-    background: #2a2a2a;
-    color: #fff;
+    border-color: var(--street-yellow);
+    background: var(--street-yellow);
+    color: var(--street-ink);
+    box-shadow: none;
+    transform: none;
 }
 
 .admin-section {
@@ -216,8 +271,10 @@
     gap: 0.8rem;
     min-width: 0;
     padding: 1rem;
-    border: 1px solid #2a2a2a;
-    border-radius: 6px;
+    border: 1px solid var(--street-border);
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 0 0.5rem 1.5rem rgba(23, 23, 23, 0.08);
 }
 
 .event-editor-card legend {
@@ -239,7 +296,7 @@
 
 .admin-section-heading p {
     margin: 0.35rem 0 0;
-    color: #666;
+    color: var(--street-muted);
 }
 
 .admin-section-heading > button {
@@ -252,13 +309,16 @@
     flex-direction: column;
     justify-content: center;
     padding: 1rem;
-    border: 1px solid #2a2a2a;
-    border-radius: 6px;
+    border: 1px solid var(--street-border);
+    border-top: 4px solid #2d2d2d;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 0 0.5rem 1.5rem rgba(23, 23, 23, 0.08);
 }
 
 .admin-stat-card span,
 .admin-stat-card small {
-    color: #666;
+    color: var(--street-muted);
 }
 
 .admin-stat-card strong {
@@ -267,17 +327,18 @@
 }
 
 .admin-stat-pending {
-    border-color: #f5a623;
+    border-top-color: var(--street-yellow);
 }
 
 .admin-stat-approved {
-    border-color: #2ecc71;
+    border-top-color: #2e9b63;
 }
 
 .submission-success {
     padding: 1rem;
     border: 1px solid #2ecc71;
-    border-radius: 6px;
+    border-radius: 4px;
+    background: #fff;
 }
 
 .submission-info {
@@ -369,9 +430,19 @@
 
 .admin-table th,
 .admin-table td {
-    border: 1px solid #2a2a2a;
+    border-bottom: 1px solid var(--street-border);
     padding: 0.5rem 0.75rem;
     text-align: left;
+}
+
+.admin-table th {
+    background: #202020;
+    color: #fff;
+    font-weight: 700;
+}
+
+.admin-table tbody tr:nth-child(even) {
+    background: #fafafa;
 }
 
 .admin-table button {
@@ -423,6 +494,11 @@
 .admin-filters select {
     min-height: 2.4rem;
     padding: 0.45rem 0.6rem;
+    border: 1px solid var(--street-border);
+    border-radius: 3px;
+    background: #fff;
+    color: var(--street-ink);
+    font: inherit;
 }
 
 .audit-section {
@@ -430,18 +506,18 @@
 }
 
 .audit-list {
-    border-top: 1px solid #2a2a2a;
+    border-top: 1px solid var(--street-border);
 }
 
 .audit-entry {
     padding: 0.75rem 0;
-    border-bottom: 1px solid #2a2a2a;
+    border-bottom: 1px solid var(--street-border);
 }
 
 .audit-entry span {
     display: block;
     margin-top: 0.25rem;
-    color: #666;
+    color: var(--street-muted);
     font-size: 0.9rem;
 }
 
@@ -470,7 +546,7 @@
 .submission-details-button {
     flex-shrink: 0;
     padding: 0.4rem 0.65rem;
-    border: 1px solid currentColor;
+    border: 1px solid var(--street-ink);
     border-radius: 4px;
     background: transparent;
     color: inherit;
@@ -480,7 +556,7 @@
 .submission-details {
     margin-top: 1rem;
     padding-top: 1rem;
-    border-top: 1px solid #2a2a2a;
+    border-top: 1px solid var(--street-border);
 }
 
 .submission-meta {
@@ -491,7 +567,7 @@
 }
 
 .submission-meta dt {
-    color: #666;
+    color: var(--street-muted);
     font-size: 0.85rem;
 }
 
@@ -506,9 +582,12 @@
 }
 
 .submission-card {
-    border: 1px solid #2a2a2a;
-    border-radius: 6px;
-    padding: 1rem;
+    border: 1px solid var(--street-border);
+    border-left: 4px solid var(--street-yellow);
+    border-radius: 4px;
+    padding: 1.25rem;
+    background: #fff;
+    box-shadow: 0 0.5rem 1.5rem rgba(23, 23, 23, 0.08);
     margin-bottom: 1rem;
 }
 
