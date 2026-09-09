@@ -102,6 +102,17 @@ export default function RegisterPage() {
                 <button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? "Tworzenie konta..." : "Zarejestruj się"}
                 </button>
+
+                <p className="auth-switch-text">
+                    Masz już konto?{" "}
+                    <button
+                        type="button"
+                        className="text-button"
+                        onClick={() => navigate("/logowanie")}
+                    >
+                        Zaloguj się
+                    </button>
+                </p>
             </form>
         </section>
     );
