@@ -124,6 +124,14 @@ const DEFAULTS = {
         selectFeeAmount: "",
         selectCapacity: 0,
         maxVehiclesPerUser: 5,
+        // Bank transfer details shown to participants with an approved submission.
+        // In the title, {rok} = edition year, {rejestracja} = licence plate.
+        paymentRecipient: "",
+        paymentAccount: "",
+        paymentTitleTemplate: "Strefa Select {rok} – {rejestracja}",
+        paymentDeadline: "",
+        // Practical info for accepted participants (entry hours, what to bring…).
+        participantInfo: "",
     },
 };
 

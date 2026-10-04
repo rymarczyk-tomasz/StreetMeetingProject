@@ -107,6 +107,17 @@ function listRevisions(key) {
     return listRevisionsStmt.all(key);
 }
 
+// Identifies the regulamin a user agreed to: "rev-<id>" of the latest saved
+// version, or "default" while the built-in text has never been edited.
+const latestRevisionStmt = db.prepare(
+    "SELECT id FROM content_revisions WHERE content_key = ? ORDER BY id DESC LIMIT 1",
+);
+
+function getContentVersion(key) {
+    const row = latestRevisionStmt.get(key);
+    return row ? `rev-${row.id}` : "default";
+}
+
 function getRevisionContent(key, revisionId) {
     const row = getRevisionStmt.get(revisionId, key);
     return row ? JSON.parse(row.content) : null;
@@ -146,6 +157,7 @@ module.exports = {
     saveContent,
     listRevisions,
     getRevisionContent,
+    getContentVersion,
     getSettings,
     getCurrentEdition,
     getSubmissionsAvailability,

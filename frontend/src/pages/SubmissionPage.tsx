@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/client";
+import ConsentFields from "../components/ConsentFields";
+import { photosLabel } from "../utils/plural";
 
 // Must match the backend limits in backend/src/submissions/routes.ts.
 const MAX_PHOTOS = 5;
@@ -16,25 +18,52 @@ function formatMegabytes(bytes) {
 
 export default function SubmissionPage() {
     const { user } = useAuth();
+    const [searchParams] = useSearchParams();
     const [form, setForm] = useState({
         firstName: user.firstName || "",
         lastName: user.lastName || "",
         phone: user.phone || "",
-        licensePlate: user.licensePlate || "",
-        carBrand: user.carBrand || "",
+        licensePlate: "",
+        carBrand: "",
         carDescription: "",
     });
     const [photos, setPhotos] = useState<File[]>([]);
+    const [consents, setConsents] = useState({ acceptTerms: false, photoPublishConsent: false });
+    const [vehicles, setVehicles] = useState([]);
+    const [vehicleId, setVehicleId] = useState("");
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [availability, setAvailability] = useState(null);
 
+    const vehicle = vehicles.find((item) => String(item.id) === vehicleId);
+    const usesGaragePhotos = Boolean(vehicle?.photos.length) && photos.length === 0;
+
+    function chooseVehicle(id, list = vehicles) {
+        setVehicleId(id);
+        const chosen = list.find((item) => String(item.id) === id);
+        if (chosen) {
+            setForm((previous) => ({
+                ...previous,
+                licensePlate: chosen.licensePlate,
+                carBrand: chosen.carBrand,
+                carDescription: chosen.carDescription || previous.carDescription,
+            }));
+        }
+    }
+
     async function loadAvailability() {
         try {
-            const { data } = await api.get("/submissions/availability");
-            setAvailability(data.availability);
+            const [availabilityResponse, vehiclesResponse] = await Promise.all([
+                api.get("/submissions/availability"),
+                api.get("/vehicles"),
+            ]);
+            setAvailability(availabilityResponse.data.availability);
+            setVehicles(vehiclesResponse.data.vehicles);
+            // Coming from "Zgłoś ten pojazd" in the garage.
+            const preselected = searchParams.get("pojazd");
+            if (preselected) chooseVehicle(preselected, vehiclesResponse.data.vehicles);
         } catch (err) {
             setError(
                 err.response?.data?.message ||
@@ -97,7 +126,7 @@ export default function SubmissionPage() {
         event.preventDefault();
         setError("");
 
-        if (photos.length === 0) {
+        if (photos.length === 0 && !usesGaragePhotos) {
             setError("Proszę dodać przynajmniej jedno zdjęcie.");
             return;
         }
@@ -108,6 +137,9 @@ export default function SubmissionPage() {
             Object.entries(form).forEach(([key, value]) =>
                 formData.append(key, value),
             );
+            formData.append("acceptTerms", String(consents.acceptTerms));
+            formData.append("photoPublishConsent", String(consents.photoPublishConsent));
+            if (vehicleId) formData.append("vehicleId", vehicleId);
             photos.forEach((file) => formData.append("photos", file));
 
             await api.post("/submissions", formData);
@@ -133,6 +165,8 @@ export default function SubmissionPage() {
             carDescription: "",
         });
         setPhotos([]);
+        setVehicleId("");
+        setConsents({ acceptTerms: false, photoPublishConsent: false });
         setError("");
         setIsSubmitted(false);
     }
@@ -185,6 +219,28 @@ export default function SubmissionPage() {
                             ` Masz już ${availability.activeCount} aktywnych zgłoszeń — pozostało ${availability.remaining}.`}
                     </p>
                     <form onSubmit={handleSubmit} className="auth-form">
+                        {vehicles.length > 0 ? (
+                            <label>
+                                Pojazd z garażu (opcjonalnie)
+                                <select
+                                    value={vehicleId}
+                                    onChange={(event) => chooseVehicle(event.target.value)}
+                                >
+                                    <option value="">— wpisz dane ręcznie —</option>
+                                    {vehicles.map((item) => (
+                                        <option key={item.id} value={item.id}>
+                                            {item.carBrand} ({item.licensePlate})
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        ) : (
+                            <p className="admin-hint">
+                                Wskazówka: auta zapisane w{" "}
+                                <Link to="/garaz">garażu</Link> zgłosisz jednym
+                                kliknięciem, także w kolejnych latach.
+                            </p>
+                        )}
                         <label>
                             Imię
                             <input
@@ -246,14 +302,28 @@ export default function SubmissionPage() {
                                 maxLength={3000}
                             />
                         </label>
+                        {vehicle?.photos.length > 0 && (
+                            <div className="garage-photos-preview">
+                                <p className="admin-hint">
+                                    {usesGaragePhotos
+                                        ? `Wyślemy ${photosLabel(vehicle.photos.length)} z garażu. Możesz też wybrać nowe poniżej — wtedy zastąpią te z garażu.`
+                                        : "Wybrałeś nowe zdjęcia — zastąpią zdjęcia z garażu."}
+                                </p>
+                                <div className="submission-photos">
+                                    {vehicle.photos.map((photo) => (
+                                        <img key={photo} src={photo} alt="" loading="lazy" />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         <label>
-                            Zdjęcia (maksymalnie {MAX_PHOTOS}, łącznie do 50 MB;
-                            JPG, PNG, WEBP lub AVIF)
+                            {usesGaragePhotos ? "Inne zdjęcia (opcjonalnie)" : "Zdjęcia"} (maksymalnie{" "}
+                            {MAX_PHOTOS}, łącznie do 50 MB; JPG, PNG, WEBP lub AVIF)
                             <input
                                 type="file"
                                 accept={ACCEPTED_TYPES}
                                 multiple
-                                required
+                                required={!usesGaragePhotos}
                                 onChange={handlePhotosChange}
                             />
                         </label>
@@ -263,12 +333,13 @@ export default function SubmissionPage() {
                                 łącznie {formatMegabytes(totalSize)} z 50 MB.
                             </p>
                         )}
+                        <ConsentFields value={consents} onChange={setConsents} />
                         {error && (
                             <p className="form-error" role="alert">
                                 {error}
                             </p>
                         )}
-                        <button type="submit" disabled={isSubmitting}>
+                        <button type="submit" disabled={isSubmitting || !consents.acceptTerms}>
                             {isSubmitting
                                 ? "Wysyłanie..."
                                 : "Wyślij zgłoszenie"}

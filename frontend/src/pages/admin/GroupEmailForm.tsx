@@ -71,12 +71,13 @@ export default function GroupEmailForm({ edition, onSent }) {
     return (
         <details className="gallery-howto group-email">
             <summary>Wyślij wiadomość do uczestników</summary>
-            {recipients && !recipients.emailConfigured && (
-                <p className="payment-alert">
-                    Wysyłka e-maili nie jest jeszcze skonfigurowana (SMTP w
-                    backend/config/.env), więc wiadomości nie wyjdą.
-                </p>
-            )}
+            <p className="admin-hint">
+                Wiadomość pojawi się w panelu każdego uczestnika (sekcja „Komunikaty od
+                organizatora”)
+                {recipients?.emailConfigured
+                    ? " i zostanie wysłana e-mailem."
+                    : ". E-maile nie wyjdą, dopóki nie skonfigurujesz SMTP w backend/config/.env."}
+            </p>
             <form className="event-editor" onSubmit={send}>
                 <label>
                     Do kogo
@@ -116,12 +117,7 @@ export default function GroupEmailForm({ edition, onSent }) {
                 <div className="submission-actions">
                     <button
                         type="submit"
-                        disabled={
-                            isSending ||
-                            !recipients?.count ||
-                            !recipients?.emailConfigured ||
-                            recipients?.inProgress
-                        }
+                        disabled={isSending || !recipients?.count || recipients?.inProgress}
                     >
                         {isSending ? "Wysyłanie..." : "Wyślij"}
                     </button>

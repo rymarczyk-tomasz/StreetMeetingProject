@@ -4,6 +4,7 @@ const usersDb = require("../db/users");
 const refreshTokensDb = require("../db/refreshTokens");
 const submissionsDb = require("../db/submissions");
 const auditLogDb = require("../db/auditLog");
+const messagesDb = require("../db/messages");
 const siteContentDb = require("../db/siteContent");
 const { authenticate, requireRole } = require("../auth/middleware");
 const {
@@ -536,12 +537,9 @@ router.get("/emails/recipients", (req, res) => {
     });
 });
 
+// Every message lands in the participants' panel ("Komunikaty"); it is also
+// e-mailed when SMTP is configured.
 router.post("/emails", (req, res) => {
-    if (!isEmailConfigured()) {
-        return res.status(503).json({
-            message: "Wysyłka e-maili nie jest skonfigurowana (SMTP w backend/config/.env).",
-        });
-    }
     if (groupEmailInProgress) {
         return res
             .status(409)
@@ -562,16 +560,35 @@ router.post("/emails", (req, res) => {
         return res.status(400).json({ message: "Brak odbiorców dla wybranych filtrów." });
     }
 
+    const adminId = req.user.sub;
+    const messageId = messagesDb.createMessage(
+        adminId,
+        subject,
+        message,
+        recipients.map((recipient) => recipient.user_id),
+    );
+
+    if (!isEmailConfigured()) {
+        audit(req, "email.group_sent", "email", messageId, {
+            subject,
+            filters,
+            panelOnly: true,
+            recipients: recipients.length,
+        });
+        return res.status(201).json({
+            message: `Wiadomość jest w panelu ${recipients.length} uczestników (e-maile nie wyszły — SMTP nie jest skonfigurowany).`,
+        });
+    }
+
     // Sending can take minutes; reply right away and log the outcome when done.
     groupEmailInProgress = true;
-    const adminId = req.user.sub;
     sendGroupEmail({ recipients, subject, message })
         .then((result) =>
             auditLogDb.createAuditEntry({
                 adminId,
                 action: "email.group_sent",
                 targetType: "email",
-                targetId: null,
+                targetId: messageId,
                 details: { subject, filters, ...result },
             }),
         )
@@ -581,8 +598,46 @@ router.post("/emails", (req, res) => {
         });
 
     res.status(202).json({
-        message: `Wysyłanie do ${recipients.length} odbiorców rozpoczęte. Wynik pojawi się w dzienniku działań.`,
+        message: `Wiadomość jest już w panelu ${recipients.length} uczestników; e-maile są wysyłane (wynik w dzienniku działań).`,
     });
+});
+
+// ---- Gate check-in -------------------------------------------------------
+
+// Accepts the QR content ("SSP-<token>") or the bare token.
+function findByPassCode(code) {
+    const token = String(code || "").trim().replace(/^SSP-/i, "");
+    return /^[a-f0-9]{24}$/i.test(token) ? submissionsDb.findSubmissionByPassToken(token) : null;
+}
+
+function toCheckinView(row) {
+    return {
+        ...toAdminSubmission(row),
+        validForCurrentEdition: row.edition === siteContentDb.getCurrentEdition(),
+        valid: row.status === "approved" && row.payment_status === "paid",
+    };
+}
+
+router.get("/checkin/:code", (req, res) => {
+    const submission = findByPassCode(req.params.code);
+    if (!submission) {
+        return res.status(404).json({ message: "Nieznany kod wejściówki." });
+    }
+    res.json({ submission: toCheckinView(submission) });
+});
+
+router.post("/submissions/:id/checkin", (req, res) => {
+    const existing = submissionsDb.findSubmissionById(Number(req.params.id));
+    if (!existing) {
+        return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+    }
+
+    const checkedIn = req.body?.checkedIn !== false;
+    const updated = submissionsDb.setCheckedIn(existing.id, checkedIn);
+    audit(req, checkedIn ? "submission.checked_in" : "submission.checkin_undone", "submission", existing.id, {
+        licensePlate: existing.license_plate,
+    });
+    res.json({ submission: toCheckinView(updated) });
 });
 
 module.exports = router;

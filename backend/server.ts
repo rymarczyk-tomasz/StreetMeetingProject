@@ -10,6 +10,8 @@ const cookieParser = require("cookie-parser");
 const authRoutes = require("./src/auth/routes");
 const adminRoutes = require("./src/admin/routes");
 const { router: submissionsRoutes } = require("./src/submissions/routes");
+const vehiclesRoutes = require("./src/vehicles/routes");
+const messagesRoutes = require("./src/messages/routes");
 const siteContentDb = require("./src/db/siteContent");
 const { PUBLIC_CONTENT_KEYS } = require("./src/content/defaults");
 const {
@@ -121,6 +123,8 @@ app.get("/health", (req, res) => {
 });
 app.use("/api/admin", adminRoutes);
 app.use("/api/submissions", submissionsRoutes);
+app.use("/api/vehicles", vehiclesRoutes);
+app.use("/api/messages", messagesRoutes);
 
 app.use("/api", (req, res) => {
     res.status(404).json({ message: "Nie znaleziono." });

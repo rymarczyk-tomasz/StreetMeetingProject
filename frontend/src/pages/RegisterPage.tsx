@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function RegisterPage() {
@@ -10,6 +10,7 @@ export default function RegisterPage() {
         lastName: "",
         email: "",
         password: "",
+        acceptTerms: false,
     });
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -94,12 +95,30 @@ export default function RegisterPage() {
                         </button>
                     </span>
                 </label>
+                <label className="consent-label">
+                    <input
+                        type="checkbox"
+                        checked={form.acceptTerms}
+                        onChange={(event) =>
+                            setForm((prev) => ({ ...prev, acceptTerms: event.target.checked }))
+                        }
+                        required
+                    />
+                    <span>
+                        Akceptuję{" "}
+                        <Link to="/regulamin" target="_blank">
+                            regulamin
+                        </Link>{" "}
+                        i wyrażam zgodę na przetwarzanie moich danych w celu prowadzenia
+                        konta i obsługi zgłoszeń.
+                    </span>
+                </label>
                 {error && (
                     <p className="form-error" role="alert">
                         {error}
                     </p>
                 )}
-                <button type="submit" disabled={isSubmitting}>
+                <button type="submit" disabled={isSubmitting || !form.acceptTerms}>
                     {isSubmitting ? "Tworzenie konta..." : "Zarejestruj się"}
                 </button>
 

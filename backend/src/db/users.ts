@@ -1,8 +1,9 @@
 const db = require("./database");
 
 const insertUserStmt = db.prepare(`
-    INSERT INTO users (email, password_hash, first_name, last_name, role)
-    VALUES (@email, @passwordHash, @firstName, @lastName, @role)
+    INSERT INTO users (email, password_hash, first_name, last_name, role, terms_accepted_at, terms_version)
+    VALUES (@email, @passwordHash, @firstName, @lastName, @role,
+            CASE WHEN @termsVersion IS NULL THEN NULL ELSE datetime('now') END, @termsVersion)
 `);
 
 const findByEmailStmt = db.prepare(`SELECT * FROM users WHERE email = ?`);
@@ -15,10 +16,16 @@ const updateRoleStmt = db.prepare(`UPDATE users SET role = ? WHERE id = ?`);
 const updateActiveStmt = db.prepare(
     `UPDATE users SET is_active = ? WHERE id = ?`,
 );
+// Cars live in the garage (vehicles table) now; license_plate/car_brand on users
+// are legacy columns left untouched.
 const updateProfileStmt = db.prepare(
-    `UPDATE users
-     SET first_name = ?, last_name = ?, phone = ?, license_plate = ?, car_brand = ?
-     WHERE id = ?`,
+    `UPDATE users SET first_name = ?, last_name = ?, phone = ? WHERE id = ?`,
+);
+const setEmailVerifiedStmt = db.prepare(
+    `UPDATE users SET email_verified_at = datetime('now') WHERE id = ?`,
+);
+const updateEmailStmt = db.prepare(
+    `UPDATE users SET email = ?, email_verified_at = datetime('now') WHERE id = ?`,
 );
 const updatePasswordStmt = db.prepare(
     `UPDATE users SET password_hash = ? WHERE id = ?`,
@@ -28,16 +35,42 @@ const countAdminsStmt = db.prepare(
 );
 const deleteUserStmt = db.prepare(`DELETE FROM users WHERE id = ?`);
 
-function createUser({ email, passwordHash, firstName, lastName, role }) {
+// termsVersion: regulamin version accepted at registration (null for CLI-created admins).
+function createUser({
+    email,
+    passwordHash,
+    firstName,
+    lastName,
+    role,
+    termsVersion = null,
+}: {
+    email: string;
+    passwordHash: string;
+    firstName?: string;
+    lastName?: string;
+    role?: string;
+    termsVersion?: string | null;
+}) {
     const result = insertUserStmt.run({
         email,
         passwordHash,
         firstName: firstName || null,
         lastName: lastName || null,
         role: role || "user",
+        termsVersion,
     });
 
     return findByIdStmt.get(result.lastInsertRowid);
+}
+
+function setEmailVerified(id) {
+    setEmailVerifiedStmt.run(id);
+}
+
+// The new address was confirmed through a link sent to it, so it is verified.
+function updateUserEmail(id, email) {
+    updateEmailStmt.run(email, id);
+    return findByIdStmt.get(id);
 }
 
 function findUserByEmail(email) {
@@ -104,18 +137,8 @@ function updateUserActive(id, isActive) {
     return findByIdStmt.get(id);
 }
 
-function updateUserProfile(
-    id,
-    { firstName, lastName, phone, licensePlate, carBrand },
-) {
-    updateProfileStmt.run(
-        firstName || null,
-        lastName || null,
-        phone || null,
-        licensePlate || null,
-        carBrand || null,
-        id,
-    );
+function updateUserProfile(id, { firstName, lastName, phone }) {
+    updateProfileStmt.run(firstName || null, lastName || null, phone || null, id);
     return findByIdStmt.get(id);
 }
 
@@ -144,4 +167,6 @@ module.exports = {
     updateUserPassword,
     countAdmins,
     deleteUser,
+    setEmailVerified,
+    updateUserEmail,
 };

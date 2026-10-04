@@ -289,10 +289,26 @@ function validateSettings(input) {
         selectFeeAmount: text(input.selectFeeAmount, 100),
         selectCapacity: Number(input.selectCapacity || 0),
         maxVehiclesPerUser: Number(input.maxVehiclesPerUser || 0),
+        paymentRecipient: text(input.paymentRecipient, 200),
+        paymentAccount: text(input.paymentAccount, 60),
+        paymentTitleTemplate: text(input.paymentTitleTemplate, 140),
+        paymentDeadline: text(input.paymentDeadline, 10),
+        participantInfo: String(input.participantInfo || "").trim().slice(0, 3000),
     };
 
-    if (content.submissionsDeadline && !DATE_REGEX.test(content.submissionsDeadline)) {
-        return { error: "Termin zgłoszeń musi być datą (RRRR-MM-DD)." };
+    for (const [field, label] of [
+        ["submissionsDeadline", "Termin zgłoszeń"],
+        ["paymentDeadline", "Termin płatności"],
+    ]) {
+        if (content[field] && !DATE_REGEX.test(content[field])) {
+            return { error: `${label} musi być datą (RRRR-MM-DD).` };
+        }
+    }
+
+    // Polish IBAN: 26 digits, optionally with "PL" and spaces.
+    const accountDigits = content.paymentAccount.replace(/\s+/g, "").replace(/^PL/i, "");
+    if (content.paymentAccount && !/^\d{26}$/.test(accountDigits)) {
+        return { error: "Numer konta musi mieć 26 cyfr (polski numer IBAN)." };
     }
     if (
         !Number.isInteger(content.selectCapacity) ||

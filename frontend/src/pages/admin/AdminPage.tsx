@@ -1,6 +1,7 @@
 import { useState } from "react";
 import AdminStats from "./AdminStats";
 import AuditLog from "./AuditLog";
+import CheckinPanel from "./CheckinPanel";
 import {
     AnnouncementEditor,
     ContactEditor,
@@ -20,6 +21,7 @@ import UsersPanel from "./UsersPanel";
 const SECTIONS = [
     ["dashboard", "Dashboard"],
     ["submissions", "Zgłoszenia"],
+    ["checkin", "Wjazd"],
     ["users", "Użytkownicy"],
     ["gallery", "Galeria"],
     ["content", "Treści strony"],
@@ -110,6 +112,16 @@ export default function AdminPage() {
                         description="Przeglądaj, filtruj i rozpatruj zgłoszenia. Poprzednie lata znajdziesz w filtrze „Edycja”."
                     />
                     <SubmissionsPanel onAction={onAction} />
+                </div>
+            )}
+
+            {activeSection === "checkin" && (
+                <div className="admin-section">
+                    <SectionHeading
+                        title="Wjazd na strefę Select"
+                        description="Skanuj kod QR z wejściówki uczestnika albo znajdź auto po rejestracji i zarejestruj wjazd."
+                    />
+                    <CheckinPanel onAction={onAction} />
                 </div>
             )}
 

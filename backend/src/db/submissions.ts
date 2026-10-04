@@ -3,12 +3,33 @@ const db = require("./database");
 const insertStmt = db.prepare(`
     INSERT INTO submissions (
         user_id, first_name, last_name, phone, license_plate,
-        car_brand, car_description, photos, edition
+        car_brand, car_description, photos, edition,
+        consent_at, consent_version, photo_publish_consent
     ) VALUES (
         @userId, @firstName, @lastName, @phone, @licensePlate,
-        @carBrand, @carDescription, @photos, @edition
+        @carBrand, @carDescription, @photos, @edition,
+        datetime('now'), @consentVersion, @photoPublishConsent
     )
 `);
+const updatePhotosStmt = db.prepare(`
+    UPDATE submissions SET photos = ?, updated_at = datetime('now') WHERE id = ?
+`);
+const setPaymentProofStmt = db.prepare(`
+    UPDATE submissions
+    SET payment_proof = ?, payment_status = 'verification', updated_at = datetime('now')
+    WHERE id = ?
+`);
+const setPassTokenStmt = db.prepare(
+    `UPDATE submissions SET pass_token = ? WHERE id = ? AND pass_token IS NULL`,
+);
+const findByPassTokenStmt = db.prepare(`
+    SELECT submissions.*, users.email AS user_email
+    FROM submissions JOIN users ON users.id = submissions.user_id
+    WHERE pass_token = ?
+`);
+const setCheckedInStmt = db.prepare(
+    `UPDATE submissions SET checked_in_at = ? WHERE id = ?`,
+);
 
 const findByIdStmt = db.prepare(`SELECT * FROM submissions WHERE id = ?`);
 const listByUserStmt = db.prepare(
@@ -39,6 +60,12 @@ const countActiveForUserStmt = db.prepare(`
     SELECT COUNT(*) AS count FROM submissions
     WHERE user_id = ? AND edition = ? AND status != 'rejected'
 `);
+const findActiveByPlateStmt = db.prepare(`
+    SELECT id FROM submissions
+    WHERE user_id = ? AND edition = ? AND status != 'rejected'
+      AND replace(upper(license_plate), ' ', '') = replace(upper(?), ' ', '')
+    LIMIT 1
+`);
 const listEditionsStmt = db.prepare(`
     SELECT edition, COUNT(*) AS count FROM submissions
     GROUP BY edition ORDER BY edition DESC
@@ -48,8 +75,35 @@ function createSubmission(data) {
     const result = insertStmt.run({
         ...data,
         photos: JSON.stringify(data.photos || []),
+        consentVersion: data.consentVersion || null,
+        photoPublishConsent: data.photoPublishConsent ? 1 : 0,
     });
     return findByIdStmt.get(result.lastInsertRowid);
+}
+
+function updateSubmissionPhotos(id, photos) {
+    updatePhotosStmt.run(JSON.stringify(photos), id);
+    return findByIdStmt.get(id);
+}
+
+function setPaymentProof(id, storedPath) {
+    setPaymentProofStmt.run(storedPath, id);
+    return findByIdStmt.get(id);
+}
+
+// The QR entry pass token is created once, on first request.
+function ensurePassToken(id, token) {
+    setPassTokenStmt.run(token, id);
+    return findByIdStmt.get(id).pass_token;
+}
+
+function findSubmissionByPassToken(token) {
+    return findByPassTokenStmt.get(String(token || ""));
+}
+
+function setCheckedIn(id, checkedIn) {
+    setCheckedInStmt.run(checkedIn ? new Date().toISOString().slice(0, 19).replace("T", " ") : null, id);
+    return findByIdStmt.get(id);
 }
 
 function findSubmissionById(id) {
@@ -123,7 +177,7 @@ function listRecipients(filters: SubmissionFilters = {}) {
     return db
         .prepare(
             `
-            SELECT users.email AS email, MIN(users.first_name) AS first_name
+            SELECT users.id AS user_id, users.email AS email, MIN(users.first_name) AS first_name
             FROM submissions
             JOIN users ON users.id = submissions.user_id
             ${where}${where ? " AND" : " WHERE"} users.is_active = 1
@@ -162,6 +216,11 @@ function deleteSubmission(id) {
 // can re-apply with another car and starts fresh every year.
 function countActiveForUser(userId, edition) {
     return countActiveForUserStmt.get(userId, edition).count;
+}
+
+// Same car (plate, ignoring spaces/case) already submitted by this user in the edition.
+function hasActiveSubmissionForPlate(userId, edition, licensePlate) {
+    return Boolean(findActiveByPlateStmt.get(userId, edition, licensePlate));
 }
 
 function listEditions() {
@@ -218,6 +277,11 @@ function getTopCarBrands(edition, limit = 8) {
 
 module.exports = {
     createSubmission,
+    updateSubmissionPhotos,
+    setPaymentProof,
+    ensurePassToken,
+    findSubmissionByPassToken,
+    setCheckedIn,
     findSubmissionById,
     listSubmissionsByUser,
     listAllSubmissions,
@@ -228,6 +292,7 @@ module.exports = {
     updateSubmissionDetails,
     deleteSubmission,
     countActiveForUser,
+    hasActiveSubmissionForPlate,
     listEditions,
     getSubmissionStats,
     getSubmissionsPerDay,

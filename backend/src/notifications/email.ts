@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const siteContentDb = require("../db/siteContent");
+const { getPaymentDetails } = require("../payments");
 
 let transporter;
 
@@ -66,17 +66,28 @@ async function sendMail({ to, subject, text, html }) {
     return { sent: true };
 }
 
-function getFeeAmount() {
-    const fromSettings = String(
-        siteContentDb.getSettings().selectFeeAmount || "",
-    ).trim();
-    return (
-        fromSettings ||
-        String(
-            process.env.SELECT_FEE_AMOUNT ||
-                "kwoty wskazanej przez organizatora",
-        ).trim()
-    );
+function formatDeadline(date) {
+    if (!date) return "";
+    return new Intl.DateTimeFormat("pl-PL", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+    }).format(new Date(`${date}T12:00:00`));
+}
+
+// Lines describing how to pay (amount, account, title, deadline) for the approval e-mail.
+function paymentLines(submission) {
+    const payment = getPaymentDetails(submission);
+    const lines = [
+        `Prosimy o opłacenie składki w wysokości ${payment.amount || "wskazanej przez organizatora"}${payment.deadline ? ` do ${formatDeadline(payment.deadline)}` : ""}.`,
+    ];
+    if (payment.complete) {
+        if (payment.recipient) lines.push(`Odbiorca: ${payment.recipient}`);
+        lines.push(`Numer konta: ${payment.account}`);
+        lines.push(`Tytuł przelewu: ${payment.title}`);
+    }
+    lines.push("Po wykonaniu przelewu zgłoś opłatę w panelu (możesz dołączyć potwierdzenie).");
+    return lines;
 }
 
 async function sendSubmissionStatusEmail({
@@ -95,13 +106,14 @@ async function sendSubmissionStatusEmail({
     const statusLabel = approved ? "zaakceptowane" : "odrzucone";
     const subject = `Street Show: zgłoszenie ${statusLabel}`;
     const note = adminNote ? String(adminNote) : "";
-    const feeAmount = getFeeAmount();
+    const payment = approved ? paymentLines(submission) : [];
     const panelUrl = `${getAppUrl()}/panel`;
     const approvedText = [
         `Cześć ${firstName},`,
         "",
         `Chcielibyśmy Cię poinformować, że Twój samochód ${carBrand} został zaakceptowany do strefy Select.`,
-        `Prosimy o opłacenie składki w wysokości ${feeAmount}.`,
+        "",
+        ...payment,
         note ? `\nWiadomość od organizatora:\n${note}` : "",
         "",
         `Szczegóły znajdziesz w swoim panelu: ${panelUrl}`,
@@ -129,7 +141,7 @@ async function sendSubmissionStatusEmail({
             ? `
                 <p>Cześć ${escapeHtml(firstName)},</p>
                 <p>Chcielibyśmy Cię poinformować, że Twój samochód <strong>${escapeHtml(carBrand)}</strong> został zaakceptowany do strefy Select.</p>
-                <p>Prosimy o opłacenie składki w wysokości <strong>${escapeHtml(feeAmount)}</strong>.</p>
+                <p>${payment.map((line) => escapeHtml(line)).join("<br>")}</p>
                 ${noteHtml}
                 <p>Szczegóły znajdziesz w <a href="${escapeHtml(panelUrl)}">swoim panelu</a>.</p>
                 <p>Pozdrawiamy<br>Street Show Crew</p>
@@ -171,28 +183,57 @@ async function sendPasswordResetEmail({ user, token, ttlMinutes }) {
     });
 }
 
-async function sendWelcomeEmail({ user }) {
+async function sendVerificationEmail({ user, token, ttlHours }) {
+    const url = `${getAppUrl()}/potwierdz-email?token=${encodeURIComponent(token)}`;
     const firstName = user.first_name || "Użytkowniku";
-    const panelUrl = `${getAppUrl()}/panel`;
 
     return sendMail({
         to: user.email,
-        subject: "Street Show: konto zostało utworzone",
+        subject: "Street Show: potwierdź adres e-mail",
         text: [
             `Cześć ${firstName},`,
             "",
-            "Twoje konto w serwisie Street Show zostało utworzone.",
-            `W panelu możesz zgłosić swój pojazd do strefy Select: ${panelUrl}`,
+            "Twoje konto w serwisie Street Show jest gotowe. Potwierdź jeszcze, że ten adres należy do Ciebie — dzięki temu dostaniesz decyzję w sprawie zgłoszenia i ważne informacje o wydarzeniu:",
+            url,
+            `(link ważny ${ttlHours} godzin)`,
             "",
-            "Jeśli to nie Ty zakładałeś konto, napisz do nas, odpowiadając na tę wiadomość.",
+            "Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.",
             "",
             "Street Show",
         ].join("\n"),
         html: `
             <p>Cześć ${escapeHtml(firstName)},</p>
-            <p>Twoje konto w serwisie Street Show zostało utworzone.</p>
-            <p>W <a href="${escapeHtml(panelUrl)}">panelu</a> możesz zgłosić swój pojazd do strefy Select.</p>
-            <p>Jeśli to nie Ty zakładałeś konto, napisz do nas, odpowiadając na tę wiadomość.</p>
+            <p>Twoje konto w serwisie Street Show jest gotowe. Potwierdź jeszcze, że ten adres należy do Ciebie — dzięki temu dostaniesz decyzję w sprawie zgłoszenia i ważne informacje o wydarzeniu.</p>
+            <p><a href="${escapeHtml(url)}">Potwierdź adres e-mail</a> (link ważny ${ttlHours} godzin)</p>
+            <p>Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.</p>
+            <p>Street Show</p>
+        `,
+    });
+}
+
+async function sendEmailChangeEmail({ user, newEmail, token, ttlHours }) {
+    const url = `${getAppUrl()}/zmiana-emaila?token=${encodeURIComponent(token)}`;
+    const firstName = user.first_name || "Użytkowniku";
+
+    return sendMail({
+        to: newEmail,
+        subject: "Street Show: potwierdź nowy adres e-mail",
+        text: [
+            `Cześć ${firstName},`,
+            "",
+            `Ktoś (mamy nadzieję, że Ty) chce zmienić adres e-mail konta Street Show na ${newEmail}.`,
+            `Potwierdź zmianę (link ważny ${ttlHours} godzin):`,
+            url,
+            "",
+            "Jeśli to nie Ty, zignoruj tę wiadomość — adres się nie zmieni.",
+            "",
+            "Street Show",
+        ].join("\n"),
+        html: `
+            <p>Cześć ${escapeHtml(firstName)},</p>
+            <p>Ktoś (mamy nadzieję, że Ty) chce zmienić adres e-mail konta Street Show na <strong>${escapeHtml(newEmail)}</strong>.</p>
+            <p><a href="${escapeHtml(url)}">Potwierdź zmianę adresu</a> (link ważny ${ttlHours} godzin)</p>
+            <p>Jeśli to nie Ty, zignoruj tę wiadomość — adres się nie zmieni.</p>
             <p>Street Show</p>
         `,
     });
@@ -266,8 +307,9 @@ async function sendGroupEmail({ recipients, subject, message }) {
 module.exports = {
     isEmailConfigured,
     sendGroupEmail,
+    sendVerificationEmail,
+    sendEmailChangeEmail,
     sendSubmissionStatusEmail,
     sendPasswordResetEmail,
-    sendWelcomeEmail,
     sendNewSubmissionAdminEmail,
 };

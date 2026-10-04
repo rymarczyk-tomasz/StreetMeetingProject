@@ -92,7 +92,16 @@ const userColumns = new Set(
         .map((column) => column.name),
 );
 
-for (const column of ["phone", "license_plate", "car_brand"]) {
+// terms_*: when the user accepted the regulamin/RODO at registration and which
+// regulamin version (revision id) it was; email_verified_at: confirmed address.
+for (const column of [
+    "phone",
+    "license_plate",
+    "car_brand",
+    "terms_accepted_at",
+    "terms_version",
+    "email_verified_at",
+]) {
     if (!userColumns.has(column)) {
         db.exec(`ALTER TABLE users ADD COLUMN ${column} TEXT`);
     }
@@ -123,9 +132,68 @@ if (!submissionColumns.has("edition")) {
     db.exec("UPDATE submissions SET edition = 2026 WHERE edition IS NULL");
 }
 
+// consent_*: regulamin/RODO acceptance recorded with each submission;
+// photo_publish_consent: optional OK to publish photos of the car;
+// payment_proof: uploaded transfer confirmation; pass_token / checked_in_at:
+// QR entry pass for approved + paid cars and the gate check-in time.
+const newSubmissionColumns = {
+    consent_at: "TEXT",
+    consent_version: "TEXT",
+    photo_publish_consent: "INTEGER NOT NULL DEFAULT 0",
+    payment_proof: "TEXT",
+    pass_token: "TEXT",
+    checked_in_at: "TEXT",
+};
+for (const [column, type] of Object.entries(newSubmissionColumns)) {
+    if (!submissionColumns.has(column)) {
+        db.exec(`ALTER TABLE submissions ADD COLUMN ${column} ${type}`);
+    }
+}
+
 db.exec(`
     CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status);
     CREATE INDEX IF NOT EXISTS idx_submissions_edition ON submissions(edition, user_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_submissions_pass_token ON submissions(pass_token);
+
+    -- "Garage": cars a user keeps for quick submissions in later editions.
+    CREATE TABLE IF NOT EXISTS vehicles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        car_brand TEXT NOT NULL,
+        license_plate TEXT NOT NULL,
+        car_description TEXT NOT NULL DEFAULT '',
+        photos TEXT NOT NULL DEFAULT '[]',
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_vehicles_user_id ON vehicles(user_id);
+
+    -- Messages from organizers shown in the participant panel (and e-mailed).
+    CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        admin_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        subject TEXT NOT NULL,
+        body TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS message_recipients (
+        message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        read_at TEXT,
+        PRIMARY KEY (message_id, user_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_message_recipients_user ON message_recipients(user_id);
+
+    -- One-time links for confirming an e-mail address or an e-mail change.
+    CREATE TABLE IF NOT EXISTS email_tokens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        kind TEXT NOT NULL CHECK (kind IN ('verify', 'change')),
+        token_hash TEXT NOT NULL UNIQUE,
+        new_email TEXT,
+        expires_at TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
 `);
 
 module.exports = db;

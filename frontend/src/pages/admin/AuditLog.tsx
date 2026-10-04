@@ -7,6 +7,8 @@ const ACTION_LABELS = {
     "submission.approved": "zaakceptował zgłoszenie",
     "submission.rejected": "odrzucił zgłoszenie",
     "submission.deleted": "usunął zgłoszenie",
+    "submission.checked_in": "zarejestrował wjazd",
+    "submission.checkin_undone": "cofnął wjazd",
     "submission.payment_unpaid": "cofnął potwierdzenie opłaty",
     "submission.payment_verification": "zgłosił opłatę do weryfikacji",
     "submission.payment_paid": "potwierdził opłacenie zgłoszenia",
@@ -47,8 +49,11 @@ function describeDetails(entry) {
         return ` — rok ${details.previousYear} → ${details.year}`;
     }
     if (entry.action === "email.group_sent") {
-        return ` — „${details.subject}”: wysłano ${details.sent}, błędy ${details.failed}`;
+        return details.panelOnly
+            ? ` — „${details.subject}”: w panelu ${details.recipients} osób (bez e-maili)`
+            : ` — „${details.subject}”: wysłano ${details.sent}, błędy ${details.failed}`;
     }
+    if (details.licensePlate) return ` — ${details.licensePlate}`;
     if (entry.action.endsWith(".content_restored")) {
         return ` (${entry.targetType})`;
     }

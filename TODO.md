@@ -14,9 +14,12 @@ Lista rzeczy do dodania lub dopracowania w projekcie.
 - [x] Galeria z albumami z Dysku Google, miniatury na serwerze
 - [x] FAQ, regulamin (edytor + PDF), ogloszenia, partnerzy edytowalne w panelu, historia zmian
 - [x] Lista na brame do druku, wiadomosci e-mail do grup uczestnikow
-- [ ] Bilety/wejsciowki z kodem QR i check-in na bramie
-- [ ] Wgrywanie potwierdzenia przelewu przez uczestnika
-- [ ] Weryfikacja adresu e-mail przy rejestracji (po skonfigurowaniu SMTP)
+- [x] Wejsciowki z kodem QR i check-in na bramie (Admin → Wjazd)
+- [x] Wgrywanie potwierdzenia przelewu przez uczestnika, dane do przelewu w panelu
+- [x] Weryfikacja i zmiana adresu e-mail (dzialaja po skonfigurowaniu SMTP)
+- [x] Zgody (regulamin/RODO) przy rejestracji i zgloszeniu, z data i wersja regulaminu
+- [x] Garaz pojazdow, zgloszenie z garazu, "Zglos ponownie" na nowa edycje
+- [x] Komunikaty od organizatora w panelu uczestnika
 
 ## E-mail i powiadomienia
 

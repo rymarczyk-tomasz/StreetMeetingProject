@@ -9,9 +9,9 @@ export default function AccountSettingsPage() {
         firstName: user.firstName || "",
         lastName: user.lastName || "",
         phone: user.phone || "",
-        licensePlate: user.licensePlate || "",
-        carBrand: user.carBrand || "",
     });
+    const [emailChange, setEmailChange] = useState({ newEmail: "", password: "" });
+    const [isChangingEmail, setIsChangingEmail] = useState(false);
     const [passwords, setPasswords] = useState({
         currentPassword: "",
         newPassword: "",
@@ -74,6 +74,29 @@ export default function AccountSettingsPage() {
         }
     }
 
+    async function runAction(request, fallback) {
+        clearFeedback();
+        try {
+            const { data } = await request();
+            setMessage(data.message);
+            return true;
+        } catch (err) {
+            setError(err.response?.data?.message || fallback);
+            return false;
+        }
+    }
+
+    async function changeEmail(event) {
+        event.preventDefault();
+        setIsChangingEmail(true);
+        const ok = await runAction(
+            () => api.post("/auth/change-email", emailChange),
+            "Nie udało się zmienić adresu e-mail.",
+        );
+        if (ok) setEmailChange({ newEmail: "", password: "" });
+        setIsChangingEmail(false);
+    }
+
     async function exportData() {
         clearFeedback();
         setIsExporting(true);
@@ -132,13 +155,24 @@ export default function AccountSettingsPage() {
 
             <p className="account-settings-intro">
                 Zarządzaj swoimi danymi logowania i informacjami wyświetlanymi
-                przy zgłoszeniach.
+                przy zgłoszeniach. Swoje auta zapisujesz w{" "}
+                <Link to="/garaz">garażu</Link>.
             </p>
+
+            {message && (
+                <p className="form-success" role="status">
+                    {message}
+                </p>
+            )}
+            {error && (
+                <p className="form-error" role="alert">
+                    {error}
+                </p>
+            )}
 
             <div className="account-settings-grid">
                 <section className="account-card">
                     <h2>Moje dane</h2>
-                    <p className="account-email">{user.email}</p>
                     <form className="auth-form" onSubmit={saveProfile}>
                         <label>
                             Imię
@@ -180,35 +214,68 @@ export default function AccountSettingsPage() {
                                 placeholder="np. +48 123 456 789"
                             />
                         </label>
-                        <label>
-                            Numer tablicy rejestracyjnej (opcjonalnie)
-                            <input
-                                value={profile.licensePlate}
-                                onChange={(event) =>
-                                    setProfile({
-                                        ...profile,
-                                        licensePlate: event.target.value,
-                                    })
-                                }
-                                placeholder="np. GD 12345"
-                                maxLength={20}
-                            />
-                        </label>
-                        <label>
-                            Marka pojazdu (opcjonalnie)
-                            <input
-                                value={profile.carBrand}
-                                onChange={(event) =>
-                                    setProfile({
-                                        ...profile,
-                                        carBrand: event.target.value,
-                                    })
-                                }
-                                maxLength={100}
-                            />
-                        </label>
                         <button type="submit" disabled={isSavingProfile}>
                             {isSavingProfile ? "Zapisywanie..." : "Zapisz dane"}
+                        </button>
+                    </form>
+                </section>
+
+                <section className="account-card">
+                    <h2>Adres e-mail</h2>
+                    <p className="account-email">
+                        {user.email}{" "}
+                        <span
+                            className={`status-badge ${user.emailVerified ? "status-approved" : "payment-status-verification"}`}
+                        >
+                            {user.emailVerified ? "Potwierdzony" : "Niepotwierdzony"}
+                        </span>
+                    </p>
+                    {!user.emailVerified && (
+                        <p>
+                            <button
+                                type="button"
+                                className="button-secondary"
+                                onClick={() =>
+                                    runAction(
+                                        () => api.post("/auth/resend-verification"),
+                                        "Nie udało się wysłać linku.",
+                                    )
+                                }
+                            >
+                                Wyślij link potwierdzający
+                            </button>
+                        </p>
+                    )}
+                    <form className="auth-form" onSubmit={changeEmail}>
+                        <label>
+                            Nowy adres e-mail
+                            <input
+                                type="email"
+                                value={emailChange.newEmail}
+                                onChange={(event) =>
+                                    setEmailChange({ ...emailChange, newEmail: event.target.value })
+                                }
+                                autoComplete="email"
+                                required
+                            />
+                        </label>
+                        <label>
+                            Aktualne hasło
+                            <input
+                                type="password"
+                                value={emailChange.password}
+                                onChange={(event) =>
+                                    setEmailChange({ ...emailChange, password: event.target.value })
+                                }
+                                autoComplete="current-password"
+                                required
+                            />
+                        </label>
+                        <p className="admin-hint">
+                            Wyślemy link na nowy adres — zmiana nastąpi po jego kliknięciu.
+                        </p>
+                        <button type="submit" disabled={isChangingEmail}>
+                            {isChangingEmail ? "Wysyłanie..." : "Zmień adres"}
                         </button>
                     </form>
                 </section>
@@ -270,6 +337,24 @@ export default function AccountSettingsPage() {
                                 : "Zmień hasło"}
                         </button>
                     </form>
+
+                    <h3 className="account-subheading">Sesje</h3>
+                    <p>
+                        Zgubiłeś telefon albo logowałeś się na cudzym komputerze?
+                        Wyloguj wszystkie inne urządzenia.
+                    </p>
+                    <button
+                        type="button"
+                        className="button-secondary"
+                        onClick={() =>
+                            runAction(
+                                () => api.post("/auth/logout-all"),
+                                "Nie udało się wylogować innych urządzeń.",
+                            )
+                        }
+                    >
+                        Wyloguj ze wszystkich innych urządzeń
+                    </button>
                 </section>
 
                 <section className="account-card">
@@ -314,9 +399,6 @@ export default function AccountSettingsPage() {
                     </form>
                 </section>
             </div>
-
-            {message && <p className="form-success">{message}</p>}
-            {error && <p className="form-error">{error}</p>}
         </section>
     );
 }

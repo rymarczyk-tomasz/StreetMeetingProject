@@ -414,7 +414,18 @@ export default function SubmissionsPanel({ onAction }) {
                         </p>
                         <p className="admin-hint">
                             Edycja {s.edition} · dodano {formatDate(s.createdAt)}
+                            {s.consentAt
+                                ? ` · zgoda na regulamin: ${formatDate(s.consentAt)}`
+                                : " · brak zapisanej zgody (zgłoszenie sprzed zmian)"}
+                            {s.photoPublishConsent && " · zgoda na publikację zdjęć"}
                         </p>
+                        {s.checkedInAt && (
+                            <p>
+                                <span className="status-badge status-approved">
+                                    Wjazd: {formatDate(s.checkedInAt)}
+                                </span>
+                            </p>
+                        )}
                         <p>{s.carDescription}</p>
                         <div className="submission-photos">
                             {s.photos.map((photo, photoIndex) => (
@@ -463,6 +474,13 @@ export default function SubmissionsPanel({ onAction }) {
                             <p className="payment-alert">
                                 Użytkownik zgłosił opłacenie. Zweryfikuj
                                 płatność i potwierdź ją poniżej.
+                            </p>
+                        )}
+                        {s.paymentProofUrl && (
+                            <p>
+                                <a href={s.paymentProofUrl} target="_blank" rel="noopener noreferrer">
+                                    Potwierdzenie przelewu od uczestnika
+                                </a>
                             </p>
                         )}
                         {s.status === "approved" &&

@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 
 const ACCESS_TOKEN_TTL = "15m";
@@ -27,9 +28,13 @@ function signAccessToken(user) {
     );
 }
 
+// jwtid makes every refresh token unique; without it two sessions of the same user
+// started in the same second got identical tokens, so revoking/rotating one also
+// hit the other.
 function signRefreshToken(user) {
     return jwt.sign({ sub: user.id }, getRefreshSecret(), {
         expiresIn: `${REFRESH_TOKEN_TTL_DAYS}d`,
+        jwtid: crypto.randomUUID(),
     });
 }
 

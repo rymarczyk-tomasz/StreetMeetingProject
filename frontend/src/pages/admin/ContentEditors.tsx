@@ -776,12 +776,54 @@ export function SubmissionSettingsEditor({ onAction }) {
                         value={settings.selectCapacity}
                         onChange={(value) => editor.update({ selectCapacity: Number(value) })}
                     />
-                    <TextInput
-                        label="Kwota opłaty podawana w e-mailu o akceptacji"
-                        value={settings.selectFeeAmount}
-                        maxLength={100}
-                        placeholder="np. 150 zł"
-                        onChange={(selectFeeAmount) => editor.update({ selectFeeAmount })}
+                    <fieldset className="faq-editor-category">
+                        <legend>Opłata za strefę Select</legend>
+                        <p className="admin-hint">
+                            Uczestnik z zaakceptowanym zgłoszeniem widzi te dane w panelu
+                            (z przyciskami „Kopiuj”) i w e-mailu o akceptacji.
+                        </p>
+                        <TextInput
+                            label="Kwota"
+                            value={settings.selectFeeAmount}
+                            maxLength={100}
+                            placeholder="np. 150 zł"
+                            onChange={(selectFeeAmount) => editor.update({ selectFeeAmount })}
+                        />
+                        <TextInput
+                            label="Odbiorca przelewu"
+                            value={settings.paymentRecipient}
+                            maxLength={200}
+                            placeholder="np. Street Meeting Poland Sp. z o.o."
+                            onChange={(paymentRecipient) => editor.update({ paymentRecipient })}
+                        />
+                        <TextInput
+                            label="Numer konta (26 cyfr)"
+                            value={settings.paymentAccount}
+                            maxLength={60}
+                            placeholder="12 3456 7890 1234 5678 9012 3456"
+                            onChange={(paymentAccount) => editor.update({ paymentAccount })}
+                        />
+                        <TextInput
+                            label="Tytuł przelewu — {rok} i {rejestracja} zostaną podmienione"
+                            value={settings.paymentTitleTemplate}
+                            maxLength={140}
+                            onChange={(paymentTitleTemplate) => editor.update({ paymentTitleTemplate })}
+                        />
+                        <label>
+                            Termin płatności (opcjonalny)
+                            <input
+                                type="date"
+                                value={settings.paymentDeadline}
+                                onChange={(event) => editor.update({ paymentDeadline: event.target.value })}
+                            />
+                        </label>
+                    </fieldset>
+                    <TextArea
+                        label="Informacje dla zaakceptowanych uczestników (widoczne w ich panelu): godziny i brama wjazdu, co zabrać, kontakt w dniu wydarzenia…"
+                        rows={5}
+                        maxLength={3000}
+                        value={settings.participantInfo}
+                        onChange={(participantInfo) => editor.update({ participantInfo })}
                     />
                 </>
             )}

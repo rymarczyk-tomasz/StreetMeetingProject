@@ -4,6 +4,7 @@ const path = require("path");
 const db = require("./db/database");
 const refreshTokensDb = require("./db/refreshTokens");
 const passwordResetTokensDb = require("./db/passwordResetTokens");
+const emailTokensDb = require("./db/emailTokens");
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -19,6 +20,7 @@ function pruneExpiredTokens() {
     try {
         refreshTokensDb.pruneExpiredTokens();
         passwordResetTokensDb.pruneExpiredResetTokens();
+        emailTokensDb.pruneExpiredEmailTokens();
     } catch (error) {
         console.error("[maintenance] Czyszczenie tokenów:", error.message);
     }
