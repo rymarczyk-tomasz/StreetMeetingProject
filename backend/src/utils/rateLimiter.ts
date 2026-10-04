@@ -15,8 +15,9 @@ function createRateLimiter({ windowMs, maxRequests, message }) {
     }, windowMs).unref();
 
     return function rateLimit(req, res, next) {
+        // req.ip honours app.set("trust proxy"), so a client cannot pick its own
+        // key by sending a forged X-Forwarded-For header.
         const key =
-            (req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
             req.ip ||
             req.socket?.remoteAddress ||
             "unknown";

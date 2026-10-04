@@ -1,4 +1,15 @@
 const { verifyAccessToken } = require("./tokens");
+const usersDb = require("../db/users");
+
+// The access token only proves identity; role and active flag are re-read from the
+// database on every request, so blocking a user or revoking admin rights takes effect
+// immediately instead of after the token's 15-minute lifetime.
+function resolveUser(token) {
+    const payload = verifyAccessToken(token);
+    const user = usersDb.findUserById(payload.sub);
+    if (!user || !user.is_active) return null;
+    return { sub: user.id, email: user.email, role: user.role };
+}
 
 function authenticate(req, res, next) {
     const token = req.cookies?.access_token;
@@ -8,7 +19,13 @@ function authenticate(req, res, next) {
     }
 
     try {
-        req.user = verifyAccessToken(token);
+        const user = resolveUser(token);
+        if (!user) {
+            return res
+                .status(401)
+                .json({ message: "Sesja wygasła lub konto jest niedostępne." });
+        }
+        req.user = user;
         return next();
     } catch {
         return res
@@ -22,7 +39,7 @@ function optionalAuthenticate(req, res, next) {
 
     if (token) {
         try {
-            req.user = verifyAccessToken(token);
+            req.user = resolveUser(token) || undefined;
         } catch {
             // ignore invalid/expired token for optional auth
         }

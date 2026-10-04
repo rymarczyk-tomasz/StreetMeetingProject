@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function LoginPage() {
@@ -74,6 +74,10 @@ export default function LoginPage() {
                 <button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? "Logowanie..." : "Zaloguj się"}
                 </button>
+
+                <p className="auth-switch-text">
+                    <Link to="/nie-pamietam-hasla">Nie pamiętasz hasła?</Link>
+                </p>
 
                 <p className="auth-switch-text">
                     Nie masz jeszcze konta?{" "}

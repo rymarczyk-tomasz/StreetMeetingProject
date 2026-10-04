@@ -60,7 +60,7 @@ npm install
 npm run start        # startuje na http://localhost:33000
 ```
 
-Backend czyta konfigurację z `backend/config/.env` (Google Sheets/Drive dla starego `/upload` i galerii, oraz `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `CORS_ORIGINS`). Plik już istnieje lokalnie z wygenerowanymi sekretami — **nie commitować** (jest w `.gitignore`).
+Backend czyta konfigurację z `backend/config/.env` (Google Drive dla synchronizacji galerii, oraz `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `CORS_ORIGINS`). Plik już istnieje lokalnie z wygenerowanymi sekretami — **nie commitować** (jest w `.gitignore`).
 
 Powiadomienia e-mail o zaakceptowaniu lub odrzuceniu zgłoszenia wymagają konfiguracji SMTP w tym samym pliku:
 
@@ -74,7 +74,19 @@ SMTP_FROM=Street Show <adres@example.com>
 SELECT_FEE_AMOUNT=150 zł
 ```
 
-Brak konfiguracji SMTP nie blokuje zmiany statusu zgłoszenia — powiadomienie zostanie pominięte i zapisane w logu backendu.
+Brak konfiguracji SMTP nie blokuje zmiany statusu zgłoszenia — powiadomienie zostanie pominięte i zapisane w logu backendu. **Reset hasła („Nie pamiętasz hasła?”) działa tylko ze skonfigurowanym SMTP.** Kwotę opłaty można też ustawić w panelu admina (Ustawienia) — ma pierwszeństwo przed `SELECT_FEE_AMOUNT`.
+
+Pozostałe (opcjonalne) zmienne:
+
+```env
+APP_URL=https://www.streetshow.pl      # do linków w e-mailach (reset hasła, panel)
+ADMIN_NOTIFY_EMAIL=org@example.com    # e-mail(e) organizatorów o każdym nowym zgłoszeniu, po przecinku
+TRUST_PROXY=loopback                  # nginx na tym samym serwerze; liczba hopów, jeśli przed nginx jest kolejne proxy
+BACKUP_DIR=/root/streetshow-backups   # domyślnie backend/backups
+BACKUP_KEEP=14                        # ile dziennych kopii bazy trzymać
+BACKUP_DISABLED=false
+DRIVE_GALLERY_FOLDER_ID=...           # folder Google Drive z pełną galerią (+ GOOGLE_* z kontem serwisowym)
+```
 
 ### Frontend
 
@@ -96,13 +108,7 @@ node scripts/create-admin.js <email> <haslo min.8 znakow> [Imię] [Nazwisko]
 
 Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do `admin` (nie zmienia hasła).
 
-## Dane testowego konta administratora (środowisko lokalne/dev)
-
-> Utworzone lokalnie poleceniem `create-admin.js` podczas developmentu. Zmień hasło (lub usuń konto i utwórz nowe) przed wdrożeniem produkcyjnym.
-
-- **URL logowania:** `/logowanie`
-- **E-mail:** `admin@streetshow.pl`
-- **Hasło:** `AdminStreet2026`
+> Nie zapisuj w repozytorium danych logowania (nawet testowych) — utwórz własne konto lokalnie skryptem powyżej.
 
 ## Architektura logowania (skrót dla AI/dewelopera)
 
@@ -113,10 +119,20 @@ Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do
 
 ## Zgłoszenia "Strefa Select" (skrót dla AI/dewelopera)
 
-- Zalogowany użytkownik na `/panel` może wysłać **jedno aktywne** zgłoszenie (dane pojazdu + do 5 zdjęć, max 50MB łącznie) — blokada przy statusie `pending` lub `approved`.
-- Zdjęcia trafiają na dysk serwera do `backend/uploads/submissions/<userId>/` (nie do Google Drive — to osobny, prostszy mechanizm niż stary publiczny formularz).
-- Admin w `/admin` widzi wszystkie zgłoszenia z danymi zgłaszającego, podglądem zdjęć i przyciskami Zaakceptuj/Odrzuć (`PATCH /api/admin/submissions/:id/status`).
-- Stary, publiczny (bez logowania) formularz zgłoszeniowy na stronie głównej (`POST /upload`, integracja z Google Sheets/Drive) nadal istnieje w kodzie backendu, ale sekcja `#form` na stronie głównej jest **celowo zamknięta** (komunikat "Zgłoszenia do strefy Select są obecnie zamknięte"), zgodnie ze stanem produkcyjnym w momencie migracji.
+- Zalogowany użytkownik może mieć do **5 aktywnych zgłoszeń pojazdów** (nieodrzuconych; limit zmienialny w panelu admina → Ustawienia). Każde zgłoszenie: dane pojazdu + do **5 zdjęć, łącznie max 50 MB** (pojedyncze zdjęcie może zająć cały limit).
+- Dozwolone formaty: JPG, PNG, WEBP, AVIF. Backend nadaje własną nazwę i rozszerzenie pliku oraz sprawdza zawartość (magic bytes) — plik HTML/SVG udający obraz jest odrzucany (`backend/src/utils/imageUpload.ts`).
+- Zdjęcia trafiają do `backend/uploads/submissions/<userId>/`, ale **nie są publiczne**: serwuje je `GET /api/submissions/photos/:userId/:plik` tylko właścicielowi i adminom.
+- Użytkownik może edytować lub wycofać zgłoszenie, dopóki jest `pending`. Może też pobrać swoje dane i usunąć konto (Ustawienia konta, RODO).
+- Admin: akceptacja/odrzucenie pojedynczo lub zbiorczo, komentarz dla uczestnika + notatka wewnętrzna, potwierdzanie opłat, usuwanie zgłoszeń, eksport do Excela, otwieranie/zamykanie zapisów z terminem.
+- Stary publiczny formularz (`POST /upload` z Google Sheets/Drive) został usunięty z backendu.
+
+## Bezpieczeństwo (skrót)
+
+- `helmet` (nagłówki bezpieczeństwa, `nosniff`) na API; rola i blokada konta sprawdzane w bazie przy każdym żądaniu (zablokowanie działa natychmiast).
+- Rate limit liczony po `req.ip` z `trust proxy` — nagłówek `X-Forwarded-For` od klienta nie pozwala go obejść.
+- Linki i obrazy w CMS muszą zaczynać się od `https://`, `http://`, `/` lub `#` (blokada `javascript:`).
+- Codzienna kopia bazy SQLite do `backend/backups/` (`npm run backup` ręcznie). **To nie zastępuje kopii poza serwerem** — kopiuj `backups/` i `uploads/` gdzie indziej (np. rclone/rsync z crona).
+- nginx: `/api` przekazuj do backendu z `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`, a **nie serwuj katalogu `backend/uploads/submissions` bezpośrednio** (tylko `/uploads/content`, jeśli w ogóle — backend robi to sam).
 
 ## Plany pod wdrożenie (mikrus / hostinger.pl)
 

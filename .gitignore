@@ -57,3 +57,10 @@ img/gallery/*.avif
 img/optimized/gallery/*.webp
 img/optimized/gallery/*.avif
 img/gallery/.drive-sync-state.json
+
+# SQLite snapshots made by the backend's daily backup (backend/src/maintenance.ts)
+backend/backups/
+
+# Local reports / OS junk
+lighthouse-report*.json
+.DS_Store

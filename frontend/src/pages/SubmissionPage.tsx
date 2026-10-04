@@ -1,7 +1,18 @@
 import { useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/client";
+
+// Must match the backend limits in backend/src/submissions/routes.ts.
+const MAX_PHOTOS = 5;
+const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
+const ACCEPTED_TYPES = "image/jpeg,image/png,image/webp,image/avif";
+const ACCEPTED_MIME = new Set(ACCEPTED_TYPES.split(","));
+
+function formatMegabytes(bytes) {
+    return `${(bytes / 1024 / 1024).toFixed(1).replace(".", ",")} MB`;
+}
 
 export default function SubmissionPage() {
     const { user } = useAuth();
@@ -13,33 +24,29 @@ export default function SubmissionPage() {
         carBrand: user.carBrand || "",
         carDescription: "",
     });
-    const [photos, setPhotos] = useState<FileList | null>(null);
+    const [photos, setPhotos] = useState<File[]>([]);
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [hasPendingOrApproved, setHasPendingOrApproved] = useState(false);
+    const [availability, setAvailability] = useState(null);
+
+    async function loadAvailability() {
+        try {
+            const { data } = await api.get("/submissions/availability");
+            setAvailability(data.availability);
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                    "Nie udało się sprawdzić dostępności zgłoszeń.",
+            );
+        } finally {
+            setIsLoading(false);
+        }
+    }
 
     useEffect(() => {
-        async function loadSubmissions() {
-            try {
-                const { data } = await api.get("/submissions");
-                setHasPendingOrApproved(
-                    data.submissions.some((submission) =>
-                        ["pending", "approved"].includes(submission.status),
-                    ),
-                );
-            } catch (err) {
-                setError(
-                    err.response?.data?.message ||
-                        "Nie udało się pobrać zgłoszeń.",
-                );
-            } finally {
-                setIsLoading(false);
-            }
-        }
-
-        loadSubmissions();
+        loadAvailability();
     }, []);
 
     function updateField(field) {
@@ -57,27 +64,40 @@ export default function SubmissionPage() {
             0,
         );
 
-        if (selectedPhotos.length > 5) {
-            setPhotos(null);
-            setError("Możesz dodać maksymalnie 5 zdjęć.");
+        if (selectedPhotos.length > MAX_PHOTOS) {
+            event.target.value = "";
+            setPhotos([]);
+            setError(`Możesz dodać maksymalnie ${MAX_PHOTOS} zdjęć.`);
             return;
         }
 
-        if (totalSize > 50 * 1024 * 1024) {
-            setPhotos(null);
-            setError("Łączny rozmiar zdjęć nie może przekraczać 50 MB.");
+        if (selectedPhotos.some((photo) => !ACCEPTED_MIME.has(photo.type))) {
+            event.target.value = "";
+            setPhotos([]);
+            setError(
+                "Dozwolone są tylko zdjęcia w formatach JPG, PNG, WEBP lub AVIF.",
+            );
+            return;
+        }
+
+        if (totalSize > MAX_TOTAL_SIZE) {
+            event.target.value = "";
+            setPhotos([]);
+            setError(
+                `Łączny rozmiar zdjęć (${formatMegabytes(totalSize)}) przekracza 50 MB.`,
+            );
             return;
         }
 
         setError("");
-        setPhotos(event.target.files);
+        setPhotos(selectedPhotos);
     }
 
     async function handleSubmit(event) {
         event.preventDefault();
         setError("");
 
-        if (!photos || photos.length === 0) {
+        if (photos.length === 0) {
             setError("Proszę dodać przynajmniej jedno zdjęcie.");
             return;
         }
@@ -88,14 +108,11 @@ export default function SubmissionPage() {
             Object.entries(form).forEach(([key, value]) =>
                 formData.append(key, value),
             );
-            Array.from(photos).forEach((file) =>
-                formData.append("photos", file),
-            );
+            photos.forEach((file) => formData.append("photos", file));
 
-            await api.post("/submissions", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
+            await api.post("/submissions", formData);
             setIsSubmitted(true);
+            loadAvailability();
         } catch (err) {
             setError(
                 err.response?.data?.message ||
@@ -115,10 +132,13 @@ export default function SubmissionPage() {
             carBrand: "",
             carDescription: "",
         });
-        setPhotos(null);
+        setPhotos([]);
         setError("");
         setIsSubmitted(false);
     }
+
+    const totalSize = photos.reduce((sum, photo) => sum + photo.size, 0);
+    const canSubmit = availability?.open && availability.remaining > 0;
 
     return (
         <section className="page auth-page">
@@ -128,18 +148,41 @@ export default function SubmissionPage() {
             ) : isSubmitted ? (
                 <div className="submission-success">
                     <p>Twoje zgłoszenie zostało wysłane.</p>
-                    <button type="button" onClick={startAnotherSubmission}>
-                        Dodaj kolejne zgłoszenie
-                    </button>
+                    {canSubmit ? (
+                        <button type="button" onClick={startAnotherSubmission}>
+                            Dodaj kolejny pojazd ({availability.remaining}{" "}
+                            pozostało)
+                        </button>
+                    ) : null}
+                    <p>
+                        <Link to="/panel">Przejdź do swoich zgłoszeń</Link>
+                    </p>
+                </div>
+            ) : !availability ? (
+                error && <p className="form-error">{error}</p>
+            ) : !availability.open ? (
+                <div className="submission-info">
+                    <p>{availability.reason}</p>
+                    <Link to="/panel">Wróć do panelu</Link>
+                </div>
+            ) : availability.remaining <= 0 ? (
+                <div className="submission-info">
+                    <p>
+                        Masz już {availability.activeCount} aktywnych zgłoszeń —
+                        to maksymalna liczba pojazdów na jedno konto (
+                        {availability.maxVehicles}). Możesz wycofać oczekujące
+                        zgłoszenie w panelu, aby dodać inne auto.
+                    </p>
+                    <Link to="/panel">Przejdź do swoich zgłoszeń</Link>
                 </div>
             ) : (
                 <>
-                    {hasPendingOrApproved && (
-                        <p className="submission-info">
-                            Masz już zgłoszenie oczekujące na rozpatrzenie lub
-                            zaakceptowane. Możesz mimo to dodać kolejne auto.
-                        </p>
-                    )}
+                    <p className="submission-info">
+                        Możesz zgłosić maksymalnie {availability.maxVehicles}{" "}
+                        pojazdów (każdy osobnym formularzem).
+                        {availability.activeCount > 0 &&
+                            ` Masz już ${availability.activeCount} aktywnych zgłoszeń — pozostało ${availability.remaining}.`}
+                    </p>
                     <form onSubmit={handleSubmit} className="auth-form">
                         <label>
                             Imię
@@ -148,6 +191,7 @@ export default function SubmissionPage() {
                                 onChange={updateField("firstName")}
                                 required
                                 minLength={2}
+                                maxLength={100}
                             />
                         </label>
                         <label>
@@ -157,6 +201,7 @@ export default function SubmissionPage() {
                                 onChange={updateField("lastName")}
                                 required
                                 minLength={2}
+                                maxLength={100}
                             />
                         </label>
                         <label>
@@ -176,6 +221,7 @@ export default function SubmissionPage() {
                                 onChange={updateField("licensePlate")}
                                 placeholder="np. GD 12345"
                                 required
+                                maxLength={20}
                             />
                         </label>
                         <label>
@@ -185,6 +231,7 @@ export default function SubmissionPage() {
                                 onChange={updateField("carBrand")}
                                 required
                                 minLength={2}
+                                maxLength={100}
                             />
                         </label>
                         <label>
@@ -195,21 +242,24 @@ export default function SubmissionPage() {
                                 rows={3}
                                 required
                                 minLength={10}
+                                maxLength={3000}
                             />
                         </label>
                         <label>
-                            Zdjęcia (maksymalnie 5, łącznie do 50MB)
+                            Zdjęcia (maksymalnie {MAX_PHOTOS}, łącznie do 50 MB;
+                            JPG, PNG, WEBP lub AVIF)
                             <input
                                 type="file"
-                                accept="image/*"
+                                accept={ACCEPTED_TYPES}
                                 multiple
                                 required
                                 onChange={handlePhotosChange}
                             />
                         </label>
-                        {photos?.length > 0 && (
+                        {photos.length > 0 && (
                             <p className="file-selection-info">
-                                Wybrano {photos.length} zdjęć.
+                                Wybrano {photos.length} z {MAX_PHOTOS} zdjęć,
+                                łącznie {formatMegabytes(totalSize)} z 50 MB.
                             </p>
                         )}
                         {error && (

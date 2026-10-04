@@ -72,6 +72,17 @@ db.exec(`
     );
 
     CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at);
+
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token_hash TEXT NOT NULL UNIQUE,
+        expires_at TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
+    CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token_hash ON refresh_tokens(token_hash);
 `);
 
 const userColumns = new Set(
@@ -99,5 +110,14 @@ if (!submissionColumns.has("payment_status")) {
         "ALTER TABLE submissions ADD COLUMN payment_status TEXT NOT NULL DEFAULT 'unpaid'",
     );
 }
+
+// Note visible only to admins (admin_note is shown to the participant).
+if (!submissionColumns.has("internal_note")) {
+    db.exec("ALTER TABLE submissions ADD COLUMN internal_note TEXT");
+}
+
+db.exec(
+    "CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status)",
+);
 
 module.exports = db;

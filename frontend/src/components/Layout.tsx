@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -216,7 +216,11 @@ export default function Layout() {
             </nav>
 
             <div className="app-page-content">
-                <Outlet />
+                <Suspense
+                    fallback={<p className="page-status">Ładowanie...</p>}
+                >
+                    <Outlet />
+                </Suspense>
             </div>
 
             <footer className="bg-dark text-light">

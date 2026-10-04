@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/client";
 
@@ -21,6 +21,10 @@ export default function AccountSettingsPage() {
     const [error, setError] = useState("");
     const [isSavingProfile, setIsSavingProfile] = useState(false);
     const [isChangingPassword, setIsChangingPassword] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+    const [deletePassword, setDeletePassword] = useState("");
+    const [isDeleting, setIsDeleting] = useState(false);
+    const navigate = useNavigate();
 
     function clearFeedback() {
         setMessage("");
@@ -67,6 +71,50 @@ export default function AccountSettingsPage() {
             );
         } finally {
             setIsChangingPassword(false);
+        }
+    }
+
+    async function exportData() {
+        clearFeedback();
+        setIsExporting(true);
+        try {
+            const { data } = await api.get("/auth/me/export");
+            const blob = new Blob([JSON.stringify(data, null, 2)], {
+                type: "application/json",
+            });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "street-show-moje-dane.json";
+            link.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            setError(
+                err.response?.data?.message || "Nie udało się pobrać danych.",
+            );
+        } finally {
+            setIsExporting(false);
+        }
+    }
+
+    async function deleteAccount(event) {
+        event.preventDefault();
+        clearFeedback();
+        const confirmed = window.confirm(
+            "Czy na pewno chcesz trwale usunąć konto wraz ze wszystkimi zgłoszeniami?",
+        );
+        if (!confirmed) return;
+
+        setIsDeleting(true);
+        try {
+            await api.delete("/auth/me", { data: { password: deletePassword } });
+            await refreshUser();
+            navigate("/", { replace: true });
+        } catch (err) {
+            setError(
+                err.response?.data?.message || "Nie udało się usunąć konta.",
+            );
+            setIsDeleting(false);
         }
     }
 
@@ -220,6 +268,48 @@ export default function AccountSettingsPage() {
                             {isChangingPassword
                                 ? "Zmienianie..."
                                 : "Zmień hasło"}
+                        </button>
+                    </form>
+                </section>
+
+                <section className="account-card">
+                    <h2>Twoje dane</h2>
+                    <p>
+                        Możesz pobrać kopię danych, które przechowujemy o Twoim
+                        koncie i zgłoszeniach.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={exportData}
+                        disabled={isExporting}
+                    >
+                        {isExporting ? "Przygotowywanie..." : "Pobierz moje dane"}
+                    </button>
+
+                    <h3 className="account-danger-heading">Usuń konto</h3>
+                    <p>
+                        Usunięcie konta jest nieodwracalne — skasujemy Twoje dane,
+                        wszystkie zgłoszenia i przesłane zdjęcia.
+                    </p>
+                    <form className="auth-form" onSubmit={deleteAccount}>
+                        <label>
+                            Potwierdź hasłem
+                            <input
+                                type="password"
+                                value={deletePassword}
+                                onChange={(event) =>
+                                    setDeletePassword(event.target.value)
+                                }
+                                autoComplete="current-password"
+                                required
+                            />
+                        </label>
+                        <button
+                            type="submit"
+                            className="button-danger"
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? "Usuwanie..." : "Usuń konto"}
                         </button>
                     </form>
                 </section>

@@ -1,17 +1,24 @@
+import { lazy } from "react";
 import { Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import HomePage from "./pages/HomePage";
-import GalleryPage from "./pages/GalleryPage";
-import FaqPage from "./pages/FaqPage";
-import RegulaminPage from "./pages/RegulaminPage";
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import DashboardPage from "./pages/DashboardPage";
-import AccountSettingsPage from "./pages/AccountSettingsPage";
-import SubmissionPage from "./pages/SubmissionPage";
-import AdminPage from "./pages/AdminPage";
 import "./App.css";
+
+// Everything except the landing page is split into its own chunk, so visitors of
+// the home page don't download the panels (the admin panel alone is the biggest part).
+// The Suspense boundary lives in Layout, so header and footer stay visible while loading.
+const GalleryPage = lazy(() => import("./pages/GalleryPage"));
+const FaqPage = lazy(() => import("./pages/FaqPage"));
+const RegulaminPage = lazy(() => import("./pages/RegulaminPage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const RegisterPage = lazy(() => import("./pages/RegisterPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const AccountSettingsPage = lazy(() => import("./pages/AccountSettingsPage"));
+const SubmissionPage = lazy(() => import("./pages/SubmissionPage"));
+const AdminPage = lazy(() => import("./pages/admin/AdminPage"));
 
 function App() {
     return (
@@ -23,6 +30,11 @@ function App() {
                 <Route path="regulamin" element={<RegulaminPage />} />
                 <Route path="logowanie" element={<LoginPage />} />
                 <Route path="rejestracja" element={<RegisterPage />} />
+                <Route
+                    path="nie-pamietam-hasla"
+                    element={<ForgotPasswordPage />}
+                />
+                <Route path="reset-hasla" element={<ResetPasswordPage />} />
                 <Route
                     path="panel"
                     element={

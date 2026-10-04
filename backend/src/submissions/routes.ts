@@ -1,44 +1,48 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-const multer = require("multer");
 
 const submissionsDb = require("../db/submissions");
+const siteContentDb = require("../db/siteContent");
 const { authenticate } = require("../auth/middleware");
 const { createRateLimiter } = require("../utils/rateLimiter");
+const {
+    PHONE_REGEX,
+    normalizeText,
+    normalizePhone,
+} = require("../utils/validation");
+const {
+    createImageUpload,
+    verifyUploadedImages,
+    removeFiles,
+    isAllowedImageFilename,
+    uploadErrorHandler,
+} = require("../utils/imageUpload");
+const { getUserSubmissionsDir } = require("../utils/paths");
+const { sendNewSubmissionAdminEmail } = require("../notifications/email");
 
 const router = express.Router();
 
-const EMAIL_LIKE_FILENAME = /[^a-zA-Z0-9._-]/g;
-const uploadsRoot = path.join(process.cwd(), "uploads/submissions");
-if (!fs.existsSync(uploadsRoot)) {
-    fs.mkdirSync(uploadsRoot, { recursive: true });
-}
+const MAX_PHOTOS = 5;
+const MAX_TOTAL_PHOTOS_SIZE = 50 * 1024 * 1024;
+const TOTAL_SIZE_LABEL = "50 MB";
+// Multipart framing + text fields on top of the photos themselves.
+const MULTIPART_OVERHEAD = 1024 * 1024;
+const DEFAULT_MAX_VEHICLES = 5;
 
-const storage = multer.diskStorage({
-    destination(req, file, cb) {
-        const userDir = path.join(uploadsRoot, String(req.user.sub));
-        fs.mkdirSync(userDir, { recursive: true });
-        cb(null, userDir);
-    },
-    filename(req, file, cb) {
-        const safeName = file.originalname.replace(EMAIL_LIKE_FILENAME, "_");
-        cb(null, `${Date.now()}-${safeName}`);
-    },
-});
-
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
-        cb(null, true);
-    } else {
-        cb(new Error("Tylko pliki graficzne (obrazy) są dozwolone!"), false);
-    }
+const FIELD_LIMITS = {
+    firstName: 100,
+    lastName: 100,
+    licensePlate: 20,
+    carBrand: 100,
+    carDescription: 3000,
 };
 
-const upload = multer({
-    storage,
-    limits: { files: 5, fileSize: 50 * 1024 * 1024 },
-    fileFilter,
+const upload = createImageUpload({
+    destination: (req) => getUserSubmissionsDir(req.user.sub),
+    maxFiles: MAX_PHOTOS,
+    // A single photo may use the whole budget; the total is checked after upload.
+    maxFileSize: MAX_TOTAL_PHOTOS_SIZE,
 });
 
 const submissionRateLimit = createRateLimiter({
@@ -47,14 +51,28 @@ const submissionRateLimit = createRateLimiter({
     message: "Za dużo prób wysyłki. Spróbuj ponownie za chwilę.",
 });
 
-const PHONE_REGEX = /^\+?[0-9]{9,15}$/;
+const STORED_PHOTO_PATTERN = /^\/uploads\/submissions\/(\d+)\/([^/]+)$/;
 
-function normalizeText(value) {
-    return String(value || "").trim();
+// Photos are stored in the DB as their legacy public path; they are now only
+// reachable through the authenticated /api/submissions/photos endpoint.
+function toPhotoUrl(storedPath) {
+    const match = STORED_PHOTO_PATTERN.exec(storedPath);
+    return match
+        ? `/api/submissions/photos/${match[1]}/${match[2]}`
+        : storedPath;
 }
 
-function normalizePhone(value) {
-    return normalizeText(value).replace(/\s+/g, "");
+function getPhotoDiskPath(storedPath) {
+    const match = STORED_PHOTO_PATTERN.exec(storedPath);
+    if (!match || !isAllowedImageFilename(match[2])) return null;
+    return path.join(getUserSubmissionsDir(match[1]), match[2]);
+}
+
+function removeSubmissionPhotos(row) {
+    for (const storedPath of JSON.parse(row.photos || "[]")) {
+        const diskPath = getPhotoDiskPath(storedPath);
+        if (diskPath) fs.promises.unlink(diskPath).catch(() => {});
+    }
 }
 
 function toPublicSubmission(row) {
@@ -66,7 +84,7 @@ function toPublicSubmission(row) {
         licensePlate: row.license_plate,
         carBrand: row.car_brand,
         carDescription: row.car_description,
-        photos: JSON.parse(row.photos || "[]"),
+        photos: JSON.parse(row.photos || "[]").map(toPhotoUrl),
         status: row.status,
         paymentStatus: row.payment_status || "unpaid",
         adminNote: row.admin_note,
@@ -76,6 +94,84 @@ function toPublicSubmission(row) {
     };
 }
 
+function getMaxVehicles() {
+    const value = Number(siteContentDb.getSettings().maxVehiclesPerUser);
+    return Number.isInteger(value) && value > 0 ? value : DEFAULT_MAX_VEHICLES;
+}
+
+function getAvailability(userId) {
+    const availability = siteContentDb.getSubmissionsAvailability();
+    const maxVehicles = getMaxVehicles();
+    const activeCount = submissionsDb.countActiveForUser(userId);
+    return {
+        ...availability,
+        maxVehicles,
+        activeCount,
+        remaining: Math.max(0, maxVehicles - activeCount),
+    };
+}
+
+function readSubmissionFields(body) {
+    const fields = {
+        firstName: normalizeText(body.firstName),
+        lastName: normalizeText(body.lastName),
+        phone: normalizePhone(body.phone),
+        licensePlate: normalizeText(body.licensePlate).toUpperCase(),
+        carBrand: normalizeText(body.carBrand),
+        carDescription: normalizeText(body.carDescription),
+    };
+
+    if (Object.values(fields).some((value) => !value)) {
+        return { error: "Wszystkie pola są wymagane." };
+    }
+
+    if (!PHONE_REGEX.test(fields.phone)) {
+        return { error: "Proszę podać poprawny numer telefonu (9-15 cyfr)." };
+    }
+
+    for (const [field, limit] of Object.entries(FIELD_LIMITS)) {
+        if (fields[field].length > limit) {
+            return {
+                error: `Pole jest zbyt długie (maksymalnie ${limit} znaków).`,
+            };
+        }
+    }
+
+    return { fields };
+}
+
+function findOwnSubmission(req) {
+    const submission = submissionsDb.findSubmissionById(Number(req.params.id));
+    if (!submission || Number(submission.user_id) !== Number(req.user.sub)) {
+        return null;
+    }
+    return submission;
+}
+
+// Runs before multer, so rejected requests never write files to disk.
+function ensureCanSubmit(req, res, next) {
+    const availability = getAvailability(req.user.sub);
+
+    if (!availability.open) {
+        return res.status(403).json({ message: availability.reason });
+    }
+
+    if (availability.remaining <= 0) {
+        return res.status(400).json({
+            message: `Możesz mieć maksymalnie ${availability.maxVehicles} aktywnych zgłoszeń pojazdów. Wycofaj jedno z oczekujących zgłoszeń, aby dodać kolejne.`,
+        });
+    }
+
+    const contentLength = Number(req.headers["content-length"] || 0);
+    if (contentLength > MAX_TOTAL_PHOTOS_SIZE + MULTIPART_OVERHEAD) {
+        return res.status(413).json({
+            message: `Łączny rozmiar zdjęć nie może przekraczać ${TOTAL_SIZE_LABEL}.`,
+        });
+    }
+
+    next();
+}
+
 router.use(authenticate);
 
 router.get("/", (req, res) => {
@@ -83,11 +179,36 @@ router.get("/", (req, res) => {
     res.json({ submissions: rows.map(toPublicSubmission) });
 });
 
-router.patch("/:id/payment-status", (req, res) => {
-    const id = Number(req.params.id);
-    const submission = submissionsDb.findSubmissionById(id);
+router.get("/availability", (req, res) => {
+    res.json({ availability: getAvailability(req.user.sub) });
+});
 
-    if (!submission || Number(submission.user_id) !== Number(req.user.sub)) {
+router.get("/photos/:userId/:filename", (req, res) => {
+    const ownerId = Number(req.params.userId);
+    const { filename } = req.params;
+
+    if (req.user.role !== "admin" && Number(req.user.sub) !== ownerId) {
+        return res.status(404).end();
+    }
+
+    if (!Number.isInteger(ownerId) || !isAllowedImageFilename(filename)) {
+        return res.status(404).end();
+    }
+
+    res.set("Cache-Control", "private, max-age=3600");
+    res.sendFile(
+        path.join(getUserSubmissionsDir(ownerId), filename),
+        { dotfiles: "deny" },
+        (error) => {
+            if (error && !res.headersSent) res.status(404).end();
+        },
+    );
+});
+
+router.patch("/:id/payment-status", (req, res) => {
+    const submission = findOwnSubmission(req);
+
+    if (!submission) {
         return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
     }
 
@@ -104,49 +225,87 @@ router.patch("/:id/payment-status", (req, res) => {
     }
 
     const updated = submissionsDb.updateSubmissionPaymentStatus(
-        id,
+        submission.id,
         "verification",
     );
     res.json({ submission: toPublicSubmission(updated) });
 });
 
-router.post("/", submissionRateLimit, upload.array("photos", 5), (req, res) => {
-    let savedFiles = req.files || [];
+// Participants may correct a submission until an admin has reviewed it.
+router.patch("/:id", (req, res) => {
+    const submission = findOwnSubmission(req);
 
-    try {
-        const firstName = normalizeText(req.body.firstName);
-        const lastName = normalizeText(req.body.lastName);
-        const phone = normalizePhone(req.body.phone);
-        const licensePlate = normalizeText(req.body.licensePlate);
-        const carBrand = normalizeText(req.body.carBrand);
-        const carDescription = normalizeText(req.body.carDescription);
+    if (!submission) {
+        return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+    }
 
-        if (
-            !firstName ||
-            !lastName ||
-            !phone ||
-            !licensePlate ||
-            !carBrand ||
-            !carDescription
-        ) {
-            throw Object.assign(new Error("Wszystkie pola są wymagane."), {
-                status: 400,
-            });
-        }
+    if (submission.status !== "pending") {
+        return res.status(400).json({
+            message: "Można edytować tylko zgłoszenia oczekujące na rozpatrzenie.",
+        });
+    }
 
-        if (!PHONE_REGEX.test(phone)) {
-            throw Object.assign(
-                new Error("Proszę podać poprawny numer telefonu (9-15 cyfr)."),
-                { status: 400 },
-            );
+    const { fields, error } = readSubmissionFields(req.body);
+    if (error) {
+        return res.status(400).json({ message: error });
+    }
+
+    const updated = submissionsDb.updateSubmissionDetails(
+        submission.id,
+        fields,
+    );
+    res.json({ submission: toPublicSubmission(updated) });
+});
+
+router.delete("/:id", (req, res) => {
+    const submission = findOwnSubmission(req);
+
+    if (!submission) {
+        return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+    }
+
+    if (submission.status !== "pending") {
+        return res.status(400).json({
+            message:
+                "Można wycofać tylko zgłoszenia oczekujące na rozpatrzenie. W innej sprawie skontaktuj się z organizatorem.",
+        });
+    }
+
+    submissionsDb.deleteSubmission(submission.id);
+    removeSubmissionPhotos(submission);
+    res.json({ message: "Zgłoszenie zostało wycofane." });
+});
+
+router.post(
+    "/",
+    submissionRateLimit,
+    ensureCanSubmit,
+    upload.array("photos", MAX_PHOTOS),
+    (req, res) => {
+        const savedFiles = req.files || [];
+
+        const { fields, error } = readSubmissionFields(req.body);
+        if (error) {
+            removeFiles(savedFiles);
+            return res.status(400).json({ message: error });
         }
 
         if (!savedFiles.length) {
-            throw Object.assign(
-                new Error("Proszę dodać przynajmniej jedno zdjęcie."),
-                { status: 400 },
-            );
+            return res
+                .status(400)
+                .json({ message: "Proszę dodać przynajmniej jedno zdjęcie." });
         }
+
+        const totalSize = savedFiles.reduce((sum, file) => sum + file.size, 0);
+        if (totalSize > MAX_TOTAL_PHOTOS_SIZE) {
+            removeFiles(savedFiles);
+            return res.status(413).json({
+                message: `Łączny rozmiar zdjęć nie może przekraczać ${TOTAL_SIZE_LABEL}.`,
+            });
+        }
+
+        // Throws UploadValidationError (handled below) if a file isn't a real image.
+        verifyUploadedImages(savedFiles);
 
         const photos = savedFiles.map(
             (file) => `/uploads/submissions/${req.user.sub}/${file.filename}`,
@@ -154,47 +313,29 @@ router.post("/", submissionRateLimit, upload.array("photos", 5), (req, res) => {
 
         const submission = submissionsDb.createSubmission({
             userId: req.user.sub,
-            firstName,
-            lastName,
-            phone,
-            licensePlate,
-            carBrand,
-            carDescription,
+            ...fields,
             photos,
         });
 
+        void sendNewSubmissionAdminEmail({
+            submission,
+            userEmail: req.user.email,
+        }).catch((emailError) =>
+            console.error(
+                "[email] Powiadomienie o nowym zgłoszeniu:",
+                emailError.message,
+            ),
+        );
+
         res.status(201).json({ submission: toPublicSubmission(submission) });
-    } catch (error) {
-        savedFiles.forEach((file) => {
-            if (fs.existsSync(file.path)) fs.unlink(file.path, () => {});
-        });
-        res.status(error.status || 500).json({
-            message: error.status
-                ? error.message
-                : "Wystąpił błąd serwera podczas wysyłki zgłoszenia.",
-        });
-    }
-});
+    },
+);
 
-router.use((error, req, res, next) => {
-    if (error instanceof multer.MulterError) {
-        if (error.code === "LIMIT_FILE_COUNT") {
-            return res
-                .status(400)
-                .json({ message: "Można przesłać maksymalnie 5 zdjęć." });
-        }
-        if (error.code === "LIMIT_FILE_SIZE") {
-            return res
-                .status(400)
-                .json({ message: "Łączny rozmiar plików przekracza 50MB." });
-        }
-    }
+router.use(
+    uploadErrorHandler({
+        maxFiles: MAX_PHOTOS,
+        totalSizeLabel: TOTAL_SIZE_LABEL,
+    }),
+);
 
-    if (error.message === "Tylko pliki graficzne (obrazy) są dozwolone!") {
-        return res.status(400).json({ message: error.message });
-    }
-
-    next(error);
-});
-
-module.exports = { router, toPublicSubmission };
+module.exports = { router, toPublicSubmission, removeSubmissionPhotos };

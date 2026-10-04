@@ -1,7 +1,4 @@
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
-const multer = require("multer");
 
 const usersDb = require("../db/users");
 const refreshTokensDb = require("../db/refreshTokens");
@@ -10,42 +7,66 @@ const auditLogDb = require("../db/auditLog");
 const eventContentDb = require("../db/eventContent");
 const siteContentDb = require("../db/siteContent");
 const { authenticate, requireRole } = require("../auth/middleware");
-const { toPublicSubmission } = require("../submissions/routes");
+const {
+    toPublicSubmission,
+    removeSubmissionPhotos,
+} = require("../submissions/routes");
 const { sendSubmissionStatusEmail } = require("../notifications/email");
+const {
+    EMAIL_REGEX,
+    normalizeText,
+    isSafeUrl,
+} = require("../utils/validation");
+const {
+    createImageUpload,
+    verifyUploadedImages,
+    uploadErrorHandler,
+} = require("../utils/imageUpload");
+const { CONTENT_UPLOAD_ROOT } = require("../utils/paths");
+const gallerySync = require("../gallery/sync");
 
 const router = express.Router();
 
 router.use(authenticate, requireRole("admin"));
 
-const contentUploadsRoot = path.join(process.cwd(), "uploads/content");
-if (!fs.existsSync(contentUploadsRoot)) {
-    fs.mkdirSync(contentUploadsRoot, { recursive: true });
+const SUBMISSION_STATUSES = ["pending", "approved", "rejected"];
+const PAYMENT_STATUSES = ["unpaid", "verification", "paid"];
+const MAX_BULK_IDS = 200;
+
+const uploadContentImage = createImageUpload({
+    destination: () => CONTENT_UPLOAD_ROOT,
+    maxFiles: 1,
+    maxFileSize: 10 * 1024 * 1024,
+});
+
+function audit(req, action, targetType, targetId, details = {}) {
+    auditLogDb.createAuditEntry({
+        adminId: req.user.sub,
+        action,
+        targetType,
+        targetId,
+        details,
+    });
 }
 
-const contentImageStorage = multer.diskStorage({
-    destination(req, file, cb) {
-        cb(null, contentUploadsRoot);
-    },
-    filename(req, file, cb) {
-        const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
-        cb(null, `${Date.now()}-${safeName}`);
-    },
-});
+function toAdminSubmission(row) {
+    return { ...toPublicSubmission(row), internalNote: row.internal_note };
+}
 
-const uploadContentImage = multer({
-    storage: contentImageStorage,
-    limits: { files: 1, fileSize: 10 * 1024 * 1024 },
-    fileFilter(req, file, cb) {
-        if (file.mimetype.startsWith("image/")) {
-            cb(null, true);
-        } else {
-            cb(
-                new Error("Tylko pliki graficzne (obrazy) są dozwolone!"),
-                false,
-            );
-        }
-    },
-});
+function toAdminUser(user) {
+    return {
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        role: user.role,
+        isActive: !!user.is_active,
+    };
+}
+
+function invalidUrlMessage(label) {
+    return `${label}: podaj adres zaczynający się od https:// lub ścieżkę zaczynającą się od /.`;
+}
 
 router.post(
     "/upload-image",
@@ -57,13 +78,10 @@ router.post(
                 .json({ message: "Nie przesłano pliku obrazu." });
         }
 
+        verifyUploadedImages([req.file]);
         res.json({ url: `/uploads/content/${req.file.filename}` });
     },
-    (err, req, res, next) => {
-        res.status(400).json({
-            message: err.message || "Nie udało się przesłać obrazu.",
-        });
-    },
+    uploadErrorHandler({ maxFiles: 1, totalSizeLabel: "10 MB" }),
 );
 
 router.get("/event", (req, res) => {
@@ -84,13 +102,13 @@ router.patch("/event", (req, res) => {
     }
 
     const cards = event.cards.map((card) => ({
-        id: String(card.id || "").trim(),
-        title: String(card.title || "").trim(),
-        description: String(card.description || "").trim(),
-        image: String(card.image || "").trim(),
-        alt: String(card.alt || "").trim(),
-        actionLabel: String(card.actionLabel || "").trim(),
-        actionHref: String(card.actionHref || "").trim(),
+        id: normalizeText(card.id),
+        title: normalizeText(card.title),
+        description: normalizeText(card.description),
+        image: normalizeText(card.image),
+        alt: normalizeText(card.alt),
+        actionLabel: normalizeText(card.actionLabel),
+        actionHref: normalizeText(card.actionHref),
         actionExternal: Boolean(card.actionExternal),
     }));
 
@@ -107,17 +125,24 @@ router.patch("/event", (req, res) => {
         });
     }
 
+    for (const [index, card] of cards.entries()) {
+        if (!isSafeUrl(card.image)) {
+            return res
+                .status(400)
+                .json({ message: invalidUrlMessage(`Zdjęcie kafelka ${index + 1}`) });
+        }
+        if (!isSafeUrl(card.actionHref, { allowEmpty: true })) {
+            return res
+                .status(400)
+                .json({ message: invalidUrlMessage(`Link kafelka ${index + 1}`) });
+        }
+    }
+
     const saved = eventContentDb.saveEventContent({
         intro: event.intro.trim(),
         cards,
     });
-    auditLogDb.createAuditEntry({
-        adminId: req.user.sub,
-        action: "event.content_updated",
-        targetType: "event",
-        targetId: 1,
-        details: { cards: cards.length },
-    });
+    audit(req, "event.content_updated", "event", 1, { cards: cards.length });
     res.json({ event: saved });
 });
 
@@ -134,37 +159,30 @@ router.patch("/home", (req, res) => {
     }
 
     const content = {
-        heroTitle: String(home.heroTitle || "").trim(),
-        heroDate: String(home.heroDate || "").trim(),
-        heroLocation: String(home.heroLocation || "").trim(),
-        heroImage: String(home.heroImage || "").trim(),
-        ticketLabel: String(home.ticketLabel || "").trim(),
-        ticketUrl: String(home.ticketUrl || "").trim(),
-        exploreLabel: String(home.exploreLabel || "").trim(),
+        heroTitle: normalizeText(home.heroTitle),
+        heroDate: normalizeText(home.heroDate),
+        heroLocation: normalizeText(home.heroLocation),
+        heroImage: normalizeText(home.heroImage),
+        ticketLabel: normalizeText(home.ticketLabel),
+        ticketUrl: normalizeText(home.ticketUrl),
+        exploreLabel: normalizeText(home.exploreLabel),
     };
 
-    if (
-        !content.heroTitle ||
-        !content.heroDate ||
-        !content.heroLocation ||
-        !content.heroImage ||
-        !content.ticketLabel ||
-        !content.ticketUrl ||
-        !content.exploreLabel
-    ) {
+    if (Object.values(content).some((value) => !value)) {
         return res
             .status(400)
             .json({ message: "Uzupełnij wszystkie pola sekcji Home." });
     }
 
+    if (!isSafeUrl(content.heroImage)) {
+        return res.status(400).json({ message: invalidUrlMessage("Zdjęcie hero") });
+    }
+    if (!isSafeUrl(content.ticketUrl)) {
+        return res.status(400).json({ message: invalidUrlMessage("Link do biletów") });
+    }
+
     const saved = siteContentDb.saveContent("home", content);
-    auditLogDb.createAuditEntry({
-        adminId: req.user.sub,
-        action: "home.content_updated",
-        targetType: "home",
-        targetId: 1,
-        details: {},
-    });
+    audit(req, "home.content_updated", "home", 1);
     res.json({ home: saved });
 });
 
@@ -181,13 +199,13 @@ router.patch("/gallery", (req, res) => {
     }
 
     const content = {
-        intro: String(gallery.intro || "").trim(),
-        linkLabel: String(gallery.linkLabel || "").trim(),
+        intro: normalizeText(gallery.intro),
+        linkLabel: normalizeText(gallery.linkLabel),
         photos: Array.isArray(gallery.photos)
             ? gallery.photos.map((photo, index) => ({
-                  id: String(photo.id || `photo-${index}`).trim(),
-                  url: String(photo.url || "").trim(),
-                  alt: String(photo.alt || "").trim(),
+                  id: normalizeText(photo.id || `photo-${index}`),
+                  url: normalizeText(photo.url),
+                  alt: normalizeText(photo.alt),
               }))
             : [],
     };
@@ -204,15 +222,43 @@ router.patch("/gallery", (req, res) => {
         });
     }
 
+    if (content.photos.some((photo) => !isSafeUrl(photo.url))) {
+        return res
+            .status(400)
+            .json({ message: invalidUrlMessage("Zdjęcie galerii") });
+    }
+
     const saved = siteContentDb.saveContent("gallery", content);
-    auditLogDb.createAuditEntry({
-        adminId: req.user.sub,
-        action: "gallery.content_updated",
-        targetType: "gallery",
-        targetId: 1,
-        details: {},
-    });
+    audit(req, "gallery.content_updated", "gallery", 1);
     res.json({ gallery: saved });
+});
+
+router.post("/gallery/sync", async (req, res) => {
+    if (!gallerySync.isGallerySyncConfigured()) {
+        return res.status(400).json({
+            message:
+                "Brak konfiguracji folderu galerii (DRIVE_GALLERY_FOLDER_ID w backend/config/.env).",
+        });
+    }
+
+    if (gallerySync.isGallerySyncInProgress()) {
+        return res
+            .status(409)
+            .json({ message: "Synchronizacja galerii już trwa." });
+    }
+
+    try {
+        const result = await gallerySync.runGallerySync("admin-panel");
+        audit(req, "gallery.synced", "gallery", 1, {
+            filesCount: result.filesCount,
+        });
+        res.json({
+            message: `Synchronizacja zakończona: ${result.filesCount} zdjęć (nowe/zmienione: ${result.downloadedCount}, usunięte: ${result.removedCount}).`,
+        });
+    } catch (error) {
+        console.error("[gallery-sync] Błąd (admin-panel):", error.message);
+        res.status(500).json({ message: "Błąd synchronizacji galerii." });
+    }
 });
 
 router.get("/contact", (req, res) => {
@@ -228,13 +274,13 @@ router.patch("/contact", (req, res) => {
     }
 
     const content = {
-        facebookUrl: String(contact.facebookUrl || "").trim(),
-        instagramUrl: String(contact.instagramUrl || "").trim(),
-        addressName: String(contact.addressName || "").trim(),
-        addressLine1: String(contact.addressLine1 || "").trim(),
-        addressLine2: String(contact.addressLine2 || "").trim(),
-        mapUrl: String(contact.mapUrl || "").trim(),
-        email: String(contact.email || "").trim(),
+        facebookUrl: normalizeText(contact.facebookUrl),
+        instagramUrl: normalizeText(contact.instagramUrl),
+        addressName: normalizeText(contact.addressName),
+        addressLine1: normalizeText(contact.addressLine1),
+        addressLine2: normalizeText(contact.addressLine2),
+        mapUrl: normalizeText(contact.mapUrl),
+        email: normalizeText(contact.email),
     };
 
     if (
@@ -248,21 +294,83 @@ router.patch("/contact", (req, res) => {
             .json({ message: "Uzupełnij wymagane pola sekcji Kontakt." });
     }
 
+    if (!EMAIL_REGEX.test(content.email)) {
+        return res
+            .status(400)
+            .json({ message: "Podaj poprawny e-mail kontaktowy." });
+    }
+
+    for (const [field, label] of [
+        ["facebookUrl", "Link do Facebooka"],
+        ["instagramUrl", "Link do Instagrama"],
+        ["mapUrl", "Link do mapy"],
+    ]) {
+        if (!isSafeUrl(content[field], { allowEmpty: true })) {
+            return res.status(400).json({ message: invalidUrlMessage(label) });
+        }
+    }
+
     const saved = siteContentDb.saveContent("contact", content);
-    auditLogDb.createAuditEntry({
-        adminId: req.user.sub,
-        action: "contact.content_updated",
-        targetType: "contact",
-        targetId: 1,
-        details: {},
-    });
+    audit(req, "contact.content_updated", "contact", 1);
     res.json({ contact: saved });
 });
 
+router.get("/settings", (req, res) => {
+    res.json({ settings: siteContentDb.getSettings() });
+});
+
+router.patch("/settings", (req, res) => {
+    const settings = req.body.settings;
+    if (!settings || typeof settings !== "object") {
+        return res.status(400).json({ message: "Nieprawidłowe ustawienia." });
+    }
+
+    const content = {
+        submissionsOpen: Boolean(settings.submissionsOpen),
+        submissionsDeadline: normalizeText(settings.submissionsDeadline),
+        selectFeeAmount: normalizeText(settings.selectFeeAmount).slice(0, 100),
+        selectCapacity: Number(settings.selectCapacity || 0),
+        maxVehiclesPerUser: Number(settings.maxVehiclesPerUser || 0),
+    };
+
+    if (
+        content.submissionsDeadline &&
+        !/^\d{4}-\d{2}-\d{2}$/.test(content.submissionsDeadline)
+    ) {
+        return res
+            .status(400)
+            .json({ message: "Termin zgłoszeń musi być datą (RRRR-MM-DD)." });
+    }
+
+    if (
+        !Number.isInteger(content.selectCapacity) ||
+        content.selectCapacity < 0 ||
+        content.selectCapacity > 10000
+    ) {
+        return res.status(400).json({
+            message: "Limit miejsc musi być liczbą całkowitą (0 = bez limitu).",
+        });
+    }
+
+    if (
+        !Number.isInteger(content.maxVehiclesPerUser) ||
+        content.maxVehiclesPerUser < 1 ||
+        content.maxVehiclesPerUser > 50
+    ) {
+        return res.status(400).json({
+            message: "Limit pojazdów na konto musi być liczbą od 1 do 50.",
+        });
+    }
+
+    const saved = siteContentDb.saveContent("settings", content);
+    audit(req, "settings.updated", "settings", 1, content);
+    res.json({ settings: saved });
+});
+
 router.get("/users", (req, res) => {
-    const role = String(req.query.role || "").trim();
-    const active = String(req.query.active || "").trim();
-    const search = String(req.query.search || "").trim();
+    const role = normalizeText(req.query.role);
+    const active = normalizeText(req.query.active);
+    const search = normalizeText(req.query.search);
 
     if (role && !["user", "admin"].includes(role)) {
         return res.status(400).json({ message: "Nieprawidłowy filtr roli." });
@@ -280,6 +388,7 @@ router.get("/users", (req, res) => {
 router.get("/stats", (req, res) => {
     const users = usersDb.getUserStats();
     const submissions = submissionsDb.getSubmissionStats();
+    const settings = siteContentDb.getSettings();
 
     res.json({
         users: {
@@ -292,7 +401,14 @@ router.get("/stats", (req, res) => {
             pending: submissions.pending || 0,
             approved: submissions.approved || 0,
             rejected: submissions.rejected || 0,
+            unpaid: submissions.unpaid || 0,
+            paymentVerification: submissions.paymentVerification || 0,
+            paid: submissions.paid || 0,
         },
+        capacity: Number(settings.selectCapacity) || 0,
+        availability: siteContentDb.getSubmissionsAvailability(settings),
+        perDay: submissionsDb.getSubmissionsPerDay(30),
+        topBrands: submissionsDb.getTopCarBrands(8),
     });
 });
 
@@ -320,23 +436,8 @@ router.patch("/users/:id/role", (req, res) => {
     }
 
     const updated = usersDb.updateUserRole(id, role);
-    auditLogDb.createAuditEntry({
-        adminId: req.user.sub,
-        action: "user.role_changed",
-        targetType: "user",
-        targetId: id,
-        details: { email: updated.email, role },
-    });
-    res.json({
-        user: {
-            id: updated.id,
-            email: updated.email,
-            firstName: updated.first_name,
-            lastName: updated.last_name,
-            role: updated.role,
-            isActive: !!updated.is_active,
-        },
-    });
+    audit(req, "user.role_changed", "user", id, { email: updated.email, role });
+    res.json({ user: toAdminUser(updated) });
 });
 
 router.patch("/users/:id/active", (req, res) => {
@@ -346,6 +447,12 @@ router.patch("/users/:id/active", (req, res) => {
     const target = usersDb.findUserById(id);
     if (!target) {
         return res.status(404).json({ message: "Nie znaleziono użytkownika." });
+    }
+
+    if (!isActive && id === Number(req.user.sub)) {
+        return res
+            .status(400)
+            .json({ message: "Nie możesz zablokować własnego konta." });
     }
 
     if (target.role === "admin" && !isActive && usersDb.countAdmins() <= 1) {
@@ -360,41 +467,37 @@ router.patch("/users/:id/active", (req, res) => {
         refreshTokensDb.revokeAllUserTokens(id);
     }
 
-    auditLogDb.createAuditEntry({
-        adminId: req.user.sub,
-        action: isActive ? "user.unblocked" : "user.blocked",
-        targetType: "user",
-        targetId: id,
-        details: { email: updated.email },
+    audit(req, isActive ? "user.unblocked" : "user.blocked", "user", id, {
+        email: updated.email,
     });
+    res.json({ user: toAdminUser(updated) });
+});
 
-    res.json({
-        user: {
-            id: updated.id,
-            email: updated.email,
-            firstName: updated.first_name,
-            lastName: updated.last_name,
-            role: updated.role,
-            isActive: !!updated.is_active,
-        },
-    });
+// Ends every session of the user (e.g. after a suspected account takeover).
+router.post("/users/:id/logout", (req, res) => {
+    const id = Number(req.params.id);
+    const target = usersDb.findUserById(id);
+    if (!target) {
+        return res.status(404).json({ message: "Nie znaleziono użytkownika." });
+    }
+
+    refreshTokensDb.revokeAllUserTokens(id);
+    audit(req, "user.sessions_revoked", "user", id, { email: target.email });
+    res.json({ message: `Wylogowano ${target.email} ze wszystkich urządzeń.` });
 });
 
 router.get("/submissions", (req, res) => {
-    const status = String(req.query.status || "").trim();
-    const paymentStatus = String(req.query.paymentStatus || "").trim();
-    const search = String(req.query.search || "").trim();
+    const status = normalizeText(req.query.status);
+    const paymentStatus = normalizeText(req.query.paymentStatus);
+    const search = normalizeText(req.query.search);
 
-    if (status && !["pending", "approved", "rejected"].includes(status)) {
+    if (status && !SUBMISSION_STATUSES.includes(status)) {
         return res
             .status(400)
             .json({ message: "Nieprawidłowy filtr statusu." });
     }
 
-    if (
-        paymentStatus &&
-        !["unpaid", "verification", "paid"].includes(paymentStatus)
-    ) {
+    if (paymentStatus && !PAYMENT_STATUSES.includes(paymentStatus)) {
         return res
             .status(400)
             .json({ message: "Nieprawidłowy status płatności." });
@@ -405,7 +508,7 @@ router.get("/submissions", (req, res) => {
         paymentStatus,
         search,
     });
-    res.json({ submissions: rows.map(toPublicSubmission) });
+    res.json({ submissions: rows.map(toAdminSubmission) });
 });
 
 router.get("/audit-log", (req, res) => {
@@ -423,43 +526,19 @@ router.get("/audit-log", (req, res) => {
     });
 });
 
-router.patch("/submissions/:id/status", (req, res) => {
-    const id = Number(req.params.id);
-    const { status } = req.body;
-    const adminNote = String(req.body.adminNote || "").trim();
-
-    if (!["pending", "approved", "rejected"].includes(status)) {
-        return res.status(400).json({ message: "Nieprawidłowy status." });
-    }
-
-    if (adminNote.length > 2000) {
-        return res.status(400).json({
-            message: "Komentarz może mieć maksymalnie 2000 znaków.",
-        });
-    }
-
-    const existing = submissionsDb.findSubmissionById(id);
-    if (!existing) {
-        return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
-    }
-
-    const updated = submissionsDb.updateSubmissionStatus(id, status, adminNote);
-    auditLogDb.createAuditEntry({
-        adminId: req.user.sub,
-        action: `submission.${status}`,
-        targetType: "submission",
-        targetId: id,
-        details: {
-            previousStatus: existing.status,
-            status,
-            adminNote,
-        },
+function changeSubmissionStatus(req, existing, status, adminNote) {
+    const updated = submissionsDb.updateSubmissionStatus(
+        existing.id,
+        status,
+        adminNote,
+    );
+    audit(req, `submission.${status}`, "submission", existing.id, {
+        previousStatus: existing.status,
+        status,
+        adminNote,
     });
 
-    if (
-        existing.status !== status &&
-        ["approved", "rejected"].includes(status)
-    ) {
+    if (existing.status !== status && ["approved", "rejected"].includes(status)) {
         const user = usersDb.findUserById(existing.user_id);
         void sendSubmissionStatusEmail({
             submission: updated,
@@ -468,20 +547,103 @@ router.patch("/submissions/:id/status", (req, res) => {
             adminNote,
         }).catch((error) => {
             console.error(
-                `[email] Nie udało się wysłać powiadomienia dla zgłoszenia ${id}:`,
+                `[email] Nie udało się wysłać powiadomienia dla zgłoszenia ${existing.id}:`,
                 error.message,
             );
         });
     }
 
-    res.json({ submission: toPublicSubmission(updated) });
+    return updated;
+}
+
+function readStatusChange(body) {
+    const status = body.status;
+    const adminNote = normalizeText(body.adminNote);
+
+    if (!SUBMISSION_STATUSES.includes(status)) {
+        return { error: "Nieprawidłowy status." };
+    }
+    if (adminNote.length > 2000) {
+        return { error: "Komentarz może mieć maksymalnie 2000 znaków." };
+    }
+    return { status, adminNote };
+}
+
+router.patch("/submissions/:id/status", (req, res) => {
+    const { status, adminNote, error } = readStatusChange(req.body);
+    if (error) {
+        return res.status(400).json({ message: error });
+    }
+
+    const existing = submissionsDb.findSubmissionById(Number(req.params.id));
+    if (!existing) {
+        return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+    }
+
+    const updated = changeSubmissionStatus(req, existing, status, adminNote);
+    res.json({ submission: toAdminSubmission(updated) });
+});
+
+router.post("/submissions/bulk-status", (req, res) => {
+    const { status, adminNote, error } = readStatusChange(req.body);
+    if (error) {
+        return res.status(400).json({ message: error });
+    }
+
+    const ids = Array.isArray(req.body.ids)
+        ? [...new Set(req.body.ids.map(Number).filter(Number.isInteger))]
+        : [];
+    if (!ids.length || ids.length > MAX_BULK_IDS) {
+        return res.status(400).json({
+            message: `Zaznacz od 1 do ${MAX_BULK_IDS} zgłoszeń.`,
+        });
+    }
+
+    let updatedCount = 0;
+    for (const id of ids) {
+        const existing = submissionsDb.findSubmissionById(id);
+        if (!existing || existing.status === status) continue;
+        // Keep a per-submission note unless a bulk note was provided.
+        changeSubmissionStatus(
+            req,
+            existing,
+            status,
+            adminNote || existing.admin_note || "",
+        );
+        updatedCount += 1;
+    }
+
+    res.json({
+        message: `Zmieniono status ${updatedCount} zgłoszeń.`,
+        updatedCount,
+    });
+});
+
+router.patch("/submissions/:id/internal-note", (req, res) => {
+    const internalNote = normalizeText(req.body.internalNote);
+    if (internalNote.length > 2000) {
+        return res.status(400).json({
+            message: "Notatka może mieć maksymalnie 2000 znaków.",
+        });
+    }
+
+    const existing = submissionsDb.findSubmissionById(Number(req.params.id));
+    if (!existing) {
+        return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+    }
+
+    const updated = submissionsDb.updateSubmissionInternalNote(
+        existing.id,
+        internalNote,
+    );
+    res.json({ submission: toAdminSubmission(updated) });
 });
 
 router.patch("/submissions/:id/payment-status", (req, res) => {
     const id = Number(req.params.id);
     const paymentStatus = req.body.paymentStatus;
 
-    if (!["unpaid", "verification", "paid"].includes(paymentStatus)) {
+    if (!PAYMENT_STATUSES.includes(paymentStatus)) {
         return res
             .status(400)
             .json({ message: "Nieprawidłowy status płatności." });
@@ -496,18 +658,27 @@ router.patch("/submissions/:id/payment-status", (req, res) => {
         id,
         paymentStatus,
     );
-    auditLogDb.createAuditEntry({
-        adminId: req.user.sub,
-        action: `submission.payment_${paymentStatus}`,
-        targetType: "submission",
-        targetId: id,
-        details: {
-            previousPaymentStatus: existing.payment_status || "unpaid",
-            paymentStatus,
-        },
+    audit(req, `submission.payment_${paymentStatus}`, "submission", id, {
+        previousPaymentStatus: existing.payment_status || "unpaid",
+        paymentStatus,
     });
 
-    res.json({ submission: toPublicSubmission(updated) });
+    res.json({ submission: toAdminSubmission(updated) });
+});
+
+router.delete("/submissions/:id", (req, res) => {
+    const existing = submissionsDb.findSubmissionById(Number(req.params.id));
+    if (!existing) {
+        return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+    }
+
+    submissionsDb.deleteSubmission(existing.id);
+    removeSubmissionPhotos(existing);
+    audit(req, "submission.deleted", "submission", existing.id, {
+        licensePlate: existing.license_plate,
+        carBrand: existing.car_brand,
+    });
+    res.json({ message: "Zgłoszenie zostało usunięte." });
 });
 
 module.exports = router;

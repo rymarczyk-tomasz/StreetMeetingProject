@@ -15,12 +15,24 @@ const PAYMENT_STATUS_LABELS = {
     paid: "Opłacone",
 };
 
+const EDITABLE_FIELDS = [
+    ["firstName", "Imię", { maxLength: 100 }],
+    ["lastName", "Nazwisko", { maxLength: 100 }],
+    ["phone", "Telefon", { type: "tel" }],
+    ["licensePlate", "Numer rejestracyjny", { maxLength: 20 }],
+    ["carBrand", "Marka pojazdu", { maxLength: 100 }],
+] as const;
+
 export default function DashboardPage() {
     const { user } = useAuth();
     const [submissions, setSubmissions] = useState([]);
     const [expandedSubmissionId, setExpandedSubmissionId] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
+    const [message, setMessage] = useState("");
+    const [editingId, setEditingId] = useState(null);
+    const [editForm, setEditForm] = useState(null);
+    const [isSaving, setIsSaving] = useState(false);
 
     const loadSubmissions = useCallback(async () => {
         setIsLoading(true);
@@ -40,7 +52,13 @@ export default function DashboardPage() {
         loadSubmissions();
     }, [loadSubmissions]);
 
+    function clearFeedback() {
+        setError("");
+        setMessage("");
+    }
+
     async function reportPayment(submissionId) {
+        clearFeedback();
         try {
             await api.patch(`/submissions/${submissionId}/payment-status`);
             await loadSubmissions();
@@ -51,6 +69,57 @@ export default function DashboardPage() {
                         ? `Błąd serwera (${err.response.status}).`
                         : "Brak połączenia z serwerem.") ||
                     "Nie udało się zgłosić opłaty do weryfikacji.",
+            );
+        }
+    }
+
+    function startEditing(submission) {
+        clearFeedback();
+        setEditingId(submission.id);
+        setEditForm({
+            firstName: submission.firstName,
+            lastName: submission.lastName,
+            phone: submission.phone,
+            licensePlate: submission.licensePlate,
+            carBrand: submission.carBrand,
+            carDescription: submission.carDescription,
+        });
+    }
+
+    async function saveEdit(event) {
+        event.preventDefault();
+        clearFeedback();
+        setIsSaving(true);
+        try {
+            await api.patch(`/submissions/${editingId}`, editForm);
+            setEditingId(null);
+            setMessage("Zgłoszenie zostało zaktualizowane.");
+            await loadSubmissions();
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                    "Nie udało się zapisać zmian zgłoszenia.",
+            );
+        } finally {
+            setIsSaving(false);
+        }
+    }
+
+    async function withdrawSubmission(submission) {
+        const confirmed = window.confirm(
+            `Czy na pewno wycofać zgłoszenie ${submission.carBrand} (${submission.licensePlate})? Zdjęcia zostaną usunięte.`,
+        );
+        if (!confirmed) return;
+
+        clearFeedback();
+        try {
+            const { data } = await api.delete(`/submissions/${submission.id}`);
+            setMessage(data.message);
+            await loadSubmissions();
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                    "Nie udało się wycofać zgłoszenia.",
             );
         }
     }
@@ -78,6 +147,7 @@ export default function DashboardPage() {
             </p>
             {isLoading && <p className="page-status">Ładowanie...</p>}
             {error && <p className="form-error">{error}</p>}
+            {message && <p className="form-success">{message}</p>}
             {!isLoading && submissions.length === 0 && (
                 <p>Nie masz jeszcze żadnych zgłoszeń.</p>
             )}
@@ -85,7 +155,9 @@ export default function DashboardPage() {
                 <ul className="submission-list">
                     {submissions.map((s) => {
                         const isExpanded = expandedSubmissionId === s.id;
+                        const isEditing = editingId === s.id;
                         const canManagePayment = s.status === "approved";
+                        const isPending = s.status === "pending";
 
                         return (
                             <li className="submission-card" key={s.id}>
@@ -116,7 +188,69 @@ export default function DashboardPage() {
                                             : "Zobacz szczegóły"}
                                     </button>
                                 </div>
-                                {isExpanded && (
+                                {isExpanded && isEditing && (
+                                    <form
+                                        className="auth-form submission-edit-form"
+                                        onSubmit={saveEdit}
+                                    >
+                                        {EDITABLE_FIELDS.map(
+                                            ([field, label, props]) => (
+                                                <label key={field}>
+                                                    {label}
+                                                    <input
+                                                        {...props}
+                                                        value={editForm[field]}
+                                                        onChange={(event) =>
+                                                            setEditForm({
+                                                                ...editForm,
+                                                                [field]:
+                                                                    event.target
+                                                                        .value,
+                                                            })
+                                                        }
+                                                        required
+                                                    />
+                                                </label>
+                                            ),
+                                        )}
+                                        <label>
+                                            Opis pojazdu
+                                            <textarea
+                                                rows={4}
+                                                maxLength={3000}
+                                                value={editForm.carDescription}
+                                                onChange={(event) =>
+                                                    setEditForm({
+                                                        ...editForm,
+                                                        carDescription:
+                                                            event.target.value,
+                                                    })
+                                                }
+                                                required
+                                            />
+                                        </label>
+                                        <div className="submission-actions">
+                                            <button
+                                                type="submit"
+                                                disabled={isSaving}
+                                            >
+                                                {isSaving
+                                                    ? "Zapisywanie..."
+                                                    : "Zapisz zmiany"}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="button-secondary"
+                                                onClick={() =>
+                                                    setEditingId(null)
+                                                }
+                                            >
+                                                Anuluj
+                                            </button>
+                                        </div>
+                                    </form>
+                                )}
+                                {isExpanded && !isEditing && (
                                     <div className="submission-details">
                                         <dl className="submission-meta">
                                             <div>
@@ -146,6 +280,27 @@ export default function DashboardPage() {
                                             <strong>Opis pojazdu:</strong>{" "}
                                             {s.carDescription}
                                         </p>
+                                        {isPending && (
+                                            <div className="submission-actions">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        startEditing(s)
+                                                    }
+                                                >
+                                                    Edytuj zgłoszenie
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="button-danger"
+                                                    onClick={() =>
+                                                        withdrawSubmission(s)
+                                                    }
+                                                >
+                                                    Wycofaj zgłoszenie
+                                                </button>
+                                            </div>
+                                        )}
                                         {canManagePayment && (
                                             <p>
                                                 <strong>Status opłaty:</strong>{" "}
@@ -194,6 +349,7 @@ export default function DashboardPage() {
                                                         <img
                                                             src={photo}
                                                             alt={`Zdjęcie ${s.carBrand}`}
+                                                            loading="lazy"
                                                         />
                                                     </a>
                                                 ))}

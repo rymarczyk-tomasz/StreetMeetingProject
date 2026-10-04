@@ -1,24 +1,32 @@
 const path = require("path");
-const os = require("os");
 // process.cwd() is backend/ (npm scripts run from there); __dirname would point
 // into dist/ once compiled and miss backend/config/.env.
 require("dotenv").config({ path: path.join(process.cwd(), "config/.env") });
 
 const cors = require("cors");
 const express = require("express");
-const multer = require("multer");
+const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
-const fs = require("fs");
-const { google } = require("googleapis");
-const { syncGalleryFromDrive } = require("./scripts/sync-gallery-from-drive");
 const authRoutes = require("./src/auth/routes");
 const adminRoutes = require("./src/admin/routes");
 const { router: submissionsRoutes } = require("./src/submissions/routes");
 const eventContentDb = require("./src/db/eventContent");
 const siteContentDb = require("./src/db/siteContent");
+const { CONTENT_UPLOAD_ROOT } = require("./src/utils/paths");
+const { scheduleDailyGallerySync } = require("./src/gallery/sync");
+const { startMaintenance } = require("./src/maintenance");
 
 const app = express();
 const PORT = process.env.PORT || 33000;
+
+// Which proxies may set X-Forwarded-For. Default "loopback" = nginx on the same
+// server: req.ip is then the address nginx appended, not whatever the client sent.
+// Set TRUST_PROXY to a hop count (e.g. 2) if there is another proxy in front of nginx.
+const trustProxyEnv = String(process.env.TRUST_PROXY || "loopback").trim();
+app.set(
+    "trust proxy",
+    /^\d+$/.test(trustProxyEnv) ? Number(trustProxyEnv) : trustProxyEnv,
+);
 
 const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:5173")
     .split(",")
@@ -26,23 +34,38 @@ const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:5173")
     .filter(Boolean);
 
 app.use(
+    helmet({
+        // The API only serves JSON and images; the SPA's own CSP belongs in nginx.
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'none'"],
+                imgSrc: ["'self'"],
+                frameAncestors: ["'none'"],
+            },
+        },
+    }),
+);
+app.use(
     cors({
         origin: allowedOrigins,
         credentials: true,
     }),
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "200kb" }));
 app.use(cookieParser());
 
-app.use(
-    "/uploads/submissions",
-    express.static(path.join(process.cwd(), "uploads/submissions")),
-);
+// Public CMS images. Submission photos are NOT public: they are served by
+// GET /api/submissions/photos/:userId/:filename (owner or admin only).
 app.use(
     "/uploads/content",
-    express.static(path.join(process.cwd(), "uploads/content")),
+    express.static(CONTENT_UPLOAD_ROOT, {
+        dotfiles: "deny",
+        index: false,
+        maxAge: "30d",
+        immutable: true,
+    }),
 );
+
 app.use("/api/auth", authRoutes);
 app.get("/api/event", (req, res) => {
     res.json({ event: eventContentDb.getEventContent() });
@@ -56,513 +79,35 @@ app.get("/api/gallery", (req, res) => {
 app.get("/api/contact", (req, res) => {
     res.json({ contact: siteContentDb.getContent("contact") });
 });
-app.use("/api/admin", adminRoutes);
-app.use("/api/submissions", submissionsRoutes);
-
-const uploadDir = path.join(os.tmpdir(), "uploads");
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
-        cb(null, true);
-    } else {
-        cb(new Error("Tylko pliki graficzne (obrazy) są dozwolone!"), false);
-    }
-};
-
-const upload = multer({
-    dest: uploadDir,
-    limits: {
-        files: 5,
-    },
-    fileFilter,
+app.get("/api/health", (req, res) => {
+    res.json({ status: "OK" });
 });
-
-const credentials = {
-    type: "service_account",
-    project_id: process.env.GOOGLE_PROJECT_ID,
-    private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-    private_key: process.env.GOOGLE_PRIVATE_KEY
-        ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n")
-        : null,
-    client_email: process.env.GOOGLE_CLIENT_EMAIL,
-    client_id: process.env.GOOGLE_CLIENT_ID,
-    auth_uri: "https://accounts.google.com/o/oauth2/auth",
-    token_uri: "https://oauth2.googleapis.com/token",
-    auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-    client_x509_cert_url: process.env.GOOGLE_CLIENT_X509_CERT_URL,
-};
-
-const hasGoogleCredentials = Boolean(credentials.private_key);
-
-if (!hasGoogleCredentials) {
-    console.warn(
-        "[google] Brak GOOGLE_PRIVATE_KEY w backend/config/.env — funkcje Google Sheets/Drive (stary formularz /upload i synchronizacja galerii) są wyłączone.",
-    );
-}
-
-const auth = hasGoogleCredentials
-    ? new google.auth.GoogleAuth({
-          credentials,
-          scopes: [
-              "https://www.googleapis.com/auth/spreadsheets",
-              "https://www.googleapis.com/auth/drive",
-          ],
-      })
-    : null;
-
-const sheets = hasGoogleCredentials
-    ? google.sheets({ version: "v4", auth })
-    : null;
-const drive = hasGoogleCredentials
-    ? google.drive({ version: "v3", auth })
-    : null;
-
-const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
-const GOOGLE_DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID;
-const GALLERY_DRIVE_FOLDER_INPUT =
-    process.env.DRIVE_GALLERY_FOLDER_ID ||
-    process.env.GALLERY_DRIVE_FOLDER_ID ||
-    process.env.GALLERY_DRIVE_FOLDER_URL;
-
-const parsedDailyHour = Number(process.env.GALLERY_SYNC_DAILY_HOUR ?? "3");
-const GALLERY_SYNC_DAILY_HOUR = Number.isFinite(parsedDailyHour)
-    ? Math.min(23, Math.max(0, Math.trunc(parsedDailyHour)))
-    : 3;
-
-const parsedDailyMinute = Number(process.env.GALLERY_SYNC_DAILY_MINUTE ?? "0");
-const GALLERY_SYNC_DAILY_MINUTE = Number.isFinite(parsedDailyMinute)
-    ? Math.min(59, Math.max(0, Math.trunc(parsedDailyMinute)))
-    : 0;
-
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
-const PHONE_REGEX = /^\+?[0-9]{9,15}$/;
-const UPLOAD_RATE_WINDOW_MS = 60 * 1000;
-const UPLOAD_RATE_MAX_REQUESTS = 5;
-const uploadRateTracker = new Map();
-
-function getMissingUploadConfiguration() {
-    const missing = [];
-
-    if (!hasGoogleCredentials) missing.push("GOOGLE_PRIVATE_KEY");
-    if (!SPREADSHEET_ID) missing.push("SPREADSHEET_ID");
-    if (!GOOGLE_DRIVE_FOLDER_ID) missing.push("DRIVE_FOLDER_ID");
-
-    return missing;
-}
-
-function getGoogleApiErrorDetails(error) {
-    const responseData = error?.response?.data;
-    const apiMessage =
-        responseData?.error?.message ||
-        responseData?.message ||
-        error?.message ||
-        "Nieznany błąd integracji Google.";
-
-    return {
-        status: error?.response?.status,
-        message: apiMessage,
-    };
-}
-
-let gallerySyncInProgress = false;
-
-function normalizeText(value) {
-    return String(value || "").trim();
-}
-
-function normalizePhone(value) {
-    return normalizeText(value).replace(/\s+/g, "");
-}
-
-function getClientIp(req) {
-    const forwardedFor = req.headers["x-forwarded-for"];
-    if (typeof forwardedFor === "string" && forwardedFor.length) {
-        return forwardedFor.split(",")[0].trim();
-    }
-
-    return req.ip || req.socket?.remoteAddress || "unknown";
-}
-
-function uploadRateLimit(req, res, next) {
-    const clientIp = getClientIp(req);
-    const now = Date.now();
-    const existingEntry = uploadRateTracker.get(clientIp) || [];
-    const recentAttempts = existingEntry.filter(
-        (timestamp) => now - timestamp < UPLOAD_RATE_WINDOW_MS,
-    );
-
-    recentAttempts.push(now);
-    uploadRateTracker.set(clientIp, recentAttempts);
-
-    if (recentAttempts.length > UPLOAD_RATE_MAX_REQUESTS) {
-        const oldestAttempt = recentAttempts[0];
-        const secondsUntilReset = Math.max(
-            1,
-            Math.ceil((UPLOAD_RATE_WINDOW_MS - (now - oldestAttempt)) / 1000),
-        );
-
-        res.set("Retry-After", String(secondsUntilReset));
-        return res.status(429).json({
-            message: "Za dużo prób wysyłki. Spróbuj ponownie za chwilę.",
-        });
-    }
-
-    next();
-}
-
-setInterval(() => {
-    const now = Date.now();
-
-    for (const [key, attempts] of uploadRateTracker.entries()) {
-        const recentAttempts = attempts.filter(
-            (timestamp) => now - timestamp < UPLOAD_RATE_WINDOW_MS,
-        );
-
-        if (recentAttempts.length) {
-            uploadRateTracker.set(key, recentAttempts);
-        } else {
-            uploadRateTracker.delete(key);
-        }
-    }
-}, UPLOAD_RATE_WINDOW_MS).unref();
-
-async function runGallerySync(reason) {
-    if (!GALLERY_DRIVE_FOLDER_INPUT) {
-        console.log(
-            "[gallery-sync] Pominięto: brak DRIVE_GALLERY_FOLDER_ID lub GALLERY_DRIVE_FOLDER_ID.",
-        );
-        return;
-    }
-
-    if (gallerySyncInProgress) {
-        console.log(
-            `[gallery-sync] Pominięto (${reason}): poprzednia synchronizacja nadal trwa.`,
-        );
-        return;
-    }
-
-    gallerySyncInProgress = true;
-    console.log(`[gallery-sync] Start (${reason})...`);
-
-    try {
-        const result = await syncGalleryFromDrive(GALLERY_DRIVE_FOLDER_INPUT);
-        console.log(
-            `[gallery-sync] Zakończono (${reason}): ${result.filesCount} zdjęć, pobrano/zaktualizowano ${result.downloadedCount}, bez zmian ${result.skippedCount}, usunięto ${result.removedCount}, folder ${result.folderId}.`,
-        );
-    } catch (error) {
-        console.error(`[gallery-sync] Błąd (${reason}):`, error.message);
-    } finally {
-        gallerySyncInProgress = false;
-    }
-}
-
-function getNextDailySyncDate(now = new Date()) {
-    const nextRun = new Date(now);
-    nextRun.setHours(GALLERY_SYNC_DAILY_HOUR, GALLERY_SYNC_DAILY_MINUTE, 0, 0);
-
-    if (nextRun <= now) {
-        nextRun.setDate(nextRun.getDate() + 1);
-    }
-
-    return nextRun;
-}
-
-function scheduleDailyGallerySync() {
-    if (!GALLERY_DRIVE_FOLDER_INPUT) {
-        console.log(
-            "[gallery-sync] Harmonogram wyłączony: brak konfiguracji folderu galerii.",
-        );
-        return;
-    }
-
-    const now = new Date();
-    const nextRun = getNextDailySyncDate(now);
-    const delay = Math.max(1000, nextRun.getTime() - now.getTime());
-
-    console.log(
-        `[gallery-sync] Zaplanowano codziennie o ${String(GALLERY_SYNC_DAILY_HOUR).padStart(2, "0")}:${String(GALLERY_SYNC_DAILY_MINUTE).padStart(2, "0")}. Najbliższa synchronizacja: ${nextRun.toISOString()}.`,
-    );
-
-    setTimeout(async () => {
-        await runGallerySync("daily-schedule");
-
-        setInterval(() => {
-            runGallerySync("daily-interval").catch(() => {});
-        }, ONE_DAY_MS);
-    }, delay);
-}
-
-async function createFolderOnDrive(name, parentId) {
-    const folder = await drive.files.create({
-        resource: {
-            name,
-            mimeType: "application/vnd.google-apps.folder",
-            parents: [parentId],
-        },
-        fields: "id, webViewLink",
-    });
-
-    return folder.data;
-}
-
-async function uploadFileToDrive(file, folderId) {
-    const uploaded = await drive.files.create({
-        resource: {
-            name: file.originalname,
-            parents: [folderId],
-        },
-        media: {
-            mimeType: file.mimetype,
-            body: fs.createReadStream(file.path),
-        },
-        fields: "id, webViewLink",
-    });
-
-    return uploaded.data.webViewLink;
-}
-
-async function appendToSheet(data) {
-    await sheets.spreadsheets.values.append({
-        spreadsheetId: SPREADSHEET_ID,
-        range: "Arkusz1!A:H",
-        valueInputOption: "RAW",
-        resource: {
-            values: [
-                [
-                    data.firstName,
-                    data.lastName,
-                    data.email,
-                    data.phone,
-                    data.licensePlate,
-                    data.carBrand,
-                    data.carDescription,
-                    data.folderUrl,
-                ],
-            ],
-        },
-    });
-}
-
-app.post(
-    "/upload",
-    uploadRateLimit,
-    upload.array("photos", 5),
-    async (req, res) => {
-        let savedFiles = [];
-
-        try {
-            const missingConfig = getMissingUploadConfiguration();
-            if (missingConfig.length) {
-                return res.status(503).json({
-                    message:
-                        "Brakuje konfiguracji backendu w Azure App Service.",
-                    details: `Ustaw zmienne środowiskowe: ${missingConfig.join(", ")}.`,
-                });
-            }
-
-            const {
-                firstName,
-                lastName,
-                email,
-                phone,
-                licensePlate,
-                carBrand,
-                carDescription,
-            } = req.body;
-
-            const normalizedFirstName = normalizeText(firstName);
-            const normalizedLastName = normalizeText(lastName);
-            const normalizedEmail = normalizeText(email);
-            const normalizedPhone = normalizePhone(phone);
-            const normalizedLicensePlate = normalizeText(licensePlate);
-            const normalizedCarBrand = normalizeText(carBrand);
-            const normalizedCarDescription = normalizeText(carDescription);
-            const honeypotField = normalizeText(req.body.website);
-            const hasRodoConsent =
-                String(req.body.rodoConsent || "").toLowerCase() === "on";
-
-            if (honeypotField) {
-                return res.status(400).json({
-                    message: "Nieprawidłowe zgłoszenie.",
-                });
-            }
-
-            if (!hasRodoConsent) {
-                return res.status(400).json({
-                    message: "Wymagana jest akceptacja zgody RODO.",
-                });
-            }
-
-            if (
-                !normalizedFirstName ||
-                !normalizedLastName ||
-                !normalizedEmail ||
-                !normalizedPhone ||
-                !normalizedLicensePlate ||
-                !normalizedCarBrand ||
-                !normalizedCarDescription
-            ) {
-                return res.status(400).json({
-                    message: "Wszystkie pola są wymagane.",
-                });
-            }
-
-            if (!EMAIL_REGEX.test(normalizedEmail)) {
-                return res.status(400).json({
-                    message: "Proszę podać poprawny adres e-mail.",
-                });
-            }
-
-            if (!PHONE_REGEX.test(normalizedPhone)) {
-                return res.status(400).json({
-                    message:
-                        "Proszę podać poprawny numer telefonu (9-15 cyfr).",
-                });
-            }
-
-            if (!req.files || req.files.length === 0) {
-                return res.status(400).json({
-                    message: "Proszę dodać przynajmniej jedno zdjęcie.",
-                });
-            }
-
-            const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
-            const totalSize = req.files.reduce(
-                (sum, file) => sum + file.size,
-                0,
-            );
-
-            if (totalSize > MAX_TOTAL_SIZE) {
-                return res.status(400).json({
-                    message: "Łączny rozmiar plików przekracza 50MB.",
-                });
-            }
-
-            const folder = await createFolderOnDrive(
-                `${normalizedFirstName} ${normalizedLastName}`,
-                GOOGLE_DRIVE_FOLDER_ID,
-            );
-
-            await Promise.all(
-                req.files.map(async (file) => {
-                    savedFiles.push(file.path);
-                    await uploadFileToDrive(file, folder.id);
-                }),
-            );
-
-            await appendToSheet({
-                firstName: normalizedFirstName,
-                lastName: normalizedLastName,
-                email: normalizedEmail,
-                phone: normalizedPhone,
-                licensePlate: normalizedLicensePlate,
-                carBrand: normalizedCarBrand,
-                carDescription: normalizedCarDescription,
-                folderUrl: folder.webViewLink,
-            });
-
-            res.json({
-                message:
-                    "Gratulacje! Twoje zgłoszenie zostało przyjęte, niebawem odezwiemy się z decyzją :)",
-            });
-        } catch (error) {
-            const googleError = getGoogleApiErrorDetails(error);
-            console.error("[upload] Błąd wysyłki formularza:", {
-                message: error.message,
-                status: googleError.status,
-                googleMessage: googleError.message,
-                stack: error.stack,
-            });
-
-            if (googleError.status === 401 || googleError.status === 403) {
-                return res.status(502).json({
-                    message:
-                        "Backend nie ma dostępu do Google Drive lub Google Sheets.",
-                    details:
-                        "Sprawdź, czy folder i arkusz są udostępnione kontu serwisowemu oraz czy sekrety Google w Azure są poprawne.",
-                });
-            }
-
-            if (googleError.status === 404) {
-                return res.status(502).json({
-                    message:
-                        "Nie znaleziono folderu Google Drive albo arkusza Google Sheets.",
-                    details:
-                        "Sprawdź SPREADSHEET_ID i DRIVE_FOLDER_ID w ustawieniach produkcyjnych.",
-                });
-            }
-
-            res.status(500).json({
-                message: "Wystąpił błąd serwera podczas wysyłki formularza.",
-                details: googleError.message,
-            });
-        } finally {
-            savedFiles.forEach((filePath) => {
-                if (fs.existsSync(filePath)) {
-                    fs.unlink(filePath, () => {});
-                }
-            });
-        }
-    },
-);
-
-app.use((error, req, res, next) => {
-    if (error instanceof multer.MulterError) {
-        if (error.code === "LIMIT_FILE_COUNT") {
-            return res
-                .status(400)
-                .json({ message: "Można przesłać maksymalnie 5 zdjęć." });
-        }
-    }
-
-    if (error.message === "Tylko pliki graficzne (obrazy) są dozwolone!") {
-        return res.status(400).json({ message: error.message });
-    }
-
-    next(error);
-});
-
 app.get("/health", (req, res) => {
     res.json({ status: "OK" });
 });
+app.use("/api/admin", adminRoutes);
+app.use("/api/submissions", submissionsRoutes);
 
-app.post("/gallery/sync", async (req, res) => {
-    if (!GALLERY_DRIVE_FOLDER_INPUT) {
-        return res.status(400).json({
-            message:
-                "Brak konfiguracji folderu galerii (DRIVE_GALLERY_FOLDER_ID/GALLERY_DRIVE_FOLDER_ID).",
-        });
+app.use("/api", (req, res) => {
+    res.status(404).json({ message: "Nie znaleziono." });
+});
+
+// Last-resort handler: never leak stack traces or internal messages to clients.
+app.use((error, req, res, next) => {
+    if (error?.type === "entity.too.large") {
+        return res.status(413).json({ message: "Przesłane dane są zbyt duże." });
+    }
+    if (error?.type === "entity.parse.failed") {
+        return res.status(400).json({ message: "Nieprawidłowe dane żądania." });
     }
 
-    if (gallerySyncInProgress) {
-        return res.status(409).json({
-            message: "Synchronizacja galerii już trwa.",
-        });
-    }
-
-    try {
-        const result = await syncGalleryFromDrive(GALLERY_DRIVE_FOLDER_INPUT);
-        return res.json({
-            message: "Synchronizacja galerii zakończona.",
-            filesCount: result.filesCount,
-            downloadedCount: result.downloadedCount,
-            skippedCount: result.skippedCount,
-            removedCount: result.removedCount,
-            folderId: result.folderId,
-        });
-    } catch (error) {
-        return res.status(500).json({
-            message: "Błąd synchronizacji galerii.",
-            error: error.message,
-        });
-    }
+    console.error(`[error] ${req.method} ${req.originalUrl}:`, error);
+    if (res.headersSent) return next(error);
+    res.status(500).json({ message: "Wystąpił błąd serwera." });
 });
 
 app.listen(PORT, () => {
     console.log(`Serwer działa na porcie ${PORT}`);
     scheduleDailyGallerySync();
+    startMaintenance();
 });

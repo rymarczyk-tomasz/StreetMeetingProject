@@ -40,6 +40,14 @@ const DEFAULTS = {
         mapUrl: "http://maps.app.goo.gl/PePJY3TXBjM7t4v37",
         email: "streetmeetingpolska@gmail.com",
     },
+    // Not page content, but editable from the admin panel the same way.
+    settings: {
+        submissionsOpen: true,
+        submissionsDeadline: "",
+        selectFeeAmount: "",
+        selectCapacity: 0,
+        maxVehiclesPerUser: 5,
+    },
 };
 
 db.exec(`
@@ -84,4 +92,32 @@ function saveContent(key, content) {
     return content;
 }
 
-module.exports = { getContent, saveContent };
+function getSettings() {
+    return getContent("settings");
+}
+
+// Deadline is a YYYY-MM-DD date; submissions stay open until the end of that day.
+function getSubmissionsAvailability(settings = getSettings()) {
+    if (!settings.submissionsOpen) {
+        return { open: false, reason: "Zgłoszenia do strefy Select są zamknięte." };
+    }
+
+    if (settings.submissionsDeadline) {
+        const deadline = new Date(`${settings.submissionsDeadline}T23:59:59`);
+        if (!Number.isNaN(deadline.getTime()) && Date.now() > deadline.getTime()) {
+            return {
+                open: false,
+                reason: "Termin przyjmowania zgłoszeń do strefy Select minął.",
+            };
+        }
+    }
+
+    return { open: true, reason: "" };
+}
+
+module.exports = {
+    getContent,
+    saveContent,
+    getSettings,
+    getSubmissionsAvailability,
+};

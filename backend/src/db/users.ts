@@ -26,6 +26,7 @@ const updatePasswordStmt = db.prepare(
 const countAdminsStmt = db.prepare(
     `SELECT COUNT(*) AS count FROM users WHERE role = 'admin'`,
 );
+const deleteUserStmt = db.prepare(`DELETE FROM users WHERE id = ?`);
 
 function createUser({ email, passwordHash, firstName, lastName, role }) {
     const result = insertUserStmt.run({
@@ -126,6 +127,11 @@ function countAdmins() {
     return countAdminsStmt.get().count;
 }
 
+// Cascades to submissions, refresh/reset tokens and the user's audit entries.
+function deleteUser(id) {
+    deleteUserStmt.run(id);
+}
+
 module.exports = {
     createUser,
     findUserByEmail,
@@ -137,4 +143,5 @@ module.exports = {
     updateUserProfile,
     updateUserPassword,
     countAdmins,
+    deleteUser,
 };
