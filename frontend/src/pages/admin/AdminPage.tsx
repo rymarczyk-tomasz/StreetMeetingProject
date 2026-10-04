@@ -2,12 +2,18 @@ import { useState } from "react";
 import AdminStats from "./AdminStats";
 import AuditLog from "./AuditLog";
 import {
+    AnnouncementEditor,
     ContactEditor,
+    EditionEditor,
     EventEditor,
-    GalleryEditor,
+    FaqEditor,
+    GalleryPreviewEditor,
     HomeEditor,
+    PartnersEditor,
+    RegulaminEditor,
+    SubmissionSettingsEditor,
 } from "./ContentEditors";
-import SettingsPanel from "./SettingsPanel";
+import GalleryAlbumsPanel from "./GalleryAlbumsPanel";
 import SubmissionsPanel from "./SubmissionsPanel";
 import UsersPanel from "./UsersPanel";
 
@@ -15,32 +21,42 @@ const SECTIONS = [
     ["dashboard", "Dashboard"],
     ["submissions", "Zgłoszenia"],
     ["users", "Użytkownicy"],
+    ["gallery", "Galeria"],
     ["content", "Treści strony"],
     ["settings", "Ustawienia"],
     ["audit", "Dziennik działań"],
 ];
 
 const CONTENT_TABS = [
-    ["event", "Event"],
-    ["gallery", "Galeria"],
-    ["home", "Home"],
-    ["contact", "Kontakt"],
-];
+    ["home", "Home", HomeEditor],
+    ["event", "Event", EventEditor],
+    ["gallery", "Podgląd galerii", GalleryPreviewEditor],
+    ["partners", "Partnerzy", PartnersEditor],
+    ["contact", "Kontakt", ContactEditor],
+    ["faq", "FAQ", FaqEditor],
+    ["regulamin", "Regulamin", RegulaminEditor],
+    ["announcement", "Ogłoszenie", AnnouncementEditor],
+] as const;
 
-const CONTENT_EDITORS = {
-    event: EventEditor,
-    gallery: GalleryEditor,
-    home: HomeEditor,
-    contact: ContactEditor,
-};
+function SectionHeading({ title, description, children = null }) {
+    return (
+        <div className="admin-section-heading">
+            <div>
+                <h2>{title}</h2>
+                <p>{description}</p>
+            </div>
+            {children}
+        </div>
+    );
+}
 
 export default function AdminPage() {
     const [activeSection, setActiveSection] = useState("dashboard");
-    const [contentTab, setContentTab] = useState("event");
+    const [contentTab, setContentTab] = useState("home");
     // Bumped after every admin action so stats and the audit log reload.
     const [refreshKey, setRefreshKey] = useState(0);
     const onAction = () => setRefreshKey((value) => value + 1);
-    const ContentEditor = CONTENT_EDITORS[contentTab];
+    const ContentEditor = CONTENT_TABS.find(([tab]) => tab === contentTab)[2];
 
     return (
         <section className="page admin-page">
@@ -72,34 +88,49 @@ export default function AdminPage() {
 
             {activeSection === "dashboard" && (
                 <div className="admin-section">
-                    <div className="admin-section-heading">
-                        <div>
-                            <h2>Dashboard</h2>
-                            <p>
-                                Najważniejsze informacje o aktywności w panelu.
-                            </p>
-                        </div>
+                    <SectionHeading
+                        title="Dashboard"
+                        description="Najważniejsze informacje o bieżącej edycji."
+                    >
                         <button
                             type="button"
                             onClick={() => setActiveSection("submissions")}
                         >
                             Przejdź do zgłoszeń
                         </button>
-                    </div>
+                    </SectionHeading>
                     <AdminStats refreshKey={refreshKey} />
+                </div>
+            )}
+
+            {activeSection === "submissions" && (
+                <div className="admin-section">
+                    <SectionHeading
+                        title="Zgłoszenia do strefy Select"
+                        description="Przeglądaj, filtruj i rozpatruj zgłoszenia. Poprzednie lata znajdziesz w filtrze „Edycja”."
+                    />
+                    <SubmissionsPanel onAction={onAction} />
                 </div>
             )}
 
             {activeSection === "users" && <UsersPanel onAction={onAction} />}
 
+            {activeSection === "gallery" && (
+                <div className="admin-section">
+                    <SectionHeading
+                        title="Galeria"
+                        description="Albumy ze zdjęciami z Dysku Google, widoczne na stronie /galeria."
+                    />
+                    <GalleryAlbumsPanel onAction={onAction} />
+                </div>
+            )}
+
             {activeSection === "content" && (
                 <div className="admin-section">
-                    <div className="admin-section-heading">
-                        <div>
-                            <h2>Treści strony</h2>
-                            <p>Wybierz sekcję strony, którą chcesz edytować.</p>
-                        </div>
-                    </div>
+                    <SectionHeading
+                        title="Treści strony"
+                        description="Wybierz sekcję strony, którą chcesz edytować. Każdy zapis trafia do historii zmian, więc zawsze możesz wrócić do poprzedniej wersji."
+                    />
                     <nav
                         className="admin-navigation admin-subnavigation"
                         aria-label="Sekcje treści strony"
@@ -126,28 +157,16 @@ export default function AdminPage() {
 
             {activeSection === "settings" && (
                 <div className="admin-section">
-                    <div className="admin-section-heading">
-                        <div>
-                            <h2>Ustawienia zgłoszeń</h2>
-                            <p>
-                                Otwieranie i zamykanie zapisów do strefy Select,
-                                limity i kwota opłaty.
-                            </p>
-                        </div>
-                    </div>
-                    <SettingsPanel onAction={onAction} />
-                </div>
-            )}
-
-            {activeSection === "submissions" && (
-                <div className="admin-section">
-                    <div className="admin-section-heading">
-                        <div>
-                            <h2>Zgłoszenia do strefy Select</h2>
-                            <p>Przeglądaj, filtruj i rozpatruj zgłoszenia.</p>
-                        </div>
-                    </div>
-                    <SubmissionsPanel onAction={onAction} />
+                    <SectionHeading
+                        title="Edycja wydarzenia"
+                        description="Rok, data i miejsce bieżącej edycji — używane na stronie głównej, w Google i do liczenia zgłoszeń."
+                    />
+                    <EditionEditor onAction={onAction} />
+                    <SectionHeading
+                        title="Zgłoszenia do strefy Select"
+                        description="Otwieranie i zamykanie zapisów, limity i kwota opłaty."
+                    />
+                    <SubmissionSettingsEditor onAction={onAction} />
                 </div>
             )}
 

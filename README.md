@@ -1,51 +1,47 @@
 # Street Meeting Poland — Street Show
 
-Strona wydarzenia motoryzacyjnego "Street Show" + panel logowania dla użytkowników i administratora.
+Strona wydarzenia motoryzacyjnego "Street Show": **React + Vite** (`frontend/`) i backend **Node/Express + SQLite** (`backend/`), z kontami użytkowników, zgłoszeniami do strefy Select i panelem administratora, w którym edytuje się całą treść strony.
 
-Projekt jest w trakcie migracji ze starej statycznej strony (HTML/JS w katalogu głównym, `index.html`, `js/`, `css/`) na **React + Vite** (`frontend/`) z osobnym backendem **Node/Express + SQLite** (`backend/`).
+## Co jest w panelu administratora
 
-## Status migracji (co jest zrobione)
-
-| Obszar                                                              | Status                                                                                                                                 | Gdzie                                                                                                  |
-| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Szkielet React + Vite                                               | ✅ gotowe                                                                                                                              | `frontend/`                                                                                            |
-| Logowanie / rejestracja (JWT w httpOnly cookies)                    | ✅ gotowe                                                                                                                              | `backend/src/auth/`, `frontend/src/context/AuthContext.jsx`                                            |
-| Rola administratora + panel zarządzania użytkownikami               | ✅ gotowe                                                                                                                              | `backend/src/admin/routes.js`, `frontend/src/pages/AdminPage.jsx`                                      |
-| Strona główna (hero, event, podgląd galerii, kontakt)               | ✅ zmigrowane do React                                                                                                                 | `frontend/src/pages/HomePage.jsx`                                                                      |
-| Galeria (pełna, z lightboxem, dane z Google Drive)                  | ✅ zmigrowane do React                                                                                                                 | `frontend/src/pages/GalleryPage.jsx`                                                                   |
-| FAQ (akordeon)                                                      | ✅ zmigrowane do React                                                                                                                 | `frontend/src/pages/FaqPage.jsx`                                                                       |
-| Regulamin (długi tekst prawny)                                      | ✅ zmigrowane do React (1:1 skopiowana treść)                                                                                          | `frontend/src/pages/RegulaminPage.jsx`                                                                 |
-| Zgłoszenia "Strefa Select" powiązane z kontem użytkownika           | ✅ gotowe (zdjęcia + status pending/approved/rejected, akceptacja w panelu admina)                                                     | `backend/src/submissions/`, `frontend/src/pages/DashboardPage.jsx`, `frontend/src/pages/AdminPage.jsx` |
-| Publiczny formularz zgłoszeniowy na stronie głównej (bez logowania) | ⚠️ celowo zamknięty (tak jak w produkcji) — istnieje stary endpoint `/upload` (Google Sheets/Drive), ale sekcja na stronie jest ukryta | `frontend/src/pages/HomePage.jsx` (sekcja `#form`)                                                     |
-| Wdrożenie na mikrus / hostinger.pl                                  | ❌ jeszcze nie zrobione                                                                                                                | —                                                                                                      |
-
-Stare pliki w katalogu głównym (`index.html`, `faq.html`, `galeria.html`, `regulamin.html`, `js/`, `css/`) to **poprzednia wersja statyczna** — zostawione jako referencja/kopia zapasowa. Docelowo cały ruch ma iść przez `frontend/`. Nie edytuj ich dalej — źródłem prawdy jest teraz `frontend/`.
+| Zakładka | Co tam jest |
+| --- | --- |
+| Dashboard | Statystyki bieżącej edycji: zgłoszenia, opłaty, wykres z 30 dni, najczęstsze marki, zapełnienie strefy Select |
+| Zgłoszenia | Filtr edycji (archiwum lat), akceptacja/odrzucenie pojedynczo i zbiorczo, notatki, opłaty, eksport do Excela, **lista na bramę do druku**, **wiadomość e-mail do grupy uczestników** |
+| Użytkownicy | Role, blokada, wylogowanie ze wszystkich urządzeń |
+| Galeria | Albumy z folderów Dysku Google (jeden folder = jeden album), synchronizacja, ukrywanie zdjęć, okładki, kolejność |
+| Treści strony | Home, Event (1–6 kafelków), podgląd galerii, partnerzy, kontakt, **FAQ** i **regulamin** (edytor jak w Wordzie + PDF), pasek ogłoszeń. Każda sekcja ma **historię zmian** z przywracaniem |
+| Ustawienia | **Edycja wydarzenia** (rok, data, godziny, miejsce) oraz zapisy do Select (otwarte/zamknięte, termin, limity, kwota opłaty) |
+| Dziennik działań | Kto, co i kiedy zmienił |
 
 ## Struktura repo
 
 ```
-frontend/           # React + Vite (SPA) — cały frontend produktu
+frontend/                 # React + Vite (SPA)
   src/
-    pages/          # HomePage, GalleryPage, FaqPage, RegulaminPage, LoginPage, RegisterPage, DashboardPage, AdminPage
-    components/     # Layout (navbar+footer wspólny), ProtectedRoute
-    context/        # AuthContext (stan zalogowania, login/register/logout)
-    api/client.js   # axios z auto-odświeżaniem tokenu przy 401
-  public/           # statyczne assety serwowane 1:1 (img/, css/custom.css, manifest, robots, sitemap)
+    pages/                # strony publiczne i panel użytkownika
+    pages/admin/          # panel administratora (każda zakładka w osobnym pliku)
+    components/           # Layout, AnnouncementBar, Lightbox, RichTextEditor (TipTap), ProtectedRoute
+    api/                  # axios z odświeżaniem sesji, useContent() do treści z CMS
+    utils/                # edycja wydarzenia, wklejanie list z Worda, odmiana liczebników
+  public/                 # statyczne assety (img/, css/custom.css, manifest, robots, sitemap)
 
-backend/            # Node.js + Express
-  server.js         # główny plik serwera, montuje wszystkie routery
+backend/                  # Node.js + Express (TypeScript → dist/)
+  server.ts               # montuje routery, publiczne API treści i galerii
   src/
-    auth/           # rejestracja/logowanie/refresh/logout, JWT, middleware
-    admin/          # zarządzanie użytkownikami + akceptacja zgłoszeń (rola "admin")
-    submissions/    # zgłoszenia do strefy Select (upload zdjęć, status)
-    db/             # SQLite (better-sqlite3): users, refresh_tokens, submissions
-    utils/          # rate limiter
-  scripts/
-    create-admin.js # tworzenie/nadawanie roli administratora z CLI
-    sync-gallery-from-drive.js  # synchronizacja galerii z Google Drive (istniejąca funkcja sprzed migracji)
-  data/             # plik SQLite (app.sqlite) — generowany, w .gitignore
-  uploads/submissions/  # zdjęcia zgłoszeń użytkowników — generowane, w .gitignore
-  config/.env       # sekrety i konfiguracja (Google API, JWT, CORS) — w .gitignore
+    auth/                 # rejestracja, logowanie, reset hasła, usuwanie konta, JWT
+    admin/                # API panelu administratora
+    submissions/          # zgłoszenia Select (zdjęcia prywatne, limity per edycja)
+    content/              # domyślne treści sekcji CMS + walidacja
+    gallery/              # albumy z Dysku Google, miniatury WEBP (sharp), synchronizacja
+    db/                   # SQLite (better-sqlite3)
+    notifications/        # e-maile (nodemailer)
+    utils/                # walidacja, czyszczenie HTML, upload plików, rate limiter
+  scripts/                # create-admin, backup-db
+  data/                   # baza app.sqlite — w .gitignore
+  uploads/                # zdjęcia zgłoszeń, pliki CMS, miniatury galerii — w .gitignore
+  backups/                # dzienne kopie bazy — w .gitignore
+  config/.env             # sekrety i konfiguracja — w .gitignore
 ```
 
 ## Jak uruchomić lokalnie
@@ -85,7 +81,8 @@ TRUST_PROXY=loopback                  # nginx na tym samym serwerze; liczba hop�
 BACKUP_DIR=/root/streetshow-backups   # domyślnie backend/backups
 BACKUP_KEEP=14                        # ile dziennych kopii bazy trzymać
 BACKUP_DISABLED=false
-DRIVE_GALLERY_FOLDER_ID=...           # folder Google Drive z pełną galerią (+ GOOGLE_* z kontem serwisowym)
+DRIVE_GALLERY_FOLDER_ID=...           # folder główny galerii na Dysku; jego podfoldery = albumy (+ GOOGLE_* konta serwisowego)
+GALLERY_SYNC_DAILY_HOUR=3             # o której w nocy synchronizować galerię
 ```
 
 ### Frontend
@@ -119,12 +116,26 @@ Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do
 
 ## Zgłoszenia "Strefa Select" (skrót dla AI/dewelopera)
 
-- Zalogowany użytkownik może mieć do **5 aktywnych zgłoszeń pojazdów** (nieodrzuconych; limit zmienialny w panelu admina → Ustawienia). Każde zgłoszenie: dane pojazdu + do **5 zdjęć, łącznie max 50 MB** (pojedyncze zdjęcie może zająć cały limit).
+- Każde zgłoszenie należy do **edycji** (roku) ustawionej w panelu → Ustawienia → Edycja wydarzenia. Zmiana roku (np. na 2028) zaczyna nowy sezon: limity i statystyki liczą się od zera, a starsze zgłoszenia są w archiwum (filtr „Edycja”). Zgłoszenia sprzed wprowadzenia edycji mają rok 2026.
+- Zalogowany użytkownik może mieć do **5 aktywnych zgłoszeń pojazdów w edycji** (nieodrzuconych; limit zmienialny w panelu admina → Ustawienia). Każde zgłoszenie: dane pojazdu + do **5 zdjęć, łącznie max 50 MB** (pojedyncze zdjęcie może zająć cały limit).
 - Dozwolone formaty: JPG, PNG, WEBP, AVIF. Backend nadaje własną nazwę i rozszerzenie pliku oraz sprawdza zawartość (magic bytes) — plik HTML/SVG udający obraz jest odrzucany (`backend/src/utils/imageUpload.ts`).
 - Zdjęcia trafiają do `backend/uploads/submissions/<userId>/`, ale **nie są publiczne**: serwuje je `GET /api/submissions/photos/:userId/:plik` tylko właścicielowi i adminom.
 - Użytkownik może edytować lub wycofać zgłoszenie, dopóki jest `pending`. Może też pobrać swoje dane i usunąć konto (Ustawienia konta, RODO).
 - Admin: akceptacja/odrzucenie pojedynczo lub zbiorczo, komentarz dla uczestnika + notatka wewnętrzna, potwierdzanie opłat, usuwanie zgłoszeń, eksport do Excela, otwieranie/zamykanie zapisów z terminem.
 - Stary publiczny formularz (`POST /upload` z Google Sheets/Drive) został usunięty z backendu.
+
+## Galeria (skrót dla AI/dewelopera)
+
+- Albumy = foldery na Dysku Google. Podfoldery `DRIVE_GALLERY_FOLDER_ID` są wykrywane automatycznie (rok z nazwy, np. „StreetShow 2025”); zdjęcia leżące luzem w folderze głównym trafiają do albumu „Archiwum”. Inny folder można dodać linkiem w panelu. Folder musi być udostępniony kontu serwisowemu (`GOOGLE_CLIENT_EMAIL`) jako „Przeglądający”.
+- Synchronizacja (`backend/src/gallery/sync.ts`) pobiera oryginał tylko dla nowych/zmienionych plików i zapisuje dwie wersje WEBP (480 px i 1600 px) w `backend/uploads/gallery/<album>/`. Usunięte z Dysku znikają ze strony. Działa w tle (panel pokazuje postęp) i codziennie w nocy. HEIC nie jest obsługiwany.
+- Publicznie: `GET /api/gallery/albums`, `GET /api/gallery/albums/:id`; miniatury z długim cache (`/uploads/gallery/...?v=<wersja>`).
+
+## Treści strony (CMS)
+
+- Wszystkie sekcje są w tabeli `site_content` (domyślne wartości: `backend/src/content/defaults.ts`, walidacja: `validators.ts`). Każdy zapis trafia do `content_revisions` (30 ostatnich wersji na sekcję) i można go przywrócić z panelu.
+- Publiczne API: `GET /api/content?keys=home,event,...` (kilka sekcji jednym zapytaniem) i `GET /api/content/:key`.
+- FAQ i regulamin to HTML z edytora TipTap. Backend czyści go przy zapisie (`sanitize-html`, tylko nagłówki/listy/pogrubienia/linki). Listy wklejone z Worda (`mso-list`) są zamieniane na prawdziwe listy (`frontend/src/utils/wordPaste.ts`).
+- Data i miejsce wydarzenia pochodzą z sekcji `edition`; strona główna generuje z nich też dane strukturalne `schema.org/Event` dla Google. Podgląd linku na Facebooku (Open Graph w `frontend/index.html`) jest celowo bez daty.
 
 ## Bezpieczeństwo (skrót)
 

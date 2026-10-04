@@ -1,187 +1,130 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import api from "../api/client";
+import Lightbox from "../components/Lightbox";
+import { photosLabel } from "../utils/plural";
 
-const FALLBACK_PHOTOS = Array.from({ length: 13 }, (_, i) => ({
-    name: `${i + 1}.webp`,
-    src: `/img/gallery/${i + 1}.webp`,
-    modalSrc: `/img/gallery/${i + 1}.webp`,
-}));
-
-function normalizeEntries(files) {
-    return files.map((entry, index) => {
-        if (typeof entry === "string") {
-            return {
-                name: entry,
-                src: `/img/gallery/${entry}`,
-                modalSrc: `/img/gallery/${entry}`,
-            };
-        }
-        return {
-            name: entry.name || `zdjecie-${index + 1}`,
-            src: entry.src,
-            modalSrc: entry.modalSrc || entry.src,
-            srcSet: entry.srcset,
-        };
-    });
-}
-
-export default function GalleryPage() {
-    const [photos, setPhotos] = useState([]);
-    const [activeIndex, setActiveIndex] = useState(null);
-    const touchStartX = useRef(0);
+function AlbumList() {
+    const [albums, setAlbums] = useState(null);
+    const [error, setError] = useState(false);
 
     useEffect(() => {
-        let cancelled = false;
-
-        async function loadGallery() {
-            try {
-                const response = await fetch(
-                    `/img/gallery/manifest.json?t=${Date.now()}`,
-                    { cache: "no-store" },
-                );
-                if (!response.ok) throw new Error("manifest fetch failed");
-                const manifest = await response.json();
-                const files = Array.isArray(manifest?.files)
-                    ? manifest.files
-                    : null;
-                if (!cancelled) {
-                    setPhotos(
-                        files?.length
-                            ? normalizeEntries(files)
-                            : FALLBACK_PHOTOS,
-                    );
-                }
-            } catch {
-                if (!cancelled) setPhotos(FALLBACK_PHOTOS);
-            }
-        }
-
-        loadGallery();
-        return () => {
-            cancelled = true;
-        };
+        api.get("/gallery/albums")
+            .then(({ data }) => setAlbums(data.albums))
+            .catch(() => setError(true));
     }, []);
 
-    const closeModal = useCallback(() => setActiveIndex(null), []);
-    const showNext = useCallback(
-        () => setActiveIndex((i) => (i === null ? i : (i + 1) % photos.length)),
-        [photos.length],
+    if (error) {
+        return (
+            <p className="text-center">
+                Galeria jest chwilowo niedostępna. Spróbuj ponownie za chwilę.
+            </p>
+        );
+    }
+    if (!albums) return <p className="page-status">Ładowanie galerii...</p>;
+    if (!albums.length) {
+        return <p className="text-center">Zdjęcia pojawią się wkrótce.</p>;
+    }
+
+    return (
+        <div className="album-grid">
+            {albums.map((album) => (
+                <Link
+                    key={album.id}
+                    to={`/galeria/${album.id}`}
+                    className="album-card"
+                >
+                    {album.coverUrl ? (
+                        <img src={album.coverUrl} alt="" loading="lazy" />
+                    ) : (
+                        <span className="album-card-placeholder" />
+                    )}
+                    <span className="album-card-body">
+                        <strong>{album.title}</strong>
+                        <small>{photosLabel(album.photoCount)}</small>
+                    </span>
+                </Link>
+            ))}
+        </div>
     );
-    const showPrev = useCallback(
-        () =>
-            setActiveIndex((i) =>
-                i === null ? i : (i - 1 + photos.length) % photos.length,
-            ),
-        [photos.length],
-    );
+}
+
+function AlbumView({ albumId }) {
+    const [data, setData] = useState(null);
+    const [error, setError] = useState(false);
+    const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
     useEffect(() => {
-        if (activeIndex === null) return;
-        document.body.style.overflow = "hidden";
+        api.get(`/gallery/albums/${albumId}`)
+            .then(({ data: response }) => setData(response))
+            .catch(() => setError(true));
+    }, [albumId]);
 
-        function handleKeydown(e) {
-            if (e.key === "ArrowRight") showNext();
-            if (e.key === "ArrowLeft") showPrev();
-            if (e.key === "Escape") closeModal();
-        }
-
-        window.addEventListener("keydown", handleKeydown);
-        return () => {
-            document.body.style.overflow = "";
-            window.removeEventListener("keydown", handleKeydown);
-        };
-    }, [activeIndex, showNext, showPrev, closeModal]);
-
-    function handleTouchStart(e) {
-        touchStartX.current = e.changedTouches[0].screenX;
+    if (error) {
+        return (
+            <div className="text-center">
+                <p>Nie znaleziono albumu.</p>
+                <Link to="/galeria">Wróć do galerii</Link>
+            </div>
+        );
     }
+    if (!data) return <p className="page-status">Ładowanie zdjęć...</p>;
 
-    function handleTouchEnd(e) {
-        const delta = touchStartX.current - e.changedTouches[0].screenX;
-        if (delta > 50) showNext();
-        else if (delta < -50) showPrev();
-    }
-
-    const activePhoto = activeIndex !== null ? photos[activeIndex] : null;
+    const { album, photos } = data;
 
     return (
         <>
+            <div className="album-header">
+                <Link to="/galeria" className="album-back">
+                    ← Wszystkie albumy
+                </Link>
+                <h2>{album.title}</h2>
+                {album.description && <p>{album.description}</p>}
+            </div>
             <div className="gallery container">
                 {photos.map((photo, index) => (
-                    <picture key={photo.name + index}>
-                        <button
-                            type="button"
-                            className="gallery-thumb-button"
-                            onClick={() => setActiveIndex(index)}
-                            aria-label={`Powiększ zdjęcie ${index + 1}`}
-                        >
-                            <img
-                                loading="lazy"
-                                src={photo.src}
-                                srcSet={photo.srcSet}
-                                sizes={
-                                    photo.srcSet
-                                        ? "(max-width: 768px) 100vw, 33vw"
-                                        : undefined
-                                }
-                                alt={`Zdjęcie z galerii Street Show ${index + 1}`}
-                                className="gallery-thumb"
-                            />
-                        </button>
-                    </picture>
+                    <button
+                        key={photo.id}
+                        type="button"
+                        className="gallery-thumb-button"
+                        onClick={() => setActiveIndex(index)}
+                        aria-label={`Powiększ zdjęcie ${index + 1}`}
+                    >
+                        <img
+                            loading="lazy"
+                            src={photo.thumb}
+                            width={photo.width ? 480 : undefined}
+                            height={
+                                photo.width
+                                    ? Math.round((480 * photo.height) / photo.width)
+                                    : undefined
+                            }
+                            alt={`${album.title} – zdjęcie ${index + 1}`}
+                            className="gallery-thumb"
+                        />
+                    </button>
                 ))}
             </div>
-
-            {activePhoto && (
-                <div
-                    id="imageModal"
-                    className="modal"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Podgląd zdjęcia galerii"
-                    style={{ display: "block" }}
-                    onClick={(e) => {
-                        if ((e.target as HTMLElement).id === "imageModal")
-                            closeModal();
-                    }}
-                    onTouchStart={handleTouchStart}
-                    onTouchEnd={handleTouchEnd}
-                >
-                    <button
-                        type="button"
-                        className="close"
-                        aria-label="Zamknij galerię"
-                        onClick={closeModal}
-                    >
-                        &times;
-                    </button>
-                    <img
-                        className="modal-image"
-                        src={activePhoto.modalSrc}
-                        alt={`Powiększone zdjęcie ${activeIndex + 1} z ${photos.length}`}
-                    />
-                    <p className="lightbox-counter" aria-live="polite">
-                        {activeIndex + 1} / {photos.length}
-                    </p>
-                    <div className="navigation">
-                        <button
-                            type="button"
-                            className="prev"
-                            aria-label="Poprzednie zdjęcie"
-                            onClick={showPrev}
-                        >
-                            &#10094;
-                        </button>
-                        <button
-                            type="button"
-                            className="next"
-                            aria-label="Następne zdjęcie"
-                            onClick={showNext}
-                        >
-                            &#10095;
-                        </button>
-                    </div>
-                </div>
-            )}
+            <Lightbox
+                photos={photos.map((photo, index) => ({
+                    src: photo.full,
+                    alt: `${album.title} – zdjęcie ${index + 1} z ${photos.length}`,
+                }))}
+                index={activeIndex}
+                onIndexChange={setActiveIndex}
+                label={`Galeria ${album.title}`}
+            />
         </>
+    );
+}
+
+export default function GalleryPage() {
+    const { albumId } = useParams();
+
+    return (
+        <div className="container my-5 gallery-page">
+            <h1 className="text-center mb-4">Galeria</h1>
+            {albumId ? <AlbumView albumId={albumId} /> : <AlbumList />}
+        </div>
     );
 }

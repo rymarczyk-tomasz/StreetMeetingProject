@@ -16,11 +16,44 @@ const ACTION_LABELS = {
     "user.sessions_revoked": "wylogował użytkownika ze wszystkich urządzeń",
     "event.content_updated": "zaktualizował treść Eventu",
     "home.content_updated": "zaktualizował treść Home",
-    "gallery.content_updated": "zaktualizował treść Galerii",
-    "gallery.synced": "zsynchronizował galerię z Dyskiem Google",
+    "gallery.content_updated": "zaktualizował podgląd galerii",
+    "gallery.synced": "uruchomił synchronizację galerii z Dyskiem Google",
+    "gallery.album_created": "dodał album galerii",
+    "gallery.album_updated": "zmienił album galerii",
+    "gallery.album_deleted": "usunął album galerii",
     "contact.content_updated": "zaktualizował treść Kontaktu",
+    "faq.content_updated": "zaktualizował FAQ",
+    "regulamin.content_updated": "zaktualizował regulamin",
+    "announcement.content_updated": "zmienił ogłoszenie na stronie",
+    "partners.content_updated": "zaktualizował partnerów",
+    "edition.content_updated": "zmienił edycję wydarzenia",
     "settings.updated": "zmienił ustawienia zgłoszeń",
+    "email.group_sent": "wysłał wiadomość do uczestników",
 };
+
+function describeAction(entry) {
+    if (ACTION_LABELS[entry.action]) return ACTION_LABELS[entry.action];
+    if (entry.action.endsWith(".content_restored")) {
+        return "przywrócił poprzednią wersję treści";
+    }
+    return entry.action;
+}
+
+function describeDetails(entry) {
+    const details = entry.details || {};
+    if (details.adminNote) return ` — „${details.adminNote}”`;
+    if (details.title) return ` — „${details.title}”`;
+    if (entry.action === "edition.content_updated" && details.year) {
+        return ` — rok ${details.previousYear} → ${details.year}`;
+    }
+    if (entry.action === "email.group_sent") {
+        return ` — „${details.subject}”: wysłano ${details.sent}, błędy ${details.failed}`;
+    }
+    if (entry.action.endsWith(".content_restored")) {
+        return ` (${entry.targetType})`;
+    }
+    return "";
+}
 
 const LIMIT_OPTIONS = [50, 100, 250, 500];
 
@@ -66,10 +99,16 @@ export default function AuditLog({ refreshKey }) {
                         <option value="submission.">Zgłoszenia</option>
                         <option value="user.">Użytkownicy</option>
                         <option value="settings.">Ustawienia</option>
+                        <option value="edition.">Edycja wydarzenia</option>
+                        <option value="gallery.">Galeria</option>
+                        <option value="email.">E-maile</option>
                         <option value="event.">Event</option>
                         <option value="home.">Home</option>
-                        <option value="gallery.">Galeria</option>
                         <option value="contact.">Kontakt</option>
+                        <option value="faq.">FAQ</option>
+                        <option value="regulamin.">Regulamin</option>
+                        <option value="announcement.">Ogłoszenie</option>
+                        <option value="partners.">Partnerzy</option>
                     </select>
                 </label>
                 <label>
@@ -96,12 +135,10 @@ export default function AuditLog({ refreshKey }) {
                     {visibleEntries.map((entry) => (
                         <article className="audit-entry" key={entry.id}>
                             <strong>{entry.adminEmail}</strong>{" "}
-                            {ACTION_LABELS[entry.action] || entry.action}{" "}
-                            {describeTarget(entry)}
+                            {describeAction(entry)} {describeTarget(entry)}
                             <span>
                                 {formatDate(entry.createdAt)}
-                                {entry.details?.adminNote &&
-                                    ` — „${entry.details.adminNote}”`}
+                                {describeDetails(entry)}
                             </span>
                         </article>
                     ))}

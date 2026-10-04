@@ -178,8 +178,9 @@ export default function SubmissionPage() {
             ) : (
                 <>
                     <p className="submission-info">
-                        Możesz zgłosić maksymalnie {availability.maxVehicles}{" "}
-                        pojazdów (każdy osobnym formularzem).
+                        Zgłoszenie dotyczy edycji {availability.edition}. Możesz
+                        zgłosić maksymalnie {availability.maxVehicles} pojazdów
+                        (każdy osobnym formularzem).
                         {availability.activeCount > 0 &&
                             ` Masz już ${availability.activeCount} aktywnych zgłoszeń — pozostało ${availability.remaining}.`}
                     </p>

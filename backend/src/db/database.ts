@@ -116,8 +116,16 @@ if (!submissionColumns.has("internal_note")) {
     db.exec("ALTER TABLE submissions ADD COLUMN internal_note TEXT");
 }
 
-db.exec(
-    "CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status)",
-);
+// Submissions belong to an event edition (year). Everything sent before editions
+// existed was for Street Show 2026.
+if (!submissionColumns.has("edition")) {
+    db.exec("ALTER TABLE submissions ADD COLUMN edition INTEGER");
+    db.exec("UPDATE submissions SET edition = 2026 WHERE edition IS NULL");
+}
+
+db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status);
+    CREATE INDEX IF NOT EXISTS idx_submissions_edition ON submissions(edition, user_id);
+`);
 
 module.exports = db;

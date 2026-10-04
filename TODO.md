@@ -10,12 +10,19 @@ Lista rzeczy do dodania lub dopracowania w projekcie.
 - [x] Edycja i usuwanie wlasnych zgloszen przez uzytkownika
 - [x] Powiadomienia e-mail o zmianie statusu zgloszenia
 - [x] Panel administratora z dodatkowymi statystykami zgloszen
+- [x] Edycje wydarzenia (rok) — zgloszenia, limity i statystyki per edycja, archiwum lat
+- [x] Galeria z albumami z Dysku Google, miniatury na serwerze
+- [x] FAQ, regulamin (edytor + PDF), ogloszenia, partnerzy edytowalne w panelu, historia zmian
+- [x] Lista na brame do druku, wiadomosci e-mail do grup uczestnikow
+- [ ] Bilety/wejsciowki z kodem QR i check-in na bramie
+- [ ] Wgrywanie potwierdzenia przelewu przez uczestnika
+- [ ] Weryfikacja adresu e-mail przy rejestracji (po skonfigurowaniu SMTP)
 
 ## E-mail i powiadomienia
 
 - [ ] Skonfigurowac produkcyjny SMTP w `backend/config/.env`
 - [ ] Ustawic `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` i `SMTP_FROM`
-- [ ] Skonfigurowac `SELECT_FEE_AMOUNT` dla wiadomosci do zaakceptowanych zgloszen
+- [ ] Ustawic kwote oplaty w panelu (Ustawienia) albo `SELECT_FEE_AMOUNT`
 - [x] Dodac e-mail potwierdzajacy utworzenie konta
 - [ ] Przetestowac wysylke e-maili w srodowisku produkcyjnym
 
@@ -28,14 +35,18 @@ Lista rzeczy do dodania lub dopracowania w projekcie.
 - [x] Codzienna kopia bazy na serwerze (`backend/backups/`)
 - [ ] Kopiowac `backend/backups/` i `backend/uploads/` poza serwer (rclone/rsync z crona)
 - [ ] nginx: CSP dla frontendu, nie serwowac `uploads/submissions` bezposrednio
+- [ ] nginx: `client_max_body_size 55m` (zgloszenia do 50 MB zdjec)
 - [ ] Uruchamiac backend jako osobny uzytkownik zamiast root
 - [ ] Zmienic lub usunac testowe konto administratora przed publikacja
+- [ ] Udostepnic folder galerii na Dysku kontu serwisowemu i ustawic `DRIVE_GALLERY_FOLDER_ID`
+- [ ] Ustawic w panelu edycje 2027 (data, godziny) i wkleic regulamin 2027
 
 ## Jakosc i bezpieczenstwo
 
 - [ ] Dodac automatyczne testy backendu i frontendu
 - [ ] Dodac monitoring bledow i logow produkcyjnych (np. Sentry + uptime check na /api/health)
-- [ ] Usunac stara statyczna strone i pliki Azure z repo
+- [x] Usunac stara statyczna strone i pliki Azure z repo
+- [ ] Usunac nieuzywane `frontend/public/img/gallery/` i `frontend/public/img/optimized/` oraz stary katalog `img/` w glownym folderze
 - [x] Sprawdzic limity uploadu (5 zdjec / 50 MB, 5 pojazdow na konto)
 - [ ] Ustalic retencje przeslanych zdjec po wydarzeniu (RODO)
 - [ ] Przejrzec polityke prywatnosci i regulamin przed uruchomieniem produkcyjnym

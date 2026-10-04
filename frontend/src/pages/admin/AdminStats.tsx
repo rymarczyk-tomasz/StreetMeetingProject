@@ -60,6 +60,10 @@ export default function AdminStats({ refreshKey }) {
 
     return (
         <>
+            <p className="admin-hint">
+                Statystyki zgłoszeń dla edycji <strong>{stats.edition}</strong>{" "}
+                (zmiana roku: Ustawienia → Edycja wydarzenia).
+            </p>
             {!availability.open && (
                 <p className="payment-alert">{availability.reason}</p>
             )}

@@ -228,8 +228,44 @@ async function sendNewSubmissionAdminEmail({ submission, userEmail }) {
     });
 }
 
+function plainTextToHtml(text) {
+    return String(text)
+        .split(/\n{2,}/)
+        .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`)
+        .join("\n");
+}
+
+const GROUP_EMAIL_DELAY_MS = 400;
+
+// Sends one personal message per recipient (no shared To/CC lists, so addresses
+// stay private), slowly enough not to trip SMTP provider rate limits.
+async function sendGroupEmail({ recipients, subject, message }) {
+    const results = { sent: 0, failed: 0 };
+
+    for (const recipient of recipients) {
+        const greeting = `Cześć ${recipient.first_name || ""}`.trim() + ",";
+        const body = `${greeting}\n\n${message}\n\nStreet Show Crew`;
+        try {
+            await sendMail({
+                to: recipient.email,
+                subject,
+                text: body,
+                html: plainTextToHtml(body),
+            });
+            results.sent += 1;
+        } catch (error) {
+            results.failed += 1;
+            console.error(`[email] Wiadomość grupowa do ${recipient.email}:`, error.message);
+        }
+        await new Promise((resolve) => setTimeout(resolve, GROUP_EMAIL_DELAY_MS));
+    }
+
+    return results;
+}
+
 module.exports = {
     isEmailConfigured,
+    sendGroupEmail,
     sendSubmissionStatusEmail,
     sendPasswordResetEmail,
     sendWelcomeEmail,

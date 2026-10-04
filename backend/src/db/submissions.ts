@@ -3,16 +3,16 @@ const db = require("./database");
 const insertStmt = db.prepare(`
     INSERT INTO submissions (
         user_id, first_name, last_name, phone, license_plate,
-        car_brand, car_description, photos
+        car_brand, car_description, photos, edition
     ) VALUES (
         @userId, @firstName, @lastName, @phone, @licensePlate,
-        @carBrand, @carDescription, @photos
+        @carBrand, @carDescription, @photos, @edition
     )
 `);
 
 const findByIdStmt = db.prepare(`SELECT * FROM submissions WHERE id = ?`);
 const listByUserStmt = db.prepare(
-    `SELECT * FROM submissions WHERE user_id = ? ORDER BY created_at DESC`,
+    `SELECT * FROM submissions WHERE user_id = ? ORDER BY edition DESC, created_at DESC`,
 );
 const updatePaymentStatusStmt = db.prepare(`
     UPDATE submissions
@@ -35,12 +35,14 @@ const updateDetailsStmt = db.prepare(`
     WHERE id = @id
 `);
 const deleteStmt = db.prepare(`DELETE FROM submissions WHERE id = ?`);
-const countActiveForUserStmt = db.prepare(
-    `SELECT COUNT(*) AS count FROM submissions WHERE user_id = ? AND status != 'rejected'`,
-);
-const countApprovedStmt = db.prepare(
-    `SELECT COUNT(*) AS count FROM submissions WHERE status = 'approved'`,
-);
+const countActiveForUserStmt = db.prepare(`
+    SELECT COUNT(*) AS count FROM submissions
+    WHERE user_id = ? AND edition = ? AND status != 'rejected'
+`);
+const listEditionsStmt = db.prepare(`
+    SELECT edition, COUNT(*) AS count FROM submissions
+    GROUP BY edition ORDER BY edition DESC
+`);
 
 function createSubmission(data) {
     const result = insertStmt.run({
@@ -58,13 +60,14 @@ function listSubmissionsByUser(userId) {
     return listByUserStmt.all(userId);
 }
 
-function listAllSubmissions({
-    status,
-    paymentStatus,
-    search,
-}: { status?: string; paymentStatus?: string; search?: string } = {}) {
+function buildFilters({ edition, status, paymentStatus, search }: SubmissionFilters) {
     const conditions = [];
     const parameters = [];
+
+    if (edition) {
+        conditions.push("submissions.edition = ?");
+        parameters.push(edition);
+    }
 
     if (status) {
         conditions.push("submissions.status = ?");
@@ -89,6 +92,18 @@ function listAllSubmissions({
     }
 
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+    return { where, parameters };
+}
+
+type SubmissionFilters = {
+    edition?: number;
+    status?: string;
+    paymentStatus?: string;
+    search?: string;
+};
+
+function listAllSubmissions(filters: SubmissionFilters = {}) {
+    const { where, parameters } = buildFilters(filters);
     return db
         .prepare(
             `
@@ -97,6 +112,23 @@ function listAllSubmissions({
             JOIN users ON users.id = submissions.user_id
             ${where}
             ORDER BY submissions.created_at DESC
+        `,
+        )
+        .all(...parameters);
+}
+
+// Distinct account e-mails (and first names) for group messages.
+function listRecipients(filters: SubmissionFilters = {}) {
+    const { where, parameters } = buildFilters(filters);
+    return db
+        .prepare(
+            `
+            SELECT users.email AS email, MIN(users.first_name) AS first_name
+            FROM submissions
+            JOIN users ON users.id = submissions.user_id
+            ${where}${where ? " AND" : " WHERE"} users.is_active = 1
+            GROUP BY users.email
+            ORDER BY users.email
         `,
         )
         .all(...parameters);
@@ -126,16 +158,17 @@ function deleteSubmission(id) {
     deleteStmt.run(id);
 }
 
-// Rejected submissions don't count, so a participant can re-apply with another car.
-function countActiveForUser(userId) {
-    return countActiveForUserStmt.get(userId).count;
+// Only the given edition counts, and rejected submissions don't, so a participant
+// can re-apply with another car and starts fresh every year.
+function countActiveForUser(userId, edition) {
+    return countActiveForUserStmt.get(userId, edition).count;
 }
 
-function countApproved() {
-    return countApprovedStmt.get().count;
+function listEditions() {
+    return listEditionsStmt.all();
 }
 
-function getSubmissionStats() {
+function getSubmissionStats(edition) {
     return db
         .prepare(
             `
@@ -148,37 +181,39 @@ function getSubmissionStats() {
                 SUM(CASE WHEN status = 'approved' AND payment_status = 'verification' THEN 1 ELSE 0 END) AS paymentVerification,
                 SUM(CASE WHEN status = 'approved' AND payment_status = 'paid' THEN 1 ELSE 0 END) AS paid
             FROM submissions
+            WHERE edition = ?
         `,
         )
-        .get();
+        .get(edition);
 }
 
-function getSubmissionsPerDay(days = 30) {
+function getSubmissionsPerDay(edition, days = 30) {
     return db
         .prepare(
             `
             SELECT date(created_at) AS day, COUNT(*) AS count
             FROM submissions
-            WHERE created_at >= datetime('now', ?)
+            WHERE edition = ? AND created_at >= datetime('now', ?)
             GROUP BY day
             ORDER BY day
         `,
         )
-        .all(`-${days} days`);
+        .all(edition, `-${days} days`);
 }
 
-function getTopCarBrands(limit = 8) {
+function getTopCarBrands(edition, limit = 8) {
     return db
         .prepare(
             `
             SELECT car_brand AS brand, COUNT(*) AS count
             FROM submissions
+            WHERE edition = ?
             GROUP BY lower(trim(car_brand))
             ORDER BY count DESC
             LIMIT ?
         `,
         )
-        .all(limit);
+        .all(edition, limit);
 }
 
 module.exports = {
@@ -186,13 +221,14 @@ module.exports = {
     findSubmissionById,
     listSubmissionsByUser,
     listAllSubmissions,
+    listRecipients,
     updateSubmissionStatus,
     updateSubmissionPaymentStatus,
     updateSubmissionInternalNote,
     updateSubmissionDetails,
     deleteSubmission,
     countActiveForUser,
-    countApproved,
+    listEditions,
     getSubmissionStats,
     getSubmissionsPerDay,
     getTopCarBrands,

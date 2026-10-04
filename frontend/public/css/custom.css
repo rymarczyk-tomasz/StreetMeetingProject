@@ -128,14 +128,75 @@ body {
     padding: 0.5em 1em;
 }
 
+/* Hero fills exactly the first screen below the fixed header (Layout sets
+   margin-top = header height) and the photo always covers it edge to edge.
+   The photo is <HeroPhoto> (.hero-photo > .hero-photo-inner), configured from the
+   CMS (Admin → Treści strony → Home) through CSS variables on .home:
+     --hero-image, --hero-image-mobile      photo URLs
+     --hd-x/--hd-y/--hd-zoom                desktop framing (crop tool)
+     --hm-x/--hm-y/--hm-zoom                phone framing
+     .hero-rotate-mobile                    photo turned 90° on phones held upright
+   No background-attachment: fixed — it sized the photo to the whole window, so its
+   top always hid behind the header (and it's broken on iOS anyway). */
 .home {
+    --hero-fallback: url("../img/photos/Hero-image.webp");
     position: relative;
-    height: 100vh;
-    background-image: url("../img/photos/Hero-image.webp");
-    background-size: cover;
-    background-position: center center;
-    background-attachment: fixed;
+    height: calc(100vh - var(--navbar-height, 0px));
+    height: calc(100svh - var(--navbar-height, 0px));
+    overflow: hidden;
+    background-color: #111;
     z-index: 0;
+}
+
+/* Frame (rotated on phones if enabled) clipping the photo layer. */
+.hero-photo {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* The photo: covers the frame, keeps the chosen point (x/y %) in view and zooms
+   around that point. */
+.hero-photo-inner {
+    --x: var(--hd-x, 50%);
+    --y: var(--hd-y, 50%);
+    position: absolute;
+    inset: 0;
+    background-image: var(--hero-image, var(--hero-fallback));
+    background-position: var(--x) var(--y);
+    background-repeat: no-repeat;
+    background-size: cover;
+    transform: scale(var(--hd-zoom, 1));
+    transform-origin: var(--x) var(--y);
+}
+
+@media (max-width: 767px) {
+    .hero-photo-inner {
+        --x: var(--hm-x, 50%);
+        --y: var(--hm-y, 50%);
+        background-image: var(
+            --hero-image-mobile,
+            var(--hero-image, var(--hero-fallback))
+        );
+        transform: scale(var(--hm-zoom, 1));
+    }
+}
+
+/* Phone held upright: lay a landscape photo on its side so it fills the screen
+   with far less cropping. The frame gets the hero's swapped dimensions and is
+   rotated around its centre. */
+@media (max-width: 767px) and (orientation: portrait) {
+    .home.hero-rotate-mobile .hero-photo {
+        inset: auto;
+        top: 50%;
+        left: 50%;
+        width: calc(100vh - var(--navbar-height, 0px));
+        width: calc(100svh - var(--navbar-height, 0px));
+        height: 100vw;
+        transform: translate(-50%, -50%) rotate(90deg);
+    }
 }
 
 .home .btn {
@@ -465,13 +526,6 @@ input.form-control {
 }
 
 @media (max-width: 768px) {
-    .home {
-        background-image: url("../img/photos/Hero-image.webp");
-        background-attachment: scroll;
-        background-position: center;
-        min-height: 100vh;
-    }
-
     .hero-shadow {
         background-color: rgba(0, 0, 0, 0.4);
     }

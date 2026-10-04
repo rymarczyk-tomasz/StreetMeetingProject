@@ -4,30 +4,33 @@ const usersDb = require("../db/users");
 const refreshTokensDb = require("../db/refreshTokens");
 const submissionsDb = require("../db/submissions");
 const auditLogDb = require("../db/auditLog");
-const eventContentDb = require("../db/eventContent");
 const siteContentDb = require("../db/siteContent");
 const { authenticate, requireRole } = require("../auth/middleware");
 const {
     toPublicSubmission,
     removeSubmissionPhotos,
 } = require("../submissions/routes");
-const { sendSubmissionStatusEmail } = require("../notifications/email");
 const {
-    EMAIL_REGEX,
-    normalizeText,
-    isSafeUrl,
-} = require("../utils/validation");
+    isEmailConfigured,
+    sendSubmissionStatusEmail,
+    sendGroupEmail,
+} = require("../notifications/email");
+const { normalizeText } = require("../utils/validation");
 const {
     createImageUpload,
     verifyUploadedImages,
+    createPdfUpload,
+    verifyUploadedPdf,
     uploadErrorHandler,
 } = require("../utils/imageUpload");
 const { CONTENT_UPLOAD_ROOT } = require("../utils/paths");
-const gallerySync = require("../gallery/sync");
+const { validateContent } = require("../content/validators");
+const { adminRouter: albumsRouter } = require("../gallery/routes");
 
 const router = express.Router();
 
 router.use(authenticate, requireRole("admin"));
+router.use("/albums", albumsRouter);
 
 const SUBMISSION_STATUSES = ["pending", "approved", "rejected"];
 const PAYMENT_STATUSES = ["unpaid", "verification", "paid"];
@@ -37,6 +40,11 @@ const uploadContentImage = createImageUpload({
     destination: () => CONTENT_UPLOAD_ROOT,
     maxFiles: 1,
     maxFileSize: 10 * 1024 * 1024,
+});
+
+const uploadContentPdf = createPdfUpload({
+    destination: () => CONTENT_UPLOAD_ROOT,
+    maxFileSize: 20 * 1024 * 1024,
 });
 
 function audit(req, action, targetType, targetId, details = {}) {
@@ -64,9 +72,16 @@ function toAdminUser(user) {
     };
 }
 
-function invalidUrlMessage(label) {
-    return `${label}: podaj adres zaczynający się od https:// lub ścieżkę zaczynającą się od /.`;
+// "?edition=2026" → 2026, "?edition=all" → null (no filter), missing → current edition.
+function readEditionFilter(value) {
+    if (value === "all") return null;
+    const edition = Number(value);
+    return Number.isInteger(edition) && edition > 0
+        ? edition
+        : siteContentDb.getCurrentEdition();
 }
+
+// ---- Uploads ------------------------------------------------------------
 
 router.post(
     "/upload-image",
@@ -84,288 +99,93 @@ router.post(
     uploadErrorHandler({ maxFiles: 1, totalSizeLabel: "10 MB" }),
 );
 
-router.get("/event", (req, res) => {
-    res.json({ event: eventContentDb.getEventContent() });
+router.post(
+    "/upload-document",
+    uploadContentPdf.single("document"),
+    (req, res) => {
+        if (!req.file) {
+            return res.status(400).json({ message: "Nie przesłano pliku PDF." });
+        }
+
+        verifyUploadedPdf(req.file);
+        res.json({ url: `/uploads/content/${req.file.filename}` });
+    },
+    uploadErrorHandler({ maxFiles: 1, totalSizeLabel: "20 MB" }),
+);
+
+// ---- Page content (CMS) -------------------------------------------------
+
+function findContentKey(req, res) {
+    const { key } = req.params;
+    if (!siteContentDb.isKnownContentKey(key)) {
+        res.status(404).json({ message: "Nieznana sekcja treści." });
+        return null;
+    }
+    return key;
+}
+
+router.get("/content/:key", (req, res) => {
+    const key = findContentKey(req, res);
+    if (!key) return;
+    res.json({ content: siteContentDb.getContent(key) });
 });
 
-router.patch("/event", (req, res) => {
-    const event = req.body.event;
-    if (
-        !event ||
-        typeof event.intro !== "string" ||
-        !Array.isArray(event.cards) ||
-        event.cards.length !== 3
-    ) {
-        return res.status(400).json({
-            message: "Treść Eventu musi zawierać opis i trzy kafelki.",
-        });
-    }
+router.patch("/content/:key", (req, res) => {
+    const key = findContentKey(req, res);
+    if (!key) return;
 
-    const cards = event.cards.map((card) => ({
-        id: normalizeText(card.id),
-        title: normalizeText(card.title),
-        description: normalizeText(card.description),
-        image: normalizeText(card.image),
-        alt: normalizeText(card.alt),
-        actionLabel: normalizeText(card.actionLabel),
-        actionHref: normalizeText(card.actionHref),
-        actionExternal: Boolean(card.actionExternal),
-    }));
+    const { content, error } = validateContent(key, req.body?.content);
+    if (error) return res.status(400).json({ message: error });
 
-    if (
-        !event.intro.trim() ||
-        cards.some(
-            (card) =>
-                !card.title || !card.description || !card.image || !card.alt,
-        )
-    ) {
-        return res.status(400).json({
-            message:
-                "Uzupełnij opis, tytuł, treść, zdjęcie i tekst alternatywny każdego kafelka.",
-        });
-    }
+    const previous = siteContentDb.getContent(key);
+    const saved = siteContentDb.saveContent(key, content, req.user.sub);
+    audit(
+        req,
+        key === "settings" ? "settings.updated" : `${key}.content_updated`,
+        key,
+        1,
+        key === "edition" && previous.year !== saved.year
+            ? { previousYear: previous.year, year: saved.year }
+            : {},
+    );
+    res.json({ content: saved });
+});
 
-    for (const [index, card] of cards.entries()) {
-        if (!isSafeUrl(card.image)) {
-            return res
-                .status(400)
-                .json({ message: invalidUrlMessage(`Zdjęcie kafelka ${index + 1}`) });
-        }
-        if (!isSafeUrl(card.actionHref, { allowEmpty: true })) {
-            return res
-                .status(400)
-                .json({ message: invalidUrlMessage(`Link kafelka ${index + 1}`) });
-        }
-    }
+router.get("/content/:key/revisions", (req, res) => {
+    const key = findContentKey(req, res);
+    if (!key) return;
 
-    const saved = eventContentDb.saveEventContent({
-        intro: event.intro.trim(),
-        cards,
+    res.json({
+        revisions: siteContentDb.listRevisions(key).map((row) => ({
+            id: row.id,
+            adminEmail: row.admin_email,
+            createdAt: row.created_at,
+        })),
     });
-    audit(req, "event.content_updated", "event", 1, { cards: cards.length });
-    res.json({ event: saved });
 });
 
-router.get("/home", (req, res) => {
-    res.json({ home: siteContentDb.getContent("home") });
+router.post("/content/:key/revisions/:revisionId/restore", (req, res) => {
+    const key = findContentKey(req, res);
+    if (!key) return;
+
+    const revision = siteContentDb.getRevisionContent(
+        key,
+        Number(req.params.revisionId),
+    );
+    if (!revision) {
+        return res.status(404).json({ message: "Nie znaleziono wersji." });
+    }
+
+    // Re-validate: rules may have tightened since the revision was saved.
+    const { content, error } = validateContent(key, revision);
+    if (error) return res.status(400).json({ message: error });
+
+    const saved = siteContentDb.saveContent(key, content, req.user.sub);
+    audit(req, `${key}.content_restored`, key, Number(req.params.revisionId));
+    res.json({ content: saved });
 });
 
-router.patch("/home", (req, res) => {
-    const home = req.body.home;
-    if (!home || typeof home !== "object") {
-        return res
-            .status(400)
-            .json({ message: "Nieprawidłowe dane sekcji Home." });
-    }
-
-    const content = {
-        heroTitle: normalizeText(home.heroTitle),
-        heroDate: normalizeText(home.heroDate),
-        heroLocation: normalizeText(home.heroLocation),
-        heroImage: normalizeText(home.heroImage),
-        ticketLabel: normalizeText(home.ticketLabel),
-        ticketUrl: normalizeText(home.ticketUrl),
-        exploreLabel: normalizeText(home.exploreLabel),
-    };
-
-    if (Object.values(content).some((value) => !value)) {
-        return res
-            .status(400)
-            .json({ message: "Uzupełnij wszystkie pola sekcji Home." });
-    }
-
-    if (!isSafeUrl(content.heroImage)) {
-        return res.status(400).json({ message: invalidUrlMessage("Zdjęcie hero") });
-    }
-    if (!isSafeUrl(content.ticketUrl)) {
-        return res.status(400).json({ message: invalidUrlMessage("Link do biletów") });
-    }
-
-    const saved = siteContentDb.saveContent("home", content);
-    audit(req, "home.content_updated", "home", 1);
-    res.json({ home: saved });
-});
-
-router.get("/gallery", (req, res) => {
-    res.json({ gallery: siteContentDb.getContent("gallery") });
-});
-
-router.patch("/gallery", (req, res) => {
-    const gallery = req.body.gallery;
-    if (!gallery || typeof gallery !== "object") {
-        return res
-            .status(400)
-            .json({ message: "Nieprawidłowe dane sekcji Galeria." });
-    }
-
-    const content = {
-        intro: normalizeText(gallery.intro),
-        linkLabel: normalizeText(gallery.linkLabel),
-        photos: Array.isArray(gallery.photos)
-            ? gallery.photos.map((photo, index) => ({
-                  id: normalizeText(photo.id || `photo-${index}`),
-                  url: normalizeText(photo.url),
-                  alt: normalizeText(photo.alt),
-              }))
-            : [],
-    };
-
-    if (!content.linkLabel) {
-        return res
-            .status(400)
-            .json({ message: "Podaj tekst przycisku do galerii." });
-    }
-
-    if (content.photos.some((photo) => !photo.url)) {
-        return res.status(400).json({
-            message: "Każde zdjęcie w galerii musi mieć plik lub URL.",
-        });
-    }
-
-    if (content.photos.some((photo) => !isSafeUrl(photo.url))) {
-        return res
-            .status(400)
-            .json({ message: invalidUrlMessage("Zdjęcie galerii") });
-    }
-
-    const saved = siteContentDb.saveContent("gallery", content);
-    audit(req, "gallery.content_updated", "gallery", 1);
-    res.json({ gallery: saved });
-});
-
-router.post("/gallery/sync", async (req, res) => {
-    if (!gallerySync.isGallerySyncConfigured()) {
-        return res.status(400).json({
-            message:
-                "Brak konfiguracji folderu galerii (DRIVE_GALLERY_FOLDER_ID w backend/config/.env).",
-        });
-    }
-
-    if (gallerySync.isGallerySyncInProgress()) {
-        return res
-            .status(409)
-            .json({ message: "Synchronizacja galerii już trwa." });
-    }
-
-    try {
-        const result = await gallerySync.runGallerySync("admin-panel");
-        audit(req, "gallery.synced", "gallery", 1, {
-            filesCount: result.filesCount,
-        });
-        res.json({
-            message: `Synchronizacja zakończona: ${result.filesCount} zdjęć (nowe/zmienione: ${result.downloadedCount}, usunięte: ${result.removedCount}).`,
-        });
-    } catch (error) {
-        console.error("[gallery-sync] Błąd (admin-panel):", error.message);
-        res.status(500).json({ message: "Błąd synchronizacji galerii." });
-    }
-});
-
-router.get("/contact", (req, res) => {
-    res.json({ contact: siteContentDb.getContent("contact") });
-});
-
-router.patch("/contact", (req, res) => {
-    const contact = req.body.contact;
-    if (!contact || typeof contact !== "object") {
-        return res
-            .status(400)
-            .json({ message: "Nieprawidłowe dane sekcji Kontakt." });
-    }
-
-    const content = {
-        facebookUrl: normalizeText(contact.facebookUrl),
-        instagramUrl: normalizeText(contact.instagramUrl),
-        addressName: normalizeText(contact.addressName),
-        addressLine1: normalizeText(contact.addressLine1),
-        addressLine2: normalizeText(contact.addressLine2),
-        mapUrl: normalizeText(contact.mapUrl),
-        email: normalizeText(contact.email),
-    };
-
-    if (
-        !content.addressName ||
-        !content.addressLine1 ||
-        !content.addressLine2 ||
-        !content.email
-    ) {
-        return res
-            .status(400)
-            .json({ message: "Uzupełnij wymagane pola sekcji Kontakt." });
-    }
-
-    if (!EMAIL_REGEX.test(content.email)) {
-        return res
-            .status(400)
-            .json({ message: "Podaj poprawny e-mail kontaktowy." });
-    }
-
-    for (const [field, label] of [
-        ["facebookUrl", "Link do Facebooka"],
-        ["instagramUrl", "Link do Instagrama"],
-        ["mapUrl", "Link do mapy"],
-    ]) {
-        if (!isSafeUrl(content[field], { allowEmpty: true })) {
-            return res.status(400).json({ message: invalidUrlMessage(label) });
-        }
-    }
-
-    const saved = siteContentDb.saveContent("contact", content);
-    audit(req, "contact.content_updated", "contact", 1);
-    res.json({ contact: saved });
-});
-
-router.get("/settings", (req, res) => {
-    res.json({ settings: siteContentDb.getSettings() });
-});
-
-router.patch("/settings", (req, res) => {
-    const settings = req.body.settings;
-    if (!settings || typeof settings !== "object") {
-        return res.status(400).json({ message: "Nieprawidłowe ustawienia." });
-    }
-
-    const content = {
-        submissionsOpen: Boolean(settings.submissionsOpen),
-        submissionsDeadline: normalizeText(settings.submissionsDeadline),
-        selectFeeAmount: normalizeText(settings.selectFeeAmount).slice(0, 100),
-        selectCapacity: Number(settings.selectCapacity || 0),
-        maxVehiclesPerUser: Number(settings.maxVehiclesPerUser || 0),
-    };
-
-    if (
-        content.submissionsDeadline &&
-        !/^\d{4}-\d{2}-\d{2}$/.test(content.submissionsDeadline)
-    ) {
-        return res
-            .status(400)
-            .json({ message: "Termin zgłoszeń musi być datą (RRRR-MM-DD)." });
-    }
-
-    if (
-        !Number.isInteger(content.selectCapacity) ||
-        content.selectCapacity < 0 ||
-        content.selectCapacity > 10000
-    ) {
-        return res.status(400).json({
-            message: "Limit miejsc musi być liczbą całkowitą (0 = bez limitu).",
-        });
-    }
-
-    if (
-        !Number.isInteger(content.maxVehiclesPerUser) ||
-        content.maxVehiclesPerUser < 1 ||
-        content.maxVehiclesPerUser > 50
-    ) {
-        return res.status(400).json({
-            message: "Limit pojazdów na konto musi być liczbą od 1 do 50.",
-        });
-    }
-
-    const saved = siteContentDb.saveContent("settings", content);
-    audit(req, "settings.updated", "settings", 1, content);
-    res.json({ settings: saved });
-});
+// ---- Users --------------------------------------------------------------
 
 router.get("/users", (req, res) => {
     const role = normalizeText(req.query.role);
@@ -383,33 +203,6 @@ router.get("/users", (req, res) => {
     }
 
     res.json({ users: usersDb.listUsers({ search, role, active }) });
-});
-
-router.get("/stats", (req, res) => {
-    const users = usersDb.getUserStats();
-    const submissions = submissionsDb.getSubmissionStats();
-    const settings = siteContentDb.getSettings();
-
-    res.json({
-        users: {
-            total: users.total || 0,
-            active: users.active || 0,
-            admins: users.admins || 0,
-        },
-        submissions: {
-            total: submissions.total || 0,
-            pending: submissions.pending || 0,
-            approved: submissions.approved || 0,
-            rejected: submissions.rejected || 0,
-            unpaid: submissions.unpaid || 0,
-            paymentVerification: submissions.paymentVerification || 0,
-            paid: submissions.paid || 0,
-        },
-        capacity: Number(settings.selectCapacity) || 0,
-        availability: siteContentDb.getSubmissionsAvailability(settings),
-        perDay: submissionsDb.getSubmissionsPerDay(30),
-        topBrands: submissionsDb.getTopCarBrands(8),
-    });
 });
 
 router.patch("/users/:id/role", (req, res) => {
@@ -486,28 +279,75 @@ router.post("/users/:id/logout", (req, res) => {
     res.json({ message: `Wylogowano ${target.email} ze wszystkich urządzeń.` });
 });
 
-router.get("/submissions", (req, res) => {
-    const status = normalizeText(req.query.status);
-    const paymentStatus = normalizeText(req.query.paymentStatus);
-    const search = normalizeText(req.query.search);
+// ---- Stats --------------------------------------------------------------
+
+router.get("/stats", (req, res) => {
+    const edition = readEditionFilter(req.query.edition) || siteContentDb.getCurrentEdition();
+    const users = usersDb.getUserStats();
+    const submissions = submissionsDb.getSubmissionStats(edition);
+    const settings = siteContentDb.getSettings();
+
+    res.json({
+        edition,
+        currentEdition: siteContentDb.getCurrentEdition(),
+        users: {
+            total: users.total || 0,
+            active: users.active || 0,
+            admins: users.admins || 0,
+        },
+        submissions: {
+            total: submissions.total || 0,
+            pending: submissions.pending || 0,
+            approved: submissions.approved || 0,
+            rejected: submissions.rejected || 0,
+            unpaid: submissions.unpaid || 0,
+            paymentVerification: submissions.paymentVerification || 0,
+            paid: submissions.paid || 0,
+        },
+        capacity: Number(settings.selectCapacity) || 0,
+        availability: siteContentDb.getSubmissionsAvailability(settings),
+        perDay: submissionsDb.getSubmissionsPerDay(edition, 30),
+        topBrands: submissionsDb.getTopCarBrands(edition, 8),
+    });
+});
+
+// ---- Submissions --------------------------------------------------------
+
+router.get("/editions", (req, res) => {
+    const currentEdition = siteContentDb.getCurrentEdition();
+    const editions = submissionsDb.listEditions();
+    if (!editions.some((row) => row.edition === currentEdition)) {
+        editions.unshift({ edition: currentEdition, count: 0 });
+    }
+    res.json({ currentEdition, editions });
+});
+
+function readSubmissionFilters(source) {
+    const status = normalizeText(source.status);
+    const paymentStatus = normalizeText(source.paymentStatus);
 
     if (status && !SUBMISSION_STATUSES.includes(status)) {
-        return res
-            .status(400)
-            .json({ message: "Nieprawidłowy filtr statusu." });
+        return { error: "Nieprawidłowy filtr statusu." };
     }
-
     if (paymentStatus && !PAYMENT_STATUSES.includes(paymentStatus)) {
-        return res
-            .status(400)
-            .json({ message: "Nieprawidłowy status płatności." });
+        return { error: "Nieprawidłowy status płatności." };
     }
 
-    const rows = submissionsDb.listAllSubmissions({
-        status,
-        paymentStatus,
-        search,
-    });
+    return {
+        filters: {
+            edition: readEditionFilter(source.edition),
+            status,
+            paymentStatus,
+            search: normalizeText(source.search),
+        },
+    };
+}
+
+router.get("/submissions", (req, res) => {
+    const { filters, error } = readSubmissionFilters(req.query);
+    if (error) return res.status(400).json({ message: error });
+
+    const rows = submissionsDb.listAllSubmissions(filters);
     res.json({ submissions: rows.map(toAdminSubmission) });
 });
 
@@ -679,6 +519,70 @@ router.delete("/submissions/:id", (req, res) => {
         carBrand: existing.car_brand,
     });
     res.json({ message: "Zgłoszenie zostało usunięte." });
+});
+
+// ---- Group e-mails ------------------------------------------------------
+
+let groupEmailInProgress = false;
+
+router.get("/emails/recipients", (req, res) => {
+    const { filters, error } = readSubmissionFilters(req.query);
+    if (error) return res.status(400).json({ message: error });
+
+    res.json({
+        count: submissionsDb.listRecipients(filters).length,
+        emailConfigured: isEmailConfigured(),
+        inProgress: groupEmailInProgress,
+    });
+});
+
+router.post("/emails", (req, res) => {
+    if (!isEmailConfigured()) {
+        return res.status(503).json({
+            message: "Wysyłka e-maili nie jest skonfigurowana (SMTP w backend/config/.env).",
+        });
+    }
+    if (groupEmailInProgress) {
+        return res
+            .status(409)
+            .json({ message: "Poprzednia wiadomość grupowa jest jeszcze wysyłana." });
+    }
+
+    const subject = normalizeText(req.body?.subject).slice(0, 200);
+    const message = String(req.body?.message || "").trim().slice(0, 10000);
+    if (!subject || !message) {
+        return res.status(400).json({ message: "Podaj temat i treść wiadomości." });
+    }
+
+    const { filters, error } = readSubmissionFilters(req.body?.filters || {});
+    if (error) return res.status(400).json({ message: error });
+
+    const recipients = submissionsDb.listRecipients(filters);
+    if (!recipients.length) {
+        return res.status(400).json({ message: "Brak odbiorców dla wybranych filtrów." });
+    }
+
+    // Sending can take minutes; reply right away and log the outcome when done.
+    groupEmailInProgress = true;
+    const adminId = req.user.sub;
+    sendGroupEmail({ recipients, subject, message })
+        .then((result) =>
+            auditLogDb.createAuditEntry({
+                adminId,
+                action: "email.group_sent",
+                targetType: "email",
+                targetId: null,
+                details: { subject, filters, ...result },
+            }),
+        )
+        .catch((sendError) => console.error("[email] Wysyłka grupowa:", sendError))
+        .finally(() => {
+            groupEmailInProgress = false;
+        });
+
+    res.status(202).json({
+        message: `Wysyłanie do ${recipients.length} odbiorców rozpoczęte. Wynik pojawi się w dzienniku działań.`,
+    });
 });
 
 module.exports = router;

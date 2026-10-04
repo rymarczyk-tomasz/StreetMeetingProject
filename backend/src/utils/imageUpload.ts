@@ -113,6 +113,41 @@ function createImageUpload({ destination, maxFiles, maxFileSize }) {
     });
 }
 
+// PDFs (e.g. the regulamin) for the CMS. Same rules: our own filename and a content check.
+function createPdfUpload({ destination, maxFileSize }) {
+    return multer({
+        storage: multer.diskStorage({
+            destination(req, file, cb) {
+                try {
+                    const dir = destination(req);
+                    fs.mkdirSync(dir, { recursive: true });
+                    cb(null, dir);
+                } catch (error) {
+                    cb(error);
+                }
+            },
+            filename(req, file, cb) {
+                cb(null, `${Date.now()}-${crypto.randomBytes(8).toString("hex")}.pdf`);
+            },
+        }),
+        limits: { files: 1, fileSize: maxFileSize, fields: 10 },
+        fileFilter(req, file, cb) {
+            if (file.mimetype === "application/pdf") {
+                cb(null, true);
+            } else {
+                cb(new UploadValidationError("Dozwolone są tylko pliki PDF."));
+            }
+        },
+    });
+}
+
+function verifyUploadedPdf(file) {
+    if (readFileHead(file.path, 5).toString("ascii") !== "%PDF-") {
+        removeFiles([file]);
+        throw new UploadValidationError("Plik nie jest prawidłowym dokumentem PDF.");
+    }
+}
+
 function isAllowedImageFilename(filename) {
     return (
         /^[a-zA-Z0-9._-]+$/.test(filename) &&
@@ -133,7 +168,7 @@ function uploadErrorHandler({ maxFiles, totalSizeLabel }) {
             }
             if (error.code === "LIMIT_FILE_SIZE") {
                 return res.status(413).json({
-                    message: `Łączny rozmiar zdjęć nie może przekraczać ${totalSizeLabel}.`,
+                    message: `Łączny rozmiar plików nie może przekraczać ${totalSizeLabel}.`,
                 });
             }
             return res.status(400).json({ message: "Nieprawidłowe dane formularza." });
@@ -150,6 +185,8 @@ function uploadErrorHandler({ maxFiles, totalSizeLabel }) {
 module.exports = {
     createImageUpload,
     verifyUploadedImages,
+    createPdfUpload,
+    verifyUploadedPdf,
     removeFiles,
     isAllowedImageFilename,
     uploadErrorHandler,

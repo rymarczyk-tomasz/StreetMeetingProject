@@ -1,717 +1,790 @@
-import { useEffect, useState } from "react";
-import api from "../../api/client";
-import { IMAGE_ACCEPT, uploadContentImage } from "./shared";
+import { lazy, Suspense } from "react";
+import { faqFirstNumbers } from "../../utils/faq";
+import HeroCropEditor from "./HeroCropEditor";
+import { ContentForm, useContentEditor } from "./useContentEditor";
+import {
+    ImageField,
+    ListItemControls,
+    PdfField,
+    moveItem,
+    newId,
+} from "./fields";
+
+// TipTap is fairly large; only the FAQ and regulamin tabs need it.
+const RichTextEditor = lazy(() => import("../../components/RichTextEditor"));
+
+function RichText(props) {
+    return (
+        <Suspense fallback={<p className="page-status">Ładowanie edytora...</p>}>
+            <RichTextEditor {...props} />
+        </Suspense>
+    );
+}
+
+function TextInput({ label, value, onChange, ...props }) {
+    return (
+        <label>
+            {label}
+            <input
+                value={value ?? ""}
+                onChange={(event) => onChange(event.target.value)}
+                {...props}
+            />
+        </label>
+    );
+}
+
+function TextArea({ label, value, onChange, rows = 3, ...props }) {
+    return (
+        <label>
+            {label}
+            <textarea
+                rows={rows}
+                value={value ?? ""}
+                onChange={(event) => onChange(event.target.value)}
+                {...props}
+            />
+        </label>
+    );
+}
+
+// ---- Event cards ---------------------------------------------------------
+
+const MAX_EVENT_CARDS = 6;
 
 export function EventEditor({ onAction }) {
-    const [event, setEvent] = useState(null);
-    const [error, setError] = useState("");
-    const [message, setMessage] = useState("");
-    const [isSaving, setIsSaving] = useState(false);
-    const [uploadingIndex, setUploadingIndex] = useState(null);
+    const editor = useContentEditor("event", onAction);
+    const cards = editor.content?.cards || [];
 
-    useEffect(() => {
-        api.get("/admin/event")
-            .then(({ data }) => setEvent(data.event))
-            .catch((err) =>
-                setError(
-                    err.response?.data?.message ||
-                        "Nie udało się pobrać treści Eventu.",
-                ),
-            );
-    }, []);
-
-    function updateCard(index, field, value) {
-        setEvent((current) => ({
-            ...current,
-            cards: current.cards.map((card, cardIndex) =>
-                cardIndex === index ? { ...card, [field]: value } : card,
-            ),
-        }));
+    function setCards(next) {
+        editor.update({ cards: next });
     }
 
-    async function handleImageFile(index, file) {
-        if (!file) return;
-        setUploadingIndex(index);
-        setError("");
-        try {
-            const url = await uploadContentImage(file);
-            updateCard(index, "image", url);
-        } catch (err) {
-            setError(
-                err.response?.data?.message ||
-                    "Nie udało się przesłać zdjęcia.",
-            );
-        } finally {
-            setUploadingIndex(null);
-        }
+    function updateCard(index, patch) {
+        setCards(cards.map((card, i) => (i === index ? { ...card, ...patch } : card)));
     }
-
-    async function save(eventSubmit) {
-        eventSubmit.preventDefault();
-        setIsSaving(true);
-        setError("");
-        setMessage("");
-        try {
-            await api.patch("/admin/event", { event });
-            setMessage("Treść Eventu została zapisana.");
-            onAction();
-        } catch (err) {
-            setError(
-                err.response?.data?.message ||
-                    "Nie udało się zapisać treści Eventu.",
-            );
-        } finally {
-            setIsSaving(false);
-        }
-    }
-
-    if (!event)
-        return <p className="page-status">Ładowanie treści Eventu...</p>;
 
     return (
-        <form className="event-editor" onSubmit={save}>
-            {error && <p className="form-error">{error}</p>}
-            {message && <p className="form-success">{message}</p>}
-            <label>
-                Opis sekcji Event
-                <textarea
-                    rows={3}
-                    value={event.intro}
-                    onChange={(eventInput) =>
-                        setEvent({ ...event, intro: eventInput.target.value })
-                    }
-                />
-            </label>
-            <div className="event-editor-grid">
-                {event.cards.map((card, index) => (
-                    <fieldset className="event-editor-card" key={card.id}>
-                        <legend>Kafelek {index + 1}</legend>
-                        <label>
-                            Tytuł
-                            <input
-                                value={card.title}
-                                onChange={(input) =>
-                                    updateCard(
-                                        index,
-                                        "title",
-                                        input.target.value,
-                                    )
+        <ContentForm editor={editor} saveLabel="Zapisz sekcję Event">
+            {editor.content && (
+                <>
+                    <TextArea
+                        label="Opis sekcji Event"
+                        value={editor.content.intro}
+                        onChange={(intro) => editor.update({ intro })}
+                    />
+                    <div className="event-editor-grid">
+                        {cards.map((card, index) => (
+                            <fieldset className="event-editor-card" key={card.id}>
+                                <legend>Kafelek {index + 1}</legend>
+                                <TextInput
+                                    label="Tytuł"
+                                    value={card.title}
+                                    onChange={(title) => updateCard(index, { title })}
+                                />
+                                <TextArea
+                                    label="Treść (Enter = nowa linia)"
+                                    rows={6}
+                                    value={card.description}
+                                    onChange={(description) =>
+                                        updateCard(index, { description })
+                                    }
+                                />
+                                <ImageField
+                                    label="Zdjęcie"
+                                    value={card.image}
+                                    onChange={(image) => updateCard(index, { image })}
+                                    previewAlt="Podgląd kafelka"
+                                />
+                                <TextInput
+                                    label="Tekst alternatywny zdjęcia (opis dla niewidomych i Google)"
+                                    value={card.alt}
+                                    onChange={(alt) => updateCard(index, { alt })}
+                                />
+                                <TextInput
+                                    label="Tekst przycisku (opcjonalny)"
+                                    value={card.actionLabel}
+                                    onChange={(actionLabel) =>
+                                        updateCard(index, { actionLabel })
+                                    }
+                                />
+                                <TextInput
+                                    label="Link przycisku (https://…, /formularz albo #contact)"
+                                    value={card.actionHref}
+                                    onChange={(actionHref) =>
+                                        updateCard(index, { actionHref })
+                                    }
+                                />
+                                <ListItemControls
+                                    index={index}
+                                    count={cards.length}
+                                    onMove={(from, to) => setCards(moveItem(cards, from, to))}
+                                    onRemove={() => {
+                                        if (cards.length === 1) return;
+                                        setCards(cards.filter((_, i) => i !== index));
+                                    }}
+                                    removeLabel="Usuń kafelek"
+                                />
+                            </fieldset>
+                        ))}
+                    </div>
+                    {cards.length < MAX_EVENT_CARDS && (
+                        <div className="submission-actions">
+                            <button
+                                type="button"
+                                className="button-secondary"
+                                onClick={() =>
+                                    setCards([
+                                        ...cards,
+                                        {
+                                            id: newId("card"),
+                                            title: "",
+                                            description: "",
+                                            image: "",
+                                            alt: "",
+                                            actionLabel: "",
+                                            actionHref: "",
+                                        },
+                                    ])
                                 }
-                            />
-                        </label>
-                        <label>
-                            Treść
-                            <textarea
-                                rows={6}
-                                value={card.description}
-                                onChange={(input) =>
-                                    updateCard(
-                                        index,
-                                        "description",
-                                        input.target.value,
-                                    )
-                                }
-                            />
-                        </label>
-                        <label>
-                            Ścieżka lub URL zdjęcia
-                            <input
-                                type="text"
-                                value={card.image}
-                                onChange={(input) =>
-                                    updateCard(
-                                        index,
-                                        "image",
-                                        input.target.value,
-                                    )
-                                }
-                                placeholder="/img/photos/nazwa.webp"
-                            />
-                        </label>
-                        <label>
-                            Prześlij zdjęcie z komputera
-                            <input
-                                type="file"
-                                accept={IMAGE_ACCEPT}
-                                onChange={(input) =>
-                                    handleImageFile(
-                                        index,
-                                        input.target.files?.[0],
-                                    )
-                                }
-                                disabled={uploadingIndex === index}
-                            />
-                        </label>
-                        {uploadingIndex === index && (
-                            <p className="page-status">Przesyłanie...</p>
-                        )}
-                        <img
-                            className="event-editor-preview"
-                            src={card.image}
-                            alt="Podgląd kafelka"
-                        />
-                        <label>
-                            Tekst alternatywny
-                            <input
-                                value={card.alt}
-                                onChange={(input) =>
-                                    updateCard(index, "alt", input.target.value)
-                                }
-                            />
-                        </label>
-                        <label>
-                            Tekst przycisku
-                            <input
-                                value={card.actionLabel}
-                                onChange={(input) =>
-                                    updateCard(
-                                        index,
-                                        "actionLabel",
-                                        input.target.value,
-                                    )
-                                }
-                            />
-                        </label>
-                        <label>
-                            Link przycisku
-                            <input
-                                value={card.actionHref}
-                                onChange={(input) =>
-                                    updateCard(
-                                        index,
-                                        "actionHref",
-                                        input.target.value,
-                                    )
-                                }
-                            />
-                        </label>
-                    </fieldset>
-                ))}
-            </div>
-            <button type="submit" disabled={isSaving}>
-                {isSaving ? "Zapisywanie..." : "Zapisz zmiany Eventu"}
-            </button>
-        </form>
+                            >
+                                + Dodaj kafelek
+                            </button>
+                        </div>
+                    )}
+                </>
+            )}
+        </ContentForm>
     );
 }
+
+// ---- Home (hero) -------------------------------------------------------------
 
 export function HomeEditor({ onAction }) {
-    const [home, setHome] = useState(null);
-    const [error, setError] = useState("");
-    const [message, setMessage] = useState("");
-    const [isSaving, setIsSaving] = useState(false);
-    const [isUploadingHero, setIsUploadingHero] = useState(false);
-
-    useEffect(() => {
-        api.get("/admin/home")
-            .then(({ data }) => setHome(data.home))
-            .catch((err) =>
-                setError(
-                    err.response?.data?.message ||
-                        "Nie udało się pobrać treści Home.",
-                ),
-            );
-    }, []);
-
-    async function save(formEvent) {
-        formEvent.preventDefault();
-        setIsSaving(true);
-        setError("");
-        setMessage("");
-        try {
-            await api.patch("/admin/home", { home });
-            setMessage("Treść Home została zapisana.");
-            onAction();
-        } catch (err) {
-            setError(
-                err.response?.data?.message ||
-                    "Nie udało się zapisać treści Home.",
-            );
-        } finally {
-            setIsSaving(false);
-        }
-    }
-
-    if (!home) return <p className="page-status">Ładowanie treści Home...</p>;
-
-    async function handleHeroImageFile(file) {
-        if (!file) return;
-        setIsUploadingHero(true);
-        setError("");
-        try {
-            const url = await uploadContentImage(file);
-            setHome((current) => ({ ...current, heroImage: url }));
-        } catch (err) {
-            setError(
-                err.response?.data?.message ||
-                    "Nie udało się przesłać zdjęcia hero.",
-            );
-        } finally {
-            setIsUploadingHero(false);
-        }
-    }
+    const editor = useContentEditor("home", onAction);
+    const home = editor.content;
 
     return (
-        <form className="event-editor" onSubmit={save}>
-            {error && <p className="form-error">{error}</p>}
-            {message && <p className="form-success">{message}</p>}
-            <label>
-                Tytuł
-                <input
-                    value={home.heroTitle}
-                    onChange={(input) =>
-                        setHome({ ...home, heroTitle: input.target.value })
-                    }
-                />
-            </label>
-            <label>
-                Data wydarzenia
-                <input
-                    value={home.heroDate}
-                    onChange={(input) =>
-                        setHome({ ...home, heroDate: input.target.value })
-                    }
-                />
-            </label>
-            <label>
-                Miejsce wydarzenia
-                <input
-                    value={home.heroLocation}
-                    onChange={(input) =>
-                        setHome({ ...home, heroLocation: input.target.value })
-                    }
-                />
-            </label>
-            <label>
-                Ścieżka lub URL zdjęcia hero
-                <input
-                    type="text"
-                    value={home.heroImage}
-                    onChange={(input) =>
-                        setHome({ ...home, heroImage: input.target.value })
-                    }
-                    placeholder="/img/photos/nazwa.webp"
-                />
-            </label>
-            <label>
-                Prześlij zdjęcie hero z komputera
-                <input
-                    type="file"
-                    accept={IMAGE_ACCEPT}
-                    onChange={(input) =>
-                        handleHeroImageFile(input.target.files?.[0])
-                    }
-                    disabled={isUploadingHero}
-                />
-            </label>
-            {isUploadingHero && <p className="page-status">Przesyłanie...</p>}
-            {home.heroImage && (
-                <img
-                    className="event-editor-preview"
-                    src={home.heroImage}
-                    alt="Podgląd zdjęcia hero"
-                />
+        <ContentForm editor={editor} saveLabel="Zapisz sekcję Home">
+            {home && (
+                <>
+                    <p className="admin-hint">
+                        Data, godziny i miejsce wydarzenia ustawiasz raz w zakładce
+                        Ustawienia → Edycja wydarzenia — pokażą się tu automatycznie.
+                    </p>
+                    <TextInput
+                        label="Tytuł"
+                        value={home.heroTitle}
+                        onChange={(heroTitle) => editor.update({ heroTitle })}
+                    />
+                    <ImageField
+                        label="Zdjęcie w tle"
+                        value={home.heroImage}
+                        onChange={(heroImage) => editor.update({ heroImage })}
+                        previewAlt="Podgląd zdjęcia hero"
+                    />
+                    <label className="admin-checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={Boolean(home.heroMobileRotate)}
+                            onChange={(event) =>
+                                editor.update({ heroMobileRotate: event.target.checked })
+                            }
+                        />
+                        Obróć zdjęcie o 90° na telefonie (dobre dla poziomych zdjęć z
+                        góry, np. stadionu z drona)
+                    </label>
+                    <ImageField
+                        label="Osobne zdjęcie na telefon (opcjonalne, pionowe; zastępuje obracanie)"
+                        value={home.heroImageMobile || ""}
+                        onChange={(heroImageMobile) => editor.update({ heroImageMobile })}
+                        previewAlt="Podgląd zdjęcia na telefon"
+                    />
+                    <HeroCropEditor home={home} update={editor.update} />
+                    <TextInput
+                        label="Tekst przycisku biletów"
+                        value={home.ticketLabel}
+                        onChange={(ticketLabel) => editor.update({ ticketLabel })}
+                    />
+                    <TextInput
+                        label="Link do biletów"
+                        value={home.ticketUrl}
+                        onChange={(ticketUrl) => editor.update({ ticketUrl })}
+                    />
+                    <TextInput
+                        label='Tekst linku "Poznaj atrakcje"'
+                        value={home.exploreLabel}
+                        onChange={(exploreLabel) => editor.update({ exploreLabel })}
+                    />
+                </>
             )}
-            <label>
-                Tekst przycisku biletów
-                <input
-                    value={home.ticketLabel}
-                    onChange={(input) =>
-                        setHome({ ...home, ticketLabel: input.target.value })
-                    }
-                />
-            </label>
-            <label>
-                Link do biletów
-                <input
-                    value={home.ticketUrl}
-                    onChange={(input) =>
-                        setHome({ ...home, ticketUrl: input.target.value })
-                    }
-                />
-            </label>
-            <label>
-                Tekst linku "Poznaj atrakcje"
-                <input
-                    value={home.exploreLabel}
-                    onChange={(input) =>
-                        setHome({ ...home, exploreLabel: input.target.value })
-                    }
-                />
-            </label>
-            <button type="submit" disabled={isSaving}>
-                {isSaving ? "Zapisywanie..." : "Zapisz zmiany Home"}
-            </button>
-        </form>
+        </ContentForm>
     );
 }
 
-export function GalleryEditor({ onAction }) {
-    const [gallery, setGallery] = useState(null);
-    const [error, setError] = useState("");
-    const [message, setMessage] = useState("");
-    const [isSaving, setIsSaving] = useState(false);
-    const [uploadingId, setUploadingId] = useState(null);
-    const [isSyncing, setIsSyncing] = useState(false);
+// ---- Home gallery preview ------------------------------------------------------
 
-    useEffect(() => {
-        api.get("/admin/gallery")
-            .then(({ data }) => setGallery(data.gallery))
-            .catch((err) =>
-                setError(
-                    err.response?.data?.message ||
-                        "Nie udało się pobrać treści Galerii.",
-                ),
-            );
-    }, []);
+export function GalleryPreviewEditor({ onAction }) {
+    const editor = useContentEditor("gallery", onAction);
+    const gallery = editor.content;
+    const photos = gallery?.photos || [];
 
-    function updatePhoto(id, field, value) {
-        setGallery((current) => ({
-            ...current,
-            photos: (current.photos || []).map((photo) =>
-                photo.id === id ? { ...photo, [field]: value } : photo,
-            ),
-        }));
+    function setPhotos(next) {
+        editor.update({ photos: next });
     }
-
-    async function addPhoto(file) {
-        if (!file) return;
-        setUploadingId("new");
-        setError("");
-        try {
-            const url = await uploadContentImage(file);
-            setGallery((current) => ({
-                ...current,
-                photos: [
-                    ...(current.photos || []),
-                    { id: `photo-${Date.now()}`, url, alt: "" },
-                ],
-            }));
-        } catch (err) {
-            setError(
-                err.response?.data?.message ||
-                    "Nie udało się przesłać zdjęcia.",
-            );
-        } finally {
-            setUploadingId(null);
-        }
-    }
-
-    async function replacePhoto(id, file) {
-        if (!file) return;
-        setUploadingId(id);
-        setError("");
-        try {
-            const url = await uploadContentImage(file);
-            updatePhoto(id, "url", url);
-        } catch (err) {
-            setError(
-                err.response?.data?.message ||
-                    "Nie udało się przesłać zdjęcia.",
-            );
-        } finally {
-            setUploadingId(null);
-        }
-    }
-
-    async function syncGallery() {
-        setIsSyncing(true);
-        setError("");
-        setMessage("");
-        try {
-            const { data } = await api.post("/admin/gallery/sync");
-            setMessage(data.message);
-            onAction();
-        } catch (err) {
-            setError(
-                err.response?.data?.message ||
-                    "Nie udało się zsynchronizować galerii.",
-            );
-        } finally {
-            setIsSyncing(false);
-        }
-    }
-
-    function removePhoto(id) {
-        setGallery((current) => ({
-            ...current,
-            photos: (current.photos || []).filter((photo) => photo.id !== id),
-        }));
-    }
-
-    async function save(formEvent) {
-        formEvent.preventDefault();
-        setIsSaving(true);
-        setError("");
-        setMessage("");
-        try {
-            await api.patch("/admin/gallery", { gallery });
-            setMessage("Treść Galerii została zapisana.");
-            onAction();
-        } catch (err) {
-            setError(
-                err.response?.data?.message ||
-                    "Nie udało się zapisać treści Galerii.",
-            );
-        } finally {
-            setIsSaving(false);
-        }
-    }
-
-    if (!gallery)
-        return <p className="page-status">Ładowanie treści Galerii...</p>;
 
     return (
-        <form className="event-editor" onSubmit={save}>
-            {error && <p className="form-error">{error}</p>}
-            {message && <p className="form-success">{message}</p>}
-            <p className="admin-hint">
-                Te zdjęcia widać w podglądzie sekcji "Galeria" na stronie
-                głównej (maks. 3). Pełna galeria pod adresem /galeria nadal
-                synchronizuje się automatycznie z Dysku Google i nie jest tu
-                edytowana.
-            </p>
-            <div className="submission-actions">
-                <button
-                    type="button"
-                    className="button-secondary"
-                    onClick={syncGallery}
-                    disabled={isSyncing}
-                >
-                    {isSyncing
-                        ? "Synchronizowanie..."
-                        : "Synchronizuj pełną galerię z Dysku Google teraz"}
-                </button>
-            </div>
-            <label>
-                Opis nad podglądem galerii (opcjonalny)
-                <textarea
-                    rows={3}
-                    value={gallery.intro}
-                    onChange={(input) =>
-                        setGallery({ ...gallery, intro: input.target.value })
-                    }
-                />
-            </label>
-            <label>
-                Tekst przycisku "Przejdź do galerii"
-                <input
-                    value={gallery.linkLabel}
-                    onChange={(input) =>
-                        setGallery({
-                            ...gallery,
-                            linkLabel: input.target.value,
-                        })
-                    }
-                />
-            </label>
-            <div className="event-editor-grid">
-                {(gallery.photos || []).map((photo, index) => (
-                    <fieldset className="event-editor-card" key={photo.id}>
-                        <legend>Zdjęcie {index + 1}</legend>
-                        <label>
-                            Ścieżka lub URL zdjęcia
-                            <input
-                                type="text"
-                                value={photo.url}
-                                onChange={(input) =>
-                                    updatePhoto(
-                                        photo.id,
-                                        "url",
-                                        input.target.value,
-                                    )
-                                }
-                                placeholder="/img/photos/nazwa.webp"
-                            />
-                        </label>
-                        <label>
-                            Prześlij zdjęcie z komputera
-                            <input
-                                type="file"
-                                accept={IMAGE_ACCEPT}
-                                onChange={(input) =>
-                                    replacePhoto(
-                                        photo.id,
-                                        input.target.files?.[0],
-                                    )
-                                }
-                                disabled={uploadingId === photo.id}
-                            />
-                        </label>
-                        {uploadingId === photo.id && (
-                            <p className="page-status">Przesyłanie...</p>
-                        )}
-                        <img
-                            className="event-editor-preview"
-                            src={photo.url}
-                            alt={photo.alt || "Podgląd zdjęcia galerii"}
-                        />
-                        <label>
-                            Tekst alternatywny
-                            <input
-                                value={photo.alt}
-                                onChange={(input) =>
-                                    updatePhoto(
-                                        photo.id,
-                                        "alt",
-                                        input.target.value,
-                                    )
-                                }
-                            />
-                        </label>
+        <ContentForm editor={editor} saveLabel="Zapisz podgląd galerii">
+            {gallery && (
+                <>
+                    <p className="admin-hint">
+                        Te zdjęcia widać w sekcji „Galeria” na stronie głównej
+                        (pierwsze 3). Albumy pełnej galerii zarządzasz w zakładce
+                        Galeria.
+                    </p>
+                    <TextArea
+                        label="Opis nad podglądem galerii (opcjonalny)"
+                        value={gallery.intro}
+                        onChange={(intro) => editor.update({ intro })}
+                    />
+                    <TextInput
+                        label='Tekst przycisku "Przejdź do galerii"'
+                        value={gallery.linkLabel}
+                        onChange={(linkLabel) => editor.update({ linkLabel })}
+                    />
+                    <div className="event-editor-grid">
+                        {photos.map((photo, index) => (
+                            <fieldset className="event-editor-card" key={photo.id}>
+                                <legend>Zdjęcie {index + 1}</legend>
+                                <ImageField
+                                    label="Zdjęcie"
+                                    value={photo.url}
+                                    onChange={(url) =>
+                                        setPhotos(
+                                            photos.map((p, i) =>
+                                                i === index ? { ...p, url } : p,
+                                            ),
+                                        )
+                                    }
+                                    previewAlt={photo.alt || "Podgląd zdjęcia"}
+                                />
+                                <TextInput
+                                    label="Tekst alternatywny"
+                                    value={photo.alt}
+                                    onChange={(alt) =>
+                                        setPhotos(
+                                            photos.map((p, i) =>
+                                                i === index ? { ...p, alt } : p,
+                                            ),
+                                        )
+                                    }
+                                />
+                                <ListItemControls
+                                    index={index}
+                                    count={photos.length}
+                                    onMove={(from, to) => setPhotos(moveItem(photos, from, to))}
+                                    onRemove={() =>
+                                        setPhotos(photos.filter((_, i) => i !== index))
+                                    }
+                                    removeLabel="Usuń zdjęcie"
+                                />
+                            </fieldset>
+                        ))}
+                    </div>
+                    <div className="submission-actions">
                         <button
                             type="button"
-                            onClick={() => removePhoto(photo.id)}
+                            className="button-secondary"
+                            onClick={() =>
+                                setPhotos([...photos, { id: newId("photo"), url: "", alt: "" }])
+                            }
                         >
-                            Usuń zdjęcie
+                            + Dodaj zdjęcie
                         </button>
-                    </fieldset>
-                ))}
-            </div>
-            <label>
-                Dodaj nowe zdjęcie z komputera
-                <input
-                    type="file"
-                    accept={IMAGE_ACCEPT}
-                    onChange={(input) => addPhoto(input.target.files?.[0])}
-                    disabled={uploadingId === "new"}
-                />
-            </label>
-            {uploadingId === "new" && (
-                <p className="page-status">Przesyłanie...</p>
+                    </div>
+                </>
             )}
-            <button type="submit" disabled={isSaving}>
-                {isSaving ? "Zapisywanie..." : "Zapisz zmiany Galerii"}
-            </button>
-        </form>
+        </ContentForm>
     );
 }
 
+// ---- Contact ------------------------------------------------------------------
+
 export function ContactEditor({ onAction }) {
-    const [contact, setContact] = useState(null);
-    const [error, setError] = useState("");
-    const [message, setMessage] = useState("");
-    const [isSaving, setIsSaving] = useState(false);
-
-    useEffect(() => {
-        api.get("/admin/contact")
-            .then(({ data }) => setContact(data.contact))
-            .catch((err) =>
-                setError(
-                    err.response?.data?.message ||
-                        "Nie udało się pobrać treści Kontaktu.",
-                ),
-            );
-    }, []);
-
-    async function save(formEvent) {
-        formEvent.preventDefault();
-        setIsSaving(true);
-        setError("");
-        setMessage("");
-        try {
-            await api.patch("/admin/contact", { contact });
-            setMessage("Treść Kontaktu została zapisana.");
-            onAction();
-        } catch (err) {
-            setError(
-                err.response?.data?.message ||
-                    "Nie udało się zapisać treści Kontaktu.",
-            );
-        } finally {
-            setIsSaving(false);
-        }
-    }
-
-    if (!contact)
-        return <p className="page-status">Ładowanie treści Kontaktu...</p>;
+    const editor = useContentEditor("contact", onAction);
+    const contact = editor.content;
 
     return (
-        <form className="event-editor" onSubmit={save}>
-            {error && <p className="form-error">{error}</p>}
-            {message && <p className="form-success">{message}</p>}
-            <label>
-                Link do Facebooka
-                <input
-                    value={contact.facebookUrl}
-                    onChange={(input) =>
-                        setContact({
-                            ...contact,
-                            facebookUrl: input.target.value,
-                        })
-                    }
-                />
-            </label>
-            <label>
-                Link do Instagrama
-                <input
-                    value={contact.instagramUrl}
-                    onChange={(input) =>
-                        setContact({
-                            ...contact,
-                            instagramUrl: input.target.value,
-                        })
-                    }
-                />
-            </label>
-            <label>
-                Nazwa
-                <input
-                    value={contact.addressName}
-                    onChange={(input) =>
-                        setContact({
-                            ...contact,
-                            addressName: input.target.value,
-                        })
-                    }
-                />
-            </label>
-            <label>
-                Adres — linia 1
-                <input
-                    value={contact.addressLine1}
-                    onChange={(input) =>
-                        setContact({
-                            ...contact,
-                            addressLine1: input.target.value,
-                        })
-                    }
-                />
-            </label>
-            <label>
-                Adres — linia 2
-                <input
-                    value={contact.addressLine2}
-                    onChange={(input) =>
-                        setContact({
-                            ...contact,
-                            addressLine2: input.target.value,
-                        })
-                    }
-                />
-            </label>
-            <label>
-                Link do mapy
-                <input
-                    value={contact.mapUrl}
-                    onChange={(input) =>
-                        setContact({ ...contact, mapUrl: input.target.value })
-                    }
-                />
-            </label>
-            <label>
-                E-mail kontaktowy
-                <input
-                    type="email"
-                    value={contact.email}
-                    onChange={(input) =>
-                        setContact({ ...contact, email: input.target.value })
-                    }
-                />
-            </label>
-            <button type="submit" disabled={isSaving}>
-                {isSaving ? "Zapisywanie..." : "Zapisz zmiany Kontaktu"}
-            </button>
-        </form>
+        <ContentForm editor={editor} saveLabel="Zapisz sekcję Kontakt">
+            {contact &&
+                [
+                    ["facebookUrl", "Link do Facebooka"],
+                    ["instagramUrl", "Link do Instagrama"],
+                    ["addressName", "Nazwa"],
+                    ["addressLine1", "Adres — linia 1"],
+                    ["addressLine2", "Adres — linia 2"],
+                    ["mapUrl", "Link do mapy"],
+                    ["email", "E-mail kontaktowy"],
+                ].map(([field, label]) => (
+                    <TextInput
+                        key={field}
+                        label={label}
+                        type={field === "email" ? "email" : "text"}
+                        value={contact[field]}
+                        onChange={(value) => editor.update({ [field]: value })}
+                    />
+                ))}
+        </ContentForm>
+    );
+}
+
+// ---- FAQ ------------------------------------------------------------------------
+
+export function FaqEditor({ onAction }) {
+    const editor = useContentEditor("faq", onAction);
+    const faq = editor.content;
+    const categories = faq?.categories || [];
+
+    function setCategories(next) {
+        editor.update({ categories: next });
+    }
+
+    function updateCategory(index, patch) {
+        setCategories(categories.map((c, i) => (i === index ? { ...c, ...patch } : c)));
+    }
+
+    function updateItem(categoryIndex, itemIndex, patch) {
+        const items = categories[categoryIndex].items.map((item, i) =>
+            i === itemIndex ? { ...item, ...patch } : item,
+        );
+        updateCategory(categoryIndex, { items });
+    }
+
+    const firstNumbers = faqFirstNumbers(faq);
+
+    return (
+        <ContentForm editor={editor} saveLabel="Zapisz FAQ">
+            {faq && (
+                <>
+                    <p className="admin-hint">
+                        Pytania są numerowane automatycznie. Odpowiedź możesz
+                        wkleić z Worda — formatowanie (pogrubienia, listy, linki)
+                        zostanie zachowane.
+                    </p>
+                    {categories.map((category, categoryIndex) => (
+                        <fieldset className="faq-editor-category" key={category.id}>
+                            <legend>Kategoria {categoryIndex + 1}</legend>
+                            <TextInput
+                                label="Nazwa kategorii"
+                                value={category.title}
+                                onChange={(title) => updateCategory(categoryIndex, { title })}
+                            />
+                            {category.items.map((item, itemIndex) => {
+                                const questionNumber = firstNumbers[categoryIndex] + itemIndex;
+                                return (
+                                    <div className="faq-editor-item" key={item.id}>
+                                        <TextInput
+                                            label={`Pytanie ${questionNumber}`}
+                                            value={item.question}
+                                            onChange={(question) =>
+                                                updateItem(categoryIndex, itemIndex, { question })
+                                            }
+                                        />
+                                        <span className="field-label">Odpowiedź</span>
+                                        <RichText
+                                            key={`${editor.version}-${item.id}`}
+                                            value={item.answerHtml}
+                                            minHeight={80}
+                                            ariaLabel={`Odpowiedź na pytanie ${questionNumber}`}
+                                            onChange={(answerHtml) =>
+                                                updateItem(categoryIndex, itemIndex, { answerHtml })
+                                            }
+                                        />
+                                        <ListItemControls
+                                            index={itemIndex}
+                                            count={category.items.length}
+                                            onMove={(from, to) =>
+                                                updateCategory(categoryIndex, {
+                                                    items: moveItem(category.items, from, to),
+                                                })
+                                            }
+                                            onRemove={() => {
+                                                if (window.confirm("Usunąć to pytanie?")) {
+                                                    updateCategory(categoryIndex, {
+                                                        items: category.items.filter(
+                                                            (_, i) => i !== itemIndex,
+                                                        ),
+                                                    });
+                                                }
+                                            }}
+                                            removeLabel="Usuń pytanie"
+                                        />
+                                    </div>
+                                );
+                            })}
+                            <div className="submission-actions">
+                                <button
+                                    type="button"
+                                    className="button-secondary"
+                                    onClick={() =>
+                                        updateCategory(categoryIndex, {
+                                            items: [
+                                                ...category.items,
+                                                { id: newId("q"), question: "", answerHtml: "" },
+                                            ],
+                                        })
+                                    }
+                                >
+                                    + Dodaj pytanie
+                                </button>
+                            </div>
+                            <ListItemControls
+                                index={categoryIndex}
+                                count={categories.length}
+                                onMove={(from, to) => setCategories(moveItem(categories, from, to))}
+                                onRemove={() => {
+                                    if (
+                                        window.confirm(
+                                            `Usunąć całą kategorię „${category.title}” razem z pytaniami?`,
+                                        )
+                                    ) {
+                                        setCategories(categories.filter((_, i) => i !== categoryIndex));
+                                    }
+                                }}
+                                removeLabel="Usuń kategorię"
+                            />
+                        </fieldset>
+                    ))}
+                    <div className="submission-actions">
+                        <button
+                            type="button"
+                            className="button-secondary"
+                            onClick={() =>
+                                setCategories([
+                                    ...categories,
+                                    { id: newId("kategoria"), title: "", items: [] },
+                                ])
+                            }
+                        >
+                            + Dodaj kategorię
+                        </button>
+                    </div>
+                </>
+            )}
+        </ContentForm>
+    );
+}
+
+// ---- Regulamin -------------------------------------------------------------------
+
+export function RegulaminEditor({ onAction }) {
+    const editor = useContentEditor("regulamin", onAction);
+    const regulamin = editor.content;
+
+    return (
+        <ContentForm editor={editor} saveLabel="Zapisz regulamin">
+            {regulamin && (
+                <>
+                    <p className="admin-hint">
+                        Najprościej: otwórz regulamin w Wordzie, zaznacz całość
+                        (Ctrl+A), skopiuj (Ctrl+C) i wklej tutaj (Ctrl+V) w miejsce
+                        starej treści. Nagłówki, listy (także a, b, c) i
+                        pogrubienia zostaną zachowane. Możesz też dodać PDF — na
+                        stronie pojawi się przycisk „Pobierz regulamin (PDF)”.
+                    </p>
+                    <TextInput
+                        label="Tytuł"
+                        value={regulamin.title}
+                        onChange={(title) => editor.update({ title })}
+                    />
+                    <PdfField
+                        label="Plik PDF regulaminu (opcjonalny)"
+                        value={regulamin.pdfUrl}
+                        onChange={(pdfUrl) => editor.update({ pdfUrl })}
+                    />
+                    <span className="field-label">Treść regulaminu</span>
+                    <RichText
+                        key={editor.version}
+                        value={regulamin.html}
+                        minHeight={400}
+                        ariaLabel="Treść regulaminu"
+                        onChange={(html) => editor.update({ html })}
+                    />
+                </>
+            )}
+        </ContentForm>
+    );
+}
+
+// ---- Announcement bar ---------------------------------------------------------------
+
+export function AnnouncementEditor({ onAction }) {
+    const editor = useContentEditor("announcement", onAction);
+    const announcement = editor.content;
+
+    return (
+        <ContentForm editor={editor} saveLabel="Zapisz ogłoszenie">
+            {announcement && (
+                <>
+                    <p className="admin-hint">
+                        Pasek z ogłoszeniem nad menu, widoczny na każdej stronie, np.
+                        „Zapisy do strefy Select zamknięte” albo „Zmiana godzin
+                        otwarcia bram”.
+                    </p>
+                    <label className="admin-checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={announcement.enabled}
+                            onChange={(event) => editor.update({ enabled: event.target.checked })}
+                        />
+                        Pokazuj ogłoszenie
+                    </label>
+                    <TextInput
+                        label="Treść ogłoszenia"
+                        value={announcement.text}
+                        maxLength={300}
+                        onChange={(text) => editor.update({ text })}
+                    />
+                    <TextInput
+                        label="Link (opcjonalny, np. /regulamin albo https://…)"
+                        value={announcement.linkUrl}
+                        onChange={(linkUrl) => editor.update({ linkUrl })}
+                    />
+                    <TextInput
+                        label="Tekst linku"
+                        value={announcement.linkLabel}
+                        placeholder="Więcej"
+                        onChange={(linkLabel) => editor.update({ linkLabel })}
+                    />
+                    <label>
+                        Kolor
+                        <select
+                            value={announcement.variant}
+                            onChange={(event) => editor.update({ variant: event.target.value })}
+                        >
+                            <option value="info">Czarny (informacja)</option>
+                            <option value="warning">Żółty (ważne)</option>
+                        </select>
+                    </label>
+                    <label>
+                        Ukryj automatycznie po dniu (opcjonalnie)
+                        <input
+                            type="date"
+                            value={announcement.expiresAt}
+                            onChange={(event) => editor.update({ expiresAt: event.target.value })}
+                        />
+                    </label>
+                </>
+            )}
+        </ContentForm>
+    );
+}
+
+// ---- Partners ------------------------------------------------------------------------
+
+export function PartnersEditor({ onAction }) {
+    const editor = useContentEditor("partners", onAction);
+    const partners = editor.content;
+    const items = partners?.items || [];
+
+    function setItems(next) {
+        editor.update({ items: next });
+    }
+
+    function updateItem(index, patch) {
+        setItems(items.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+    }
+
+    return (
+        <ContentForm editor={editor} saveLabel="Zapisz partnerów">
+            {partners && (
+                <>
+                    <p className="admin-hint">
+                        Logotypy partnerów i sponsorów pokazują się na stronie
+                        głównej nad kontaktem. Bez partnerów sekcja jest ukryta.
+                        Najlepiej wyglądają logotypy PNG/WEBP z przezroczystym tłem.
+                    </p>
+                    <TextInput
+                        label="Nagłówek sekcji"
+                        value={partners.title}
+                        onChange={(title) => editor.update({ title })}
+                    />
+                    <div className="event-editor-grid">
+                        {items.map((item, index) => (
+                            <fieldset className="event-editor-card" key={item.id}>
+                                <legend>{item.name || `Partner ${index + 1}`}</legend>
+                                <TextInput
+                                    label="Nazwa"
+                                    value={item.name}
+                                    onChange={(name) => updateItem(index, { name })}
+                                />
+                                <ImageField
+                                    label="Logo"
+                                    value={item.logo}
+                                    onChange={(logo) => updateItem(index, { logo })}
+                                    previewAlt={item.name || "Logo"}
+                                />
+                                <TextInput
+                                    label="Strona partnera (opcjonalnie)"
+                                    value={item.url}
+                                    onChange={(url) => updateItem(index, { url })}
+                                />
+                                <ListItemControls
+                                    index={index}
+                                    count={items.length}
+                                    onMove={(from, to) => setItems(moveItem(items, from, to))}
+                                    onRemove={() => setItems(items.filter((_, i) => i !== index))}
+                                />
+                            </fieldset>
+                        ))}
+                    </div>
+                    <div className="submission-actions">
+                        <button
+                            type="button"
+                            className="button-secondary"
+                            onClick={() =>
+                                setItems([...items, { id: newId("partner"), name: "", logo: "", url: "" }])
+                            }
+                        >
+                            + Dodaj partnera
+                        </button>
+                    </div>
+                </>
+            )}
+        </ContentForm>
+    );
+}
+
+// ---- Settings: edition + submissions -------------------------------------------------
+
+export function EditionEditor({ onAction }) {
+    const editor = useContentEditor("edition", onAction);
+    const edition = editor.content;
+
+    return (
+        <ContentForm editor={editor} saveLabel="Zapisz edycję wydarzenia">
+            {edition && (
+                <>
+                    <p className="admin-hint">
+                        Rok edycji decyduje, do której edycji trafiają nowe
+                        zgłoszenia Select, i od niego liczy się limit pojazdów.
+                        Zgłoszenia z poprzednich lat zostają w archiwum (filtr
+                        „Edycja” w Zgłoszeniach). Data i miejsce pokazują się na
+                        stronie głównej i w Google.
+                    </p>
+                    <TextInput
+                        label="Rok edycji"
+                        type="number"
+                        min={2020}
+                        max={2100}
+                        value={edition.year}
+                        onChange={(year) => editor.update({ year: Number(year) })}
+                    />
+                    <TextInput
+                        label="Nazwa"
+                        value={edition.name}
+                        onChange={(name) => editor.update({ name })}
+                    />
+                    <label>
+                        Data wydarzenia
+                        <input
+                            type="date"
+                            value={edition.date}
+                            onChange={(event) => editor.update({ date: event.target.value })}
+                        />
+                    </label>
+                    <TextInput
+                        label="Tekst, gdy data nie jest jeszcze znana"
+                        value={edition.dateText}
+                        placeholder="Termin wkrótce"
+                        onChange={(dateText) => editor.update({ dateText })}
+                    />
+                    <div className="admin-inline-fields">
+                        <label>
+                            Godzina rozpoczęcia
+                            <input
+                                type="time"
+                                value={edition.startTime}
+                                onChange={(event) => editor.update({ startTime: event.target.value })}
+                            />
+                        </label>
+                        <label>
+                            Godzina zakończenia
+                            <input
+                                type="time"
+                                value={edition.endTime}
+                                onChange={(event) => editor.update({ endTime: event.target.value })}
+                            />
+                        </label>
+                    </div>
+                    <TextInput
+                        label="Miejsce"
+                        value={edition.venueName}
+                        onChange={(venueName) => editor.update({ venueName })}
+                    />
+                    <TextInput
+                        label="Adres miejsca"
+                        value={edition.venueAddress}
+                        onChange={(venueAddress) => editor.update({ venueAddress })}
+                    />
+                </>
+            )}
+        </ContentForm>
+    );
+}
+
+export function SubmissionSettingsEditor({ onAction }) {
+    const editor = useContentEditor("settings", onAction);
+    const settings = editor.content;
+
+    return (
+        <ContentForm editor={editor} saveLabel="Zapisz ustawienia zgłoszeń">
+            {settings && (
+                <>
+                    <label className="admin-checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={settings.submissionsOpen}
+                            onChange={(event) =>
+                                editor.update({ submissionsOpen: event.target.checked })
+                            }
+                        />
+                        Przyjmuj nowe zgłoszenia do strefy Select
+                    </label>
+                    <label>
+                        Termin zgłoszeń (ostatni dzień, opcjonalny)
+                        <input
+                            type="date"
+                            value={settings.submissionsDeadline}
+                            onChange={(event) =>
+                                editor.update({ submissionsDeadline: event.target.value })
+                            }
+                        />
+                    </label>
+                    <TextInput
+                        label="Maksymalna liczba aktywnych zgłoszeń pojazdów na konto (w edycji)"
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={settings.maxVehiclesPerUser}
+                        onChange={(value) => editor.update({ maxVehiclesPerUser: Number(value) })}
+                    />
+                    <TextInput
+                        label="Liczba miejsc w strefie Select (0 = bez limitu, tylko informacyjnie na dashboardzie)"
+                        type="number"
+                        min={0}
+                        value={settings.selectCapacity}
+                        onChange={(value) => editor.update({ selectCapacity: Number(value) })}
+                    />
+                    <TextInput
+                        label="Kwota opłaty podawana w e-mailu o akceptacji"
+                        value={settings.selectFeeAmount}
+                        maxLength={100}
+                        placeholder="np. 150 zł"
+                        onChange={(selectFeeAmount) => editor.update({ selectFeeAmount })}
+                    />
+                </>
+            )}
+        </ContentForm>
     );
 }

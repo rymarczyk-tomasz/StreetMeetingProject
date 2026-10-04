@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import AnnouncementBar from "./AnnouncementBar";
 
 // Keeps the fixed navbar from overlapping page content (hero gets its own offset).
 function useNavbarOffset() {
@@ -20,8 +21,8 @@ function useNavbarOffset() {
             );
 
             if (home) {
+                // Height comes from CSS (.home uses --navbar-height).
                 home.style.marginTop = `${navbarHeight}px`;
-                home.style.height = `calc(100vh - ${navbarHeight}px)`;
                 if (content) (content as HTMLElement).style.paddingTop = "";
             } else if (content) {
                 (content as HTMLElement).style.paddingTop = `${navbarHeight}px`;
@@ -29,8 +30,10 @@ function useNavbarOffset() {
         }
 
         applyOffset();
-        window.addEventListener("resize", applyOffset);
-        return () => window.removeEventListener("resize", applyOffset);
+        // Also reacts to the header growing later, e.g. when the announcement loads.
+        const observer = new ResizeObserver(applyOffset);
+        if (navbar) observer.observe(navbar);
+        return () => observer.disconnect();
     }, [location.pathname]);
 }
 
@@ -93,127 +96,127 @@ export default function Layout() {
 
     return (
         <>
-            <nav
-                className="navbar navbar-expand-lg bg-body-tertiary py-4 fixed-top"
-                id="navbar"
-            >
-                <div className="container">
-                    <Link className="navbar-brand" to="/">
-                        <img
-                            className="logo"
-                            src="/img/Logo 2.0/SVG/Logo_4.svg"
-                            alt="Street Meeting Poland - Logo"
-                        />
-                    </Link>
-                    <button
-                        className="navbar-toggler"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#navbarNavAltMarkup"
-                        aria-controls="navbarNavAltMarkup"
-                        aria-expanded="false"
-                        aria-label="Toggle navigation"
-                    >
-                        <span className="navbar-toggler-icon"></span>
-                    </button>
-                    <div
-                        className="collapse navbar-collapse"
-                        id="navbarNavAltMarkup"
-                    >
-                        <div className="navbar-nav ms-auto">
-                            <a
-                                className={`nav-link ${
-                                    activeHomeSection === "home" ? "active" : ""
-                                }`}
-                                href={isHome ? "#home" : "/#home"}
-                                onClick={closeMobileNav}
-                            >
-                                Home
-                            </a>
-                            <a
-                                className={`nav-link ${
-                                    activeHomeSection === "event"
-                                        ? "active"
-                                        : ""
-                                }`}
-                                href={isHome ? "#event" : "/#event"}
-                                onClick={closeMobileNav}
-                            >
-                                Event
-                            </a>
-                            <NavLink
-                                className={({ isActive }) =>
-                                    `nav-link ${
-                                        isActive ||
-                                        activeHomeSection === "gallery"
+            <div className="fixed-top" id="navbar">
+                <AnnouncementBar />
+                <nav className="navbar navbar-expand-lg bg-body-tertiary py-4">
+                    <div className="container">
+                        <Link className="navbar-brand" to="/">
+                            <img
+                                className="logo"
+                                src="/img/Logo 2.0/SVG/Logo_4.svg"
+                                alt="Street Meeting Poland - Logo"
+                            />
+                        </Link>
+                        <button
+                            className="navbar-toggler"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#navbarNavAltMarkup"
+                            aria-controls="navbarNavAltMarkup"
+                            aria-expanded="false"
+                            aria-label="Toggle navigation"
+                        >
+                            <span className="navbar-toggler-icon"></span>
+                        </button>
+                        <div
+                            className="collapse navbar-collapse"
+                            id="navbarNavAltMarkup"
+                        >
+                            <div className="navbar-nav ms-auto">
+                                <a
+                                    className={`nav-link ${
+                                        activeHomeSection === "home" ? "active" : ""
+                                    }`}
+                                    href={isHome ? "#home" : "/#home"}
+                                    onClick={closeMobileNav}
+                                >
+                                    Home
+                                </a>
+                                <a
+                                    className={`nav-link ${
+                                        activeHomeSection === "event"
                                             ? "active"
                                             : ""
-                                    }`
-                                }
-                                to="/galeria"
-                                onClick={closeMobileNav}
-                            >
-                                Galeria
-                            </NavLink>
-                            <a
-                                className={`nav-link ${
-                                    activeHomeSection === "contact"
-                                        ? "active"
-                                        : ""
-                                }`}
-                                href={isHome ? "#contact" : "/#contact"}
-                                onClick={closeMobileNav}
-                            >
-                                Kontakt
-                            </a>
-                            <NavLink
-                                className="nav-link"
-                                to="/faq"
-                                onClick={closeMobileNav}
-                            >
-                                FAQ
-                            </NavLink>
-                            {user ? (
-                                <>
-                                    <NavLink
-                                        className="nav-link"
-                                        to="/panel"
-                                        onClick={closeMobileNav}
-                                    >
-                                        Panel konta
-                                    </NavLink>
-                                    {user.role === "admin" && (
+                                    }`}
+                                    href={isHome ? "#event" : "/#event"}
+                                    onClick={closeMobileNav}
+                                >
+                                    Event
+                                </a>
+                                <NavLink
+                                    className={({ isActive }) =>
+                                        `nav-link ${
+                                            isActive ||
+                                            activeHomeSection === "gallery"
+                                                ? "active"
+                                                : ""
+                                        }`
+                                    }
+                                    to="/galeria"
+                                    onClick={closeMobileNav}
+                                >
+                                    Galeria
+                                </NavLink>
+                                <a
+                                    className={`nav-link ${
+                                        activeHomeSection === "contact"
+                                            ? "active"
+                                            : ""
+                                    }`}
+                                    href={isHome ? "#contact" : "/#contact"}
+                                    onClick={closeMobileNav}
+                                >
+                                    Kontakt
+                                </a>
+                                <NavLink
+                                    className="nav-link"
+                                    to="/faq"
+                                    onClick={closeMobileNav}
+                                >
+                                    FAQ
+                                </NavLink>
+                                {user ? (
+                                    <>
                                         <NavLink
                                             className="nav-link"
-                                            to="/admin"
+                                            to="/panel"
                                             onClick={closeMobileNav}
                                         >
-                                            Administrator
+                                            Panel konta
                                         </NavLink>
-                                    )}
-                                    <button
-                                        type="button"
-                                        className="nav-link link-button"
-                                        onClick={logout}
-                                    >
-                                        Wyloguj
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    <NavLink
-                                        className="nav-link"
-                                        to="/logowanie"
-                                        onClick={closeMobileNav}
-                                    >
-                                        Zaloguj się
-                                    </NavLink>
-                                </>
-                            )}
+                                        {user.role === "admin" && (
+                                            <NavLink
+                                                className="nav-link"
+                                                to="/admin"
+                                                onClick={closeMobileNav}
+                                            >
+                                                Administrator
+                                            </NavLink>
+                                        )}
+                                        <button
+                                            type="button"
+                                            className="nav-link link-button"
+                                            onClick={logout}
+                                        >
+                                            Wyloguj
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <NavLink
+                                            className="nav-link"
+                                            to="/logowanie"
+                                            onClick={closeMobileNav}
+                                        >
+                                            Zaloguj się
+                                        </NavLink>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            </nav>
+                </nav>
+            </div>
 
             <div className="app-page-content">
                 <Suspense

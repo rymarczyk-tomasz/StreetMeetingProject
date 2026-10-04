@@ -10,10 +10,14 @@ const cookieParser = require("cookie-parser");
 const authRoutes = require("./src/auth/routes");
 const adminRoutes = require("./src/admin/routes");
 const { router: submissionsRoutes } = require("./src/submissions/routes");
-const eventContentDb = require("./src/db/eventContent");
 const siteContentDb = require("./src/db/siteContent");
-const { CONTENT_UPLOAD_ROOT } = require("./src/utils/paths");
+const { PUBLIC_CONTENT_KEYS } = require("./src/content/defaults");
+const {
+    CONTENT_UPLOAD_ROOT,
+    GALLERY_UPLOAD_ROOT,
+} = require("./src/utils/paths");
 const { scheduleDailyGallerySync } = require("./src/gallery/sync");
+const { publicRouter: galleryPublicRoutes } = require("./src/gallery/routes");
 const { startMaintenance } = require("./src/maintenance");
 
 const app = express();
@@ -63,22 +67,52 @@ app.use(
         index: false,
         maxAge: "30d",
         immutable: true,
+        setHeaders(res, filePath) {
+            // The browser's built-in PDF viewer doesn't work under "default-src 'none'".
+            // PDFs here are admin uploads verified to be real PDFs.
+            if (filePath.endsWith(".pdf")) res.removeHeader("Content-Security-Policy");
+        },
+    }),
+);
+
+// Gallery thumbnails are immutable per version (?v=...), so cache them for long.
+app.use(
+    "/uploads/gallery",
+    express.static(GALLERY_UPLOAD_ROOT, {
+        dotfiles: "deny",
+        index: false,
+        maxAge: "365d",
+        immutable: true,
     }),
 );
 
 app.use("/api/auth", authRoutes);
-app.get("/api/event", (req, res) => {
-    res.json({ event: eventContentDb.getEventContent() });
+
+// Public page content: GET /api/content?keys=home,event,contact returns several
+// sections in one request; GET /api/content/:key returns one.
+app.get("/api/content", (req, res) => {
+    const keys = String(req.query.keys || "")
+        .split(",")
+        .map((key) => key.trim())
+        .filter((key) => PUBLIC_CONTENT_KEYS.includes(key));
+    if (!keys.length) {
+        return res.status(400).json({ message: "Podaj sekcje (keys)." });
+    }
+
+    const content = Object.fromEntries(
+        keys.map((key) => [key, siteContentDb.getContent(key)]),
+    );
+    res.set("Cache-Control", "no-cache");
+    res.json({ content });
 });
-app.get("/api/home", (req, res) => {
-    res.json({ home: siteContentDb.getContent("home") });
+app.get("/api/content/:key", (req, res) => {
+    if (!PUBLIC_CONTENT_KEYS.includes(req.params.key)) {
+        return res.status(404).json({ message: "Nie znaleziono." });
+    }
+    res.set("Cache-Control", "no-cache");
+    res.json({ content: siteContentDb.getContent(req.params.key) });
 });
-app.get("/api/gallery", (req, res) => {
-    res.json({ gallery: siteContentDb.getContent("gallery") });
-});
-app.get("/api/contact", (req, res) => {
-    res.json({ contact: siteContentDb.getContent("contact") });
-});
+app.use("/api/gallery", galleryPublicRoutes);
 app.get("/api/health", (req, res) => {
     res.json({ status: "OK" });
 });

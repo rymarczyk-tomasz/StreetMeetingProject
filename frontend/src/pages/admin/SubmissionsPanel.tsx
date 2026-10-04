@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import api from "../../api/client";
+import Lightbox from "../../components/Lightbox";
+import GroupEmailForm from "./GroupEmailForm";
+import { printGateList } from "./gateList";
 import {
     PAYMENT_STATUS_LABELS,
     STATUS_LABELS,
@@ -26,6 +29,7 @@ async function exportToExcel(submissions) {
         "Komentarz administratora": submission.adminNote || "",
         "Notatka wewnętrzna": submission.internalNote || "",
         "Liczba zdjęć": submission.photos.length,
+        Edycja: submission.edition,
     }));
     const worksheet = XLSX.utils.json_to_sheet(rows);
     worksheet["!cols"] = [
@@ -43,6 +47,7 @@ async function exportToExcel(submissions) {
         { wch: 40 },
         { wch: 40 },
         { wch: 12 },
+        { wch: 10 },
     ];
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Zgłoszenia");
@@ -58,15 +63,25 @@ export default function SubmissionsPanel({ onAction }) {
     const [internalNotes, setInternalNotes] = useState({});
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [bulkNote, setBulkNote] = useState("");
+    // edition "" = the current edition (server default), "all" = every year.
     const [filters, setFilters] = useState({
+        edition: "",
         status: "",
         paymentStatus: "",
         search: "",
     });
+    const [editions, setEditions] = useState(null);
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [isBusy, setIsBusy] = useState(false);
+    const [lightbox, setLightbox] = useState({ photos: [], index: null });
+
+    useEffect(() => {
+        api.get("/admin/editions")
+            .then(({ data }) => setEditions(data))
+            .catch(() => setEditions(null));
+    }, []);
 
     const loadSubmissions = useCallback(async () => {
         try {
@@ -205,6 +220,34 @@ export default function SubmissionsPanel({ onAction }) {
             {message && <p className="form-success">{message}</p>}
             <div className="admin-filters submission-filters">
                 <label>
+                    Edycja
+                    <select
+                        value={filters.edition}
+                        onChange={(event) =>
+                            setFilters({
+                                ...filters,
+                                edition: event.target.value,
+                            })
+                        }
+                    >
+                        <option value="">
+                            Bieżąca
+                            {editions ? ` (${editions.currentEdition})` : ""}
+                        </option>
+                        {editions?.editions
+                            .filter(
+                                (row) =>
+                                    row.edition !== editions.currentEdition,
+                            )
+                            .map((row) => (
+                                <option key={row.edition} value={row.edition}>
+                                    {row.edition} ({row.count})
+                                </option>
+                            ))}
+                        <option value="all">Wszystkie lata</option>
+                    </select>
+                </label>
+                <label>
                     Szukaj zgłoszenia
                     <input
                         type="search"
@@ -264,7 +307,28 @@ export default function SubmissionsPanel({ onAction }) {
                 >
                     Eksportuj do Excel
                 </button>
+                <button
+                    className="admin-export-button button-secondary"
+                    type="button"
+                    onClick={() =>
+                        printGateList(
+                            filters.edition === "all" ? "" : filters.edition,
+                        ).catch((err) =>
+                            setError(
+                                err.message ||
+                                    "Nie udało się przygotować listy.",
+                            ),
+                        )
+                    }
+                >
+                    Lista na bramę (druk)
+                </button>
             </div>
+
+            <GroupEmailForm
+                edition={filters.edition === "all" ? "" : filters.edition}
+                onSent={onAction}
+            />
 
             {submissions.length > 0 && (
                 <div className="admin-bulk-bar">
@@ -349,23 +413,32 @@ export default function SubmissionsPanel({ onAction }) {
                             {s.userEmail}), tel. {s.phone}
                         </p>
                         <p className="admin-hint">
-                            Dodano {formatDate(s.createdAt)}
+                            Edycja {s.edition} · dodano {formatDate(s.createdAt)}
                         </p>
                         <p>{s.carDescription}</p>
                         <div className="submission-photos">
-                            {s.photos.map((photo) => (
-                                <a
+                            {s.photos.map((photo, photoIndex) => (
+                                <button
                                     key={photo}
-                                    href={photo}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    type="button"
+                                    className="photo-thumb-button"
+                                    aria-label={`Powiększ zdjęcie ${photoIndex + 1}`}
+                                    onClick={() =>
+                                        setLightbox({
+                                            photos: s.photos.map((src) => ({
+                                                src,
+                                                alt: `${s.carBrand} ${s.licensePlate}`,
+                                            })),
+                                            index: photoIndex,
+                                        })
+                                    }
                                 >
                                     <img
                                         src={photo}
                                         alt={`${s.carBrand} ${s.licensePlate}`}
                                         loading="lazy"
                                     />
-                                </a>
+                                </button>
                             ))}
                         </div>
                         <p>
@@ -490,6 +563,14 @@ export default function SubmissionsPanel({ onAction }) {
                     </article>
                 );
             })}
+            <Lightbox
+                photos={lightbox.photos}
+                index={lightbox.index}
+                onIndexChange={(index) =>
+                    setLightbox((current) => ({ ...current, index }))
+                }
+                label="Zdjęcia zgłoszenia"
+            />
         </>
     );
 }

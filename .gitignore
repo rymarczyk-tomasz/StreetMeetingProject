@@ -47,16 +47,11 @@ backend/data/
 # Compiled TypeScript output
 backend/dist/
 
-# User-submitted photos (runtime data, per-environment)
+# Uploaded / generated files (runtime data, per-environment)
 backend/uploads/submissions/
 backend/uploads/content/
-
-# Generated gallery assets (runtime only)
-img/gallery/*.webp
-img/gallery/*.avif
-img/optimized/gallery/*.webp
-img/optimized/gallery/*.avif
-img/gallery/.drive-sync-state.json
+# Gallery thumbnails generated from Google Drive (backend/src/gallery/sync.ts)
+backend/uploads/gallery/
 
 # SQLite snapshots made by the backend's daily backup (backend/src/maintenance.ts)
 backend/backups/

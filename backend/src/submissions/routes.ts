@@ -85,6 +85,7 @@ function toPublicSubmission(row) {
         carBrand: row.car_brand,
         carDescription: row.car_description,
         photos: JSON.parse(row.photos || "[]").map(toPhotoUrl),
+        edition: row.edition,
         status: row.status,
         paymentStatus: row.payment_status || "unpaid",
         adminNote: row.admin_note,
@@ -102,9 +103,11 @@ function getMaxVehicles() {
 function getAvailability(userId) {
     const availability = siteContentDb.getSubmissionsAvailability();
     const maxVehicles = getMaxVehicles();
-    const activeCount = submissionsDb.countActiveForUser(userId);
+    const edition = siteContentDb.getCurrentEdition();
+    const activeCount = submissionsDb.countActiveForUser(userId, edition);
     return {
         ...availability,
+        edition,
         maxVehicles,
         activeCount,
         remaining: Math.max(0, maxVehicles - activeCount),
@@ -315,6 +318,7 @@ router.post(
             userId: req.user.sub,
             ...fields,
             photos,
+            edition: siteContentDb.getCurrentEdition(),
         });
 
         void sendNewSubmissionAdminEmail({

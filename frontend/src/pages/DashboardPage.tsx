@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/client";
+import Lightbox from "../components/Lightbox";
 
 const STATUS_LABELS = {
     pending: "Oczekuje na rozpatrzenie",
@@ -33,6 +34,7 @@ export default function DashboardPage() {
     const [editingId, setEditingId] = useState(null);
     const [editForm, setEditForm] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [lightbox, setLightbox] = useState({ photos: [], index: null });
 
     const loadSubmissions = useCallback(async () => {
         setIsLoading(true);
@@ -166,6 +168,11 @@ export default function DashboardPage() {
                                         <strong>
                                             {s.carBrand} — {s.licensePlate}
                                         </strong>
+                                        {s.edition && (
+                                            <span className="status-badge payment-status-unpaid">
+                                                {s.edition}
+                                            </span>
+                                        )}
                                         <span
                                             className={`status-badge status-${s.status}`}
                                         >
@@ -339,20 +346,33 @@ export default function DashboardPage() {
                                         )}
                                         {s.photos?.length > 0 && (
                                             <div className="submission-photos">
-                                                {s.photos.map((photo) => (
-                                                    <a
-                                                        href={photo}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        key={photo}
-                                                    >
-                                                        <img
-                                                            src={photo}
-                                                            alt={`Zdjęcie ${s.carBrand}`}
-                                                            loading="lazy"
-                                                        />
-                                                    </a>
-                                                ))}
+                                                {s.photos.map(
+                                                    (photo, photoIndex) => (
+                                                        <button
+                                                            type="button"
+                                                            className="photo-thumb-button"
+                                                            key={photo}
+                                                            aria-label={`Powiększ zdjęcie ${photoIndex + 1}`}
+                                                            onClick={() =>
+                                                                setLightbox({
+                                                                    photos: s.photos.map(
+                                                                        (src) => ({
+                                                                            src,
+                                                                            alt: `Zdjęcie ${s.carBrand}`,
+                                                                        }),
+                                                                    ),
+                                                                    index: photoIndex,
+                                                                })
+                                                            }
+                                                        >
+                                                            <img
+                                                                src={photo}
+                                                                alt={`Zdjęcie ${s.carBrand}`}
+                                                                loading="lazy"
+                                                            />
+                                                        </button>
+                                                    ),
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -362,6 +382,14 @@ export default function DashboardPage() {
                     })}
                 </ul>
             )}
+            <Lightbox
+                photos={lightbox.photos}
+                index={lightbox.index}
+                onIndexChange={(index) =>
+                    setLightbox((current) => ({ ...current, index }))
+                }
+                label="Zdjęcia zgłoszenia"
+            />
         </section>
     );
 }
