@@ -5,9 +5,11 @@ const db = require("./db/database");
 const refreshTokensDb = require("./db/refreshTokens");
 const passwordResetTokensDb = require("./db/passwordResetTokens");
 const emailTokensDb = require("./db/emailTokens");
+const { sendDuePaymentReminders } = require("./submissions/paymentReminders");
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const ONE_HOUR_MS = 60 * 60 * 1000;
 
 const BACKUP_DIR = process.env.BACKUP_DIR
     ? path.resolve(process.env.BACKUP_DIR)
@@ -52,9 +54,21 @@ function runBackup() {
         .catch((error) => console.error("[backup] Błąd kopii bazy:", error.message));
 }
 
+function runPaymentReminders() {
+    sendDuePaymentReminders()
+        .then(({ sent }) => {
+            if (sent) console.log(`[email] Wysłano przypomnienia o opłacie: ${sent}`);
+        })
+        .catch((error) => console.error("[email] Przypomnienia o opłacie:", error.message));
+}
+
 function startMaintenance() {
     pruneExpiredTokens();
     setInterval(pruneExpiredTokens, SIX_HOURS_MS).unref();
+
+    // Checked hourly; the reminder module itself waits for daytime in Poland.
+    setTimeout(runPaymentReminders, 2 * 60 * 1000).unref();
+    setInterval(runPaymentReminders, ONE_HOUR_MS).unref();
 
     if (String(process.env.BACKUP_DISABLED || "").toLowerCase() === "true") {
         return;

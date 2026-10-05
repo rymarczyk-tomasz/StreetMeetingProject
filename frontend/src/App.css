@@ -711,6 +711,21 @@
     color: #fff;
 }
 
+.status-waitlist {
+    background: #8ab4f8;
+    color: #0b1f3a;
+}
+
+.status-withdrawn {
+    background: #9ca3af;
+    color: #111827;
+}
+
+.payment-overdue {
+    background: #e5484d;
+    color: #fff;
+}
+
 .payment-status-unpaid {
     background: #e5e7eb;
     color: #1f2937;
@@ -730,6 +745,20 @@
     padding: 0.75rem 1rem;
     border-left: 3px solid #f5a623;
     background: #fff8e8;
+}
+
+.admin-queue-alert {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.admin-queue-alert p {
+    margin: 0;
+    flex: 1 1 24rem;
 }
 
 @media (max-width: 700px) {

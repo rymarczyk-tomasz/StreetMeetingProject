@@ -85,68 +85,151 @@ function paymentLines(submission) {
     return lines;
 }
 
+const STATUS_EMAILS = ["approved", "rejected", "waitlist"];
+
 async function sendSubmissionStatusEmail({
     submission,
     user,
     status,
     adminNote,
+    previousStatus = "",
 }) {
-    if (!user?.email || !["approved", "rejected"].includes(status)) {
+    if (!user?.email || !STATUS_EMAILS.includes(status)) {
         return { sent: false, reason: "not_applicable" };
     }
 
-    const approved = status === "approved";
     const firstName = user.first_name || submission.first_name || "Użytkowniku";
     const carBrand = submission.car_brand || "Twój pojazd";
-    const statusLabel = approved ? "zaakceptowane" : "odrzucone";
-    const subject = `Street Show: zgłoszenie ${statusLabel}`;
     const note = adminNote ? String(adminNote) : "";
-    const payment = approved ? paymentLines(submission) : [];
     const panelUrl = `${getAppUrl()}/panel`;
-    const approvedText = [
-        `Cześć ${firstName},`,
-        "",
-        `Chcielibyśmy Cię poinformować, że Twój samochód ${carBrand} został zaakceptowany do strefy Select.`,
-        "",
-        ...payment,
-        note ? `\nWiadomość od organizatora:\n${note}` : "",
-        "",
-        `Szczegóły znajdziesz w swoim panelu: ${panelUrl}`,
-        "",
-        "Pozdrawiamy",
-        "Street Show Crew",
-    ];
-    const defaultText = [
-        `Cześć ${firstName},`,
-        "",
-        `Twoje zgłoszenie pojazdu do strefy Select zostało ${statusLabel}.`,
-        note ? `\nWiadomość od organizatora:\n${note}` : "",
-        "",
-        "Street Show",
-    ];
+    const noteText = note ? `\nWiadomość od organizatora:\n${note}` : "";
     const noteHtml = note
         ? `<p><strong>Wiadomość od organizatora:</strong><br>${escapeHtml(note).replace(/\n/g, "<br>")}</p>`
         : "";
 
-    return sendMail({
-        to: user.email,
-        subject,
-        text: (approved ? approvedText : defaultText).join("\n"),
-        html: approved
-            ? `
+    if (status === "approved") {
+        const payment = paymentLines(submission);
+        const intro =
+            previousStatus === "waitlist"
+                ? `Zwolniło się miejsce w strefie Select — Twój samochód ${carBrand} przechodzi z listy rezerwowej i został zaakceptowany.`
+                : `Chcielibyśmy Cię poinformować, że Twój samochód ${carBrand} został zaakceptowany do strefy Select.`;
+        return sendMail({
+            to: user.email,
+            subject: "Street Show: zgłoszenie zaakceptowane",
+            text: [
+                `Cześć ${firstName},`,
+                "",
+                intro,
+                "",
+                ...payment,
+                noteText,
+                "",
+                `Szczegóły znajdziesz w swoim panelu: ${panelUrl}`,
+                "",
+                "Pozdrawiamy",
+                "Street Show Crew",
+            ].join("\n"),
+            html: `
                 <p>Cześć ${escapeHtml(firstName)},</p>
-                <p>Chcielibyśmy Cię poinformować, że Twój samochód <strong>${escapeHtml(carBrand)}</strong> został zaakceptowany do strefy Select.</p>
+                <p>${escapeHtml(intro)}</p>
                 <p>${payment.map((line) => escapeHtml(line)).join("<br>")}</p>
                 ${noteHtml}
                 <p>Szczegóły znajdziesz w <a href="${escapeHtml(panelUrl)}">swoim panelu</a>.</p>
                 <p>Pozdrawiamy<br>Street Show Crew</p>
-            `
-            : `
-                <p>Cześć ${escapeHtml(firstName)},</p>
-                <p>Twoje zgłoszenie pojazdu do strefy Select zostało <strong>${statusLabel}</strong>.</p>
-                ${noteHtml}
-                <p>Street Show</p>
             `,
+        });
+    }
+
+    if (status === "waitlist") {
+        const lines = [
+            `Twój samochód ${carBrand} trafił na listę rezerwową strefy Select.`,
+            "Gdy zwolnią się miejsca, organizator wybierze z listy rezerwowej auta do akceptacji — wtedy dostaniesz e-mail z danymi do opłaty. Do tego czasu nic nie płacisz.",
+        ];
+        return sendMail({
+            to: user.email,
+            subject: "Street Show: zgłoszenie na liście rezerwowej",
+            text: [
+                `Cześć ${firstName},`,
+                "",
+                ...lines,
+                noteText,
+                "",
+                `Status zgłoszenia zobaczysz w panelu: ${panelUrl}`,
+                "",
+                "Street Show Crew",
+            ].join("\n"),
+            html: `
+                <p>Cześć ${escapeHtml(firstName)},</p>
+                ${lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}
+                ${noteHtml}
+                <p>Status zgłoszenia zobaczysz w <a href="${escapeHtml(panelUrl)}">swoim panelu</a>.</p>
+                <p>Street Show Crew</p>
+            `,
+        });
+    }
+
+    return sendMail({
+        to: user.email,
+        subject: "Street Show: zgłoszenie odrzucone",
+        text: [
+            `Cześć ${firstName},`,
+            "",
+            "Twoje zgłoszenie pojazdu do strefy Select zostało odrzucone.",
+            noteText,
+            "",
+            "Street Show",
+        ].join("\n"),
+        html: `
+            <p>Cześć ${escapeHtml(firstName)},</p>
+            <p>Twoje zgłoszenie pojazdu do strefy Select zostało <strong>odrzucone</strong>.</p>
+            ${noteHtml}
+            <p>Street Show</p>
+        `,
+    });
+}
+
+async function sendPaymentReminderEmail({ submission, email, firstName }) {
+    const payment = getPaymentDetails(submission);
+    const panelUrl = `${getAppUrl()}/panel`;
+    const name = firstName || submission.first_name || "Uczestniku";
+    const summary = `${submission.car_brand} (${submission.license_plate})`;
+    const lines = [
+        `Przypominamy o opłacie za miejsce w strefie Select dla auta ${summary} — termin mija ${formatDeadline(payment.deadline)}.`,
+        "Jeśli opłata nie wpłynie w terminie, miejsce może zostać przekazane osobie z listy rezerwowej.",
+    ];
+    const details = payment.complete
+        ? [
+              `Kwota: ${payment.amount}`,
+              payment.recipient ? `Odbiorca: ${payment.recipient}` : "",
+              `Numer konta: ${payment.account}`,
+              `Tytuł przelewu: ${payment.title}`,
+          ].filter(Boolean)
+        : [];
+    const closing =
+        "Jeśli opłata jest już wykonana, zgłoś ją w panelu (najlepiej z potwierdzeniem przelewu). Jeśli nie możesz przyjechać, kliknij w panelu „Rezygnuję” — miejsce dostanie ktoś z listy rezerwowej.";
+
+    return sendMail({
+        to: email,
+        subject: "Street Show: przypomnienie o opłacie",
+        text: [
+            `Cześć ${name},`,
+            "",
+            ...lines,
+            "",
+            ...(details.length ? [...details, ""] : []),
+            closing,
+            panelUrl,
+            "",
+            "Street Show Crew",
+        ].join("\n"),
+        html: `
+            <p>Cześć ${escapeHtml(name)},</p>
+            ${lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}
+            ${details.length ? `<p>${details.map((line) => escapeHtml(line)).join("<br>")}</p>` : ""}
+            <p>${escapeHtml(closing)}</p>
+            <p><a href="${escapeHtml(panelUrl)}">Przejdź do panelu</a></p>
+            <p>Street Show Crew</p>
+        `,
     });
 }
 
@@ -234,9 +317,13 @@ async function sendEmailChangeEmail({ user, newEmail, token, ttlHours }) {
     });
 }
 
+function adminNotifyRecipients() {
+    return String(process.env.ADMIN_NOTIFY_EMAIL || "").trim();
+}
+
 // Optional heads-up for organizers; set ADMIN_NOTIFY_EMAIL (comma-separated) to enable.
 async function sendNewSubmissionAdminEmail({ submission, userEmail }) {
-    const recipients = String(process.env.ADMIN_NOTIFY_EMAIL || "").trim();
+    const recipients = adminNotifyRecipients();
     if (!recipients) return { sent: false, reason: "not_configured" };
 
     const adminUrl = `${getAppUrl()}/admin`;
@@ -259,6 +346,35 @@ async function sendNewSubmissionAdminEmail({ submission, userEmail }) {
             <p><strong>${escapeHtml(summary)}</strong><br>
             ${escapeHtml(submission.first_name)} ${escapeHtml(submission.last_name)} (${escapeHtml(userEmail)})<br>
             tel. ${escapeHtml(submission.phone)}</p>
+            <p><a href="${escapeHtml(adminUrl)}">Otwórz panel administratora</a></p>
+        `,
+    });
+}
+
+// A participant gave up an approved (or reserve-list) place.
+async function sendWithdrawalAdminEmail({ submission, userEmail, previousStatus, waitlistCount }) {
+    const recipients = adminNotifyRecipients();
+    if (!recipients) return { sent: false, reason: "not_configured" };
+
+    const adminUrl = `${getAppUrl()}/admin`;
+    const summary = `${submission.car_brand} — ${submission.license_plate}`;
+    const lines = [
+        `Uczestnik zrezygnował z udziału w strefie Select: ${summary}`,
+        `${submission.first_name} ${submission.last_name} (${userEmail})`,
+        previousStatus === "approved"
+            ? `Zwolniło się miejsce. Na liście rezerwowej: ${waitlistCount}.`
+            : "Zgłoszenie było na liście rezerwowej.",
+        submission.payment_status === "paid"
+            ? "Opłata była już potwierdzona — sprawdź, czy należy się zwrot."
+            : "",
+    ].filter(Boolean);
+
+    return sendMail({
+        to: recipients,
+        subject: `Street Show: rezygnacja (${summary})`,
+        text: [...lines, "", `Panel administratora: ${adminUrl}`].join("\n"),
+        html: `
+            ${lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}
             <p><a href="${escapeHtml(adminUrl)}">Otwórz panel administratora</a></p>
         `,
     });
@@ -307,4 +423,6 @@ module.exports = {
     sendSubmissionStatusEmail,
     sendPasswordResetEmail,
     sendNewSubmissionAdminEmail,
+    sendWithdrawalAdminEmail,
+    sendPaymentReminderEmail,
 };

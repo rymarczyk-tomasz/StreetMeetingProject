@@ -7,6 +7,10 @@ const ACTION_LABELS = {
     "submission.pending": "ustawił zgłoszenie jako oczekujące",
     "submission.approved": "zaakceptował zgłoszenie",
     "submission.rejected": "odrzucił zgłoszenie",
+    "submission.waitlist": "dodał zgłoszenie do listy rezerwowej",
+    "submission.withdrawn": "oznaczył rezygnację uczestnika",
+    "submission.withdrawn_by_user": "zrezygnował z udziału (uczestnik)",
+    "submission.payment_reminder_sent": "wysłano przypomnienie o opłacie",
     "submission.deleted": "usunął zgłoszenie",
     "submission.checked_in": "zarejestrował wjazd",
     "submission.checkin_undone": "cofnął wjazd",
@@ -150,7 +154,7 @@ export default function AuditLog({ refreshKey }) {
                 <div className="audit-list">
                     {visibleEntries.map((entry) => (
                         <article className="audit-entry" key={entry.id}>
-                            <strong>{entry.adminEmail}</strong>{" "}
+                            <strong>{entry.adminEmail || "System"}</strong>{" "}
                             {describeAction(entry)} {describeTarget(entry)}
                             <span>
                                 {formatDate(entry.createdAt)}

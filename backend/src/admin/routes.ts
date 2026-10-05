@@ -26,6 +26,7 @@ const {
 } = require("../utils/imageUpload");
 const { CONTENT_UPLOAD_ROOT } = require("../utils/paths");
 const { validateContent } = require("../content/validators");
+const { isPaymentOverdue } = require("../payments");
 const { adminRouter: albumsRouter } = require("../gallery/routes");
 
 const router = express.Router();
@@ -33,8 +34,10 @@ const router = express.Router();
 router.use(authenticate, requireRole("admin"));
 router.use("/albums", albumsRouter);
 
-const SUBMISSION_STATUSES = ["pending", "approved", "rejected"];
+const SUBMISSION_STATUSES = ["pending", "approved", "rejected", "waitlist", "withdrawn"];
+// "overdue" is a filter only: approved, unpaid and past the payment deadline.
 const PAYMENT_STATUSES = ["unpaid", "verification", "paid"];
+const PAYMENT_FILTERS = [...PAYMENT_STATUSES, "overdue"];
 const MAX_BULK_IDS = 200;
 
 const uploadContentImage = createImageUpload({
@@ -59,7 +62,17 @@ function audit(req, action, targetType, targetId, details = {}) {
 }
 
 function toAdminSubmission(row) {
-    return { ...toPublicSubmission(row), internalNote: row.internal_note };
+    return {
+        ...toPublicSubmission(row),
+        internalNote: row.internal_note,
+        approvedAt: row.approved_at,
+        paymentReminderSentAt: row.payment_reminder_sent_at,
+    };
+}
+
+// Places in the Select zone (Ustawienia); 0 = no limit.
+function getCapacity(settings = siteContentDb.getSettings()) {
+    return Number(settings.selectCapacity) || 0;
 }
 
 function toAdminUser(user) {
@@ -312,6 +325,10 @@ router.get("/stats", (req, res) => {
     const users = usersDb.getUserStats();
     const submissions = submissionsDb.getSubmissionStats(edition);
     const settings = siteContentDb.getSettings();
+    const capacity = getCapacity(settings);
+    const overdue = submissionsDb
+        .listAwaitingPayment(edition)
+        .filter((row) => isPaymentOverdue(row, settings)).length;
 
     res.json({
         edition,
@@ -326,11 +343,15 @@ router.get("/stats", (req, res) => {
             pending: submissions.pending || 0,
             approved: submissions.approved || 0,
             rejected: submissions.rejected || 0,
+            waitlist: submissions.waitlist || 0,
+            withdrawn: submissions.withdrawn || 0,
+            overdue,
             unpaid: submissions.unpaid || 0,
             paymentVerification: submissions.paymentVerification || 0,
             paid: submissions.paid || 0,
         },
-        capacity: Number(settings.selectCapacity) || 0,
+        capacity,
+        freePlaces: capacity ? Math.max(0, capacity - (submissions.approved || 0)) : null,
         availability: siteContentDb.getSubmissionsAvailability(settings),
         perDay: submissionsDb.getSubmissionsPerDay(edition, 30),
         topBrands: submissionsDb.getTopCarBrands(edition, 8),
@@ -355,18 +376,44 @@ function readSubmissionFilters(source) {
     if (status && !SUBMISSION_STATUSES.includes(status)) {
         return { error: "Nieprawidłowy filtr statusu." };
     }
-    if (paymentStatus && !PAYMENT_STATUSES.includes(paymentStatus)) {
+    if (paymentStatus && !PAYMENT_FILTERS.includes(paymentStatus)) {
         return { error: "Nieprawidłowy status płatności." };
     }
 
+    const overdue = paymentStatus === "overdue";
     return {
         filters: {
             edition: readEditionFilter(source.edition),
-            status,
-            paymentStatus,
+            status: overdue ? "approved" : status,
+            paymentStatus: overdue ? "unpaid" : paymentStatus,
             search: normalizeText(source.search),
+            ...(overdue ? { overdue: true } : {}),
         },
     };
+}
+
+// listAllSubmissions + the filter SQL can't express (overdue payments).
+function findSubmissions(filters) {
+    const rows = submissionsDb.listAllSubmissions(filters);
+    if (!filters.overdue) return rows;
+    const settings = siteContentDb.getSettings();
+    return rows.filter((row) => isPaymentOverdue(row, settings));
+}
+
+// One recipient per account for group messages.
+function findRecipients(filters) {
+    if (!filters.overdue) return submissionsDb.listRecipients(filters);
+    const byUser = new Map();
+    for (const row of findSubmissions(filters)) {
+        if (!byUser.has(row.user_id)) {
+            byUser.set(row.user_id, {
+                user_id: row.user_id,
+                email: row.user_email,
+                first_name: row.first_name,
+            });
+        }
+    }
+    return [...byUser.values()];
 }
 
 // Bulk downloads of participant data, logged on every use.
@@ -379,7 +426,7 @@ router.get("/submissions", (req, res) => {
     const { filters, error } = readSubmissionFilters(req.query);
     if (error) return res.status(400).json({ message: error });
 
-    const rows = submissionsDb.listAllSubmissions(filters);
+    const rows = findSubmissions(filters);
     const entry = {
         adminId: req.user.sub,
         targetType: "submission",
@@ -422,13 +469,14 @@ function changeSubmissionStatus(req, existing, status, adminNote) {
         adminNote,
     });
 
-    if (existing.status !== status && ["approved", "rejected"].includes(status)) {
+    if (existing.status !== status && ["approved", "rejected", "waitlist"].includes(status)) {
         const user = usersDb.findUserById(existing.user_id);
         void sendSubmissionStatusEmail({
             submission: updated,
             user,
             status,
             adminNote,
+            previousStatus: existing.status,
         }).catch((error) => {
             console.error(
                 `[email] Nie udało się wysłać powiadomienia dla zgłoszenia ${existing.id}:`,
@@ -450,11 +498,36 @@ function readStatusChange(body) {
     if (adminNote.length > 2000) {
         return { error: "Komentarz może mieć maksymalnie 2000 znaków." };
     }
-    return { status, adminNote };
+    return { status, adminNote, force: body.force === true };
+}
+
+// Approving more cars than the Select zone has places needs an explicit
+// confirmation (force) — otherwise the admin is pointed at the reserve list.
+function capacityProblem(submissions, status, force) {
+    if (status !== "approved" || force) return null;
+    const capacity = getCapacity();
+    if (!capacity) return null;
+
+    const added = new Map();
+    for (const submission of submissions) {
+        if (submission.status === "approved") continue;
+        added.set(submission.edition, (added.get(submission.edition) || 0) + 1);
+    }
+    for (const [edition, count] of added) {
+        const approved = submissionsDb.countApproved(edition);
+        if (approved + count > capacity) {
+            const free = Math.max(0, capacity - approved);
+            return {
+                code: "capacity_full",
+                message: `Limit miejsc w strefie Select (${edition}): ${capacity}, zaakceptowano już ${approved}${free ? `, wolnych: ${free}` : ""}. Akceptacja przekroczy limit — możesz zamiast tego dodać auto do listy rezerwowej.`,
+            };
+        }
+    }
+    return null;
 }
 
 router.patch("/submissions/:id/status", (req, res) => {
-    const { status, adminNote, error } = readStatusChange(req.body);
+    const { status, adminNote, force, error } = readStatusChange(req.body);
     if (error) {
         return res.status(400).json({ message: error });
     }
@@ -464,12 +537,15 @@ router.patch("/submissions/:id/status", (req, res) => {
         return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
     }
 
+    const problem = capacityProblem([existing], status, force);
+    if (problem) return res.status(409).json(problem);
+
     const updated = changeSubmissionStatus(req, existing, status, adminNote);
     res.json({ submission: toAdminSubmission(updated) });
 });
 
 router.post("/submissions/bulk-status", (req, res) => {
-    const { status, adminNote, error } = readStatusChange(req.body);
+    const { status, adminNote, force, error } = readStatusChange(req.body);
     if (error) {
         return res.status(400).json({ message: error });
     }
@@ -483,10 +559,14 @@ router.post("/submissions/bulk-status", (req, res) => {
         });
     }
 
+    const targets = ids
+        .map((id) => submissionsDb.findSubmissionById(id))
+        .filter((existing) => existing && existing.status !== status);
+    const problem = capacityProblem(targets, status, force);
+    if (problem) return res.status(409).json(problem);
+
     let updatedCount = 0;
-    for (const id of ids) {
-        const existing = submissionsDb.findSubmissionById(id);
-        if (!existing || existing.status === status) continue;
+    for (const existing of targets) {
         // Keep a per-submission note unless a bulk note was provided.
         changeSubmissionStatus(
             req,
@@ -574,7 +654,7 @@ router.get("/emails/recipients", (req, res) => {
     if (error) return res.status(400).json({ message: error });
 
     res.json({
-        count: submissionsDb.listRecipients(filters).length,
+        count: findRecipients(filters).length,
         emailConfigured: isEmailConfigured(),
         inProgress: groupEmailInProgress,
     });
@@ -598,7 +678,7 @@ router.post("/emails", (req, res) => {
     const { filters, error } = readSubmissionFilters(req.body?.filters || {});
     if (error) return res.status(400).json({ message: error });
 
-    const recipients = submissionsDb.listRecipients(filters);
+    const recipients = findRecipients(filters);
     if (!recipients.length) {
         return res.status(400).json({ message: "Brak odbiorców dla wybranych filtrów." });
     }

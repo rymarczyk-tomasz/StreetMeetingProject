@@ -130,6 +130,8 @@ const DEFAULTS = {
         paymentAccount: "",
         paymentTitleTemplate: "Strefa Select {rok} – {rejestracja}",
         paymentDeadline: "",
+        // Days to pay counted from approval (0 = only the fixed deadline above).
+        paymentDaysAfterApproval: 0,
         // Practical info for accepted participants (entry hours, what to bring…).
         participantInfo: "",
     },

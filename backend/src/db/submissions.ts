@@ -40,11 +40,32 @@ const updatePaymentStatusStmt = db.prepare(`
     SET payment_status = ?, updated_at = datetime('now')
     WHERE id = ?
 `);
+// Entering "approved" starts a new payment period (and a new reminder).
 const updateStatusStmt = db.prepare(`
     UPDATE submissions
-    SET status = ?, admin_note = ?, updated_at = datetime('now')
-    WHERE id = ?
+    SET admin_note = @adminNote,
+        approved_at = CASE WHEN @status = 'approved' AND status != 'approved'
+            THEN datetime('now') ELSE approved_at END,
+        payment_reminder_sent_at = CASE WHEN @status = 'approved' AND status != 'approved'
+            THEN NULL ELSE payment_reminder_sent_at END,
+        withdrawn_at = CASE WHEN @status = 'withdrawn' AND status != 'withdrawn'
+            THEN datetime('now') ELSE withdrawn_at END,
+        status = @status,
+        updated_at = datetime('now')
+    WHERE id = @id
 `);
+const countByStatusStmt = db.prepare(
+    `SELECT COUNT(*) AS count FROM submissions WHERE edition = ? AND status = ?`,
+);
+const listAwaitingPaymentStmt = db.prepare(`
+    SELECT submissions.*, users.email AS user_email
+    FROM submissions JOIN users ON users.id = submissions.user_id
+    WHERE submissions.edition = ? AND submissions.status = 'approved'
+      AND submissions.payment_status = 'unpaid' AND users.is_active = 1
+`);
+const markReminderSentStmt = db.prepare(
+    `UPDATE submissions SET payment_reminder_sent_at = datetime('now') WHERE id = ?`,
+);
 const updateInternalNoteStmt = db.prepare(`
     UPDATE submissions SET internal_note = ? WHERE id = ?
 `);
@@ -58,11 +79,11 @@ const updateDetailsStmt = db.prepare(`
 const deleteStmt = db.prepare(`DELETE FROM submissions WHERE id = ?`);
 const countActiveForUserStmt = db.prepare(`
     SELECT COUNT(*) AS count FROM submissions
-    WHERE user_id = ? AND edition = ? AND status != 'rejected'
+    WHERE user_id = ? AND edition = ? AND status NOT IN ('rejected', 'withdrawn')
 `);
 const findActiveByPlateStmt = db.prepare(`
     SELECT id FROM submissions
-    WHERE user_id = ? AND edition = ? AND status != 'rejected'
+    WHERE user_id = ? AND edition = ? AND status NOT IN ('rejected', 'withdrawn')
       AND replace(upper(license_plate), ' ', '') = replace(upper(?), ' ', '')
     LIMIT 1
 `);
@@ -189,8 +210,21 @@ function listRecipients(filters: SubmissionFilters = {}) {
 }
 
 function updateSubmissionStatus(id, status, adminNote) {
-    updateStatusStmt.run(status, adminNote || null, id);
+    updateStatusStmt.run({ id, status, adminNote: adminNote || null });
     return findByIdStmt.get(id);
+}
+
+function countApproved(edition) {
+    return countByStatusStmt.get(edition, "approved").count;
+}
+
+// Approved but not paid (nor reported as paid) — candidates for reminders.
+function listAwaitingPayment(edition) {
+    return listAwaitingPaymentStmt.all(edition);
+}
+
+function markPaymentReminderSent(id) {
+    markReminderSentStmt.run(id);
 }
 
 function updateSubmissionPaymentStatus(id, paymentStatus) {
@@ -236,6 +270,8 @@ function getSubmissionStats(edition) {
                 SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
                 SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) AS approved,
                 SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) AS rejected,
+                SUM(CASE WHEN status = 'waitlist' THEN 1 ELSE 0 END) AS waitlist,
+                SUM(CASE WHEN status = 'withdrawn' THEN 1 ELSE 0 END) AS withdrawn,
                 SUM(CASE WHEN status = 'approved' AND payment_status = 'unpaid' THEN 1 ELSE 0 END) AS unpaid,
                 SUM(CASE WHEN status = 'approved' AND payment_status = 'verification' THEN 1 ELSE 0 END) AS paymentVerification,
                 SUM(CASE WHEN status = 'approved' AND payment_status = 'paid' THEN 1 ELSE 0 END) AS paid
@@ -287,6 +323,9 @@ module.exports = {
     listAllSubmissions,
     listRecipients,
     updateSubmissionStatus,
+    countApproved,
+    listAwaitingPayment,
+    markPaymentReminderSent,
     updateSubmissionPaymentStatus,
     updateSubmissionInternalNote,
     updateSubmissionDetails,

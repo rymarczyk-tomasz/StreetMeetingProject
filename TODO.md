@@ -20,6 +20,8 @@ Lista rzeczy do dodania lub dopracowania w projekcie.
 - [x] Zgody (regulamin/RODO) przy rejestracji i zgloszeniu, z data i wersja regulaminu
 - [x] Garaz pojazdow, zgloszenie z garazu, "Zglos ponownie" na nowa edycje
 - [x] Komunikaty od organizatora w panelu uczestnika
+- [x] Lista rezerwowa, limit miejsc przy akceptacji, rezygnacja uczestnika
+- [x] Termin opłaty od akceptacji, przypomnienie e-mail, filtr "po terminie"
 
 ## E-mail i powiadomienia
 

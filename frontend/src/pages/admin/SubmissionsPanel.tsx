@@ -8,6 +8,7 @@ import {
     STATUS_LABELS,
     errorMessage,
     formatDate,
+    formatDay,
 } from "./shared";
 
 // Fetched again (not taken from the table) so the backend logs the export.
@@ -31,6 +32,8 @@ async function exportToExcel(filters) {
         Status: STATUS_LABELS[submission.status] || submission.status,
         "Status opłaty":
             PAYMENT_STATUS_LABELS[submission.paymentStatus || "unpaid"],
+        "Termin opłaty":
+            submission.status === "approved" ? submission.payment?.deadline || "" : "",
         "Komentarz administratora": submission.adminNote || "",
         "Notatka wewnętrzna": submission.internalNote || "",
         "Liczba zdjęć": submission.photos.length,
@@ -49,6 +52,7 @@ async function exportToExcel(filters) {
         { wch: 45 },
         { wch: 18 },
         { wch: 18 },
+        { wch: 14 },
         { wch: 40 },
         { wch: 40 },
         { wch: 12 },
@@ -81,6 +85,24 @@ export default function SubmissionsPanel({ onAction }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isBusy, setIsBusy] = useState(false);
     const [lightbox, setLightbox] = useState({ photos: [], index: null });
+    // Free places / reserve list / overdue payments of the current edition.
+    const [queue, setQueue] = useState(null);
+
+    const loadQueue = useCallback(() => {
+        api.get("/admin/stats")
+            .then(({ data }) =>
+                setQueue({
+                    freePlaces: data.freePlaces,
+                    waitlist: data.submissions.waitlist,
+                    overdue: data.submissions.overdue,
+                }),
+            )
+            .catch(() => setQueue(null));
+    }, []);
+
+    useEffect(() => {
+        loadQueue();
+    }, [loadQueue]);
 
     useEffect(() => {
         api.get("/admin/editions")
@@ -120,6 +142,7 @@ export default function SubmissionsPanel({ onAction }) {
         try {
             const result = await action();
             await loadSubmissions();
+            loadQueue();
             onAction();
             return result;
         } catch (err) {
@@ -129,17 +152,39 @@ export default function SubmissionsPanel({ onAction }) {
         }
     }
 
+    // Approving over the Select zone limit needs a second, explicit confirmation.
+    async function withCapacityCheck(send) {
+        try {
+            return await send(false);
+        } catch (err) {
+            const data = err.response?.data;
+            if (
+                err.response?.status === 409 &&
+                data?.code === "capacity_full" &&
+                window.confirm(`${data.message}\n\nZaakceptować mimo to?`)
+            ) {
+                return send(true);
+            }
+            throw err;
+        }
+    }
+
     function setStatus(submission, status) {
         return runAction(
             () =>
-                api.patch(`/admin/submissions/${submission.id}/status`, {
-                    status,
-                    adminNote:
-                        adminNotes[submission.id] ?? submission.adminNote ?? "",
-                }),
+                withCapacityCheck((force) =>
+                    api.patch(`/admin/submissions/${submission.id}/status`, {
+                        status,
+                        force,
+                        adminNote:
+                            adminNotes[submission.id] ?? submission.adminNote ?? "",
+                    }),
+                ),
             "Nie udało się zmienić statusu zgłoszenia.",
         );
     }
+
+
 
     function setPaymentStatus(submission, paymentStatus) {
         return runAction(
@@ -190,11 +235,14 @@ export default function SubmissionsPanel({ onAction }) {
 
         const response = await runAction(
             () =>
-                api.post("/admin/submissions/bulk-status", {
-                    ids: selectedIds,
-                    status,
-                    adminNote: bulkNote,
-                }),
+                withCapacityCheck((force) =>
+                    api.post("/admin/submissions/bulk-status", {
+                        ids: selectedIds,
+                        status,
+                        force,
+                        adminNote: bulkNote,
+                    }),
+                ),
             "Nie udało się zmienić statusu zaznaczonych zgłoszeń.",
         );
         if (response) {
@@ -223,6 +271,41 @@ export default function SubmissionsPanel({ onAction }) {
         <>
             {error && <p className="form-error">{error}</p>}
             {message && <p className="form-success">{message}</p>}
+            {queue?.freePlaces > 0 && queue.waitlist > 0 && filters.status !== "waitlist" && (
+                <div className="payment-alert admin-queue-alert">
+                    <p>
+                        Wolne miejsca w strefie Select: <strong>{queue.freePlaces}</strong>. Na liście
+                        rezerwowej: <strong>{queue.waitlist}</strong> — wybierz auta do akceptacji.
+                    </p>
+                    <button
+                        type="button"
+                        className="button-secondary"
+                        onClick={() =>
+                            setFilters({ ...filters, edition: "", status: "waitlist", paymentStatus: "" })
+                        }
+                    >
+                        Pokaż listę rezerwową
+                    </button>
+                </div>
+            )}
+            {queue?.overdue > 0 && filters.paymentStatus !== "overdue" && (
+                <div className="payment-alert admin-queue-alert">
+                    <p>
+                        Po terminie płatności: <strong>{queue.overdue}</strong>{" "}
+                        {queue.overdue === 1 ? "zaakceptowane zgłoszenie" : "zaakceptowanych zgłoszeń"}.
+                        Napisz do nich (Wiadomość do grupy → „po terminie płatności”) albo przenieś auta na listę rezerwową lub je odrzuć.
+                    </p>
+                    <button
+                        type="button"
+                        className="button-secondary"
+                        onClick={() =>
+                            setFilters({ ...filters, edition: "", status: "", paymentStatus: "overdue" })
+                        }
+                    >
+                        Pokaż
+                    </button>
+                </div>
+            )}
             <div className="admin-filters submission-filters">
                 <label>
                     Edycja
@@ -281,6 +364,8 @@ export default function SubmissionsPanel({ onAction }) {
                         <option value="pending">Oczekujące</option>
                         <option value="approved">Zaakceptowane</option>
                         <option value="rejected">Odrzucone</option>
+                        <option value="waitlist">Lista rezerwowa</option>
+                        <option value="withdrawn">Rezygnacje</option>
                     </select>
                 </label>
                 <label>
@@ -298,6 +383,7 @@ export default function SubmissionsPanel({ onAction }) {
                         <option value="unpaid">Do opłacenia</option>
                         <option value="verification">Do weryfikacji</option>
                         <option value="paid">Opłacone</option>
+                        <option value="overdue">Po terminie płatności</option>
                     </select>
                 </label>
                 <button
@@ -374,6 +460,14 @@ export default function SubmissionsPanel({ onAction }) {
                                 onClick={() => bulkSetStatus("approved")}
                             >
                                 Zaakceptuj zaznaczone
+                            </button>
+                            <button
+                                type="button"
+                                className="button-secondary"
+                                disabled={isBusy}
+                                onClick={() => bulkSetStatus("waitlist")}
+                            >
+                                Na listę rezerwową
                             </button>
                             <button
                                 type="button"
@@ -462,6 +556,7 @@ export default function SubmissionsPanel({ onAction }) {
                             <span className={`status-badge status-${s.status}`}>
                                 {STATUS_LABELS[s.status] || s.status}
                             </span>
+                            {s.withdrawnAt && ` — ${formatDate(s.withdrawnAt)}`}
                         </p>
                         <p>
                             Opłata:{" "}
@@ -475,6 +570,24 @@ export default function SubmissionsPanel({ onAction }) {
                                 }
                             </span>
                         </p>
+                        {s.status === "approved" && s.paymentStatus === "unpaid" && s.payment?.deadline && (
+                            <p className="admin-hint">
+                                Termin opłaty: {formatDay(s.payment.deadline)}
+                                {s.paymentOverdue && (
+                                    <>
+                                        {" "}
+                                        <span className="status-badge payment-overdue">Po terminie</span>
+                                    </>
+                                )}
+                                {s.paymentReminderSentAt &&
+                                    ` · przypomnienie wysłane ${formatDate(s.paymentReminderSentAt)}`}
+                            </p>
+                        )}
+                        {s.status === "withdrawn" && s.paymentStatus === "paid" && (
+                            <p className="payment-alert">
+                                Uczestnik zrezygnował po opłaceniu — sprawdź, czy należy się zwrot.
+                            </p>
+                        )}
                         {s.paymentStatus === "verification" && (
                             <p className="payment-alert">
                                 Użytkownik zgłosił opłacenie. Zweryfikuj
@@ -559,11 +672,37 @@ export default function SubmissionsPanel({ onAction }) {
                             </button>
                             <button
                                 type="button"
+                                className="button-secondary"
+                                onClick={() => setStatus(s, "waitlist")}
+                                disabled={isBusy || s.status === "waitlist"}
+                            >
+                                Na listę rezerwową
+                            </button>
+                            <button
+                                type="button"
                                 onClick={() => setStatus(s, "rejected")}
                                 disabled={isBusy || s.status === "rejected"}
                             >
                                 Odrzuć
                             </button>
+                            {["approved", "waitlist"].includes(s.status) && (
+                                <button
+                                    type="button"
+                                    className="button-secondary"
+                                    onClick={() => {
+                                        if (
+                                            window.confirm(
+                                                `Oznaczyć rezygnację ${s.carBrand} (${s.licensePlate})? Użyj, gdy uczestnik zrezygnował np. telefonicznie.`,
+                                            )
+                                        ) {
+                                            setStatus(s, "withdrawn");
+                                        }
+                                    }}
+                                    disabled={isBusy}
+                                >
+                                    Oznacz rezygnację
+                                </button>
+                            )}
                             {s.status !== "pending" && (
                                 <button
                                     type="button"

@@ -4,6 +4,8 @@ export const STATUS_LABELS = {
     pending: "Oczekuje",
     approved: "Zaakceptowane",
     rejected: "Odrzucone",
+    waitlist: "Lista rezerwowa",
+    withdrawn: "Rezygnacja",
 };
 
 export const PAYMENT_STATUS_LABELS = {
@@ -26,6 +28,12 @@ export async function uploadContentImage(file) {
 
 export function errorMessage(err, fallback) {
     return err.response?.data?.message || fallback;
+}
+
+// "2026-10-12" → "12 paź 2026".
+export function formatDay(day) {
+    if (!day) return "";
+    return new Intl.DateTimeFormat("pl-PL", { dateStyle: "medium" }).format(new Date(`${day}T12:00:00`));
 }
 
 export function formatDate(value) {

@@ -293,6 +293,7 @@ function validateSettings(input) {
         paymentAccount: text(input.paymentAccount, 60),
         paymentTitleTemplate: text(input.paymentTitleTemplate, 140),
         paymentDeadline: text(input.paymentDeadline, 10),
+        paymentDaysAfterApproval: Number(input.paymentDaysAfterApproval || 0),
         participantInfo: String(input.participantInfo || "").trim().slice(0, 3000),
     };
 
@@ -323,6 +324,13 @@ function validateSettings(input) {
         content.maxVehiclesPerUser > 50
     ) {
         return { error: "Limit pojazdów na konto musi być liczbą od 1 do 50." };
+    }
+    if (
+        !Number.isInteger(content.paymentDaysAfterApproval) ||
+        content.paymentDaysAfterApproval < 0 ||
+        content.paymentDaysAfterApproval > 90
+    ) {
+        return { error: "Liczba dni na opłatę musi być liczbą od 0 do 90." };
     }
     return { content };
 }

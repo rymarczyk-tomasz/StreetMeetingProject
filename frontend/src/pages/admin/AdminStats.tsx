@@ -77,6 +77,14 @@ export default function AdminStats({ refreshKey }) {
                     <span>Oczekujące</span>
                     <strong>{submissions.pending}</strong>
                 </div>
+                <div className="admin-stat-card">
+                    <span>Lista rezerwowa</span>
+                    <strong>{submissions.waitlist}</strong>
+                    <small>
+                        {submissions.withdrawn} rezygnacji
+                        {stats.freePlaces ? ` · wolne miejsca: ${stats.freePlaces}` : ""}
+                    </small>
+                </div>
                 <div className="admin-stat-card admin-stat-approved">
                     <span>Zaakceptowane</span>
                     <strong>
@@ -98,6 +106,7 @@ export default function AdminStats({ refreshKey }) {
                     <small>
                         {submissions.paymentVerification} do weryfikacji,{" "}
                         {submissions.unpaid} nieopłaconych
+                        {submissions.overdue ? `, ${submissions.overdue} po terminie` : ""}
                     </small>
                 </div>
                 <div className="admin-stat-card">

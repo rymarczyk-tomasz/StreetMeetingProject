@@ -33,9 +33,13 @@ const {
     servePhoto,
 } = require("../utils/userPhotos");
 const { getUserSubmissionsDir } = require("../utils/paths");
-const { getPaymentDetails, getFeeAmount } = require("../payments");
+const auditLogDb = require("../db/auditLog");
+const { getPaymentDetails, getFeeAmount, isPaymentOverdue } = require("../payments");
 const { getAppUrl } = require("../utils/appUrl");
-const { sendNewSubmissionAdminEmail } = require("../notifications/email");
+const {
+    sendNewSubmissionAdminEmail,
+    sendWithdrawalAdminEmail,
+} = require("../notifications/email");
 
 const router = express.Router();
 
@@ -103,6 +107,8 @@ function toPublicSubmission(row) {
         paymentStatus: row.payment_status || "unpaid",
         paymentProofUrl: proofUrl(row.payment_proof),
         payment: approved ? getPaymentDetails(row) : null,
+        paymentOverdue: isPaymentOverdue(row),
+        withdrawnAt: row.withdrawn_at,
         hasPass: approved && row.payment_status === "paid",
         checkedInAt: row.checked_in_at,
         consentAt: row.consent_at,
@@ -414,6 +420,64 @@ router.delete("/:id", (req, res) => {
     submissionsDb.deleteSubmission(submission.id);
     removeSubmissionPhotos(submission);
     res.json({ message: "Zgłoszenie zostało wycofane." });
+});
+
+// Giving up an approved or reserve-list place ("Rezygnuję"). The submission is
+// kept (status "withdrawn") so organizers see the history and any payment;
+// the freed place can go to the next car on the reserve list.
+router.post("/:id/withdraw", (req, res) => {
+    const submission = findOwnSubmission(req);
+    if (!submission) return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+
+    if (!["approved", "waitlist"].includes(submission.status)) {
+        return res.status(400).json({
+            message: "Zrezygnować można z zaakceptowanego zgłoszenia lub z listy rezerwowej.",
+        });
+    }
+    if (submission.edition !== siteContentDb.getCurrentEdition()) {
+        return res.status(400).json({ message: "To zgłoszenie dotyczy poprzedniej edycji." });
+    }
+    if (submission.checked_in_at) {
+        return res.status(400).json({ message: "Wjazd tego auta jest już zarejestrowany." });
+    }
+
+    const updated = submissionsDb.updateSubmissionStatus(
+        submission.id,
+        "withdrawn",
+        submission.admin_note,
+    );
+    auditLogDb.createAuditEntry({
+        adminId: req.user.sub,
+        action: "submission.withdrawn_by_user",
+        targetType: "submission",
+        targetId: submission.id,
+        details: {
+            previousStatus: submission.status,
+            licensePlate: submission.license_plate,
+            paymentStatus: submission.payment_status,
+        },
+    });
+
+    const waitlistCount = submissionsDb.listAllSubmissions({
+        edition: submission.edition,
+        status: "waitlist",
+    }).length;
+    void sendWithdrawalAdminEmail({
+        submission: updated,
+        userEmail: req.user.email,
+        previousStatus: submission.status,
+        waitlistCount,
+    }).catch((emailError) =>
+        console.error("[email] Powiadomienie o rezygnacji:", emailError.message),
+    );
+
+    res.json({
+        submission: toPublicSubmission(updated),
+        message:
+            submission.payment_status === "paid"
+                ? "Rezygnacja przyjęta. W sprawie zwrotu opłaty organizator skontaktuje się z Tobą zgodnie z regulaminem."
+                : "Rezygnacja przyjęta. Dziękujemy za informację — miejsce dostanie ktoś z listy rezerwowej.",
+    });
 });
 
 // "Zgłoś ponownie": copy a submission from an earlier edition into the current one.

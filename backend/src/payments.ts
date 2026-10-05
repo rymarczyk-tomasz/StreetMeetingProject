@@ -11,6 +11,42 @@ function getFeeAmount(settings = siteContentDb.getSettings()) {
     return String(settings.selectFeeAmount || process.env.SELECT_FEE_AMOUNT || "").trim();
 }
 
+// "YYYY-MM-DD" in Poland, so deadlines flip at local midnight, not UTC.
+function todayInPoland(now = new Date()) {
+    return now.toLocaleDateString("sv-SE", { timeZone: "Europe/Warsaw" });
+}
+
+function addDays(date, days) {
+    const value = new Date(`${date}T12:00:00Z`);
+    value.setUTCDate(value.getUTCDate() + days);
+    return value.toISOString().slice(0, 10);
+}
+
+// Last day to pay for one approved submission: N days after approval
+// (Ustawienia → "dni na opłatę") and/or the fixed payment deadline, whichever
+// comes first. A fixed deadline that had already passed at approval (e.g. a car
+// taken from the reserve list late) is ignored when a relative one is set.
+function getPaymentDueDate(submission, settings = siteContentDb.getSettings()) {
+    const fixed = String(settings.paymentDeadline || "");
+    const days = Number(settings.paymentDaysAfterApproval) || 0;
+    const approvedOn = submission.approved_at
+        ? todayInPoland(new Date(`${String(submission.approved_at).replace(" ", "T")}Z`))
+        : "";
+    const relative = days > 0 && approvedOn ? addDays(approvedOn, days) : "";
+
+    if (!relative) return fixed;
+    if (!fixed || fixed < approvedOn) return relative;
+    return fixed < relative ? fixed : relative;
+}
+
+function isPaymentOverdue(submission, settings = siteContentDb.getSettings()) {
+    if (submission.status !== "approved" || (submission.payment_status || "unpaid") !== "unpaid") {
+        return false;
+    }
+    const due = getPaymentDueDate(submission, settings);
+    return Boolean(due) && due < todayInPoland();
+}
+
 // Transfer details for one submission, from Admin → Ustawienia.
 // `complete` is false until the organizer filled in the account number.
 function getPaymentDetails(submission, settings = siteContentDb.getSettings()) {
@@ -23,9 +59,17 @@ function getPaymentDetails(submission, settings = siteContentDb.getSettings()) {
         recipient: String(settings.paymentRecipient || "").trim(),
         account: formatAccount(settings.paymentAccount),
         title: title.trim(),
-        deadline: settings.paymentDeadline || "",
+        deadline: getPaymentDueDate(submission, settings),
         complete: Boolean(String(settings.paymentAccount || "").trim()),
     };
 }
 
-module.exports = { getPaymentDetails, getFeeAmount, formatAccount };
+module.exports = {
+    getPaymentDetails,
+    getPaymentDueDate,
+    isPaymentOverdue,
+    getFeeAmount,
+    formatAccount,
+    todayInPoland,
+    addDays,
+};

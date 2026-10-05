@@ -12,13 +12,20 @@ function formatDate(date) {
 export function submissionSteps(submission) {
     const { status, paymentStatus, checkedInAt } = submission;
     const approved = status === "approved";
-    const rejected = status === "rejected";
+    const rejected = status === "rejected" || status === "withdrawn";
     const paid = paymentStatus === "paid";
 
     return [
         { label: "Zgłoszone", state: "done" as StepState },
         {
-            label: rejected ? "Odrzucone" : "Rozpatrzone",
+            label:
+                status === "withdrawn"
+                    ? "Rezygnacja"
+                    : rejected
+                      ? "Odrzucone"
+                      : status === "waitlist"
+                        ? "Lista rezerwowa"
+                        : "Rozpatrzone",
             state: (rejected ? "failed" : approved ? "done" : "current") as StepState,
         },
         {
@@ -34,10 +41,16 @@ export function submissionSteps(submission) {
 
 // One sentence telling the participant what happens next (or what to do).
 export function nextStep(submission) {
-    const { status, paymentStatus, payment } = submission;
+    const { status, paymentStatus, payment, paymentOverdue } = submission;
 
     if (status === "pending") {
         return "Czekamy na decyzję organizatora. Do tego czasu możesz poprawić dane i zdjęcia albo wycofać zgłoszenie.";
+    }
+    if (status === "waitlist") {
+        return "Auto jest na liście rezerwowej. Gdy zwolnią się miejsca, organizator wybierze auta z listy — jeśli Twoje zostanie zaakceptowane, dostaniesz e-mail z danymi do opłaty.";
+    }
+    if (status === "withdrawn") {
+        return "Rezygnacja z udziału w tej edycji jest zapisana. Jeśli to pomyłka, napisz do organizatora.";
     }
     if (status === "rejected") {
         return "Zgłoszenie nie zostało zakwalifikowane. Sprawdź komentarz organizatora poniżej.";
@@ -47,6 +60,9 @@ export function nextStep(submission) {
     }
     if (paymentStatus === "paid") {
         return "Wszystko gotowe! Pokaż wejściówkę z kodem QR przy wjeździe.";
+    }
+    if (paymentOverdue) {
+        return "Termin opłaty minął. Opłać składkę jak najszybciej i zgłoś ją poniżej — inaczej miejsce może przejść na osobę z listy rezerwowej.";
     }
     const amount = payment?.amount ? ` ${payment.amount}` : "";
     const deadline = payment?.deadline ? ` do ${formatDate(payment.deadline)}` : "";

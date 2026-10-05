@@ -122,6 +122,9 @@ Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do
 - Zdjęcia trafiają do `backend/uploads/submissions/<userId>/`, ale **nie są publiczne**: serwuje je `GET /api/submissions/photos/:userId/:plik` tylko właścicielowi i adminom.
 - Użytkownik może edytować lub wycofać zgłoszenie, dopóki jest `pending`. Może też pobrać swoje dane i usunąć konto (Ustawienia konta, RODO).
 - Admin: akceptacja/odrzucenie pojedynczo lub zbiorczo, komentarz dla uczestnika + notatka wewnętrzna, potwierdzanie opłat, usuwanie zgłoszeń, eksport do Excela, otwieranie/zamykanie zapisów z terminem.
+- **Lista rezerwowa i limit miejsc:** statusy zgłoszenia to `pending`, `approved`, `rejected`, `waitlist` (lista rezerwowa — bez kolejki, admin sam wybiera auta do akceptacji) i `withdrawn` (rezygnacja). Przy ustawionej „Liczbie miejsc” akceptacja ponad limit wymaga potwierdzenia. Gdy są wolne miejsca, a lista rezerwowa nie jest pusta, Zgłoszenia pokazują alert z przyciskiem „Pokaż listę rezerwową”.
+- **Rezygnacja:** uczestnik z zaakceptowanym zgłoszeniem lub na liście rezerwowej klika „Rezygnuję” (`POST /api/submissions/:id/withdraw`). Zgłoszenie zostaje w bazie jako `withdrawn`, a organizatorzy (`ADMIN_NOTIFY_EMAIL`) dostają e-mail. Admin może też sam oznaczyć rezygnację.
+- **Termin opłaty:** liczony per zgłoszenie (`backend/src/payments.ts`) jako wcześniejszy z dwóch: stały „Termin płatności” albo „Dni na opłatę od akceptacji”. 3 dni przed terminem uczestnik dostaje jedno przypomnienie e-mailem (`backend/src/submissions/paymentReminders.ts`, sprawdzane co godzinę, wysyłka 9–20 czasu polskiego). Zgłoszenia po terminie mają filtr „Po terminie płatności” i grupę odbiorców w wiadomościach.
 - Stary publiczny formularz (`POST /upload` z Google Sheets/Drive) został usunięty z backendu.
 
 ## Wjazd na strefę Select (QR)

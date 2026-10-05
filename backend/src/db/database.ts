@@ -52,7 +52,7 @@ db.exec(`
         car_brand TEXT NOT NULL,
         car_description TEXT NOT NULL,
         photos TEXT NOT NULL DEFAULT '[]',
-        status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+        status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'waitlist', 'withdrawn')),
         payment_status TEXT NOT NULL DEFAULT 'unpaid' CHECK (payment_status IN ('unpaid', 'verification', 'paid')),
         admin_note TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -184,10 +184,47 @@ const newSubmissionColumns = {
     payment_proof: "TEXT",
     pass_token: "TEXT",
     checked_in_at: "TEXT",
+    // approved_at: start of the payment period; withdrawn_at: participant gave
+    // up the place; payment_reminder_sent_at: the "payment due soon" e-mail went out.
+    approved_at: "TEXT",
+    withdrawn_at: "TEXT",
+    payment_reminder_sent_at: "TEXT",
 };
 for (const [column, type] of Object.entries(newSubmissionColumns)) {
     if (!submissionColumns.has(column)) {
         db.exec(`ALTER TABLE submissions ADD COLUMN ${column} ${type}`);
+    }
+}
+if (!submissionColumns.has("approved_at")) {
+    db.exec("UPDATE submissions SET approved_at = updated_at WHERE status = 'approved'");
+}
+
+// The status CHECK constraint gained 'waitlist' (reserve list) and 'withdrawn'
+// (participant resigned after approval). SQLite can't alter a constraint, so
+// older databases get the table rebuilt once from its own stored definition.
+const submissionsSql = db
+    .prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'submissions'")
+    .get().sql;
+if (!submissionsSql.includes("'waitlist'")) {
+    const newSql = submissionsSql
+        .replace(/CHECK\s*\(\s*status IN \([^)]*\)\s*\)/, "CHECK (status IN ('pending', 'approved', 'rejected', 'waitlist', 'withdrawn'))")
+        .replace(/^CREATE TABLE\s+"?submissions"?/, "CREATE TABLE submissions_new");
+    if (!newSql.includes("'waitlist'") || !newSql.includes("submissions_new")) {
+        throw new Error("Migracja submissions: nie rozpoznano definicji tabeli.");
+    }
+    db.pragma("foreign_keys = OFF");
+    try {
+        db.transaction(() => {
+            db.exec(newSql);
+            db.exec(`
+                INSERT INTO submissions_new SELECT * FROM submissions;
+                DROP TABLE submissions;
+                ALTER TABLE submissions_new RENAME TO submissions;
+                CREATE INDEX IF NOT EXISTS idx_submissions_user_id ON submissions(user_id);
+            `);
+        })();
+    } finally {
+        db.pragma("foreign_keys = ON");
     }
 }
 

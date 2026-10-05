@@ -770,7 +770,7 @@ export function SubmissionSettingsEditor({ onAction }) {
                         onChange={(value) => editor.update({ maxVehiclesPerUser: Number(value) })}
                     />
                     <TextInput
-                        label="Liczba miejsc w strefie Select (0 = bez limitu, tylko informacyjnie na dashboardzie)"
+                        label="Liczba miejsc w strefie Select (0 = bez limitu). Akceptacja ponad limit wymaga potwierdzenia — nadmiarowe auta trafiają na listę rezerwową"
                         type="number"
                         min={0}
                         value={settings.selectCapacity}
@@ -817,6 +817,14 @@ export function SubmissionSettingsEditor({ onAction }) {
                                 onChange={(event) => editor.update({ paymentDeadline: event.target.value })}
                             />
                         </label>
+                        <TextInput
+                            label="Dni na opłatę od akceptacji (0 = tylko termin powyżej). Obowiązuje wcześniejszy z terminów; 3 dni przed nim uczestnik dostaje przypomnienie e-mailem"
+                            type="number"
+                            min={0}
+                            max={90}
+                            value={settings.paymentDaysAfterApproval ?? 0}
+                            onChange={(value) => editor.update({ paymentDaysAfterApproval: Number(value) })}
+                        />
                     </fieldset>
                     <TextArea
                         label="Informacje dla zaakceptowanych uczestników (widoczne w ich panelu): godziny i brama wjazdu, co zabrać, kontakt w dniu wydarzenia…"

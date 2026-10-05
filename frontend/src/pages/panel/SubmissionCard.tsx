@@ -10,6 +10,8 @@ const STATUS_LABELS = {
     pending: "Oczekuje na rozpatrzenie",
     approved: "Zaakceptowane",
     rejected: "Odrzucone",
+    waitlist: "Lista rezerwowa",
+    withdrawn: "Rezygnacja",
 };
 
 const PAYMENT_STATUS_LABELS = {
@@ -30,6 +32,12 @@ function formatDate(value) {
     if (!value) return "Brak danych";
     return new Intl.DateTimeFormat("pl-PL", { dateStyle: "medium", timeStyle: "short" }).format(
         new Date(`${value.replace(" ", "T")}Z`),
+    );
+}
+
+function formatDay(day) {
+    return new Intl.DateTimeFormat("pl-PL", { day: "numeric", month: "long", year: "numeric" }).format(
+        new Date(`${day}T12:00:00`),
     );
 }
 
@@ -88,6 +96,12 @@ function PaymentBox({ submission, onChanged, notify }) {
                     {PAYMENT_STATUS_LABELS[paymentStatus]}
                 </span>
             </h3>
+            {paymentStatus === "unpaid" && payment?.deadline && (
+                <p className={submission.paymentOverdue ? "payment-alert" : "admin-hint"}>
+                    {submission.paymentOverdue ? "Termin opłaty minął " : "Termin opłaty: "}
+                    <strong>{formatDay(payment.deadline)}</strong>
+                </p>
+            )}
             {paymentStatus !== "paid" &&
                 (payment?.complete ? (
                     <dl className="payment-details">
@@ -185,6 +199,7 @@ export default function SubmissionCard({
     const [isSaving, setIsSaving] = useState(false);
     const [showPass, setShowPass] = useState(false);
     const isPending = s.status === "pending";
+    const canResign = !archived && ["approved", "waitlist"].includes(s.status) && !s.checkedInAt;
     const canResubmit =
         archived && availability?.open && availability.remaining > 0 && s.edition < availability.edition;
 
@@ -239,6 +254,28 @@ export default function SubmissionCard({
             await onChanged();
         } catch (err) {
             notify({ error: errorText(err, "Nie udało się wycofać zgłoszenia.") });
+        }
+    }
+
+    async function resign() {
+        const warning =
+            s.paymentStatus === "paid"
+                ? " Opłata jest już potwierdzona — o zwrocie zdecyduje organizator zgodnie z regulaminem."
+                : "";
+        const place = s.status === "waitlist" ? "miejsce na liście rezerwowej" : "miejsce w strefie Select";
+        if (
+            !window.confirm(
+                `Zrezygnować z udziału auta ${s.carBrand} (${s.licensePlate})? Twoje ${place} przejdzie na kolejną osobę i nie da się tego cofnąć samodzielnie.${warning}`,
+            )
+        ) {
+            return;
+        }
+        try {
+            const { data } = await api.post(`/submissions/${s.id}/withdraw`);
+            notify({ message: data.message });
+            await onChanged();
+        } catch (err) {
+            notify({ error: errorText(err, "Nie udało się zapisać rezygnacji.") });
         }
     }
 
@@ -412,6 +449,11 @@ export default function SubmissionCard({
                                 Wycofaj
                             </button>
                         </>
+                    )}
+                    {canResign && (
+                        <button type="button" className="button-danger" onClick={resign}>
+                            Rezygnuję
+                        </button>
                     )}
                     {canResubmit && (
                         <button type="button" onClick={() => setMode("resubmit")}>

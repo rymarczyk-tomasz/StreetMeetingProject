@@ -14,7 +14,13 @@ const AUDIENCES = [
         label: "Zaakceptowani, jeszcze nieopłaceni",
         filters: { status: "approved", paymentStatus: "unpaid" },
     },
+    {
+        id: "overdue",
+        label: "Zaakceptowani po terminie płatności",
+        filters: { paymentStatus: "overdue" },
+    },
     { id: "pending", label: "Oczekujący na decyzję", filters: { status: "pending" } },
+    { id: "waitlist", label: "Lista rezerwowa", filters: { status: "waitlist" } },
     { id: "all", label: "Wszyscy zgłaszający w tej edycji", filters: {} },
 ];
 
