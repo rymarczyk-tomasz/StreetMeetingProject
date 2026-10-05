@@ -124,6 +124,13 @@ Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do
 - Admin: akceptacja/odrzucenie pojedynczo lub zbiorczo, komentarz dla uczestnika + notatka wewnętrzna, potwierdzanie opłat, usuwanie zgłoszeń, eksport do Excela, otwieranie/zamykanie zapisów z terminem.
 - Stary publiczny formularz (`POST /upload` z Google Sheets/Drive) został usunięty z backendu.
 
+## Wjazd na strefę Select (QR)
+
+- Po akceptacji i potwierdzeniu opłaty uczestnik ma w panelu wejściówkę z kodem QR. Kod zawiera link `APP_URL/wjazd?kod=SSP-…`, więc skanuje go zwykły aparat w każdym telefonie.
+- Obsługa bramy: admin nadaje w Użytkownicy uprawnienie **„Obsługa wjazdu”**. Taka osoba po zalogowaniu widzi tylko `/wjazd` (wynik skanu, rejestrację wjazdu i listę aut bez telefonów/e-maili) i nie ma dostępu do panelu admina. Admini mają ten sam ekran w Panel admina → Wjazd.
+- API: `/api/gate/*` (`backend/src/gate/routes.ts`), każdy wjazd trafia do dziennika działań z kontem osoby, która go zarejestrowała.
+- Plan awaryjny bez internetu: Zgłoszenia → „Lista na bramę (druk)”.
+
 ## Galeria (skrót dla AI/dewelopera)
 
 - Albumy = foldery na Dysku Google. Podfoldery `DRIVE_GALLERY_FOLDER_ID` są wykrywane automatycznie (rok z nazwy, np. „StreetShow 2025”); zdjęcia leżące luzem w folderze głównym trafiają do albumu „Archiwum”. Inny folder można dodać linkiem w panelu. Folder musi być udostępniony kontu serwisowemu (`GOOGLE_CLIENT_EMAIL`) jako „Przeglądający”.

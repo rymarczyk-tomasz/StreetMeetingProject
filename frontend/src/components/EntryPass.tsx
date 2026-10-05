@@ -13,7 +13,9 @@ export default function EntryPass({ submissionId, onClose }) {
         let cancelled = false;
         api.get(`/submissions/${submissionId}/pass`)
             .then(async ({ data }) => {
-                const image = await QRCode.toDataURL(data.pass.code, {
+                // The QR holds a link, so any phone camera (also iPhone) opens the
+                // gate screen; older passes with the bare code still work there too.
+                const image = await QRCode.toDataURL(data.pass.link || data.pass.code, {
                     width: 320,
                     margin: 1,
                     errorCorrectionLevel: "M",

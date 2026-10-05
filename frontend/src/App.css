@@ -1921,3 +1921,10 @@
         margin: 0 0.4rem;
     }
 }
+
+/* Gate screen: big, thumb-friendly confirm button. */
+.page .checkin-main-button {
+    width: 100%;
+    padding: 1.4rem;
+    font-size: 2rem;
+}

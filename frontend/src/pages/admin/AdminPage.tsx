@@ -1,7 +1,7 @@
 import { useState } from "react";
 import AdminStats from "./AdminStats";
 import AuditLog from "./AuditLog";
-import CheckinPanel from "./CheckinPanel";
+import GateCheckin from "../../components/GateCheckin";
 import {
     AnnouncementEditor,
     ContactEditor,
@@ -119,9 +119,9 @@ export default function AdminPage() {
                 <div className="admin-section">
                     <SectionHeading
                         title="Wjazd na strefę Select"
-                        description="Skanuj kod QR z wejściówki uczestnika albo znajdź auto po rejestracji i zarejestruj wjazd."
+                        description="Skanuj kod QR z wejściówki uczestnika albo znajdź auto po rejestracji i zarejestruj wjazd. Osobom z uprawnieniem „Obsługa wjazdu” (Użytkownicy) ten sam ekran działa pod adresem /wjazd."
                     />
-                    <CheckinPanel onAction={onAction} />
+                    <GateCheckin onAction={onAction} />
                 </div>
             )}
 

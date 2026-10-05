@@ -70,6 +70,7 @@ function toAdminUser(user) {
         lastName: user.last_name,
         role: user.role,
         isActive: !!user.is_active,
+        gateStaff: !!user.gate_staff,
     };
 }
 
@@ -268,6 +269,22 @@ router.patch("/users/:id/active", (req, res) => {
 });
 
 // Ends every session of the user (e.g. after a suspected account takeover).
+// "Obsługa wjazdu": access to the gate check-in screen only (no admin panel).
+router.patch("/users/:id/gate-staff", (req, res) => {
+    const id = Number(req.params.id);
+    const target = usersDb.findUserById(id);
+    if (!target) {
+        return res.status(404).json({ message: "Nie znaleziono użytkownika." });
+    }
+
+    const gateStaff = Boolean(req.body?.gateStaff);
+    const updated = usersDb.updateUserGateStaff(id, gateStaff);
+    audit(req, gateStaff ? "user.gate_staff_granted" : "user.gate_staff_revoked", "user", id, {
+        email: updated.email,
+    });
+    res.json({ user: toAdminUser(updated) });
+});
+
 router.post("/users/:id/logout", (req, res) => {
     const id = Number(req.params.id);
     const target = usersDb.findUserById(id);
@@ -602,42 +619,6 @@ router.post("/emails", (req, res) => {
     });
 });
 
-// ---- Gate check-in -------------------------------------------------------
-
-// Accepts the QR content ("SSP-<token>") or the bare token.
-function findByPassCode(code) {
-    const token = String(code || "").trim().replace(/^SSP-/i, "");
-    return /^[a-f0-9]{24}$/i.test(token) ? submissionsDb.findSubmissionByPassToken(token) : null;
-}
-
-function toCheckinView(row) {
-    return {
-        ...toAdminSubmission(row),
-        validForCurrentEdition: row.edition === siteContentDb.getCurrentEdition(),
-        valid: row.status === "approved" && row.payment_status === "paid",
-    };
-}
-
-router.get("/checkin/:code", (req, res) => {
-    const submission = findByPassCode(req.params.code);
-    if (!submission) {
-        return res.status(404).json({ message: "Nieznany kod wejściówki." });
-    }
-    res.json({ submission: toCheckinView(submission) });
-});
-
-router.post("/submissions/:id/checkin", (req, res) => {
-    const existing = submissionsDb.findSubmissionById(Number(req.params.id));
-    if (!existing) {
-        return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
-    }
-
-    const checkedIn = req.body?.checkedIn !== false;
-    const updated = submissionsDb.setCheckedIn(existing.id, checkedIn);
-    audit(req, checkedIn ? "submission.checked_in" : "submission.checkin_undone", "submission", existing.id, {
-        licensePlate: existing.license_plate,
-    });
-    res.json({ submission: toCheckinView(updated) });
-});
+// Gate check-in lives in src/gate/routes.ts (/api/gate), shared with gate staff.
 
 module.exports = router;

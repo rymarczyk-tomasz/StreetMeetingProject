@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 const { getPaymentDetails } = require("../payments");
+const { getAppUrl } = require("../utils/appUrl");
 
 let transporter;
 
@@ -30,12 +31,6 @@ function isEmailConfigured() {
     return Boolean(getTransporter());
 }
 
-function getAppUrl() {
-    return String(process.env.APP_URL || "https://www.streetshow.pl").replace(
-        /\/+$/,
-        "",
-    );
-}
 
 function escapeHtml(value) {
     return String(value || "")

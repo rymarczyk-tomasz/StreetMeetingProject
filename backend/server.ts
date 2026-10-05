@@ -12,6 +12,7 @@ const adminRoutes = require("./src/admin/routes");
 const { router: submissionsRoutes } = require("./src/submissions/routes");
 const vehiclesRoutes = require("./src/vehicles/routes");
 const messagesRoutes = require("./src/messages/routes");
+const gateRoutes = require("./src/gate/routes");
 const siteContentDb = require("./src/db/siteContent");
 const { PUBLIC_CONTENT_KEYS } = require("./src/content/defaults");
 const {
@@ -125,6 +126,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/submissions", submissionsRoutes);
 app.use("/api/vehicles", vehiclesRoutes);
 app.use("/api/messages", messagesRoutes);
+app.use("/api/gate", gateRoutes);
 
 app.use("/api", (req, res) => {
     res.status(404).json({ message: "Nie znaleziono." });

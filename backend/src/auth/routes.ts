@@ -62,6 +62,7 @@ function toPublicUser(user) {
         lastName: user.last_name,
         phone: user.phone,
         role: user.role,
+        canCheckIn: usersDb.canCheckIn(user),
         emailVerified: Boolean(user.email_verified_at),
         termsAcceptedAt: user.terms_accepted_at,
     };

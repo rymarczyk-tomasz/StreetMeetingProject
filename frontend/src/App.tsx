@@ -21,6 +21,7 @@ const SubmissionPage = lazy(() => import("./pages/SubmissionPage"));
 const AdminPage = lazy(() => import("./pages/admin/AdminPage"));
 const GaragePage = lazy(() => import("./pages/GaragePage"));
 const EmailTokenPage = lazy(() => import("./pages/EmailTokenPage"));
+const GatePage = lazy(() => import("./pages/GatePage"));
 
 function App() {
     return (
@@ -40,6 +41,14 @@ function App() {
                 <Route path="reset-hasla" element={<ResetPasswordPage />} />
                 <Route path="potwierdz-email" element={<EmailTokenPage action="verify" />} />
                 <Route path="zmiana-emaila" element={<EmailTokenPage action="change" />} />
+                <Route
+                    path="wjazd"
+                    element={
+                        <ProtectedRoute requireCheckIn>
+                            <GatePage />
+                        </ProtectedRoute>
+                    }
+                />
                 <Route
                     path="garaz"
                     element={

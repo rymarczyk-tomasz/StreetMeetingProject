@@ -8,7 +8,12 @@ function resolveUser(token) {
     const payload = verifyAccessToken(token);
     const user = usersDb.findUserById(payload.sub);
     if (!user || !user.is_active) return null;
-    return { sub: user.id, email: user.email, role: user.role };
+    return {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        canCheckIn: usersDb.canCheckIn(user),
+    };
 }
 
 function authenticate(req, res, next) {
@@ -62,4 +67,15 @@ function requireRole(...roles) {
     };
 }
 
-module.exports = { authenticate, optionalAuthenticate, requireRole };
+// Gate check-in: admins and users flagged as gate staff ("Obsługa wjazdu").
+function requireCheckInAccess(req, res, next) {
+    if (!req.user) {
+        return res.status(401).json({ message: "Wymagane logowanie." });
+    }
+    if (!req.user.canCheckIn) {
+        return res.status(403).json({ message: "Brak uprawnień do obsługi wjazdu." });
+    }
+    return next();
+}
+
+module.exports = { authenticate, optionalAuthenticate, requireRole, requireCheckInAccess };

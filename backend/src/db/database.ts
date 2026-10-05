@@ -107,6 +107,13 @@ for (const column of [
     }
 }
 
+// Gate staff ("Obsługa wjazdu"): may only use the check-in screen. A flag rather
+// than a new role, because the role CHECK constraint can't be altered in SQLite
+// without rebuilding the users table. Admins always have gate access.
+if (!userColumns.has("gate_staff")) {
+    db.exec("ALTER TABLE users ADD COLUMN gate_staff INTEGER NOT NULL DEFAULT 0");
+}
+
 const submissionColumns = new Set(
     db
         .prepare("PRAGMA table_info(submissions)")

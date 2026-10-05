@@ -67,6 +67,16 @@ export default function UsersPanel({ onAction }) {
         );
     }
 
+    function toggleGateStaff(targetUser) {
+        return runAction(
+            () =>
+                api.patch(`/admin/users/${targetUser.id}/gate-staff`, {
+                    gateStaff: !targetUser.gate_staff,
+                }),
+            "Nie udało się zmienić uprawnienia.",
+        );
+    }
+
     async function revokeSessions(targetUser) {
         const data = await runAction(
             () => api.post(`/admin/users/${targetUser.id}/logout`),
@@ -159,7 +169,10 @@ export default function UsersPanel({ onAction }) {
                                             .filter(Boolean)
                                             .join(" ") || "—"}
                                     </td>
-                                    <td>{u.role}</td>
+                                    <td>
+                                        {u.role}
+                                        {u.gate_staff && u.role !== "admin" ? " + wjazd" : ""}
+                                    </td>
                                     <td>
                                         {u.is_active ? "aktywny" : "zablokowany"}
                                     </td>
@@ -180,6 +193,18 @@ export default function UsersPanel({ onAction }) {
                                                 ? "Zablokuj"
                                                 : "Odblokuj"}
                                         </button>
+                                        {u.role !== "admin" && (
+                                            <button
+                                                type="button"
+                                                className="button-secondary"
+                                                onClick={() => toggleGateStaff(u)}
+                                                title="Dostęp tylko do ekranu wjazdu (/wjazd) — skanowanie wejściówek przy bramie"
+                                            >
+                                                {u.gate_staff
+                                                    ? "Odbierz obsługę wjazdu"
+                                                    : "Nadaj obsługę wjazdu"}
+                                            </button>
+                                        )}
                                         <button
                                             type="button"
                                             className="button-secondary"

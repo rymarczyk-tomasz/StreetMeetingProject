@@ -34,6 +34,7 @@ const {
 } = require("../utils/userPhotos");
 const { getUserSubmissionsDir } = require("../utils/paths");
 const { getPaymentDetails, getFeeAmount } = require("../payments");
+const { getAppUrl } = require("../utils/appUrl");
 const { sendNewSubmissionAdminEmail } = require("../notifications/email");
 
 const router = express.Router();
@@ -477,9 +478,12 @@ router.get("/:id/pass", (req, res) => {
         submission.id,
         crypto.randomBytes(12).toString("hex"),
     );
+    const code = `SSP-${token}`;
     res.json({
         pass: {
-            code: `SSP-${token}`,
+            code,
+            // Encoded in the QR: any phone camera opens the gate screen with this code.
+            link: `${getAppUrl()}/wjazd?kod=${code}`,
             edition: submission.edition,
             name: `${submission.first_name} ${submission.last_name}`,
             carBrand: submission.car_brand,

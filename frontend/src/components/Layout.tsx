@@ -190,6 +190,15 @@ export default function Layout() {
                                         >
                                             Panel konta
                                         </NavLink>
+                                        {user.canCheckIn && user.role !== "admin" && (
+                                            <NavLink
+                                                className="nav-link"
+                                                to="/wjazd"
+                                                onClick={closeMobileNav}
+                                            >
+                                                Wjazd
+                                            </NavLink>
+                                        )}
                                         {user.role === "admin" && (
                                             <NavLink
                                                 className="nav-link"

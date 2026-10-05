@@ -9,12 +9,15 @@ const insertUserStmt = db.prepare(`
 const findByEmailStmt = db.prepare(`SELECT * FROM users WHERE email = ?`);
 const findByIdStmt = db.prepare(`SELECT * FROM users WHERE id = ?`);
 const listUsersQuery = `
-    SELECT id, email, first_name, last_name, role, is_active, created_at
+    SELECT id, email, first_name, last_name, role, is_active, gate_staff, created_at
     FROM users
 `;
 const updateRoleStmt = db.prepare(`UPDATE users SET role = ? WHERE id = ?`);
 const updateActiveStmt = db.prepare(
     `UPDATE users SET is_active = ? WHERE id = ?`,
+);
+const updateGateStaffStmt = db.prepare(
+    `UPDATE users SET gate_staff = ? WHERE id = ?`,
 );
 // Cars live in the garage (vehicles table) now; license_plate/car_brand on users
 // are legacy columns left untouched.
@@ -137,6 +140,16 @@ function updateUserActive(id, isActive) {
     return findByIdStmt.get(id);
 }
 
+function updateUserGateStaff(id, gateStaff) {
+    updateGateStaffStmt.run(gateStaff ? 1 : 0, id);
+    return findByIdStmt.get(id);
+}
+
+// Admins can always check cars in; gate staff can do only that.
+function canCheckIn(user) {
+    return Boolean(user && (user.role === "admin" || user.gate_staff));
+}
+
 function updateUserProfile(id, { firstName, lastName, phone }) {
     updateProfileStmt.run(firstName || null, lastName || null, phone || null, id);
     return findByIdStmt.get(id);
@@ -169,4 +182,6 @@ module.exports = {
     deleteUser,
     setEmailVerified,
     updateUserEmail,
+    updateUserGateStaff,
+    canCheckIn,
 };

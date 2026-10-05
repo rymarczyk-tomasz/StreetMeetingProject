@@ -19,9 +19,15 @@ export default function LoginPage() {
 
         try {
             const user = await login(email, password);
-            const redirectTo =
-                location.state?.from?.pathname ||
-                (user.role === "admin" ? "/admin" : "/panel");
+            // Keep the query string: a scanned pass link is /wjazd?kod=….
+            const from = location.state?.from;
+            const redirectTo = from
+                ? `${from.pathname}${from.search || ""}`
+                : user.role === "admin"
+                  ? "/admin"
+                  : user.canCheckIn
+                    ? "/wjazd"
+                    : "/panel";
             navigate(redirectTo, { replace: true });
         } catch (err) {
             setError(err.response?.data?.message || "Nie udało się zalogować.");
