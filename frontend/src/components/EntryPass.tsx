@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import api from "../api/client";
+import { downloadPassPdf, downloadPassPng } from "../utils/passFile";
 
 // QR entry pass for an approved + paid car; staff scan it at the gate
 // (Admin → Wjazd). Shown in a dialog with a print button.
@@ -8,6 +9,18 @@ export default function EntryPass({ submissionId, onClose }) {
     const [pass, setPass] = useState(null);
     const [qr, setQr] = useState("");
     const [error, setError] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+
+    async function save(download) {
+        setIsSaving(true);
+        try {
+            await download(pass);
+        } catch {
+            setError("Nie udało się przygotować pliku. Użyj przycisku Drukuj albo zrób zrzut ekranu.");
+        } finally {
+            setIsSaving(false);
+        }
+    }
 
     useEffect(() => {
         let cancelled = false;
@@ -76,9 +89,17 @@ export default function EntryPass({ submissionId, onClose }) {
                 )}
                 <div className="submission-actions entry-pass-actions">
                     {pass && (
-                        <button type="button" onClick={() => window.print()}>
-                            Drukuj
-                        </button>
+                        <>
+                            <button type="button" disabled={isSaving} onClick={() => save(downloadPassPdf)}>
+                                Pobierz PDF
+                            </button>
+                            <button type="button" disabled={isSaving} onClick={() => save(downloadPassPng)}>
+                                Pobierz obraz (PNG)
+                            </button>
+                            <button type="button" className="button-secondary" onClick={() => window.print()}>
+                                Drukuj
+                            </button>
+                        </>
                     )}
                     <button type="button" className="button-secondary" onClick={onClose}>
                         Zamknij
