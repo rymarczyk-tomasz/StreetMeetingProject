@@ -1,5 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import api from "../api/client";
+import {
+    applyQueue,
+    enqueueCheckin,
+    hashToken,
+    isNetworkError,
+    loadQueue,
+    loadSavedCars,
+    removeFromQueue,
+    saveCars,
+    toApiTime,
+    tokenFromCode,
+} from "../utils/gateOffline";
 
 // Gate check-in screen, used on /wjazd (gate staff and admins) and in Admin → Wjazd.
 // Codes come from: a phone camera opening /wjazd?kod=… (the QR is a link), the
@@ -106,40 +118,183 @@ function ResultCard({ car, onToggle }) {
     );
 }
 
+const SYNC_INTERVAL_MS = 30 * 1000;
+
+function OfflineStatus({ offline, savedAt, queue, syncErrors, isSyncing, onSync }) {
+    if (!offline && !queue.length && !syncErrors.length) return null;
+    return (
+        <div className={`gate-offline-status${offline ? " is-offline" : ""}`} role="status">
+            {offline && (
+                <p>
+                    <strong>Brak połączenia</strong> — sprawdzanie działa na liście aut zapisanej w
+                    telefonie{savedAt ? ` (${formatTime(toApiTime(savedAt))})` : ""}. Wjazdy zapisują
+                    się lokalnie i zostaną wysłane, gdy wróci internet.
+                </p>
+            )}
+            {queue.length > 0 && (
+                <p>
+                    Czeka na wysłanie: <strong>{queue.length}</strong> (
+                    {queue.map((item) => item.licensePlate).join(", ")}).{" "}
+                    <button type="button" className="button-secondary" disabled={isSyncing} onClick={onSync}>
+                        {isSyncing ? "Wysyłanie..." : "Wyślij teraz"}
+                    </button>
+                </p>
+            )}
+            {syncErrors.map((message) => (
+                <p key={message} className="form-error">
+                    {message}
+                </p>
+            ))}
+        </div>
+    );
+}
+
 export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
     const [code, setCode] = useState(initialCode);
     const [result, setResult] = useState(null);
     const [error, setError] = useState("");
     const [isScanning, setIsScanning] = useState(false);
-    const [cars, setCars] = useState([]);
+    // Cars as last received from the server (or from the phone's copy offline).
+    const [serverCars, setServerCars] = useState([]);
+    const [queue, setQueue] = useState(loadQueue);
+    const [offline, setOffline] = useState(false);
+    const [savedAt, setSavedAt] = useState("");
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [syncErrors, setSyncErrors] = useState<string[]>([]);
     const [search, setSearch] = useState("");
     const lastScanned = useRef("");
+    const syncing = useRef(false);
+    // Read by the retry timer without restarting it on every change.
+    const offlineRef = useRef(false);
+    useEffect(() => {
+        offlineRef.current = offline;
+    }, [offline]);
+
+    const cars = applyQueue(serverCars, queue);
 
     const loadCars = useCallback(async () => {
         try {
             const { data } = await api.get("/gate/cars");
-            setCars(data.cars);
+            setServerCars(data.cars);
+            saveCars(data.cars, data.generatedAt);
+            setSavedAt(data.generatedAt);
+            setOffline(false);
         } catch (err) {
-            setError(errorText(err, "Nie udało się pobrać listy aut."));
+            if (!isNetworkError(err)) {
+                setError(errorText(err, "Nie udało się pobrać listy aut."));
+                return;
+            }
+            setOffline(true);
+            const saved = loadSavedCars();
+            if (saved) {
+                setServerCars(saved.cars);
+                setSavedAt(saved.savedAt);
+            } else {
+                setError("Brak połączenia, a w telefonie nie ma jeszcze zapisanej listy aut.");
+            }
         }
     }, []);
 
-    const lookup = useCallback(async (value) => {
-        const trimmed = String(value || "").trim();
-        if (!trimmed) return;
-        setError("");
+    // Sends queued offline check-ins in order. Stops at the first connection
+    // failure; entries the server rejects are dropped and shown as errors.
+    const syncQueue = useCallback(async () => {
+        if (syncing.current || !loadQueue().length) return;
+        syncing.current = true;
+        setIsSyncing(true);
+        const errors = [];
+        let sent = 0;
         try {
-            const { data } = await api.get("/gate/check", { params: { code: trimmed } });
-            setResult(data.car);
-        } catch (err) {
-            setResult(null);
-            setError(errorText(err, "Nie znaleziono wejściówki."));
+            for (const item of loadQueue()) {
+                try {
+                    await api.post(`/gate/cars/${item.id}/checkin`, {
+                        checkedIn: item.checkedIn,
+                        checkedInAt: item.at,
+                    });
+                    sent += 1;
+                } catch (err) {
+                    if (isNetworkError(err)) {
+                        setOffline(true);
+                        break;
+                    }
+                    errors.push(`${item.licensePlate}: ${errorText(err, "nie udało się zapisać wjazdu.")}`);
+                }
+                setQueue(removeFromQueue(item));
+            }
+        } finally {
+            syncing.current = false;
+            setIsSyncing(false);
         }
-    }, []);
+        if (errors.length) setSyncErrors((current) => [...current, ...errors]);
+        if (sent || errors.length) {
+            await loadCars();
+            onAction();
+        }
+    }, [loadCars, onAction]);
+
+    const lookupOffline = useCallback(
+        async (value) => {
+            const token = tokenFromCode(value);
+            const hash = token && (await hashToken(token));
+            const car = hash && applyQueue(loadSavedCars()?.cars || [], loadQueue()).find((row) => row.passHash === hash);
+            if (car) {
+                setResult(car);
+            } else {
+                setResult(null);
+                setError(
+                    token
+                        ? "Brak połączenia i nie ma tego kodu na liście w telefonie. Znajdź auto po rejestracji."
+                        : "Nieprawidłowy kod wejściówki.",
+                );
+            }
+        },
+        [],
+    );
+
+    const lookup = useCallback(
+        async (value) => {
+            const trimmed = String(value || "").trim();
+            if (!trimmed) return;
+            setError("");
+            try {
+                const { data } = await api.get("/gate/check", { params: { code: trimmed } });
+                setOffline(false);
+                const pending = loadQueue().find((item) => item.id === data.car.id);
+                setResult(pending ? applyQueue([data.car], [pending])[0] : data.car);
+            } catch (err) {
+                if (isNetworkError(err)) {
+                    setOffline(true);
+                    await lookupOffline(trimmed);
+                    return;
+                }
+                setResult(null);
+                setError(errorText(err, "Nie znaleziono wejściówki."));
+            }
+        },
+        [lookupOffline],
+    );
 
     useEffect(() => {
-        loadCars();
-    }, [loadCars]);
+        loadCars().then(syncQueue);
+    }, [loadCars, syncQueue]);
+
+    // Retry when the phone says it's back online, and periodically while
+    // anything is waiting (the "online" event isn't reliable on every phone).
+    useEffect(() => {
+        const goOnline = () => {
+            loadCars().then(syncQueue);
+        };
+        const goOffline = () => setOffline(true);
+        window.addEventListener("online", goOnline);
+        window.addEventListener("offline", goOffline);
+        const timer = setInterval(() => {
+            if (loadQueue().length || offlineRef.current) loadCars().then(syncQueue);
+        }, SYNC_INTERVAL_MS);
+        return () => {
+            window.removeEventListener("online", goOnline);
+            window.removeEventListener("offline", goOffline);
+            clearInterval(timer);
+        };
+    }, [loadCars, syncQueue]);
 
     // Opened from a scanned QR link (/wjazd?kod=…): check it right away.
     useEffect(() => {
@@ -160,14 +315,40 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
 
     async function toggleCheckin(car, checkedIn) {
         setError("");
+        // Offline, or earlier taps still queued: queue this one too, so the
+        // server receives them in the order they happened.
+        if (offline || loadQueue().length) {
+            saveOffline(car, checkedIn);
+            if (!offline) syncQueue();
+            return;
+        }
         try {
             const { data } = await api.post(`/gate/cars/${car.id}/checkin`, { checkedIn });
             setResult((current) => (current?.id === car.id || checkedIn ? data.car : current));
             await loadCars();
             onAction();
         } catch (err) {
+            if (isNetworkError(err)) {
+                setOffline(true);
+                saveOffline(car, checkedIn);
+                return;
+            }
             setError(errorText(err, "Nie udało się zapisać wjazdu."));
         }
+    }
+
+    function saveOffline(car, checkedIn) {
+        const entry = {
+            id: car.id,
+            checkedIn,
+            at: new Date().toISOString(),
+            licensePlate: car.licensePlate,
+        };
+        const nextQueue = enqueueCheckin(entry);
+        setQueue(nextQueue);
+        setResult((current) =>
+            current?.id === car.id || checkedIn ? applyQueue([car], [entry])[0] : current,
+        );
     }
 
     const normalized = search.replace(/\s+/g, "").toUpperCase();
@@ -186,6 +367,14 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
                 Na miejscu: <strong>{inCount}</strong> z {paidCount} opłaconych aut
                 (zaakceptowanych: {cars.length}).
             </p>
+            <OfflineStatus
+                offline={offline}
+                savedAt={savedAt}
+                queue={queue}
+                syncErrors={syncErrors}
+                isSyncing={isSyncing}
+                onSync={syncQueue}
+            />
             {error && (
                 <p className="form-error" role="alert">
                     {error}

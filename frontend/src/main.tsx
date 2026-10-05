@@ -5,6 +5,13 @@ import "./index.css";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 
+// Offline app shell (public/sw.js) — production only, so dev reloads stay fresh.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+    });
+}
+
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
         <BrowserRouter>

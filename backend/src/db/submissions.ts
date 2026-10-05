@@ -122,8 +122,9 @@ function findSubmissionByPassToken(token) {
     return findByPassTokenStmt.get(String(token || ""));
 }
 
-function setCheckedIn(id, checkedIn) {
-    setCheckedInStmt.run(checkedIn ? new Date().toISOString().slice(0, 19).replace("T", " ") : null, id);
+// `at` (a Date) lets a check-in recorded offline at the gate keep its real time.
+function setCheckedIn(id, checkedIn, at = new Date()) {
+    setCheckedInStmt.run(checkedIn ? at.toISOString().slice(0, 19).replace("T", " ") : null, id);
     return findByIdStmt.get(id);
 }
 

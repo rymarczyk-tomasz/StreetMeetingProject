@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const express = require("express");
 
 const submissionsDb = require("../db/submissions");
@@ -27,6 +28,24 @@ function toGateView(row) {
     };
 }
 
+// SHA-256 of the pass token: lets the gate phone recognise scanned passes
+// offline without keeping the codes themselves on the device.
+function passHash(token) {
+    return token ? crypto.createHash("sha256").update(String(token).toLowerCase()).digest("hex") : null;
+}
+
+// Time of a check-in made offline and sent later; ignored unless plausible
+// (from the last 2 days, not in the future).
+const MAX_OFFLINE_AGE_MS = 2 * 24 * 60 * 60 * 1000;
+function readOfflineTime(value) {
+    if (!value) return null;
+    const time = new Date(String(value));
+    const age = Date.now() - time.getTime();
+    return Number.isFinite(age) && age >= -5 * 60 * 1000 && age <= MAX_OFFLINE_AGE_MS
+        ? new Date(Math.min(time.getTime(), Date.now()))
+        : null;
+}
+
 // Accepts the QR content in any form: the link (…/wjazd?kod=SSP-…), "SSP-<token>"
 // or the bare token.
 function findByPassCode(code) {
@@ -49,7 +68,10 @@ router.get("/cars", (req, res) => {
         targetId: null,
         details: { count: rows.length },
     });
-    res.json({ cars: rows.map(toGateView) });
+    res.json({
+        cars: rows.map((row) => ({ ...toGateView(row), passHash: passHash(row.pass_token) })),
+        generatedAt: new Date().toISOString(),
+    });
 });
 
 router.get("/check", (req, res) => {
@@ -71,13 +93,23 @@ router.post("/cars/:id/checkin", (req, res) => {
         return res.status(400).json({ message: "Opłata nie jest potwierdzona — wjazd niemożliwy." });
     }
 
-    const updated = submissionsDb.setCheckedIn(existing.id, checkedIn);
+    // Already let in (e.g. by another gate phone while this one was offline):
+    // keep the first entry time.
+    if (checkedIn && existing.checked_in_at) {
+        return res.json({ car: toGateView(existing) });
+    }
+
+    const offlineAt = readOfflineTime(req.body?.checkedInAt);
+    const updated = submissionsDb.setCheckedIn(existing.id, checkedIn, offlineAt || undefined);
     auditLogDb.createAuditEntry({
         adminId: req.user.sub,
         action: checkedIn ? "submission.checked_in" : "submission.checkin_undone",
         targetType: "submission",
         targetId: existing.id,
-        details: { licensePlate: existing.license_plate },
+        details: {
+            licensePlate: existing.license_plate,
+            ...(offlineAt ? { offline: true } : {}),
+        },
     });
     res.json({ car: toGateView(updated) });
 });

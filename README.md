@@ -132,7 +132,8 @@ Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do
 - Po akceptacji i potwierdzeniu opłaty uczestnik ma w panelu wejściówkę z kodem QR. Kod zawiera link `APP_URL/wjazd?kod=SSP-…`, więc skanuje go zwykły aparat w każdym telefonie.
 - Obsługa bramy: admin nadaje w Użytkownicy uprawnienie **„Obsługa wjazdu”**. Taka osoba po zalogowaniu widzi tylko `/wjazd` (wynik skanu, rejestrację wjazdu i listę aut bez telefonów/e-maili) i nie ma dostępu do panelu admina. Admini mają ten sam ekran w Panel admina → Wjazd.
 - API: `/api/gate/*` (`backend/src/gate/routes.ts`), każdy wjazd trafia do dziennika działań z kontem osoby, która go zarejestrowała.
-- Plan awaryjny bez internetu: Zgłoszenia → „Lista na bramę (druk)”.
+- **Tryb offline:** ekran wjazdu zapisuje w telefonie ostatnią listę aut (z hashem SHA-256 kodu wejściówki zamiast samego kodu), więc skan i wyszukiwanie działają bez zasięgu. Wjazdy bez sieci trafiają do kolejki (`src/utils/gateOffline.ts`) i wysyłają się same po powrocie internetu, z godziną faktycznego wjazdu. Service worker (`frontend/public/sw.js`, tylko build produkcyjny) pozwala otworzyć `/wjazd` bez sieci, jeśli telefon był na nim wcześniej zalogowany online. Przed wydarzeniem otwórz `/wjazd` na każdym telefonie z zasięgiem.
+- Plan awaryjny bez telefonu: Zgłoszenia → „Lista na bramę (druk)”.
 
 ## Galeria (skrót dla AI/dewelopera)
 
@@ -153,6 +154,7 @@ Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do
 - Rate limit liczony po `req.ip` z `trust proxy` — nagłówek `X-Forwarded-For` od klienta nie pozwala go obejść.
 - Linki i obrazy w CMS muszą zaczynać się od `https://`, `http://`, `/` lub `#` (blokada `javascript:`).
 - Codzienna kopia bazy SQLite do `backend/backups/` (`npm run backup` ręcznie). **To nie zastępuje kopii poza serwerem** — kopiuj `backups/` i `uploads/` gdzie indziej (np. rclone/rsync z crona).
+- nginx: `sw.js` serwuj z `Cache-Control: no-cache` (inaczej telefony długo trzymają starą wersję), `/assets/*` może mieć długi cache.
 - nginx: `/api` przekazuj do backendu z `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`, a **nie serwuj katalogu `backend/uploads/submissions` bezpośrednio** (tylko `/uploads/content`, jeśli w ogóle — backend robi to sam).
 
 ## Plany pod wdrożenie (mikrus / hostinger.pl)
