@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AdminReport from "./AdminReport";
 import AdminStats from "./AdminStats";
 import AuditLog from "./AuditLog";
 import GateCheckin from "../../components/GateCheckin";
@@ -21,6 +22,7 @@ import UsersPanel from "./UsersPanel";
 
 const SECTIONS = [
     ["dashboard", "Dashboard"],
+    ["report", "Raport"],
     ["submissions", "Zgłoszenia"],
     ["checkin", "Wjazd"],
     ["users", "Użytkownicy"],
@@ -103,6 +105,16 @@ export default function AdminPage() {
                         </button>
                     </SectionHeading>
                     <AdminStats refreshKey={refreshKey} />
+                </div>
+            )}
+
+            {activeSection === "report" && (
+                <div className="admin-section">
+                    <SectionHeading
+                        title="Raport po wydarzeniu"
+                        description="Podsumowanie edycji: zgłoszenia, opłaty, wjazdy i nieobecni, z porównaniem do poprzednich lat."
+                    />
+                    <AdminReport />
                 </div>
             )}
 

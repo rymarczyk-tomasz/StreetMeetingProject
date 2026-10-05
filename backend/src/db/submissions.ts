@@ -314,6 +314,47 @@ function getSubmissionStats(edition) {
         .get(edition);
 }
 
+// Outcome of an edition, for the post-event report (one row per edition).
+const editionSummaryStmt = db.prepare(`
+    SELECT
+        edition,
+        COUNT(*) AS total,
+        SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) AS approved,
+        SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) AS rejected,
+        SUM(CASE WHEN status = 'waitlist' THEN 1 ELSE 0 END) AS waitlist,
+        SUM(CASE WHEN status = 'withdrawn' THEN 1 ELSE 0 END) AS withdrawn,
+        SUM(CASE WHEN status = 'withdrawn' AND payment_status = 'paid' THEN 1 ELSE 0 END) AS withdrawnPaid,
+        SUM(CASE WHEN status = 'approved' AND payment_status = 'paid' THEN 1 ELSE 0 END) AS paid,
+        SUM(CASE WHEN status = 'approved' AND payment_status != 'paid' THEN 1 ELSE 0 END) AS unpaid,
+        SUM(CASE WHEN status = 'approved' AND checked_in_at IS NOT NULL THEN 1 ELSE 0 END) AS checkedIn,
+        SUM(CASE WHEN status = 'approved' AND payment_status = 'paid' AND checked_in_at IS NULL THEN 1 ELSE 0 END) AS noShow,
+        COUNT(DISTINCT user_id) AS participants
+    FROM submissions
+    GROUP BY edition
+    ORDER BY edition DESC
+`);
+const checkInTimesStmt = db.prepare(`
+    SELECT checked_in_at FROM submissions
+    WHERE edition = ? AND status = 'approved' AND checked_in_at IS NOT NULL
+`);
+const noShowListStmt = db.prepare(`
+    SELECT id, car_brand, license_plate, first_name, last_name FROM submissions
+    WHERE edition = ? AND status = 'approved' AND payment_status = 'paid' AND checked_in_at IS NULL
+    ORDER BY license_plate
+`);
+
+function getEditionSummaries() {
+    return editionSummaryStmt.all();
+}
+
+function listCheckInTimes(edition) {
+    return checkInTimesStmt.all(edition).map((row) => row.checked_in_at);
+}
+
+function listNoShows(edition) {
+    return noShowListStmt.all(edition);
+}
+
 function getSubmissionsPerDay(edition, days = 30) {
     return db
         .prepare(
@@ -369,6 +410,9 @@ module.exports = {
     hasActiveSubmissionForPlate,
     listEditions,
     getSubmissionStats,
+    getEditionSummaries,
+    listCheckInTimes,
+    listNoShows,
     getSubmissionsPerDay,
     getTopCarBrands,
 };

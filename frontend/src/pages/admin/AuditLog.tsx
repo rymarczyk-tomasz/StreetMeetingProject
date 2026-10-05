@@ -11,6 +11,7 @@ const ACTION_LABELS = {
     "submission.withdrawn": "oznaczył rezygnację uczestnika",
     "submission.withdrawn_by_user": "zrezygnował z udziału (uczestnik)",
     "submission.payment_reminder_sent": "wysłano przypomnienie o opłacie",
+    "submission.report_viewed": "otworzył raport po wydarzeniu",
     "submission.message_sent": "napisał do uczestnika",
     "submission.showcase_hidden": "ukrył auto na stronie Auta strefy Select",
     "submission.showcase_shown": "przywrócił auto na stronie Auta strefy Select",

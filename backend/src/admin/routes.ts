@@ -26,7 +26,7 @@ const {
 } = require("../utils/imageUpload");
 const { CONTENT_UPLOAD_ROOT } = require("../utils/paths");
 const { validateContent } = require("../content/validators");
-const { isPaymentOverdue } = require("../payments");
+const { isPaymentOverdue, getFeeAmount } = require("../payments");
 const threadsDb = require("../db/threads");
 const ratingsDb = require("../db/ratings");
 const { getThread, postToThread, readMessageBody } = require("../submissions/thread");
@@ -361,6 +361,61 @@ router.get("/stats", (req, res) => {
         availability: siteContentDb.getSubmissionsAvailability(settings),
         perDay: submissionsDb.getSubmissionsPerDay(edition, 30),
         topBrands: submissionsDb.getTopCarBrands(edition, 8),
+    });
+});
+
+// ---- Post-event report ----------------------------------------------------
+
+// "150 zł" / "150,50 PLN" → 150 / 150.5; null when there's no number.
+function parseFeeAmount(value) {
+    const match = String(value || "").replace(/\s+/g, "").match(/\d+(?:[.,]\d+)?/);
+    return match ? Number(match[0].replace(",", ".")) : null;
+}
+
+// Check-ins per hour in Polish time ("14:00" → count).
+function arrivalsPerHour(times) {
+    const counts = new Map();
+    for (const time of times) {
+        const date = new Date(`${String(time).replace(" ", "T")}Z`);
+        const hour = date.toLocaleTimeString("pl-PL", { timeZone: "Europe/Warsaw", hour: "2-digit" });
+        const label = `${hour.padStart(2, "0")}:00`;
+        counts.set(label, (counts.get(label) || 0) + 1);
+    }
+    return [...counts.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([hour, count]) => ({ hour, count }));
+}
+
+router.get("/report", (req, res) => {
+    const edition = readEditionFilter(req.query.edition) || siteContentDb.getCurrentEdition();
+    const summaries = submissionsDb.getEditionSummaries();
+    const summary = summaries.find((row) => row.edition === edition) || { edition, total: 0 };
+    const settings = siteContentDb.getSettings();
+    const fee = parseFeeAmount(getFeeAmount(settings));
+
+    auditLogDb.createThrottledAuditEntry({
+        adminId: req.user.sub,
+        action: "submission.report_viewed",
+        targetType: "submission",
+        targetId: null,
+        details: { edition },
+    });
+
+    res.json({
+        edition,
+        summary,
+        fee: { label: getFeeAmount(settings), amount: fee },
+        // Estimate: today's fee × paid cars (the fee may have changed since).
+        revenue: fee !== null ? Math.round(fee * (summary.paid || 0) * 100) / 100 : null,
+        arrivals: arrivalsPerHour(submissionsDb.listCheckInTimes(edition)),
+        noShows: submissionsDb.listNoShows(edition).map((row) => ({
+            id: row.id,
+            carBrand: row.car_brand,
+            licensePlate: row.license_plate,
+            name: `${row.first_name} ${row.last_name}`,
+        })),
+        topBrands: submissionsDb.getTopCarBrands(edition, 10),
+        editions: summaries,
     });
 });
 

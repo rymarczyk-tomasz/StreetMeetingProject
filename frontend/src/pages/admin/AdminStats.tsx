@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import api from "../../api/client";
 import { errorMessage } from "./shared";
 
-function BarList({ title, rows, emptyText }) {
+export function BarList({ title, rows, emptyText }) {
     const max = Math.max(1, ...rows.map((row) => row.count));
 
     return (
