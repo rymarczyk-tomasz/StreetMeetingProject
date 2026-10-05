@@ -110,7 +110,8 @@ export default function AccountSettingsPage() {
             link.href = url;
             link.download = "street-show-moje-dane.json";
             link.click();
-            URL.revokeObjectURL(url);
+            // iOS Safari starts the download asynchronously — revoking right away cancels it.
+            setTimeout(() => URL.revokeObjectURL(url), 60_000);
         } catch (err) {
             setError(
                 err.response?.data?.message || "Nie udało się pobrać danych.",

@@ -553,12 +553,25 @@ input.form-control {
 .site-footer-links {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem 2rem;
+    gap: 0 2rem;
 }
 
 .site-footer a {
     color: #fff;
     text-decoration: none;
+}
+
+/* 44px touch targets (Apple HIG) — the links sit close together on phones. */
+.site-footer-links a,
+.site-footer-social a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 4.4rem;
+}
+
+.site-footer-social a {
+    min-width: 4.4rem;
 }
 
 .site-footer a:hover {
@@ -567,7 +580,7 @@ input.form-control {
 
 .site-footer-social {
     display: flex;
-    gap: 1.6rem;
+    gap: 0.4rem;
     font-size: 2.2rem;
 }
 

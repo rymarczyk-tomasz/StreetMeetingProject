@@ -28,7 +28,10 @@ export function HeroPreview({ image, crop, rotated, width, height, label }: Hero
 
     return (
         <figure className="hero-preview">
-            <div className="hero-preview-frame" style={{ width, height }}>
+            <div
+                className="hero-preview-frame"
+                style={{ width, maxWidth: "100%", aspectRatio: `${width} / ${height}` }}
+            >
                 <div
                     className="hero-photo"
                     style={

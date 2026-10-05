@@ -11,6 +11,13 @@ const MAX_PHOTOS = 5;
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
 const ACCEPTED_TYPES = "image/jpeg,image/png,image/webp,image/avif";
 const ACCEPTED_MIME = new Set(ACCEPTED_TYPES.split(","));
+const ACCEPTED_EXTENSION = /\.(jpe?g|png|webp|avif)$/i;
+
+// Some browsers report an empty type (e.g. .webp/.avif without an OS mime mapping),
+// so fall back to the extension; the backend verifies the actual file content.
+function isAcceptedPhoto(file: File) {
+    return file.type ? ACCEPTED_MIME.has(file.type) : ACCEPTED_EXTENSION.test(file.name);
+}
 
 function formatMegabytes(bytes) {
     return `${(bytes / 1024 / 1024).toFixed(1).replace(".", ",")} MB`;
@@ -100,7 +107,7 @@ export default function SubmissionPage() {
             return;
         }
 
-        if (selectedPhotos.some((photo) => !ACCEPTED_MIME.has(photo.type))) {
+        if (selectedPhotos.some((photo) => !isAcceptedPhoto(photo))) {
             event.target.value = "";
             setPhotos([]);
             setError(

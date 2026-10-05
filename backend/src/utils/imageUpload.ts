@@ -17,6 +17,17 @@ const MIME_TO_EXTENSION = {
 
 const ALLOWED_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
 
+// Some browsers send no usable type (e.g. .webp/.avif when the OS has no mime mapping);
+// then trust the filename extension for now — verifyUploadedImages checks the content.
+function imageExtensionFor(file) {
+    const fromMime = MIME_TO_EXTENSION[file.mimetype];
+    if (fromMime) return fromMime;
+    if (file.mimetype && file.mimetype !== "application/octet-stream") return null;
+    const extension = path.extname(file.originalname || "").toLowerCase();
+    if (!ALLOWED_EXTENSIONS.has(extension)) return null;
+    return extension === ".jpeg" ? ".jpg" : extension;
+}
+
 const INVALID_IMAGE_MESSAGE =
     "Dozwolone są tylko zdjęcia w formatach JPG, PNG, WEBP lub AVIF.";
 
@@ -98,13 +109,13 @@ function createImageUpload({ destination, maxFiles, maxFileSize }) {
                 }
             },
             filename(req, file, cb) {
-                const extension = MIME_TO_EXTENSION[file.mimetype];
+                const extension = imageExtensionFor(file);
                 cb(null, `${Date.now()}-${crypto.randomBytes(8).toString("hex")}${extension}`);
             },
         }),
         limits: { files: maxFiles, fileSize: maxFileSize, fields: 30 },
         fileFilter(req, file, cb) {
-            if (MIME_TO_EXTENSION[file.mimetype]) {
+            if (imageExtensionFor(file)) {
                 cb(null, true);
             } else {
                 cb(new UploadValidationError(INVALID_IMAGE_MESSAGE));
@@ -163,13 +174,13 @@ function createProofUpload({ destination, maxFileSize }) {
             },
             filename(req, file, cb) {
                 const extension =
-                    file.mimetype === "application/pdf" ? ".pdf" : MIME_TO_EXTENSION[file.mimetype];
+                    file.mimetype === "application/pdf" ? ".pdf" : imageExtensionFor(file);
                 cb(null, `proof-${Date.now()}-${crypto.randomBytes(8).toString("hex")}${extension}`);
             },
         }),
         limits: { files: 1, fileSize: maxFileSize, fields: 5 },
         fileFilter(req, file, cb) {
-            if (file.mimetype === "application/pdf" || MIME_TO_EXTENSION[file.mimetype]) {
+            if (file.mimetype === "application/pdf" || imageExtensionFor(file)) {
                 cb(null, true);
             } else {
                 cb(new UploadValidationError("Dodaj zdjęcie (JPG, PNG, WEBP) albo plik PDF."));
