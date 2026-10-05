@@ -336,6 +336,27 @@ function validateSettings(input) {
     return { content };
 }
 
+const TEMPLATE_KINDS = ["note", "group"];
+
+function validateTemplates(input) {
+    const items = asArray(input.items)
+        .slice(0, 60)
+        .map((item, index) => ({
+            id: makeId(item.id, `template-${index + 1}`),
+            kind: TEMPLATE_KINDS.includes(item.kind) ? item.kind : "note",
+            title: text(item.title, 120),
+            subject: text(item.subject, 200),
+            body: String(item.body || "").trim().slice(0, 5000),
+        }));
+
+    for (const item of items) {
+        if (!item.title || !item.body) {
+            return { error: "Każdy szablon musi mieć nazwę i treść." };
+        }
+    }
+    return { content: { items } };
+}
+
 const VALIDATORS = {
     edition: validateEdition,
     home: validateHome,
@@ -347,6 +368,7 @@ const VALIDATORS = {
     announcement: validateAnnouncement,
     partners: validatePartners,
     settings: validateSettings,
+    templates: validateTemplates,
 };
 
 function validateContent(key, input) {

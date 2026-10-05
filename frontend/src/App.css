@@ -2021,3 +2021,8 @@
     aspect-ratio: 4 / 3;
     object-fit: cover;
 }
+
+.template-picker {
+    max-width: 22rem;
+    margin: 0.5rem 0;
+}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../api/client";
 import { errorMessage } from "./shared";
+import { TemplatePicker, fillTemplate, useTemplates } from "./templates";
 
 const AUDIENCES = [
     { id: "approved", label: "Zaakceptowani", filters: { status: "approved" } },
@@ -32,6 +33,19 @@ export default function GroupEmailForm({ edition, onSent }) {
     const [recipients, setRecipients] = useState(null);
     const [feedback, setFeedback] = useState({ error: "", success: "" });
     const [isSending, setIsSending] = useState(false);
+    const { templates, currentEdition } = useTemplates("group");
+
+    function applyTemplate(template) {
+        const values = { rok: edition || currentEdition || undefined };
+        if (
+            (subject || message) &&
+            !window.confirm("Zastąpić wpisany temat i treść szablonem?")
+        ) {
+            return;
+        }
+        setSubject(fillTemplate(template.subject || template.title, values));
+        setMessage(fillTemplate(template.body, values));
+    }
 
     const audience = AUDIENCES.find((item) => item.id === audienceId);
     const filters = { ...audience.filters, edition: edition || undefined };
@@ -99,6 +113,7 @@ export default function GroupEmailForm({ edition, onSent }) {
                     Odbiorców: <strong>{recipients?.count ?? "…"}</strong> (każdy
                     dostanie osobną wiadomość zaczynającą się od „Cześć &lt;imię&gt;,”).
                 </p>
+                <TemplatePicker templates={templates} onPick={applyTemplate} />
                 <label>
                     Temat
                     <input

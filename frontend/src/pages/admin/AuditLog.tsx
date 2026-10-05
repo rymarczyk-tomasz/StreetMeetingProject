@@ -44,6 +44,7 @@ const ACTION_LABELS = {
     "partners.content_updated": "zaktualizował partnerów",
     "edition.content_updated": "zmienił edycję wydarzenia",
     "settings.updated": "zmienił ustawienia zgłoszeń",
+    "templates.content_updated": "zmienił szablony wiadomości",
     "email.group_sent": "wysłał wiadomość do uczestników",
 };
 
@@ -121,6 +122,7 @@ export default function AuditLog({ refreshKey }) {
                         <option value="submission.">Zgłoszenia</option>
                         <option value="user.">Użytkownicy</option>
                         <option value="settings.">Ustawienia</option>
+                        <option value="templates.">Szablony wiadomości</option>
                         <option value="edition.">Edycja wydarzenia</option>
                         <option value="gallery.">Galeria</option>
                         <option value="email.">E-maile</option>

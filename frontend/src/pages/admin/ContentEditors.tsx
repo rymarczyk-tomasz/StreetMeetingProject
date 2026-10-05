@@ -847,3 +847,104 @@ export function SubmissionSettingsEditor({ onAction }) {
         </ContentForm>
     );
 }
+
+// ---- Message templates -------------------------------------------------------
+
+const TEMPLATE_KIND_LABELS = {
+    note: "Komentarz do zgłoszenia",
+    group: "Wiadomość do grupy",
+};
+
+export function TemplatesEditor({ onAction }) {
+    const editor = useContentEditor("templates", onAction);
+    const items = editor.content?.items || [];
+
+    function setItems(next) {
+        editor.update({ items: next });
+    }
+
+    function updateItem(index, patch) {
+        setItems(items.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+    }
+
+    return (
+        <ContentForm editor={editor} saveLabel="Zapisz szablony">
+            {editor.content && (
+                <>
+                    <p className="admin-hint">
+                        Szablony wybierasz w Zgłoszeniach („Wstaw szablon komentarza”) i w
+                        wiadomości do grupy. <code>{"{rok}"}</code>, <code>{"{marka}"}</code> i{" "}
+                        <code>{"{rejestracja}"}</code> zostaną uzupełnione danymi zgłoszenia (w
+                        wiadomości do grupy tylko <code>{"{rok}"}</code>). Tekst po wstawieniu
+                        można jeszcze poprawić.
+                    </p>
+                    <div className="event-editor-grid">
+                        {items.map((item, index) => (
+                            <fieldset className="event-editor-card" key={item.id}>
+                                <legend>{item.title || `Szablon ${index + 1}`}</legend>
+                                <label>
+                                    Rodzaj
+                                    <select
+                                        value={item.kind}
+                                        onChange={(event) => updateItem(index, { kind: event.target.value })}
+                                    >
+                                        {Object.entries(TEMPLATE_KIND_LABELS).map(([kind, label]) => (
+                                            <option key={kind} value={kind}>
+                                                {label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                                <TextInput
+                                    label="Nazwa (widoczna tylko w panelu)"
+                                    value={item.title}
+                                    maxLength={120}
+                                    onChange={(title) => updateItem(index, { title })}
+                                />
+                                {item.kind === "group" && (
+                                    <TextInput
+                                        label="Temat wiadomości"
+                                        value={item.subject}
+                                        maxLength={200}
+                                        onChange={(subject) => updateItem(index, { subject })}
+                                    />
+                                )}
+                                <TextArea
+                                    label="Treść"
+                                    rows={6}
+                                    maxLength={5000}
+                                    value={item.body}
+                                    onChange={(body) => updateItem(index, { body })}
+                                />
+                                <ListItemControls
+                                    index={index}
+                                    count={items.length}
+                                    onMove={(from, to) => setItems(moveItem(items, from, to))}
+                                    onRemove={() => setItems(items.filter((_, i) => i !== index))}
+                                    removeLabel="Usuń szablon"
+                                />
+                            </fieldset>
+                        ))}
+                    </div>
+                    <div className="submission-actions">
+                        {Object.entries(TEMPLATE_KIND_LABELS).map(([kind, label]) => (
+                            <button
+                                key={kind}
+                                type="button"
+                                className="button-secondary"
+                                onClick={() =>
+                                    setItems([
+                                        ...items,
+                                        { id: newId("template"), kind, title: "", subject: "", body: "" },
+                                    ])
+                                }
+                            >
+                                + {label}
+                            </button>
+                        ))}
+                    </div>
+                </>
+            )}
+        </ContentForm>
+    );
+}

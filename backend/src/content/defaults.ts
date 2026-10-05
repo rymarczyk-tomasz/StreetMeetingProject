@@ -137,6 +137,61 @@ const DEFAULTS = {
         // Practical info for accepted participants (entry hours, what to bring…).
         participantInfo: "",
     },
+    // Ready-made texts: "note" = comment for a participant on a submission,
+    // "group" = group message. {rok}, {marka}, {rejestracja} are filled in.
+    templates: {
+        items: [
+            {
+                id: "note-photos",
+                kind: "note",
+                title: "Prośba o lepsze zdjęcia",
+                subject: "",
+                body: "Prosimy o dodanie wyraźniejszych zdjęć auta {marka} — najlepiej całe auto z przodu, z boku i z tyłu, w dziennym świetle. Do tego czasu zgłoszenie czeka na decyzję.",
+            },
+            {
+                id: "note-capacity",
+                kind: "note",
+                title: "Odrzucenie: brak miejsc",
+                subject: "",
+                body: "Dziękujemy za zgłoszenie {marka} ({rejestracja}). Niestety liczba miejsc w strefie Select na edycję {rok} jest ograniczona i tym razem nie możemy przyjąć auta. Zapraszamy na wydarzenie jako widz i do zgłoszenia w kolejnej edycji!",
+            },
+            {
+                id: "note-profile",
+                kind: "note",
+                title: "Odrzucenie: auto nie pasuje do strefy",
+                subject: "",
+                body: "Dziękujemy za zgłoszenie {marka}. Strefa Select w edycji {rok} ma określony charakter i tym razem nie zakwalifikowaliśmy auta. Zapraszamy na wydarzenie jako widz!",
+            },
+            {
+                id: "note-waitlist",
+                kind: "note",
+                title: "Lista rezerwowa",
+                subject: "",
+                body: "Auto {marka} jest na liście rezerwowej. Jeśli zwolni się miejsce, odezwiemy się z akceptacją i danymi do opłaty.",
+            },
+            {
+                id: "group-payment",
+                kind: "group",
+                title: "Przypomnienie o opłacie",
+                subject: "Street Show {rok}: przypomnienie o opłacie",
+                body: "Przypominamy o opłacie za miejsce w strefie Select. Dane do przelewu znajdziesz w swoim panelu. Jeśli opłata jest już wykonana, zgłoś ją w panelu, najlepiej z potwierdzeniem przelewu.\n\nJeśli nie możesz przyjechać, kliknij w panelu „Rezygnuję” — miejsce dostanie ktoś z listy rezerwowej.",
+            },
+            {
+                id: "group-info",
+                kind: "group",
+                title: "Informacje przed wydarzeniem",
+                subject: "Street Show {rok}: informacje dla uczestników strefy Select",
+                body: "Już niedługo widzimy się na Street Show!\n\nWjazd dla strefy Select: [godziny i brama]\nZabierz ze sobą: wejściówkę z kodem QR (w panelu, można ją pobrać jako PDF/PNG) i dokument tożsamości.\nKontakt w dniu wydarzenia: [telefon]",
+            },
+            {
+                id: "group-thanks",
+                kind: "group",
+                title: "Podziękowanie po wydarzeniu",
+                subject: "Dziękujemy za Street Show {rok}!",
+                body: "Dziękujemy, że byliście z nami! Zdjęcia z wydarzenia znajdziecie wkrótce w galerii na stronie.\n\nDo zobaczenia w kolejnej edycji!",
+            },
+        ],
+    },
 };
 
 // Sections anyone may read through the public API.

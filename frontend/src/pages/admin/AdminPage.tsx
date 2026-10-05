@@ -13,6 +13,7 @@ import {
     PartnersEditor,
     RegulaminEditor,
     SubmissionSettingsEditor,
+    TemplatesEditor,
 } from "./ContentEditors";
 import GalleryAlbumsPanel from "./GalleryAlbumsPanel";
 import SubmissionsPanel from "./SubmissionsPanel";
@@ -179,6 +180,11 @@ export default function AdminPage() {
                         description="Otwieranie i zamykanie zapisów, limity i kwota opłaty."
                     />
                     <SubmissionSettingsEditor onAction={onAction} />
+                    <SectionHeading
+                        title="Szablony wiadomości"
+                        description="Gotowe komentarze do zgłoszeń (np. powody odrzucenia) i treści wiadomości do grupy."
+                    />
+                    <TemplatesEditor onAction={onAction} />
                 </div>
             )}
 

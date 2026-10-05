@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import api from "../../api/client";
 import Lightbox from "../../components/Lightbox";
 import GroupEmailForm from "./GroupEmailForm";
+import { TemplatePicker, fillTemplate, useTemplates } from "./templates";
 import { printGateList } from "./gateList";
 import {
     PAYMENT_STATUS_LABELS,
@@ -85,6 +86,7 @@ export default function SubmissionsPanel({ onAction }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isBusy, setIsBusy] = useState(false);
     const [lightbox, setLightbox] = useState({ photos: [], index: null });
+    const { templates: noteTemplates } = useTemplates("note");
     // Free places / reserve list / overdue payments of the current edition.
     const [queue, setQueue] = useState(null);
 
@@ -461,6 +463,14 @@ export default function SubmissionsPanel({ onAction }) {
                                     placeholder="Pusty = zostaje dotychczasowy komentarz"
                                 />
                             </label>
+                            <TemplatePicker
+                                templates={noteTemplates}
+                                label="Szablon komentarza"
+                                onPick={(template) =>
+                                    // Bulk: car-specific placeholders can't be filled.
+                                    setBulkNote(fillTemplate(template.body, {}))
+                                }
+                            />
                             <button
                                 type="button"
                                 disabled={isBusy}
@@ -643,6 +653,20 @@ export default function SubmissionsPanel({ onAction }) {
                                 Cofnij potwierdzenie opłaty
                             </button>
                         )}
+                        <TemplatePicker
+                            templates={noteTemplates}
+                            label="Wstaw szablon komentarza"
+                            onPick={(template) =>
+                                setAdminNotes({
+                                    ...adminNotes,
+                                    [s.id]: fillTemplate(template.body, {
+                                        rok: s.edition,
+                                        marka: s.carBrand,
+                                        rejestracja: s.licensePlate,
+                                    }),
+                                })
+                            }
+                        />
                         <label className="admin-note-field">
                             Komentarz dla użytkownika (widoczny w panelu i w
                             e-mailu)
