@@ -422,6 +422,7 @@ function findRecipients(filters) {
                 user_id: row.user_id,
                 email: row.user_email,
                 first_name: row.first_name,
+                notify_email: usersDb.findUserById(row.user_id)?.notify_group_email,
             });
         }
     }
@@ -750,16 +751,20 @@ router.post("/emails", (req, res) => {
         });
     }
 
+    // Everyone gets the message in the panel; e-mail only who didn't opt out.
+    const emailRecipients = recipients.filter((recipient) => recipient.notify_email !== 0);
+    const optedOut = recipients.length - emailRecipients.length;
+
     // Sending can take minutes; reply right away and log the outcome when done.
     groupEmailInProgress = true;
-    sendGroupEmail({ recipients, subject, message })
+    sendGroupEmail({ recipients: emailRecipients, subject, message })
         .then((result) =>
             auditLogDb.createAuditEntry({
                 adminId,
                 action: "email.group_sent",
                 targetType: "email",
                 targetId: messageId,
-                details: { subject, filters, ...result },
+                details: { subject, filters, ...result, optedOut },
             }),
         )
         .catch((sendError) => console.error("[email] Wysyłka grupowa:", sendError))
@@ -768,7 +773,7 @@ router.post("/emails", (req, res) => {
         });
 
     res.status(202).json({
-        message: `Wiadomość jest już w panelu ${recipients.length} uczestników; e-maile są wysyłane (wynik w dzienniku działań).`,
+        message: `Wiadomość jest już w panelu ${recipients.length} uczestników; e-maile są wysyłane (wynik w dzienniku działań).${optedOut ? ` ${optedOut} os. wyłączyło e-maile z wiadomościami — zobaczą ją tylko w panelu.` : ""}`,
     });
 });
 

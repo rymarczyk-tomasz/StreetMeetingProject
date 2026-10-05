@@ -25,6 +25,20 @@ export default function AccountSettingsPage() {
     const [deletePassword, setDeletePassword] = useState("");
     const [isDeleting, setIsDeleting] = useState(false);
     const navigate = useNavigate();
+    const [notifications, setNotifications] = useState(
+        user.notifications || { groupEmail: true, paymentReminders: true, threadReplies: true },
+    );
+
+    async function toggleNotification(key, value) {
+        const previous = notifications;
+        setNotifications({ ...notifications, [key]: value });
+        const saved = await runAction(
+            () => api.patch("/auth/me/notifications", { [key]: value }),
+            "Nie udało się zapisać ustawień powiadomień.",
+        );
+        if (saved) await refreshUser();
+        else setNotifications(previous);
+    }
 
     function clearFeedback() {
         setMessage("");
@@ -279,6 +293,28 @@ export default function AccountSettingsPage() {
                             {isChangingEmail ? "Wysyłanie..." : "Zmień adres"}
                         </button>
                     </form>
+                </section>
+
+                <section className="account-card">
+                    <h2>Powiadomienia e-mail</h2>
+                    <p>
+                        Decyzje w sprawie zgłoszeń i wiadomości dotyczące konta wysyłamy zawsze.
+                        Pozostałe e-maile możesz wyłączyć — wszystko nadal zobaczysz w swoim panelu.
+                    </p>
+                    {[
+                        ["groupEmail", "Komunikaty od organizatora (wiadomości do uczestników)"],
+                        ["paymentReminders", "Przypomnienie o zbliżającym się terminie opłaty"],
+                        ["threadReplies", "Odpowiedzi organizatora w wiadomościach przy zgłoszeniu"],
+                    ].map(([key, label]) => (
+                        <label className="consent-label" key={key}>
+                            <input
+                                type="checkbox"
+                                checked={notifications[key]}
+                                onChange={(event) => toggleNotification(key, event.target.checked)}
+                            />
+                            <span>{label}</span>
+                        </label>
+                    ))}
                 </section>
 
                 <section className="account-card">

@@ -37,6 +37,42 @@ const countAdminsStmt = db.prepare(
     `SELECT COUNT(*) AS count FROM users WHERE role = 'admin'`,
 );
 const deleteUserStmt = db.prepare(`DELETE FROM users WHERE id = ?`);
+const updateNotificationsStmt = db.prepare(`
+    UPDATE users
+    SET notify_group_email = @groupEmail,
+        notify_payment_reminders = @paymentReminders,
+        notify_thread_email = @threadReplies
+    WHERE id = @id
+`);
+
+// API name → column. All default to on.
+const NOTIFICATION_COLUMNS = {
+    groupEmail: "notify_group_email",
+    paymentReminders: "notify_payment_reminders",
+    threadReplies: "notify_thread_email",
+};
+
+function notificationPrefs(user) {
+    return Object.fromEntries(
+        Object.entries(NOTIFICATION_COLUMNS).map(([key, column]) => [key, user?.[column] !== 0]),
+    );
+}
+
+// prefs: partial { groupEmail, paymentReminders, threadReplies } booleans.
+function updateNotificationPrefs(id, prefs) {
+    const current = notificationPrefs(findByIdStmt.get(id));
+    const next = { ...current };
+    for (const key of Object.keys(NOTIFICATION_COLUMNS)) {
+        if (typeof prefs[key] === "boolean") next[key] = prefs[key];
+    }
+    updateNotificationsStmt.run({
+        id,
+        groupEmail: next.groupEmail ? 1 : 0,
+        paymentReminders: next.paymentReminders ? 1 : 0,
+        threadReplies: next.threadReplies ? 1 : 0,
+    });
+    return findByIdStmt.get(id);
+}
 
 // termsVersion: regulamin version accepted at registration (null for CLI-created admins).
 function createUser({
@@ -184,4 +220,6 @@ module.exports = {
     updateUserEmail,
     updateUserGateStaff,
     canCheckIn,
+    notificationPrefs,
+    updateNotificationPrefs,
 };

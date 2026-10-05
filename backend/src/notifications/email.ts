@@ -61,6 +61,15 @@ async function sendMail({ to, subject, text, html }) {
     return { sent: true };
 }
 
+// Optional e-mails say where to switch them off.
+function preferencesFooter() {
+    const url = `${getAppUrl()}/ustawienia-konta`;
+    return {
+        text: `\n—\nNie chcesz takich e-maili? Wyłącz je w ustawieniach konta: ${url}`,
+        html: `<p style="color:#777;font-size:12px">Nie chcesz takich e-maili? <a href="${escapeHtml(url)}">Wyłącz je w ustawieniach konta</a>.</p>`,
+    };
+}
+
 function formatDeadline(date) {
     if (!date) return "";
     return new Intl.DateTimeFormat("pl-PL", {
@@ -221,6 +230,7 @@ async function sendPaymentReminderEmail({ submission, email, firstName }) {
             panelUrl,
             "",
             "Street Show Crew",
+            preferencesFooter().text,
         ].join("\n"),
         html: `
             <p>Cześć ${escapeHtml(name)},</p>
@@ -229,6 +239,7 @@ async function sendPaymentReminderEmail({ submission, email, firstName }) {
             <p>${escapeHtml(closing)}</p>
             <p><a href="${escapeHtml(panelUrl)}">Przejdź do panelu</a></p>
             <p>Street Show Crew</p>
+            ${preferencesFooter().html}
         `,
     });
 }
@@ -400,6 +411,7 @@ async function sendThreadReplyEmail({ user, submission, body }) {
             `Odpowiedz w swoim panelu: ${panelUrl}`,
             "",
             "Street Show Crew",
+            preferencesFooter().text,
         ].join("\n"),
         html: `
             <p>Cześć ${escapeHtml(firstName)},</p>
@@ -407,6 +419,7 @@ async function sendThreadReplyEmail({ user, submission, body }) {
             <blockquote>${escapeHtml(body).replace(/\n/g, "<br>")}</blockquote>
             <p><a href="${escapeHtml(panelUrl)}">Odpowiedz w swoim panelu</a> — odpowiedzi na ten e-mail nie trafią do organizatora.</p>
             <p>Street Show Crew</p>
+            ${preferencesFooter().html}
         `,
     });
 }
@@ -447,12 +460,13 @@ async function sendGroupEmail({ recipients, subject, message }) {
     for (const recipient of recipients) {
         const greeting = `Cześć ${recipient.first_name || ""}`.trim() + ",";
         const body = `${greeting}\n\n${message}\n\nStreet Show Crew`;
+        const footer = preferencesFooter();
         try {
             await sendMail({
                 to: recipient.email,
                 subject,
-                text: body,
-                html: plainTextToHtml(body),
+                text: `${body}\n${footer.text}`,
+                html: `${plainTextToHtml(body)}\n${footer.html}`,
             });
             results.sent += 1;
         } catch (error) {

@@ -58,7 +58,8 @@ const countByStatusStmt = db.prepare(
     `SELECT COUNT(*) AS count FROM submissions WHERE edition = ? AND status = ?`,
 );
 const listAwaitingPaymentStmt = db.prepare(`
-    SELECT submissions.*, users.email AS user_email
+    SELECT submissions.*, users.email AS user_email,
+           users.notify_payment_reminders AS notify_payment_reminders
     FROM submissions JOIN users ON users.id = submissions.user_id
     WHERE submissions.edition = ? AND submissions.status = 'approved'
       AND submissions.payment_status = 'unpaid' AND users.is_active = 1
@@ -209,7 +210,8 @@ function listRecipients(filters: SubmissionFilters = {}) {
     return db
         .prepare(
             `
-            SELECT users.id AS user_id, users.email AS email, MIN(users.first_name) AS first_name
+            SELECT users.id AS user_id, users.email AS email, MIN(users.first_name) AS first_name,
+                   users.notify_group_email AS notify_email
             FROM submissions
             JOIN users ON users.id = submissions.user_id
             ${where}${where ? " AND" : " WHERE"} users.is_active = 1

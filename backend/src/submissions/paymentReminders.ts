@@ -36,7 +36,8 @@ async function sendDuePaymentReminders() {
         const latestDue = addDays(today, REMINDER_DAYS_BEFORE);
 
         for (const row of submissionsDb.listAwaitingPayment(siteContentDb.getCurrentEdition())) {
-            if (row.payment_reminder_sent_at) continue;
+            // Switched off in Ustawienia konta: the deadline is still in the panel.
+            if (row.payment_reminder_sent_at || row.notify_payment_reminders === 0) continue;
             const due = getPaymentDueDate(row, settings);
             if (!due || due < today || due > latestDue) continue;
 

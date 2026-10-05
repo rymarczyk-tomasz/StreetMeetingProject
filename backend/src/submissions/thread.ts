@@ -48,9 +48,12 @@ function postToThread({ submission, author, fromAdmin, text, userEmail }) {
         body: text,
     });
 
-    const notify = fromAdmin
-        ? sendThreadReplyEmail({ user: usersDb.findUserById(submission.user_id), submission, body: text })
-        : sendThreadAdminEmail({ submission, userEmail, body: text });
+    const participant = fromAdmin ? usersDb.findUserById(submission.user_id) : null;
+    const notify = !fromAdmin
+        ? sendThreadAdminEmail({ submission, userEmail, body: text })
+        : usersDb.notificationPrefs(participant).threadReplies
+          ? sendThreadReplyEmail({ user: participant, submission, body: text })
+          : Promise.resolve();
     void notify.catch((error) =>
         console.error(`[email] Wiadomość w zgłoszeniu ${submission.id}:`, error.message),
     );

@@ -72,6 +72,7 @@ function toPublicUser(user) {
         canCheckIn: usersDb.canCheckIn(user),
         emailVerified: Boolean(user.email_verified_at),
         termsAcceptedAt: user.terms_accepted_at,
+        notifications: usersDb.notificationPrefs(user),
     };
 }
 
@@ -321,6 +322,11 @@ router.patch("/me", authenticate, (req, res) => {
     });
 
     res.json({ user: toPublicUser(user) });
+});
+
+router.patch("/me/notifications", authenticate, (req, res) => {
+    const user = usersDb.updateNotificationPrefs(req.user.sub, req.body || {});
+    res.json({ user: toPublicUser(user), message: "Zapisano ustawienia powiadomień." });
 });
 
 router.post("/verify-email", authRateLimit, (req, res) => {

@@ -148,6 +148,14 @@ if (!userColumns.has("gate_staff")) {
     db.exec("ALTER TABLE users ADD COLUMN gate_staff INTEGER NOT NULL DEFAULT 0");
 }
 
+// E-mail preferences (Ustawienia konta). Only optional e-mails can be switched
+// off; decisions about submissions and security e-mails always go out.
+for (const column of ["notify_group_email", "notify_payment_reminders", "notify_thread_email"]) {
+    if (!userColumns.has(column)) {
+        db.exec(`ALTER TABLE users ADD COLUMN ${column} INTEGER NOT NULL DEFAULT 1`);
+    }
+}
+
 const submissionColumns = new Set(
     db
         .prepare("PRAGMA table_info(submissions)")
