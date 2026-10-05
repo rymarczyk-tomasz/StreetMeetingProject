@@ -105,7 +105,7 @@ async function getSystemStatus() {
                     "backup",
                     "Kopia bazy",
                     backupAge > 2 * DAY_MS ? "error" : "ok",
-                    `Ostatnia: ${backup.name} (${backup.count} kopii w ${BACKUP_DIR}). Pamiętaj o kopii poza serwerem.`,
+                    `Ostatnia: ${backup.name} (liczba kopii: ${backup.count}, katalog ${BACKUP_DIR}). Pamiętaj o kopii poza serwerem.`,
                 ),
         isEmailConfigured()
             ? check("smtp", "Wysyłka e-maili (SMTP)", "ok", `Nadawca: ${process.env.SMTP_FROM || process.env.SMTP_USER}. Sprawdź przyciskiem „Wyślij testowy e-mail”.`)
