@@ -1,15 +1,23 @@
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
-const sharp = require("sharp");
 
 const galleryDb = require("../db/gallery");
 const drive = require("./drive");
 const { getAlbumDir } = require("../utils/paths");
 
-// Small VPS: decode one photo at a time and don't keep decoded images in cache.
-sharp.concurrency(1);
-sharp.cache(false);
+// sharp is a native module: load it on first use, so a broken install (wrong
+// platform/Node version on the server) only breaks gallery sync, not the whole API.
+let sharpModule;
+function getSharp() {
+    if (!sharpModule) {
+        sharpModule = require("sharp");
+        // Small VPS: decode one photo at a time and don't keep decoded images in cache.
+        sharpModule.concurrency(1);
+        sharpModule.cache(false);
+    }
+    return sharpModule;
+}
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const THUMB_WIDTH = 480;
@@ -72,6 +80,7 @@ async function removePhotoFiles(albumId, driveFileId) {
 async function renderPhoto(albumId, file) {
     const original = await drive.downloadFile(file.id);
     const base = photoFileBase(albumId, file.id);
+    const sharp = getSharp();
     // rotate() applies EXIF orientation so phone photos aren't sideways.
     const full = await sharp(original)
         .rotate()
