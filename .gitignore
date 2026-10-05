@@ -49,6 +49,7 @@ backend/dist/
 
 # Uploaded / generated files (runtime data, per-environment)
 backend/uploads/submissions/
+backend/uploads/vehicles/
 backend/uploads/content/
 # Gallery thumbnails generated from Google Drive (backend/src/gallery/sync.ts)
 backend/uploads/gallery/
