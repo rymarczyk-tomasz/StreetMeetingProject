@@ -132,6 +132,8 @@ const DEFAULTS = {
         paymentDeadline: "",
         // Days to pay counted from approval (0 = only the fixed deadline above).
         paymentDaysAfterApproval: 0,
+        // Public page with approved cars (photo-publishing consent only).
+        showcaseEnabled: false,
         // Practical info for accepted participants (entry hours, what to bring…).
         participantInfo: "",
     },

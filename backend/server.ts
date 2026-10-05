@@ -13,6 +13,7 @@ const { router: submissionsRoutes } = require("./src/submissions/routes");
 const vehiclesRoutes = require("./src/vehicles/routes");
 const messagesRoutes = require("./src/messages/routes");
 const gateRoutes = require("./src/gate/routes");
+const { router: showcaseRoutes } = require("./src/showcase/routes");
 const siteContentDb = require("./src/db/siteContent");
 const { PUBLIC_CONTENT_KEYS } = require("./src/content/defaults");
 const {
@@ -116,6 +117,7 @@ app.get("/api/content/:key", (req, res) => {
     res.json({ content: siteContentDb.getContent(req.params.key) });
 });
 app.use("/api/gallery", galleryPublicRoutes);
+app.use("/api/showcase", showcaseRoutes);
 app.get("/api/health", (req, res) => {
     res.json({ status: "OK" });
 });

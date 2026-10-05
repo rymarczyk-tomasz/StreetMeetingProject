@@ -826,6 +826,15 @@ export function SubmissionSettingsEditor({ onAction }) {
                             onChange={(value) => editor.update({ paymentDaysAfterApproval: Number(value) })}
                         />
                     </fieldset>
+                    <label className="admin-checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={Boolean(settings.showcaseEnabled)}
+                            onChange={(event) => editor.update({ showcaseEnabled: event.target.checked })}
+                        />
+                        Pokazuj na stronie listę zaakceptowanych aut („Auta strefy Select”, /auta-select) — tylko
+                        marka i zdjęcia aut, których właściciele zgodzili się na publikację zdjęć
+                    </label>
                     <TextArea
                         label="Informacje dla zaakceptowanych uczestników (widoczne w ich panelu): godziny i brama wjazdu, co zabrać, kontakt w dniu wydarzenia…"
                         rows={5}

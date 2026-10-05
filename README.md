@@ -141,6 +141,12 @@ Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do
 - Synchronizacja (`backend/src/gallery/sync.ts`) pobiera oryginał tylko dla nowych/zmienionych plików i zapisuje dwie wersje WEBP (480 px i 1600 px) w `backend/uploads/gallery/<album>/`. Usunięte z Dysku znikają ze strony. Działa w tle (panel pokazuje postęp) i codziennie w nocy. HEIC nie jest obsługiwany.
 - Publicznie: `GET /api/gallery/albums`, `GET /api/gallery/albums/:id`; miniatury z długim cache (`/uploads/gallery/...?v=<wersja>`).
 
+## Auta strefy Select i odliczanie
+
+- Strona `/auta-select` (i zapowiedź na stronie głównej) pokazuje zaakceptowane auta bieżącej edycji, ale tylko te, których właściciele zaznaczyli w zgłoszeniu zgodę na publikację zdjęć. Domyślnie wyłączona — włącza się w Ustawieniach. Pojedyncze auto można ukryć w Zgłoszeniach.
+- Publicznie widać tylko markę i zdjęcia (bez nazwisk, rejestracji i opisów). `GET /api/showcase` zwraca listę, a `GET /api/showcase/photos/:id/:n?w=480|1200` zmniejszone kopie WEBP bez EXIF (`backend/uploads/showcase/`). Każde żądanie ponownie sprawdza zgodę i widoczność, więc nie serwuj tego katalogu statycznie z nginx.
+- Na stronie głównej pod datą jest odliczanie do wydarzenia (`Countdown`), liczone z daty i godziny w sekcji Edycja.
+
 ## Treści strony (CMS)
 
 - Wszystkie sekcje są w tabeli `site_content` (domyślne wartości: `backend/src/content/defaults.ts`, walidacja: `validators.ts`). Każdy zapis trafia do `content_revisions` (30 ostatnich wersji na sekcję) i można go przywrócić z panelu.

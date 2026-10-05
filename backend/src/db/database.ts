@@ -189,6 +189,8 @@ const newSubmissionColumns = {
     approved_at: "TEXT",
     withdrawn_at: "TEXT",
     payment_reminder_sent_at: "TEXT",
+    // Admin hid the car from the public "Auta strefy Select" page.
+    showcase_hidden: "INTEGER NOT NULL DEFAULT 0",
 };
 for (const [column, type] of Object.entries(newSubmissionColumns)) {
     if (!submissionColumns.has(column)) {

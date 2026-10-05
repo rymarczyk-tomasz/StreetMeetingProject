@@ -63,6 +63,16 @@ const listAwaitingPaymentStmt = db.prepare(`
     WHERE submissions.edition = ? AND submissions.status = 'approved'
       AND submissions.payment_status = 'unpaid' AND users.is_active = 1
 `);
+const setShowcaseHiddenStmt = db.prepare(
+    `UPDATE submissions SET showcase_hidden = ? WHERE id = ?`,
+);
+// Public "Auta strefy Select": approved cars whose owners agreed to photo publishing.
+const listShowcaseStmt = db.prepare(`
+    SELECT * FROM submissions
+    WHERE edition = ? AND status = 'approved' AND photo_publish_consent = 1
+      AND showcase_hidden = 0
+    ORDER BY lower(car_brand), id
+`);
 const markReminderSentStmt = db.prepare(
     `UPDATE submissions SET payment_reminder_sent_at = datetime('now') WHERE id = ?`,
 );
@@ -224,6 +234,25 @@ function listAwaitingPayment(edition) {
     return listAwaitingPaymentStmt.all(edition);
 }
 
+function setShowcaseHidden(id, hidden) {
+    setShowcaseHiddenStmt.run(hidden ? 1 : 0, id);
+    return findByIdStmt.get(id);
+}
+
+function listShowcase(edition) {
+    return listShowcaseStmt.all(edition);
+}
+
+function isInShowcase(row, edition) {
+    return Boolean(
+        row &&
+            row.edition === edition &&
+            row.status === "approved" &&
+            row.photo_publish_consent &&
+            !row.showcase_hidden,
+    );
+}
+
 function markPaymentReminderSent(id) {
     markReminderSentStmt.run(id);
 }
@@ -327,6 +356,9 @@ module.exports = {
     countApproved,
     listAwaitingPayment,
     markPaymentReminderSent,
+    setShowcaseHidden,
+    listShowcase,
+    isInShowcase,
     updateSubmissionPaymentStatus,
     updateSubmissionInternalNote,
     updateSubmissionDetails,

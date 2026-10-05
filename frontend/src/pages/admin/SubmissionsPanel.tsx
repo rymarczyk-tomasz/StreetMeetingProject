@@ -213,6 +213,13 @@ export default function SubmissionsPanel({ onAction }) {
         });
     }
 
+    function setShowcaseHidden(submission, hidden) {
+        return runAction(
+            () => api.patch(`/admin/submissions/${submission.id}/showcase`, { hidden }),
+            "Nie udało się zmienić widoczności auta na stronie.",
+        );
+    }
+
     async function deleteSubmission(submission) {
         const confirmed = window.confirm(
             `Trwale usunąć zgłoszenie ${submission.carBrand} (${submission.licensePlate}) razem ze zdjęciami?`,
@@ -518,6 +525,21 @@ export default function SubmissionsPanel({ onAction }) {
                                 : " · brak zapisanej zgody (zgłoszenie sprzed zmian)"}
                             {s.photoPublishConsent && " · zgoda na publikację zdjęć"}
                         </p>
+                        {s.status === "approved" && s.photoPublishConsent && (
+                            <p className="admin-hint">
+                                {s.showcaseHidden
+                                    ? "Ukryte na stronie „Auta strefy Select”. "
+                                    : "Widoczne na stronie „Auta strefy Select” (gdy włączona w Ustawieniach). "}
+                                <button
+                                    type="button"
+                                    className="button-secondary"
+                                    disabled={isBusy}
+                                    onClick={() => setShowcaseHidden(s, !s.showcaseHidden)}
+                                >
+                                    {s.showcaseHidden ? "Pokaż na stronie" : "Ukryj na stronie"}
+                                </button>
+                            </p>
+                        )}
                         {s.checkedInAt && (
                             <p>
                                 <span className="status-badge status-approved">

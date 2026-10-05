@@ -67,6 +67,7 @@ function toAdminSubmission(row) {
         internalNote: row.internal_note,
         approvedAt: row.approved_at,
         paymentReminderSentAt: row.payment_reminder_sent_at,
+        showcaseHidden: Boolean(row.showcase_hidden),
     };
 }
 
@@ -627,6 +628,20 @@ router.patch("/submissions/:id/payment-status", (req, res) => {
         paymentStatus,
     });
 
+    res.json({ submission: toAdminSubmission(updated) });
+});
+
+// Hide/show a car on the public "Auta strefy Select" page.
+router.patch("/submissions/:id/showcase", (req, res) => {
+    const existing = submissionsDb.findSubmissionById(Number(req.params.id));
+    if (!existing) {
+        return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+    }
+    const hidden = Boolean(req.body?.hidden);
+    const updated = submissionsDb.setShowcaseHidden(existing.id, hidden);
+    audit(req, hidden ? "submission.showcase_hidden" : "submission.showcase_shown", "submission", existing.id, {
+        licensePlate: existing.license_plate,
+    });
     res.json({ submission: toAdminSubmission(updated) });
 });
 

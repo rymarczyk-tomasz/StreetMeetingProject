@@ -1990,3 +1990,34 @@
 .gate-offline-status p {
     margin: 0.25rem 0;
 }
+
+.showcase-card {
+    padding: 0;
+    border: 0;
+    text-align: left;
+    cursor: pointer;
+}
+
+.hero-countdown {
+    position: relative;
+    z-index: 2;
+    margin: 0.5rem 0 0;
+    padding: 0.2rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.45);
+    font-size: clamp(1.5rem, 1.4vw, 1.8rem);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.showcase-preview-card {
+    overflow: hidden;
+    background: #1f1f1f;
+    color: #fff;
+}
+
+.showcase-preview-card .card-img-top {
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+}

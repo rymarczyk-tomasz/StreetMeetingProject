@@ -33,6 +33,7 @@ const { getUserSubmissionsDir, getUserVehiclesDir } = require("../utils/paths");
 const emailTokensDb = require("../db/emailTokens");
 const siteContentDb = require("../db/siteContent");
 const vehiclesDb = require("../db/vehicles");
+const { removeShowcaseCopies } = require("../showcase/routes");
 const {
     isEmailConfigured,
     sendPasswordResetEmail,
@@ -463,7 +464,10 @@ router.delete("/me", authenticate, authRateLimit, async (req, res) => {
         });
     }
 
+    // Ids first: the submissions rows go away with the user.
+    const submissionIds = submissionsDb.listSubmissionsByUser(user.id).map((row) => row.id);
     usersDb.deleteUser(user.id);
+    submissionIds.forEach(removeShowcaseCopies);
     for (const dir of [getUserSubmissionsDir(user.id), getUserVehiclesDir(user.id)]) {
         fs.promises.rm(dir, { recursive: true, force: true }).catch((error) =>
             console.error(

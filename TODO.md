@@ -22,6 +22,7 @@ Lista rzeczy do dodania lub dopracowania w projekcie.
 - [x] Komunikaty od organizatora w panelu uczestnika
 - [x] Lista rezerwowa, limit miejsc przy akceptacji, rezygnacja uczestnika
 - [x] Tryb offline na bramie (lista aut w telefonie, kolejka wjazdów, service worker)
+- [x] Odliczanie do wydarzenia i publiczna lista "Auta strefy Select" (za zgodą)
 - [x] Termin opłaty od akceptacji, przypomnienie e-mail, filtr "po terminie"
 
 ## E-mail i powiadomienia

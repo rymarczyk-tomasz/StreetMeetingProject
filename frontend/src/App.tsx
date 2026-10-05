@@ -22,6 +22,7 @@ const AdminPage = lazy(() => import("./pages/admin/AdminPage"));
 const GaragePage = lazy(() => import("./pages/GaragePage"));
 const EmailTokenPage = lazy(() => import("./pages/EmailTokenPage"));
 const GatePage = lazy(() => import("./pages/GatePage"));
+const ShowcasePage = lazy(() => import("./pages/ShowcasePage"));
 
 function App() {
     return (
@@ -30,6 +31,7 @@ function App() {
                 <Route index element={<HomePage />} />
                 <Route path="galeria" element={<GalleryPage />} />
                 <Route path="galeria/:albumId" element={<GalleryPage />} />
+                <Route path="auta-select" element={<ShowcasePage />} />
                 <Route path="faq" element={<FaqPage />} />
                 <Route path="regulamin" element={<RegulaminPage />} />
                 <Route path="logowanie" element={<LoginPage />} />

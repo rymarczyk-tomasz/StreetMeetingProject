@@ -36,6 +36,7 @@ const { getUserSubmissionsDir } = require("../utils/paths");
 const auditLogDb = require("../db/auditLog");
 const { getPaymentDetails, getFeeAmount, isPaymentOverdue } = require("../payments");
 const { getAppUrl } = require("../utils/appUrl");
+const { removeShowcaseCopies } = require("../showcase/routes");
 const {
     sendNewSubmissionAdminEmail,
     sendWithdrawalAdminEmail,
@@ -81,6 +82,7 @@ function proofUrl(storedPath) {
 
 function removeSubmissionPhotos(row) {
     removeStoredPhotos(JSON.parse(row.photos || "[]"));
+    removeShowcaseCopies(row.id);
     if (row.payment_proof) removeStoredProof(row.payment_proof);
 }
 

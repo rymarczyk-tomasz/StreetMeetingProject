@@ -1,6 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import api from "../api/client";
 import { useContent } from "../api/content";
+import Countdown from "../components/Countdown";
 import HeroPhoto from "../components/HeroPhoto";
 import { heroPhotoVars, shouldRotateOnMobile } from "../utils/hero";
 import { cardImageProps } from "../utils/photos";
@@ -132,6 +134,50 @@ function Partners({ partners }) {
     );
 }
 
+const SHOWCASE_PREVIEW = 6;
+
+// Teaser of the public "Auta strefy Select" page; hidden until it's switched on
+// in Admin → Ustawienia and there are cars to show.
+function SelectShowcase() {
+    const [data, setData] = useState(null);
+
+    useEffect(() => {
+        api.get("/showcase")
+            .then(({ data: response }) => setData(response))
+            .catch(() => setData(null));
+    }, []);
+
+    if (!data?.enabled || !data.cars.length) return null;
+
+    return (
+        <section id="select" className="bg-dark text-light py-5">
+            <div className="container text-center">
+                <h2 className="display-5 pb-lg-3 text-uppercase">Strefa Select {data.edition}</h2>
+                <p className="py-3">Auta zakwalifikowane do strefy Select tegorocznej edycji.</p>
+                <div className="row row-cols-2 row-cols-md-3 g-3">
+                    {data.cars.slice(0, SHOWCASE_PREVIEW).map((car) => (
+                        <div className="col" key={car.id}>
+                            <article className="card h-100 showcase-preview-card">
+                                {car.photos[0] && (
+                                    <img loading="lazy" src={car.photos[0].thumb} className="card-img-top" alt={car.carBrand} />
+                                )}
+                                <div className="card-body">
+                                    <p className="card-title m-0">{car.carBrand}</p>
+                                </div>
+                            </article>
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <div className="container text-center">
+                <Link to="/auta-select" className="gallery-btn">
+                    Zobacz wszystkie auta ({data.cars.length})
+                </Link>
+            </div>
+        </section>
+    );
+}
+
 // Structured data lets search engines show the event date in results.
 function useEventJsonLd(edition, home, contact) {
     useEffect(() => {
@@ -185,6 +231,7 @@ export default function HomePage() {
                             {edition.venueName}
                         </p>
                     )}
+                    <Countdown date={edition?.date} startTime={edition?.startTime} />
                     <div className="hero-actions">
                         {home.ticketUrl && (
                             <a
@@ -247,6 +294,8 @@ export default function HomePage() {
                         </Link>
                     </div>
                 </section>
+
+                <SelectShowcase />
 
                 <Partners partners={partners} />
 

@@ -294,6 +294,7 @@ function validateSettings(input) {
         paymentTitleTemplate: text(input.paymentTitleTemplate, 140),
         paymentDeadline: text(input.paymentDeadline, 10),
         paymentDaysAfterApproval: Number(input.paymentDaysAfterApproval || 0),
+        showcaseEnabled: Boolean(input.showcaseEnabled),
         participantInfo: String(input.participantInfo || "").trim().slice(0, 3000),
     };
 

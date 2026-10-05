@@ -114,6 +114,7 @@ module.exports = {
     MAX_PHOTOS,
     MAX_TOTAL_PHOTOS_SIZE,
     toPhotoUrl,
+    diskPathOf,
     storedPathFor,
     removeStoredPhotos,
     copyStoredPhotos,
