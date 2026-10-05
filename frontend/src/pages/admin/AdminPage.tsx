@@ -1,6 +1,7 @@
 import { useState } from "react";
 import AdminReport from "./AdminReport";
 import AdminStats from "./AdminStats";
+import SystemStatus from "./SystemStatus";
 import AuditLog from "./AuditLog";
 import GateCheckin from "../../components/GateCheckin";
 import {
@@ -30,6 +31,7 @@ const SECTIONS = [
     ["content", "Treści strony"],
     ["settings", "Ustawienia"],
     ["audit", "Dziennik działań"],
+    ["system", "System"],
 ];
 
 const CONTENT_TABS = [
@@ -201,6 +203,16 @@ export default function AdminPage() {
             )}
 
             {activeSection === "audit" && <AuditLog refreshKey={refreshKey} />}
+
+            {activeSection === "system" && (
+                <div className="admin-section">
+                    <SectionHeading
+                        title="Stan systemu"
+                        description="Kopie bazy, e-maile, galeria i miejsce na dysku — rzeczy, które na serwerze psują się po cichu."
+                    />
+                    <SystemStatus onAction={onAction} />
+                </div>
+            )}
         </section>
     );
 }

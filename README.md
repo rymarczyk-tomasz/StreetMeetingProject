@@ -7,12 +7,14 @@ Strona wydarzenia motoryzacyjnego "Street Show": **React + Vite** (`frontend/`) 
 | Zakładka | Co tam jest |
 | --- | --- |
 | Dashboard | Statystyki bieżącej edycji: zgłoszenia, opłaty, wykres z 30 dni, najczęstsze marki, zapełnienie strefy Select |
-| Zgłoszenia | Filtr edycji (archiwum lat), akceptacja/odrzucenie pojedynczo i zbiorczo, notatki, opłaty, eksport do Excela, **lista na bramę do druku**, **wiadomość e-mail do grupy uczestników** |
+| Raport | Podsumowanie edycji po wydarzeniu: opłaty, wjazdy, nieobecni, rezygnacje, przychód, przyjazdy wg godziny, porównanie lat (do druku) |
+| Zgłoszenia | Filtr edycji (archiwum lat), akceptacja/odrzucenie/lista rezerwowa pojedynczo i zbiorczo, **oceny 1–5 od każdego admina**, **wątek wiadomości z uczestnikiem**, notatki, **szablony komentarzy**, opłaty, eksport do Excela, **lista na bramę do druku**, **wiadomość e-mail do grupy uczestników** |
 | Użytkownicy | Role, blokada, wylogowanie ze wszystkich urządzeń |
 | Galeria | Albumy z folderów Dysku Google (jeden folder = jeden album), synchronizacja, ukrywanie zdjęć, okładki, kolejność |
 | Treści strony | Home, Event (1–6 kafelków), podgląd galerii, partnerzy, kontakt, **FAQ** i **regulamin** (edytor jak w Wordzie + PDF), pasek ogłoszeń. Każda sekcja ma **historię zmian** z przywracaniem |
-| Ustawienia | **Edycja wydarzenia** (rok, data, godziny, miejsce) oraz zapisy do Select (otwarte/zamknięte, termin, limity, kwota opłaty) |
+| Ustawienia | **Edycja wydarzenia** (rok, data, godziny, miejsce), zapisy do Select (otwarte/zamknięte, termin, limity, kwota i termin opłaty, strona „Auta strefy Select”) oraz **szablony wiadomości** |
 | Dziennik działań | Kto, co i kiedy zmienił |
+| System | Stan kopii bazy, SMTP (z testowym e-mailem), APP_URL, galerii, miejsca na dysku i rozmiaru danych |
 
 ## Struktura repo
 

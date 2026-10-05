@@ -23,6 +23,9 @@ Lista rzeczy do dodania lub dopracowania w projekcie.
 - [x] Lista rezerwowa, limit miejsc przy akceptacji, rezygnacja uczestnika
 - [x] Tryb offline na bramie (lista aut w telefonie, kolejka wjazdów, service worker)
 - [x] Odliczanie do wydarzenia i publiczna lista "Auta strefy Select" (za zgodą)
+- [x] Szablony wiadomości, wejściówka PDF/PNG, preferencje powiadomień, wątek wiadomości przy zgłoszeniu
+- [x] Oceny zgłoszeń przez adminów, raport po wydarzeniu, podgląd stanu systemu
+- [ ] Wejściówka w Apple/Google Wallet (wymaga konta Apple Developer i wydawcy Google Wallet)
 - [x] Termin opłaty od akceptacji, przypomnienie e-mail, filtr "po terminie"
 
 ## E-mail i powiadomienia

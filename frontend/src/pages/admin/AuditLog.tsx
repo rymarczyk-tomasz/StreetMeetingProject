@@ -48,6 +48,7 @@ const ACTION_LABELS = {
     "settings.updated": "zmienił ustawienia zgłoszeń",
     "templates.content_updated": "zmienił szablony wiadomości",
     "email.group_sent": "wysłał wiadomość do uczestników",
+    "system.test_email_sent": "wysłał testowy e-mail",
 };
 
 function describeAction(entry) {

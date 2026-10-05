@@ -443,6 +443,18 @@ async function sendThreadAdminEmail({ submission, userEmail, body }) {
     });
 }
 
+// Admin → System: proves SMTP works end to end. Throws the provider's error.
+async function sendTestEmail(to) {
+    const result = await sendMail({
+        to,
+        subject: "Street Show: testowy e-mail",
+        text: `To jest testowa wiadomość z panelu administratora (${getAppUrl()}). Skoro ją widzisz, wysyłka e-maili działa.`,
+        html: `<p>To jest testowa wiadomość z panelu administratora (${escapeHtml(getAppUrl())}).</p><p>Skoro ją widzisz, wysyłka e-maili działa.</p>`,
+    });
+    if (!result.sent) throw new Error("SMTP nie jest skonfigurowany.");
+    return result;
+}
+
 function plainTextToHtml(text) {
     return String(text)
         .split(/\n{2,}/)
@@ -491,4 +503,5 @@ module.exports = {
     sendPaymentReminderEmail,
     sendThreadReplyEmail,
     sendThreadAdminEmail,
+    sendTestEmail,
 };

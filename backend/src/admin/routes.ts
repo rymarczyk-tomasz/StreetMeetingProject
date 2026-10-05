@@ -15,7 +15,9 @@ const {
     isEmailConfigured,
     sendSubmissionStatusEmail,
     sendGroupEmail,
+    sendTestEmail,
 } = require("../notifications/email");
+const { getSystemStatus } = require("./system");
 const { normalizeText } = require("../utils/validation");
 const {
     createImageUpload,
@@ -857,6 +859,32 @@ router.post("/emails", (req, res) => {
     res.status(202).json({
         message: `Wiadomość jest już w panelu ${recipients.length} uczestników; e-maile są wysyłane (wynik w dzienniku działań).${optedOut ? ` ${optedOut} os. wyłączyło e-maile z wiadomościami — zobaczą ją tylko w panelu.` : ""}`,
     });
+});
+
+// ---- System status ------------------------------------------------------
+
+router.get("/system", async (req, res, next) => {
+    try {
+        res.json(await getSystemStatus());
+    } catch (error) {
+        next(error);
+    }
+});
+
+let lastTestEmailAt = 0;
+
+router.post("/system/test-email", async (req, res) => {
+    if (Date.now() - lastTestEmailAt < 30 * 1000) {
+        return res.status(429).json({ message: "Poczekaj chwilę przed kolejnym testem." });
+    }
+    lastTestEmailAt = Date.now();
+    try {
+        await sendTestEmail(req.user.email);
+        audit(req, "system.test_email_sent", "system", null, { to: req.user.email });
+        res.json({ message: `Wysłano testowy e-mail na ${req.user.email}. Sprawdź skrzynkę (i folder spam).` });
+    } catch (error) {
+        res.status(502).json({ message: `Nie udało się wysłać: ${error.message}` });
+    }
 });
 
 // Gate check-in lives in src/gate/routes.ts (/api/gate), shared with gate staff.
