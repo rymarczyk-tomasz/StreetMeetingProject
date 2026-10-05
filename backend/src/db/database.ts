@@ -63,15 +63,14 @@ db.exec(`
 
     CREATE TABLE IF NOT EXISTS audit_log (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        admin_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        admin_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        actor_email TEXT,
         action TEXT NOT NULL,
         target_type TEXT NOT NULL,
         target_id INTEGER,
         details TEXT NOT NULL DEFAULT '{}',
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
-
-    CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at);
 
     CREATE TABLE IF NOT EXISTS password_reset_tokens (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -84,6 +83,41 @@ db.exec(`
     CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
     CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token_hash ON refresh_tokens(token_hash);
 `);
+
+// The audit log used to be deleted together with the admin's account (ON DELETE
+// CASCADE), so deleting an account erased the trace of what it did. Entries now
+// outlive the account and keep the e-mail it had. SQLite can't alter a foreign
+// key in place, so older databases get the table rebuilt once.
+const auditColumns = new Set(
+    db
+        .prepare("PRAGMA table_info(audit_log)")
+        .all()
+        .map((column) => column.name),
+);
+if (!auditColumns.has("actor_email")) {
+    db.transaction(() => {
+        db.exec(`
+            CREATE TABLE audit_log_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                admin_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                actor_email TEXT,
+                action TEXT NOT NULL,
+                target_type TEXT NOT NULL,
+                target_id INTEGER,
+                details TEXT NOT NULL DEFAULT '{}',
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            INSERT INTO audit_log_new
+                (id, admin_id, actor_email, action, target_type, target_id, details, created_at)
+            SELECT audit_log.id, audit_log.admin_id, users.email, audit_log.action,
+                   audit_log.target_type, audit_log.target_id, audit_log.details, audit_log.created_at
+            FROM audit_log LEFT JOIN users ON users.id = audit_log.admin_id;
+            DROP TABLE audit_log;
+            ALTER TABLE audit_log_new RENAME TO audit_log;
+        `);
+    })();
+}
+db.exec("CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at)");
 
 const userColumns = new Set(
     db

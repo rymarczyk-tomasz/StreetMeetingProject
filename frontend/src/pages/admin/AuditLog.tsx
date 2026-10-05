@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../api/client";
+import { plural } from "../../utils/plural";
 import { errorMessage, formatDate } from "./shared";
 
 const ACTION_LABELS = {
@@ -12,6 +13,11 @@ const ACTION_LABELS = {
     "submission.payment_unpaid": "cofnął potwierdzenie opłaty",
     "submission.payment_verification": "zgłosił opłatę do weryfikacji",
     "submission.payment_paid": "potwierdził opłacenie zgłoszenia",
+    "submission.exported": "wyeksportował zgłoszenia do Excela",
+    "submission.gate_list_printed": "wydrukował listę na bramę",
+    "submission.list_viewed": "przeglądał listę zgłoszeń",
+    "submission.gate_list_viewed": "otworzył listę aut przy wjeździe",
+    "user.list_viewed": "przeglądał listę użytkowników",
     "user.role_changed": "zmienił rolę użytkownika",
     "user.blocked": "zablokował użytkownika",
     "user.unblocked": "odblokował użytkownika",
@@ -56,6 +62,9 @@ function describeDetails(entry) {
             : ` — „${details.subject}”: wysłano ${details.sent}, błędy ${details.failed}`;
     }
     if (details.licensePlate) return ` — ${details.licensePlate}`;
+    if (typeof details.count === "number") {
+        return ` — ${plural(details.count, "rekord", "rekordy", "rekordów")}`;
+    }
     if (entry.action.endsWith(".content_restored")) {
         return ` (${entry.targetType})`;
     }

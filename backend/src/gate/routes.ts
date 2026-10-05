@@ -42,6 +42,13 @@ router.get("/cars", (req, res) => {
         edition: siteContentDb.getCurrentEdition(),
         status: "approved",
     });
+    auditLogDb.createThrottledAuditEntry({
+        adminId: req.user.sub,
+        action: "submission.gate_list_viewed",
+        targetType: "submission",
+        targetId: null,
+        details: { count: rows.length },
+    });
     res.json({ cars: rows.map(toGateView) });
 });
 

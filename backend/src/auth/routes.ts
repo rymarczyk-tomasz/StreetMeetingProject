@@ -15,6 +15,11 @@ const {
     clearAuthCookies,
 } = require("./tokens");
 const { authenticate } = require("./middleware");
+const {
+    isLoginLocked,
+    recordLoginFailure,
+    clearLoginFailures,
+} = require("./loginThrottle");
 const { createRateLimiter } = require("../utils/rateLimiter");
 const {
     EMAIL_REGEX,
@@ -139,6 +144,13 @@ router.post("/login", authRateLimit, async (req, res) => {
     const email = normalizeEmail(req.body.email);
     const password = String(req.body.password || "").slice(0, 256);
 
+    if (isLoginLocked(email)) {
+        return res.status(429).json({
+            message:
+                "Zbyt wiele nieudanych prób logowania na to konto. Spróbuj za 15 minut albo ustaw nowe hasło („Nie pamiętasz hasła?”).",
+        });
+    }
+
     const user = usersDb.findUserByEmail(email);
     const passwordMatches = await bcrypt.compare(
         password,
@@ -146,10 +158,13 @@ router.post("/login", authRateLimit, async (req, res) => {
     );
 
     if (!user || !passwordMatches) {
+        recordLoginFailure(email);
         return res
             .status(401)
             .json({ message: "Nieprawidłowy e-mail lub hasło." });
     }
+
+    clearLoginFailures(email);
 
     // Only revealed to someone who already knows the password.
     if (!user.is_active) {
@@ -263,6 +278,8 @@ router.post("/reset-password", passwordResetRateLimit, async (req, res) => {
     passwordResetTokensDb.deleteResetTokensForUser(user.id);
     // Log out every other device that may be using the old password.
     refreshTokensDb.revokeAllUserTokens(user.id);
+    // The owner proved access to the mailbox, so a lockout no longer applies.
+    clearLoginFailures(user.email);
     clearAuthCookies(res);
 
     res.json({

@@ -20,7 +20,7 @@ export async function printGateList(edition) {
     printWindow.document.write("<p>Przygotowywanie listy…</p>");
 
     const { data } = await api.get("/admin/submissions", {
-        params: { edition: edition || undefined, status: "approved" },
+        params: { edition: edition || undefined, status: "approved", purpose: "gate-list" },
     });
     const rows = [...data.submissions].sort((a, b) =>
         a.licensePlate.localeCompare(b.licensePlate, "pl", { numeric: true }),

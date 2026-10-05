@@ -204,7 +204,15 @@ router.get("/users", (req, res) => {
             .json({ message: "Nieprawidłowy filtr statusu." });
     }
 
-    res.json({ users: usersDb.listUsers({ search, role, active }) });
+    const users = usersDb.listUsers({ search, role, active });
+    auditLogDb.createThrottledAuditEntry({
+        adminId: req.user.sub,
+        action: "user.list_viewed",
+        targetType: "user",
+        targetId: null,
+        details: { count: users.length },
+    });
+    res.json({ users });
 });
 
 router.patch("/users/:id/role", (req, res) => {
@@ -361,11 +369,29 @@ function readSubmissionFilters(source) {
     };
 }
 
+// Bulk downloads of participant data, logged on every use.
+const SUBMISSION_LIST_PURPOSES = {
+    export: "submission.exported",
+    "gate-list": "submission.gate_list_printed",
+};
+
 router.get("/submissions", (req, res) => {
     const { filters, error } = readSubmissionFilters(req.query);
     if (error) return res.status(400).json({ message: error });
 
     const rows = submissionsDb.listAllSubmissions(filters);
+    const entry = {
+        adminId: req.user.sub,
+        targetType: "submission",
+        targetId: null,
+        details: { filters, count: rows.length },
+    };
+    const purposeAction = SUBMISSION_LIST_PURPOSES[String(req.query.purpose || "")];
+    if (purposeAction) {
+        auditLogDb.createAuditEntry({ ...entry, action: purposeAction });
+    } else {
+        auditLogDb.createThrottledAuditEntry({ ...entry, action: "submission.list_viewed" });
+    }
     res.json({ submissions: rows.map(toAdminSubmission) });
 });
 

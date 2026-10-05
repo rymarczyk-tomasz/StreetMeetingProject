@@ -10,7 +10,12 @@ import {
     formatDate,
 } from "./shared";
 
-async function exportToExcel(submissions) {
+// Fetched again (not taken from the table) so the backend logs the export.
+async function exportToExcel(filters) {
+    const { data } = await api.get("/admin/submissions", {
+        params: { ...filters, purpose: "export" },
+    });
+    const submissions = data.submissions;
     // SheetJS is large; load it only when someone actually exports.
     const XLSX = await import("xlsx");
     const rows = submissions.map((submission) => ({
@@ -299,7 +304,7 @@ export default function SubmissionsPanel({ onAction }) {
                     className="admin-export-button"
                     type="button"
                     onClick={() =>
-                        exportToExcel(submissions).catch(() =>
+                        exportToExcel(filters).catch(() =>
                             setError("Nie udało się wygenerować pliku Excel."),
                         )
                     }
