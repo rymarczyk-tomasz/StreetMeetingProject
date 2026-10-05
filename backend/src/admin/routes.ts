@@ -28,6 +28,7 @@ const { CONTENT_UPLOAD_ROOT } = require("../utils/paths");
 const { validateContent } = require("../content/validators");
 const { isPaymentOverdue } = require("../payments");
 const threadsDb = require("../db/threads");
+const ratingsDb = require("../db/ratings");
 const { getThread, postToThread, readMessageBody } = require("../submissions/thread");
 const { adminRouter: albumsRouter } = require("../gallery/routes");
 
@@ -452,7 +453,33 @@ router.get("/submissions", (req, res) => {
     } else {
         auditLogDb.createThrottledAuditEntry({ ...entry, action: "submission.list_viewed" });
     }
-    res.json({ submissions: rows.map(toAdminSubmission) });
+    const ratings = ratingsDb.ratingSummaries(req.user.sub);
+    res.json({
+        submissions: rows.map((row) => ({
+            ...toAdminSubmission(row),
+            rating: ratings.get(row.id) || { average: null, count: 0, mine: null, scores: [] },
+        })),
+    });
+});
+
+// The signed-in admin's 1–5 score (0/null clears it).
+router.put("/submissions/:id/rating", (req, res) => {
+    const existing = submissionsDb.findSubmissionById(Number(req.params.id));
+    if (!existing) return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+
+    const score = Number(req.body?.score || 0);
+    if (!Number.isInteger(score) || score < 0 || score > 5) {
+        return res.status(400).json({ message: "Ocena musi być liczbą od 1 do 5." });
+    }
+    ratingsDb.setRating(existing.id, Number(req.user.sub), score);
+    res.json({
+        rating: ratingsDb.ratingSummaries(req.user.sub).get(existing.id) || {
+            average: null,
+            count: 0,
+            mine: null,
+            scores: [],
+        },
+    });
 });
 
 router.get("/audit-log", (req, res) => {

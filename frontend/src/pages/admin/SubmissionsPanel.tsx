@@ -38,6 +38,8 @@ async function exportToExcel(filters) {
             submission.status === "approved" ? submission.payment?.deadline || "" : "",
         "Komentarz administratora": submission.adminNote || "",
         "Notatka wewnętrzna": submission.internalNote || "",
+        "Średnia ocena": submission.rating?.average ?? "",
+        "Liczba ocen": submission.rating?.count ?? 0,
         "Liczba zdjęć": submission.photos.length,
         Edycja: submission.edition,
     }));
@@ -58,6 +60,8 @@ async function exportToExcel(filters) {
         { wch: 40 },
         { wch: 40 },
         { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
         { wch: 10 },
     ];
     const workbook = XLSX.utils.book_new();
@@ -65,6 +69,43 @@ async function exportToExcel(filters) {
     XLSX.writeFile(
         workbook,
         `zgloszenia-${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
+}
+
+const SORTS = {
+    newest: (a, b) => b.createdAt.localeCompare(a.createdAt),
+    oldest: (a, b) => a.createdAt.localeCompare(b.createdAt),
+    rating: (a, b) => (b.rating?.average ?? -1) - (a.rating?.average ?? -1) || b.rating?.count - a.rating?.count,
+};
+
+// 1–5 stars for the signed-in admin; clicking the current score clears it.
+function RatingStars({ rating, disabled, onRate }) {
+    const mine = rating?.mine || 0;
+    const others = (rating?.scores || []).map((item) => `${item.adminEmail}: ${item.score}`).join("\n");
+    return (
+        <div className="rating-row">
+            <span className="rating-stars" role="group" aria-label="Twoja ocena">
+                {[1, 2, 3, 4, 5].map((score) => (
+                    <button
+                        key={score}
+                        type="button"
+                        className={score <= mine ? "is-on" : ""}
+                        disabled={disabled}
+                        aria-pressed={score === mine}
+                        aria-label={`Oceń na ${score}`}
+                        onClick={() => onRate(score === mine ? 0 : score)}
+                    >
+                        ★
+                    </button>
+                ))}
+            </span>
+            <span className="admin-hint" title={others || undefined}>
+                {rating?.count
+                    ? `średnia ${rating.average} (${rating.count} ${rating.count === 1 ? "ocena" : rating.count < 5 ? "oceny" : "ocen"})`
+                    : "brak ocen"}
+                {mine ? "" : " · bez Twojej oceny"}
+            </span>
+        </div>
     );
 }
 
@@ -83,6 +124,8 @@ export default function SubmissionsPanel({ onAction }) {
         unread: "",
     });
     const [openThreads, setOpenThreads] = useState<number[]>([]);
+    const [sort, setSort] = useState("newest");
+    const [onlyUnrated, setOnlyUnrated] = useState(false);
     const [editions, setEditions] = useState(null);
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
@@ -219,6 +262,18 @@ export default function SubmissionsPanel({ onAction }) {
         });
     }
 
+    // Updated in place: reloading the whole list after every star would be slow.
+    async function rate(submission, score) {
+        try {
+            const { data } = await api.put(`/admin/submissions/${submission.id}/rating`, { score });
+            setSubmissions((current) =>
+                current.map((item) => (item.id === submission.id ? { ...item, rating: data.rating } : item)),
+            );
+        } catch (err) {
+            setError(errorMessage(err, "Nie udało się zapisać oceny."));
+        }
+    }
+
     function setShowcaseHidden(submission, hidden) {
         return runAction(
             () => api.patch(`/admin/submissions/${submission.id}/showcase`, { hidden }),
@@ -273,6 +328,9 @@ export default function SubmissionsPanel({ onAction }) {
         );
     }
 
+    const visibleSubmissions = submissions
+        .filter((s) => !onlyUnrated || !s.rating?.mine)
+        .sort(SORTS[sort]);
     const allSelected =
         submissions.length > 0 && selectedIds.length === submissions.length;
 
@@ -413,6 +471,22 @@ export default function SubmissionsPanel({ onAction }) {
                         <option value="overdue">Po terminie płatności</option>
                     </select>
                 </label>
+                <label>
+                    Sortuj
+                    <select value={sort} onChange={(event) => setSort(event.target.value)}>
+                        <option value="newest">Najnowsze</option>
+                        <option value="oldest">Najstarsze</option>
+                        <option value="rating">Najwyżej oceniane</option>
+                    </select>
+                </label>
+                <label className="admin-checkbox-label">
+                    <input
+                        type="checkbox"
+                        checked={onlyUnrated}
+                        onChange={(event) => setOnlyUnrated(event.target.checked)}
+                    />
+                    Tylko jeszcze nieocenione przeze mnie
+                </label>
                 <label className="admin-checkbox-label">
                     <input
                         type="checkbox"
@@ -527,8 +601,10 @@ export default function SubmissionsPanel({ onAction }) {
                 </div>
             )}
 
-            {submissions.length === 0 && <p>Brak zgłoszeń.</p>}
-            {submissions.map((s) => {
+            {visibleSubmissions.length === 0 && (
+                <p>{submissions.length ? "Wszystkie widoczne zgłoszenia masz już ocenione." : "Brak zgłoszeń."}</p>
+            )}
+            {visibleSubmissions.map((s) => {
                 const isSelected = selectedIds.includes(s.id);
                 const internalNoteValue =
                     internalNotes[s.id] ?? s.internalNote ?? "";
@@ -585,6 +661,7 @@ export default function SubmissionsPanel({ onAction }) {
                                 </span>
                             </p>
                         )}
+                        <RatingStars rating={s.rating} disabled={isBusy} onRate={(score) => rate(s, score)} />
                         <p>{s.carDescription}</p>
                         <div className="submission-photos">
                             {s.photos.map((photo, photoIndex) => (
