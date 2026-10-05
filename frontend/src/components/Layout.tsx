@@ -1,7 +1,10 @@
 import { Suspense, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useContent } from "../api/content";
 import AnnouncementBar from "./AnnouncementBar";
+
+const FOOTER_CONTENT_KEYS = ["contact"];
 
 // Keeps the fixed navbar from overlapping page content (hero gets its own offset).
 function useNavbarOffset() {
@@ -93,6 +96,9 @@ export default function Layout() {
 
     useNavbarOffset();
     const activeHomeSection = useActiveHomeSection(isHome);
+    const { content } = useContent(FOOTER_CONTENT_KEYS);
+    // The home page has its own contact section right above the footer.
+    const contact = isHome ? null : content?.contact;
 
     return (
         <>
@@ -226,14 +232,41 @@ export default function Layout() {
                 </Suspense>
             </div>
 
-            <footer className="bg-dark text-light">
-                <p className="text-center mb-0 py-3">
-                    &copy; {new Date().getFullYear()} Street Meeting Poland
-                    <span className="mx-2">|</span>
-                    <Link className="text-light" to="/regulamin">
-                        Regulamin
-                    </Link>
-                </p>
+            <footer className="site-footer bg-dark text-light">
+                <div className="container site-footer-inner">
+                    <p className="mb-0">
+                        &copy; {new Date().getFullYear()} Street Meeting Poland
+                    </p>
+                    <nav className="site-footer-links" aria-label="Stopka">
+                        <Link to="/faq">FAQ</Link>
+                        <Link to="/regulamin">Regulamin</Link>
+                        {contact?.email && (
+                            <a href={`mailto:${contact.email}`}>{contact.email}</a>
+                        )}
+                    </nav>
+                    <div className="site-footer-social">
+                        {contact?.facebookUrl && (
+                            <a
+                                href={contact.facebookUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="Facebook Street Meeting Poland"
+                            >
+                                <i className="bi bi-facebook" aria-hidden="true"></i>
+                            </a>
+                        )}
+                        {contact?.instagramUrl && (
+                            <a
+                                href={contact.instagramUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="Instagram Street Meeting Poland"
+                            >
+                                <i className="bi bi-instagram" aria-hidden="true"></i>
+                            </a>
+                        )}
+                    </div>
+                </div>
             </footer>
         </>
     );

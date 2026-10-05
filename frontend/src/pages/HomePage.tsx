@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useContent } from "../api/content";
 import HeroPhoto from "../components/HeroPhoto";
 import { heroPhotoVars, shouldRotateOnMobile } from "../utils/hero";
+import { cardImageProps } from "../utils/photos";
 import {
     buildEventJsonLd,
     formatEditionDate,
@@ -65,7 +66,7 @@ function EventCards({ cards }) {
                     <article className="card h-100">
                         <img
                             loading="lazy"
-                            src={card.image}
+                            {...cardImageProps(card.image)}
                             className="card-img-top"
                             alt={card.alt}
                         />
@@ -165,11 +166,11 @@ export default function HomePage() {
             >
                 <HeroPhoto />
                 <div className="container-fluid h-100 d-flex flex-column justify-content-center align-items-center text-light text-center">
-                    <h1 className="display-3 text-uppercase">
+                    <h1 className="hero-title text-uppercase">
                         {home.heroTitle}
                     </h1>
                     {dateLabel && (
-                        <h2 className="mb-2 text-uppercase">
+                        <p className="hero-meta">
                             {dateLabel}
                             {edition?.date && hoursLabel && (
                                 <span className="hero-hours">
@@ -177,12 +178,12 @@ export default function HomePage() {
                                     · {hoursLabel}
                                 </span>
                             )}
-                        </h2>
+                        </p>
                     )}
                     {edition?.venueName && (
-                        <h2 className="mb-2 text-uppercase">
+                        <p className="hero-meta hero-meta-venue">
                             {edition.venueName}
-                        </h2>
+                        </p>
                     )}
                     <div className="hero-actions">
                         {home.ticketUrl && (
@@ -228,7 +229,7 @@ export default function HomePage() {
                                     <article className="card h-100">
                                         <img
                                             loading="lazy"
-                                            src={photo.url}
+                                            {...cardImageProps(photo.url)}
                                             className="card-img-top"
                                             alt={
                                                 photo.alt ||
@@ -304,8 +305,10 @@ export default function HomePage() {
                                                 className="bi bi-geo-alt"
                                                 aria-hidden="true"
                                             ></i>
-                                            {contact.addressLine1} <br />
-                                            {contact.addressLine2}
+                                            <span>
+                                                {contact.addressLine1} <br />
+                                                {contact.addressLine2}
+                                            </span>
                                         </p>
                                     </a>
                                     <a

@@ -66,7 +66,7 @@
 .page-eyebrow {
     margin: 0 0 0.35rem;
     color: #9a7100;
-    font-size: 0.8rem;
+    font-size: 1.2rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -209,7 +209,7 @@
 .admin-page-status,
 .admin-result-count {
     color: var(--street-muted);
-    font-size: 0.85rem;
+    font-size: 1.3rem;
 }
 
 .admin-navigation {
@@ -401,6 +401,73 @@
     gap: 0.35rem;
 }
 
+/* Login, registration etc.: the form sits on the same card as the account panel. */
+.auth-page .auth-form {
+    padding: 2rem;
+    border: 1px solid var(--street-border);
+    border-top: 4px solid var(--street-yellow);
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: var(--street-shadow);
+}
+
+.auth-page .auth-form input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.auth-page .auth-form select,
+.auth-page .auth-form textarea {
+    width: 100%;
+    min-height: 4.4rem;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid var(--street-border);
+    border-radius: 3px;
+    background: #fff;
+    color: var(--street-ink);
+    font: inherit;
+}
+
+.auth-page .auth-form input:focus,
+.auth-page .auth-form select:focus,
+.auth-page .auth-form textarea:focus {
+    border-color: var(--street-yellow);
+    outline: 2px solid rgba(244, 197, 66, 0.35);
+    outline-offset: 1px;
+}
+
+.auth-page .auth-form button[type="submit"] {
+    min-height: 4.4rem;
+}
+
+.page input[type="file"]::file-selector-button {
+    margin-right: 1rem;
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--street-yellow);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--street-ink);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    transition: background-color 160ms ease;
+}
+
+.page input[type="file"]::file-selector-button:hover {
+    background: var(--street-yellow);
+}
+
+/* Secondary action (e.g. "Zarejestruj się" under the login form): outlined, so it
+   doesn't compete with the main yellow submit button. */
+.page button.text-button {
+    padding: 0.35rem 0.8rem;
+    background: transparent;
+}
+
+.page button.text-button:hover:not(:disabled) {
+    background: var(--street-yellow);
+}
+
+.auth-switch-text {
+    margin: 0;
+}
+
 .form-error {
     color: #e5484d;
 }
@@ -520,7 +587,7 @@
     display: block;
     margin-top: 0.25rem;
     color: var(--street-muted);
-    font-size: 0.9rem;
+    font-size: 1.4rem;
 }
 
 .submission-list {
@@ -570,7 +637,7 @@
 
 .submission-meta dt {
     color: var(--street-muted);
-    font-size: 0.85rem;
+    font-size: 1.3rem;
 }
 
 .submission-meta dd {
@@ -611,7 +678,7 @@
     display: inline-block;
     padding: 0.15rem 0.5rem;
     border-radius: 4px;
-    font-size: 0.85rem;
+    font-size: 1.3rem;
     text-transform: uppercase;
 }
 
