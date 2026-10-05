@@ -34,6 +34,7 @@ const emailTokensDb = require("../db/emailTokens");
 const siteContentDb = require("../db/siteContent");
 const vehiclesDb = require("../db/vehicles");
 const { removeShowcaseCopies } = require("../showcase/routes");
+const threadsDb = require("../db/threads");
 const {
     isEmailConfigured,
     sendPasswordResetEmail,
@@ -425,6 +426,11 @@ router.get("/me/export", authenticate, (req, res) => {
             checkedInAt: row.checked_in_at,
             createdAt: row.created_at,
             updatedAt: row.updated_at,
+            messages: threadsDb.listThread(row.id).map((message) => ({
+                from: message.from_admin ? "organizator" : "uczestnik",
+                body: message.body,
+                createdAt: message.created_at,
+            })),
         }));
     const vehicles = vehiclesDb.listVehicles(req.user.sub).map((row) => ({
         carBrand: row.car_brand,

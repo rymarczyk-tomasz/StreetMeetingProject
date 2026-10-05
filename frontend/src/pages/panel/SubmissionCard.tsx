@@ -4,6 +4,7 @@ import ConsentFields from "../../components/ConsentFields";
 import CopyField from "../../components/CopyField";
 import EntryPass from "../../components/EntryPass";
 import PhotoSetEditor from "../../components/PhotoSetEditor";
+import SubmissionThread from "../../components/SubmissionThread";
 import { nextStep, submissionSteps } from "../../utils/submissionSteps";
 
 const STATUS_LABELS = {
@@ -198,6 +199,8 @@ export default function SubmissionCard({
     const [editForm, setEditForm] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
     const [showPass, setShowPass] = useState(false);
+    const [showThread, setShowThread] = useState(false);
+    const unreadMessages = s.messages?.unread || 0;
     const isPending = s.status === "pending";
     const canResign = !archived && ["approved", "waitlist"].includes(s.status) && !s.checkedInAt;
     const canResubmit =
@@ -335,6 +338,26 @@ export default function SubmissionCard({
                 <p className="submission-note">
                     <strong>Komentarz organizatora:</strong> {s.adminNote}
                 </p>
+            )}
+
+            {(!archived || s.messages?.total > 0) && (
+                <div className="submission-thread-toggle">
+                    <button
+                        type="button"
+                        className="button-secondary"
+                        onClick={() => setShowThread(!showThread)}
+                        aria-expanded={showThread}
+                    >
+                        {showThread ? "Ukryj wiadomości" : "Wiadomości z organizatorem"}
+                        {s.messages?.total > 0 && ` (${s.messages.total})`}
+                    </button>
+                    {unreadMessages > 0 && !showThread && (
+                        <span className="unread-badge">nowe: {unreadMessages}</span>
+                    )}
+                </div>
+            )}
+            {showThread && (
+                <SubmissionThread basePath={`/submissions/${s.id}`} viewer="user" onRead={onChanged} />
             )}
 
             {mode === "edit" && (

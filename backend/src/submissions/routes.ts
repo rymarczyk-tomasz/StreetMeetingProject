@@ -37,6 +37,8 @@ const auditLogDb = require("../db/auditLog");
 const { getPaymentDetails, getFeeAmount, isPaymentOverdue } = require("../payments");
 const { getAppUrl } = require("../utils/appUrl");
 const { removeShowcaseCopies } = require("../showcase/routes");
+const threadsDb = require("../db/threads");
+const { getThread, postToThread, readMessageBody } = require("./thread");
 const {
     sendNewSubmissionAdminEmail,
     sendWithdrawalAdminEmail,
@@ -67,6 +69,12 @@ const upload = createImageUpload({
 const proofUpload = createProofUpload({
     destination: (req) => getUserSubmissionsDir(req.user.sub),
     maxFileSize: 10 * 1024 * 1024,
+});
+
+const messageRateLimit = createRateLimiter({
+    windowMs: 60 * 1000,
+    maxRequests: 6,
+    message: "Za dużo wiadomości w krótkim czasie. Spróbuj ponownie za chwilę.",
 });
 
 const submissionRateLimit = createRateLimiter({
@@ -111,6 +119,7 @@ function toPublicSubmission(row) {
         payment: approved ? getPaymentDetails(row) : null,
         paymentOverdue: isPaymentOverdue(row),
         withdrawnAt: row.withdrawn_at,
+        messages: threadsDb.threadCounts(row.id, false),
         hasPass: approved && row.payment_status === "paid",
         checkedInAt: row.checked_in_at,
         consentAt: row.consent_at,
@@ -422,6 +431,30 @@ router.delete("/:id", (req, res) => {
     submissionsDb.deleteSubmission(submission.id);
     removeSubmissionPhotos(submission);
     res.json({ message: "Zgłoszenie zostało wycofane." });
+});
+
+// Conversation with the organizers about this submission.
+router.get("/:id/messages", (req, res) => {
+    const submission = findOwnSubmission(req);
+    if (!submission) return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+    res.json({ messages: getThread(submission, false) });
+});
+
+router.post("/:id/messages", messageRateLimit, (req, res) => {
+    const submission = findOwnSubmission(req);
+    if (!submission) return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+
+    const { text, error } = readMessageBody(req.body);
+    if (error) return res.status(400).json({ message: error });
+
+    const messages = postToThread({
+        submission,
+        author: req.user.sub,
+        fromAdmin: false,
+        text,
+        userEmail: req.user.email,
+    });
+    res.status(201).json({ messages });
 });
 
 // Giving up an approved or reserve-list place ("Rezygnuję"). The submission is

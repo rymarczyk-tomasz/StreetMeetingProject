@@ -380,6 +380,56 @@ async function sendWithdrawalAdminEmail({ submission, userEmail, previousStatus,
     });
 }
 
+// Organizer replied in a submission's thread.
+async function sendThreadReplyEmail({ user, submission, body }) {
+    if (!user?.email) return { sent: false, reason: "not_applicable" };
+    const panelUrl = `${getAppUrl()}/panel`;
+    const firstName = user.first_name || submission.first_name || "Uczestniku";
+    const summary = `${submission.car_brand} (${submission.license_plate})`;
+
+    return sendMail({
+        to: user.email,
+        subject: `Street Show: nowa wiadomość w sprawie ${summary}`,
+        text: [
+            `Cześć ${firstName},`,
+            "",
+            `Organizator napisał w sprawie zgłoszenia ${summary}:`,
+            "",
+            body,
+            "",
+            `Odpowiedz w swoim panelu: ${panelUrl}`,
+            "",
+            "Street Show Crew",
+        ].join("\n"),
+        html: `
+            <p>Cześć ${escapeHtml(firstName)},</p>
+            <p>Organizator napisał w sprawie zgłoszenia <strong>${escapeHtml(summary)}</strong>:</p>
+            <blockquote>${escapeHtml(body).replace(/\n/g, "<br>")}</blockquote>
+            <p><a href="${escapeHtml(panelUrl)}">Odpowiedz w swoim panelu</a> — odpowiedzi na ten e-mail nie trafią do organizatora.</p>
+            <p>Street Show Crew</p>
+        `,
+    });
+}
+
+// Participant wrote in a submission's thread (ADMIN_NOTIFY_EMAIL).
+async function sendThreadAdminEmail({ submission, userEmail, body }) {
+    const recipients = adminNotifyRecipients();
+    if (!recipients) return { sent: false, reason: "not_configured" };
+    const adminUrl = `${getAppUrl()}/admin`;
+    const summary = `${submission.car_brand} — ${submission.license_plate}`;
+
+    return sendMail({
+        to: recipients,
+        subject: `Street Show: wiadomość od uczestnika (${summary})`,
+        text: [`${userEmail} napisał w sprawie zgłoszenia #${submission.id} (${summary}):`, "", body, "", `Odpowiedz w panelu: ${adminUrl}`].join("\n"),
+        html: `
+            <p>${escapeHtml(userEmail)} napisał w sprawie zgłoszenia #${submission.id} (<strong>${escapeHtml(summary)}</strong>):</p>
+            <blockquote>${escapeHtml(body).replace(/\n/g, "<br>")}</blockquote>
+            <p><a href="${escapeHtml(adminUrl)}">Odpowiedz w panelu administratora</a></p>
+        `,
+    });
+}
+
 function plainTextToHtml(text) {
     return String(text)
         .split(/\n{2,}/)
@@ -425,4 +475,6 @@ module.exports = {
     sendNewSubmissionAdminEmail,
     sendWithdrawalAdminEmail,
     sendPaymentReminderEmail,
+    sendThreadReplyEmail,
+    sendThreadAdminEmail,
 };

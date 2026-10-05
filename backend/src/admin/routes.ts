@@ -27,6 +27,8 @@ const {
 const { CONTENT_UPLOAD_ROOT } = require("../utils/paths");
 const { validateContent } = require("../content/validators");
 const { isPaymentOverdue } = require("../payments");
+const threadsDb = require("../db/threads");
+const { getThread, postToThread, readMessageBody } = require("../submissions/thread");
 const { adminRouter: albumsRouter } = require("../gallery/routes");
 
 const router = express.Router();
@@ -68,6 +70,7 @@ function toAdminSubmission(row) {
         approvedAt: row.approved_at,
         paymentReminderSentAt: row.payment_reminder_sent_at,
         showcaseHidden: Boolean(row.showcase_hidden),
+        messages: threadsDb.threadCounts(row.id, true),
     };
 }
 
@@ -334,6 +337,7 @@ router.get("/stats", (req, res) => {
     res.json({
         edition,
         currentEdition: siteContentDb.getCurrentEdition(),
+        unreadMessages: [...threadsDb.unreadCountsForAdmin().values()].reduce((sum, count) => sum + count, 0),
         users: {
             total: users.total || 0,
             active: users.active || 0,
@@ -389,21 +393,28 @@ function readSubmissionFilters(source) {
             paymentStatus: overdue ? "unpaid" : paymentStatus,
             search: normalizeText(source.search),
             ...(overdue ? { overdue: true } : {}),
+            ...(source.unread === "1" || source.unread === true ? { unread: true } : {}),
         },
     };
 }
 
 // listAllSubmissions + the filter SQL can't express (overdue payments).
 function findSubmissions(filters) {
-    const rows = submissionsDb.listAllSubmissions(filters);
-    if (!filters.overdue) return rows;
-    const settings = siteContentDb.getSettings();
-    return rows.filter((row) => isPaymentOverdue(row, settings));
+    let rows = submissionsDb.listAllSubmissions(filters);
+    if (filters.overdue) {
+        const settings = siteContentDb.getSettings();
+        rows = rows.filter((row) => isPaymentOverdue(row, settings));
+    }
+    if (filters.unread) {
+        const unread = threadsDb.unreadCountsForAdmin();
+        rows = rows.filter((row) => unread.has(row.id));
+    }
+    return rows;
 }
 
 // One recipient per account for group messages.
 function findRecipients(filters) {
-    if (!filters.overdue) return submissionsDb.listRecipients(filters);
+    if (!filters.overdue && !filters.unread) return submissionsDb.listRecipients(filters);
     const byUser = new Map();
     for (const row of findSubmissions(filters)) {
         if (!byUser.has(row.user_id)) {
@@ -629,6 +640,27 @@ router.patch("/submissions/:id/payment-status", (req, res) => {
     });
 
     res.json({ submission: toAdminSubmission(updated) });
+});
+
+// Conversation with the participant about a submission.
+router.get("/submissions/:id/messages", (req, res) => {
+    const existing = submissionsDb.findSubmissionById(Number(req.params.id));
+    if (!existing) return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+    res.json({ messages: getThread(existing, true) });
+});
+
+router.post("/submissions/:id/messages", (req, res) => {
+    const existing = submissionsDb.findSubmissionById(Number(req.params.id));
+    if (!existing) return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+
+    const { text, error } = readMessageBody(req.body);
+    if (error) return res.status(400).json({ message: error });
+
+    const messages = postToThread({ submission: existing, author: req.user.sub, fromAdmin: true, text });
+    audit(req, "submission.message_sent", "submission", existing.id, {
+        licensePlate: existing.license_plate,
+    });
+    res.status(201).json({ messages });
 });
 
 // Hide/show a car on the public "Auta strefy Select" page.

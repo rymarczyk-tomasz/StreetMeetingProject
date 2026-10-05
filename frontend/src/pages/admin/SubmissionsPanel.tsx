@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import api from "../../api/client";
 import Lightbox from "../../components/Lightbox";
+import SubmissionThread from "../../components/SubmissionThread";
 import GroupEmailForm from "./GroupEmailForm";
 import { TemplatePicker, fillTemplate, useTemplates } from "./templates";
 import { printGateList } from "./gateList";
@@ -79,7 +80,9 @@ export default function SubmissionsPanel({ onAction }) {
         status: "",
         paymentStatus: "",
         search: "",
+        unread: "",
     });
+    const [openThreads, setOpenThreads] = useState<number[]>([]);
     const [editions, setEditions] = useState(null);
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
@@ -96,6 +99,7 @@ export default function SubmissionsPanel({ onAction }) {
                 setQueue({
                     freePlaces: data.freePlaces,
                     waitlist: data.submissions.waitlist,
+                    unreadMessages: data.unreadMessages,
                     overdue: data.submissions.overdue,
                 }),
             )
@@ -297,6 +301,20 @@ export default function SubmissionsPanel({ onAction }) {
                     </button>
                 </div>
             )}
+            {queue?.unreadMessages > 0 && !filters.unread && (
+                <div className="payment-alert admin-queue-alert">
+                    <p>
+                        Nowe wiadomości od uczestników: <strong>{queue.unreadMessages}</strong>.
+                    </p>
+                    <button
+                        type="button"
+                        className="button-secondary"
+                        onClick={() => setFilters({ ...filters, edition: "all", status: "", paymentStatus: "", unread: "1" })}
+                    >
+                        Pokaż
+                    </button>
+                </div>
+            )}
             {queue?.overdue > 0 && filters.paymentStatus !== "overdue" && (
                 <div className="payment-alert admin-queue-alert">
                     <p>
@@ -394,6 +412,16 @@ export default function SubmissionsPanel({ onAction }) {
                         <option value="paid">Opłacone</option>
                         <option value="overdue">Po terminie płatności</option>
                     </select>
+                </label>
+                <label className="admin-checkbox-label">
+                    <input
+                        type="checkbox"
+                        checked={filters.unread === "1"}
+                        onChange={(event) =>
+                            setFilters({ ...filters, unread: event.target.checked ? "1" : "" })
+                        }
+                    />
+                    Z nowymi wiadomościami
                 </label>
                 <button
                     className="admin-export-button"
@@ -652,6 +680,36 @@ export default function SubmissionsPanel({ onAction }) {
                             >
                                 Cofnij potwierdzenie opłaty
                             </button>
+                        )}
+                        <div className="submission-thread-toggle">
+                            <button
+                                type="button"
+                                className="button-secondary"
+                                aria-expanded={openThreads.includes(s.id)}
+                                onClick={() =>
+                                    setOpenThreads((current) =>
+                                        current.includes(s.id)
+                                            ? current.filter((id) => id !== s.id)
+                                            : [...current, s.id],
+                                    )
+                                }
+                            >
+                                {openThreads.includes(s.id) ? "Ukryj wiadomości" : "Wiadomości z uczestnikiem"}
+                                {s.messages?.total > 0 && ` (${s.messages.total})`}
+                            </button>
+                            {s.messages?.unread > 0 && !openThreads.includes(s.id) && (
+                                <span className="unread-badge">nowe: {s.messages.unread}</span>
+                            )}
+                        </div>
+                        {openThreads.includes(s.id) && (
+                            <SubmissionThread
+                                basePath={`/admin/submissions/${s.id}`}
+                                viewer="admin"
+                                onRead={() => {
+                                    loadQueue();
+                                    loadSubmissions();
+                                }}
+                            />
                         )}
                         <TemplatePicker
                             templates={noteTemplates}

@@ -2026,3 +2026,68 @@
     max-width: 22rem;
     margin: 0.5rem 0;
 }
+
+.submission-thread-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+}
+
+.submission-thread {
+    margin: 0.5rem 0 1rem;
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.thread-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin: 0 0 0.75rem;
+    padding: 0;
+    list-style: none;
+}
+
+.thread-messages li {
+    max-width: 85%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 10px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+}
+
+.thread-messages li.is-mine {
+    align-self: flex-end;
+    background: #fff8e1;
+    border-color: #f5d97a;
+}
+
+.thread-messages li p {
+    margin: 0.2rem 0 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.thread-meta {
+    font-size: 1.2rem;
+    color: #6b7280;
+}
+
+.thread-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
+.thread-form label {
+    width: 100%;
+}
+
+.thread-form textarea {
+    width: 100%;
+}
