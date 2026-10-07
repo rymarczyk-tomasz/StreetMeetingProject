@@ -24,6 +24,7 @@ const EmailTokenPage = lazy(() => import("./pages/EmailTokenPage"));
 const GatePage = lazy(() => import("./pages/GatePage"));
 const ShowcasePage = lazy(() => import("./pages/ShowcasePage"));
 const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
+const ConfirmDateSubscriptionPage = lazy(() => import("./pages/ConfirmDateSubscriptionPage"));
 
 function App() {
     return (
@@ -49,6 +50,7 @@ function App() {
                 <Route path="potwierdz-email" element={<EmailTokenPage action="verify" />} />
                 <Route path="zmiana-emaila" element={<EmailTokenPage action="change" />} />
                 <Route path="wypisz" element={<UnsubscribePage />} />
+                <Route path="potwierdz-zapis" element={<ConfirmDateSubscriptionPage />} />
                 <Route
                     path="wjazd"
                     element={

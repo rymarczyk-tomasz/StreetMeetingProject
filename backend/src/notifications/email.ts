@@ -518,6 +518,35 @@ async function sendGroupEmail({ recipients, subject, message }) {
     return results;
 }
 
+// "Daj mi znać o dacie" double opt-in: the address only joins the list after
+// its owner clicks through (anyone can type someone else's e-mail on the page).
+async function sendDateSubscribeConfirmEmail({ email, token, edition }) {
+    const url = `${getAppUrl()}/potwierdz-zapis?token=${encodeURIComponent(token)}`;
+    const subject = `Potwierdź zapis – Street Show${edition ? ` ${edition}` : ""}`;
+
+    return sendMail({
+        to: email,
+        subject,
+        text: [
+            "Cześć,",
+            "",
+            "Kliknij link, żeby potwierdzić, że chcesz dostać e-mail, gdy ogłosimy termin Street Show:",
+            url,
+            "",
+            "Jeśli to nie Ty, zignoruj tę wiadomość — bez potwierdzenia nie wyślemy nic więcej.",
+            "",
+            "Street Show Crew",
+        ].join("\n"),
+        html: `
+            <p>Cześć,</p>
+            <p>Kliknij przycisk, żeby potwierdzić, że chcesz dostać e-mail, gdy ogłosimy termin Street Show.</p>
+            <p><a href="${escapeHtml(url)}" style="display:inline-block;padding:12px 24px;background:#f4c542;color:#171717;font-weight:700;text-decoration:none;border-radius:4px">Potwierdzam</a></p>
+            <p style="color:#777;font-size:12px">Jeśli to nie Ty, zignoruj tę wiadomość — bez potwierdzenia nie wyślemy nic więcej.</p>
+            <p>Street Show Crew</p>
+        `,
+    });
+}
+
 // "Daj mi znać o dacie" list: no account behind these addresses, so every
 // e-mail carries its own one-click unsubscribe link instead of the settings page.
 async function sendDateSubscribersEmail({ subscribers, subject, message, onSent }) {
@@ -552,6 +581,7 @@ module.exports = {
     isEmailConfigured,
     sendGroupEmail,
     sendDateSubscribersEmail,
+    sendDateSubscribeConfirmEmail,
     sendVerificationEmail,
     sendEmailChangeEmail,
     sendSubmissionStatusEmail,

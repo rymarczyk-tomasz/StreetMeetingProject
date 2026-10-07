@@ -72,10 +72,15 @@ export default function DateSubscribersPanel({ onAction }) {
                 Adresy zapisane na stronie głównej, gdy edycja nie ma jeszcze daty. Gdy
                 ustawisz datę, formularz znika ze strony — wyślij wtedy jedną wiadomość z
                 terminem i linkiem do biletów. Każdy e-mail ma link do wypisania się.
+                Liczą się tylko adresy potwierdzone kliknięciem w link z e-maila;
+                niepotwierdzone znikają po 7 dniach.
             </p>
             <p className="admin-hint">
                 Zapisanych: <strong>{stats?.total ?? "…"}</strong>, jeszcze bez
-                powiadomienia: <strong>{stats?.pending ?? "…"}</strong>.{" "}
+                powiadomienia: <strong>{stats?.pending ?? "…"}</strong>.
+                {stats?.unconfirmed > 0 && (
+                    <> Niepotwierdzone: {stats.unconfirmed} (nie dostaną wiadomości).</>
+                )}{" "}
                 <button type="button" className="text-button" onClick={exportCsv}>
                     Pobierz CSV
                 </button>

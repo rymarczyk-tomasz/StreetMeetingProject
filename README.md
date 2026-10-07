@@ -161,7 +161,7 @@ Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do
 
 ## Powiadom o dacie
 
-- Gdy w sekcji Edycja nie ma jeszcze daty, strona główna pokazuje formularz „Powiadom mnie o dacie” (`POST /api/notify`, wymagana zgoda, rate limit 5 / 15 min). Adresy trafiają do tabeli `date_subscribers`.
+- Gdy w sekcji Edycja nie ma jeszcze daty, strona główna pokazuje formularz „Powiadom mnie o dacie” (`POST /api/notify`, wymagana zgoda, rate limit 5 / 15 min). Adresy trafiają do tabeli `date_subscribers` jako niepotwierdzone, a na adres idzie e-mail „Potwierdź zapis” z linkiem do `/potwierdz-zapis?token=…` (`POST /api/notify/confirm`, ponowny link najwyżej co 10 min). Liczby, eksport i wysyłka obejmują tylko potwierdzone adresy; niepotwierdzone po 7 dniach usuwa `maintenance.ts`.
 - Panel admina → Ustawienia: lista zapisanych, eksport CSV i wysyłka e-maila z datą (`/api/admin/date-subscribers*`). Mail ma nagłówek `List-Unsubscribe` i link do `/wypisz?token=…` (`POST /api/notify/unsubscribe`). Wymaga SMTP.
 
 ## Treści strony (CMS)

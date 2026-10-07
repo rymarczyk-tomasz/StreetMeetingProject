@@ -267,8 +267,11 @@ function NotifySignup({ edition }) {
         event.preventDefault();
         setState({ status: "busy", message: "" });
         try {
-            const { data } = await api.post("/notify", { email, consent });
-            setState({ status: "done", message: data.message });
+            await api.post("/notify", { email, consent });
+            setState({
+                status: "done",
+                message: "Sprawdź skrzynkę i kliknij link, żeby potwierdzić zapis.",
+            });
             setEmail("");
             setConsent(false);
         } catch (error) {

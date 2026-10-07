@@ -5,6 +5,7 @@ const db = require("./db/database");
 const refreshTokensDb = require("./db/refreshTokens");
 const passwordResetTokensDb = require("./db/passwordResetTokens");
 const emailTokensDb = require("./db/emailTokens");
+const dateSubscribersDb = require("./db/dateSubscribers");
 const { sendDuePaymentReminders } = require("./submissions/paymentReminders");
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
@@ -23,6 +24,8 @@ function pruneExpiredTokens() {
         refreshTokensDb.pruneExpiredTokens();
         passwordResetTokensDb.pruneExpiredResetTokens();
         emailTokensDb.pruneExpiredEmailTokens();
+        // "Daj mi znać o dacie" sign-ups nobody confirmed within 7 days.
+        dateSubscribersDb.pruneUnconfirmed();
     } catch (error) {
         console.error("[maintenance] Czyszczenie tokenów:", error.message);
     }

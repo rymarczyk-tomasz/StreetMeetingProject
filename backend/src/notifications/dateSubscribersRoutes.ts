@@ -4,6 +4,7 @@ const dateSubscribersDb = require("../db/dateSubscribers");
 const siteContentDb = require("../db/siteContent");
 const { EMAIL_REGEX, normalizeText } = require("../utils/validation");
 const { createRateLimiter } = require("../utils/rateLimiter");
+const { sendDateSubscribeConfirmEmail } = require("./email");
 
 // Public half of the "Daj mi znać o dacie" list (the admin half is in
 // admin/routes.ts): sign up from the home page, leave with the e-mail's link.
@@ -24,11 +25,26 @@ router.post("/", signupRateLimit, (req, res) => {
         return res.status(400).json({ message: "Zaakceptuj politykę prywatności." });
     }
 
-    dateSubscribersDb.addSubscriber(email, siteContentDb.getCurrentEdition());
-    // Same answer whether or not the address was already on the list.
+    const edition = siteContentDb.getCurrentEdition();
+    const token = dateSubscribersDb.addSubscriber(email, edition);
+    if (token) {
+        sendDateSubscribeConfirmEmail({ email, token, edition }).catch((error) =>
+            console.error("[email] Potwierdzenie zapisu na datę:", error.message),
+        );
+    }
+    // Same answer whether the address is new, unconfirmed or already on the list.
     res.status(201).json({
-        message: "Zapisane! Napiszemy, gdy ogłosimy termin i ruszy sprzedaż biletów.",
+        message: "Sprawdź skrzynkę – wysłaliśmy link potwierdzający.",
     });
+});
+
+router.post("/confirm", (req, res) => {
+    if (!dateSubscribersDb.confirmByToken(String(req.body?.token || ""))) {
+        return res.status(400).json({
+            message: "Link jest nieprawidłowy albo wygasł. Zapisz się ponownie na stronie głównej.",
+        });
+    }
+    res.json({ message: "Gotowe! Napiszemy, gdy ogłosimy termin." });
 });
 
 router.post("/unsubscribe", (req, res) => {
