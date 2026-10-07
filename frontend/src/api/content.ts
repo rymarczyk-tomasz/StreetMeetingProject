@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "./client";
 
-// Loads public page sections (edited in the admin panel) in a single request:
-// useContent(["home", "event"]) → { content: { home, event } | null, error }.
 export function useContent(keys: string[]) {
     const keyList = keys.join(",");
     const [content, setContent] = useState(null);

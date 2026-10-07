@@ -14,7 +14,6 @@ export const PAYMENT_STATUS_LABELS = {
     paid: "Opłacone",
 };
 
-// Formats accepted by the backend (see backend/src/utils/imageUpload.ts).
 export const IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/avif";
 
 export async function uploadContentImage(file) {
@@ -30,7 +29,6 @@ export function errorMessage(err, fallback) {
     return err.response?.data?.message || fallback;
 }
 
-// "2026-10-12" → "12 paź 2026".
 export function formatDay(day) {
     if (!day) return "";
     return new Intl.DateTimeFormat("pl-PL", { dateStyle: "medium" }).format(new Date(`${day}T12:00:00`));

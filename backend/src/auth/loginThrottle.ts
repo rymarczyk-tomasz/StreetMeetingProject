@@ -1,7 +1,4 @@
-// Per-account brake on password guessing. The per-IP rate limiter doesn't stop
-// an attack spread over many addresses; this counts failed logins per e-mail
-// (known or not, so it reveals nothing about which accounts exist) and pauses
-// logins to that address for a while after too many misses.
+// per e-mail (known or not), the per-ip limiter doesn't stop distributed guessing
 const MAX_FAILURES = 10;
 const WINDOW_MS = 15 * 60 * 1000;
 const LOCK_MS = 15 * 60 * 1000;

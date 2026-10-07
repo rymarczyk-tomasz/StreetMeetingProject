@@ -5,7 +5,6 @@ const api = axios.create({
     withCredentials: true,
 });
 
-// If an access token expires mid-session, try a single silent refresh then retry once.
 let isRefreshing = false;
 let pendingRequests = [];
 

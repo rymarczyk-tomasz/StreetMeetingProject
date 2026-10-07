@@ -1,4 +1,3 @@
-// Initial FAQ content (from the previous hardcoded FaqPage), editable in the admin panel.
 module.exports = {
     "title": "FAQ",
     "categories": [

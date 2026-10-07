@@ -3,7 +3,6 @@ const express = require("express");
 const messagesDb = require("../db/messages");
 const { authenticate } = require("../auth/middleware");
 
-// Participant inbox: messages organizers sent from Admin → Zgłoszenia.
 const router = express.Router();
 
 router.use(authenticate);

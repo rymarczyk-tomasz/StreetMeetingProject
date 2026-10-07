@@ -146,7 +146,6 @@ function RevisionHistory({ editor }) {
     );
 }
 
-// "Ostatnia zmiana: admin, date" next to the save button.
 function LastChange({ editor }) {
     const [last, setLast] = useState(null);
 
@@ -165,8 +164,6 @@ function LastChange({ editor }) {
     );
 }
 
-// Form shell shared by all section editors: messages, save button, history.
-// `showSave={false}` for editors that save from their own buttons.
 export function ContentForm({ editor, saveLabel = "Zapisz zmiany", showSave = true, children }) {
     if (!editor.content) {
         return editor.error ? (

@@ -4,8 +4,6 @@ import api from "../api/client";
 import Plate from "./Plate";
 import { downloadPassPdf, downloadPassPng } from "../utils/passFile";
 
-// QR entry pass for an approved + paid car; staff scan it at the gate
-// (Admin → Wjazd). Shown in a dialog with a print button.
 export default function EntryPass({ submissionId, onClose }) {
     const [pass, setPass] = useState(null);
     const [qr, setQr] = useState("");

@@ -23,8 +23,6 @@ async function fileSize(file) {
     }
 }
 
-// Total size of a directory tree (uploads can hold thousands of files, so
-// this walks asynchronously and skips anything unreadable).
 async function directorySize(dir) {
     let total = 0;
     let entries;

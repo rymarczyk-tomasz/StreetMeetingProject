@@ -8,8 +8,6 @@ type AuthLayoutProps = {
     children: ReactNode;
 };
 
-// Login / registration: photo with a short pitch on the left, the form on the
-// right. On phones the photo is dropped and only the form stays.
 export default function AuthLayout({ image, eyebrow, headline, aside, children }: AuthLayoutProps) {
     return (
         <section className="auth-split">
@@ -25,8 +23,6 @@ export default function AuthLayout({ image, eyebrow, headline, aside, children }
     );
 }
 
-// Short account screens (password reset, e-mail links, unsubscribe, no access):
-// the same split layout with a default photo and pitch.
 export function SimpleAuthLayout({ children }: { children: ReactNode }) {
     return (
         <AuthLayout

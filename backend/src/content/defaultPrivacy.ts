@@ -1,5 +1,3 @@
-// Starting point for the privacy policy, editable in the admin panel (Treści strony → Polityka
-// prywatności). It describes what this site actually collects; have it checked before publishing.
 module.exports = {
     title: "Polityka prywatności",
     html: [

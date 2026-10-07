@@ -28,7 +28,7 @@ frontend/                 # React + Vite (SPA)
     components/           # Layout (nawigacja, menu konta, stopka), PageHeader, AuthLayout, Plate, EntryPass, Lightbox, RichTextEditor (TipTap), ProtectedRoute
     api/                  # axios z odświeżaniem sesji, useContent() do treści z CMS
     utils/                # edycja wydarzenia, wklejanie list z Worda, odmiana liczebników
-  public/                 # statyczne assety (img/, css/custom.css — tokeny i style redesignu, manifest, robots, sitemap)
+  public/                 # statyczne assety (img/, css/custom.css — tokeny i główne style, manifest, robots, sitemap)
 
 backend/                  # Node.js + Express (TypeScript → dist/)
   server.ts               # montuje routery, publiczne API treści i galerii

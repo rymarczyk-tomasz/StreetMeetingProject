@@ -80,7 +80,6 @@ function toAdminSubmission(row) {
     };
 }
 
-// Places in the Select zone (Ustawienia); 0 = no limit.
 function getCapacity(settings = siteContentDb.getSettings()) {
     return Number(settings.selectCapacity) || 0;
 }
@@ -299,8 +298,6 @@ router.patch("/users/:id/active", (req, res) => {
     res.json({ user: toAdminUser(updated) });
 });
 
-// Ends every session of the user (e.g. after a suspected account takeover).
-// "Obsługa wjazdu": access to the gate check-in screen only (no admin panel).
 router.patch("/users/:id/gate-staff", (req, res) => {
     const id = Number(req.params.id);
     const target = usersDb.findUserById(id);
@@ -346,7 +343,6 @@ router.get("/stats", (req, res) => {
         // Approved participants see empty transfer details until this is filled in.
         paymentDetailsMissing: !hasPaymentDetails(settings),
         unreadMessages: [...threadsDb.unreadCountsForAdmin().values()].reduce((sum, count) => sum + count, 0),
-        // "Daj mi znać o dacie": worth sending once the edition has a date.
         dateSubscribers: {
             pending: dateSubscribersDb.countSubscribers().pending || 0,
             total: dateSubscribersDb.countSubscribers().total || 0,
@@ -487,7 +483,6 @@ function findSubmissions(filters) {
     return rows;
 }
 
-// One recipient per account for group messages.
 function findRecipients(filters) {
     if (!filters.overdue && !filters.unread) return submissionsDb.listRecipients(filters);
     const byUser = new Map();
@@ -551,12 +546,10 @@ function countSubmissionsByFilter(filters) {
     return counts;
 }
 
-// Every conversation with participants, unread first (Admin → Wiadomości).
 router.get("/threads", (req, res) => {
     res.json({ threads: threadsDb.listThreadsForAdmin() });
 });
 
-// The signed-in admin's 1–5 score (0/null clears it).
 router.put("/submissions/:id/rating", (req, res) => {
     const existing = submissionsDb.findSubmissionById(Number(req.params.id));
     if (!existing) return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
@@ -782,7 +775,6 @@ router.patch("/submissions/:id/payment-status", (req, res) => {
     res.json({ submission: toAdminSubmission(updated) });
 });
 
-// Conversation with the participant about a submission.
 router.get("/submissions/:id/messages", (req, res) => {
     const existing = submissionsDb.findSubmissionById(Number(req.params.id));
     if (!existing) return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
@@ -803,7 +795,6 @@ router.post("/submissions/:id/messages", (req, res) => {
     res.status(201).json({ messages });
 });
 
-// Hide/show a car on the public "Auta strefy Select" page.
 router.patch("/submissions/:id/showcase", (req, res) => {
     const existing = submissionsDb.findSubmissionById(Number(req.params.id));
     if (!existing) {
@@ -890,7 +881,6 @@ router.post("/emails", (req, res) => {
         });
     }
 
-    // Everyone gets the message in the panel; e-mail only who didn't opt out.
     const emailRecipients = recipients.filter((recipient) => recipient.notify_email !== 0);
     const optedOut = recipients.length - emailRecipients.length;
 
@@ -1015,7 +1005,5 @@ router.post("/system/test-email", async (req, res) => {
         res.status(502).json({ message: `Nie udało się wysłać: ${error.message}` });
     }
 });
-
-// Gate check-in lives in src/gate/routes.ts (/api/gate), shared with gate staff.
 
 module.exports = router;

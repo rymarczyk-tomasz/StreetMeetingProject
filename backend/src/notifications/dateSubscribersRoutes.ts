@@ -6,8 +6,6 @@ const { EMAIL_REGEX, normalizeText } = require("../utils/validation");
 const { createRateLimiter } = require("../utils/rateLimiter");
 const { sendDateSubscribeConfirmEmail } = require("./email");
 
-// Public half of the "Daj mi znać o dacie" list (the admin half is in
-// admin/routes.ts): sign up from the home page, leave with the e-mail's link.
 const router = express.Router();
 
 const signupRateLimit = createRateLimiter({

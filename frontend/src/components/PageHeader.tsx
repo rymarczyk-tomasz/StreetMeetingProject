@@ -7,8 +7,6 @@ type PageHeaderProps = {
     action?: ReactNode;
 };
 
-// Grey band opening public sub-pages (Galeria, FAQ, Regulamin): eyebrow + big
-// title on the left, an optional lead or action on the right.
 export default function PageHeader({ eyebrow, title, lead, action }: PageHeaderProps) {
     return (
         <header className="page-header">

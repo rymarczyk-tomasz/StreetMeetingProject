@@ -69,7 +69,7 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 - [ ] Ustawienia → Edycja wydarzenia: rok 2027, data, godziny, miejsce
 - [ ] Ustawienia: zapisy do Select (termin, limity, liczba miejsc, kwota i termin opłaty, dane do przelewu)
 - [ ] Wkleić regulamin 2027 i FAQ, uzupełnić kontakt i partnerów
-- [ ] Treści strony → Home: lead pod tytułem; „Co Cię czeka”: sprawdzić kafelki (zapisana wcześniej treść ma stary kafelek BILETY i link drift — po redesignie domyślnie: Strefa Select → `#select`, Drift taxi → `/faq`, Expo → bilety); „Strefa Select”: 4 kroki
+- [ ] Treści strony → Home: lead pod tytułem; „Co Cię czeka”: sprawdzić kafelki (zapisana wcześniej treść ma stary kafelek BILETY i link drift — domyślnie teraz: Strefa Select → `#select`, Drift taxi → `/faq`, Expo → bilety); „Strefa Select”: 4 kroki
 - [ ] Polityka prywatności (`/polityka-prywatnosci`, Treści strony → Polityka prywatności): domyślna treść opisuje dane zbierane przez stronę — dać do sprawdzenia, dopisać retencję zdjęć
 - [ ] Po ogłoszeniu daty: Ustawienia → lista „Powiadom o dacie” → wysłać e-mail do zapisanych (najpierw sprawdzić na prawdziwym SMTP, w tym link „Wypisz”)
 - [ ] Przejrzeć politykę prywatności / RODO, ustalić retencję zdjęć po wydarzeniu

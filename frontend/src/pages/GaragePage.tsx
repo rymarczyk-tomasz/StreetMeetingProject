@@ -44,7 +44,6 @@ function VehicleFields({ form, setForm }) {
     );
 }
 
-// One big photo + two small ones; the third tile shows "+N" for the rest.
 function PhotoMosaic({ photos, alt, onOpen }) {
     if (!photos.length) {
         return (
@@ -207,7 +206,6 @@ function VehicleCard({ vehicle, edition, onChanged, notify, onOpenPhotos }) {
     );
 }
 
-// The participant's saved cars, reusable for submissions in every edition.
 export default function GaragePage() {
     const [vehicles, setVehicles] = useState(null);
     const [edition, setEdition] = useState(null);

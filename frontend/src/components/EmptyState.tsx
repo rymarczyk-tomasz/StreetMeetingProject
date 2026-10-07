@@ -1,7 +1,5 @@
 import type { ReactNode } from "react";
 
-// Horizontal "nothing here yet" card: icon, title + text, one action.
-// Styles: .empty-state in public/css/custom.css.
 export default function EmptyState({
     icon,
     title,

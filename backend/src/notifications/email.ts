@@ -31,7 +31,6 @@ function isEmailConfigured() {
     return Boolean(getTransporter());
 }
 
-
 function escapeHtml(value) {
     return String(value || "")
         .replace(/&/g, "&amp;")
@@ -62,7 +61,6 @@ async function sendMail({ to, subject, text, html, headers = undefined }) {
     return { sent: true };
 }
 
-// Optional e-mails say where to switch them off.
 function preferencesFooter() {
     const url = `${getAppUrl()}/ustawienia-konta`;
     return {
@@ -80,7 +78,6 @@ function formatDeadline(date) {
     }).format(new Date(`${date}T12:00:00`));
 }
 
-// Lines describing how to pay (amount, account, title, deadline) for the approval e-mail.
 function paymentLines(submission) {
     const payment = getPaymentDetails(submission);
     const lines = [
@@ -245,8 +242,7 @@ async function sendPaymentReminderEmail({ submission, email, firstName }) {
     });
 }
 
-// Organizer confirmed the payment, so the QR entry pass is now in the participant's panel.
-// Transactional like the status e-mails, so it is not tied to the optional notification settings.
+// transactional - sent regardless of notification settings
 async function sendPaymentConfirmedEmail({ submission, user }) {
     const email = user?.email;
     if (!email) return { sent: false, reason: "not_applicable" };
@@ -359,7 +355,6 @@ function adminNotifyRecipients() {
     return String(process.env.ADMIN_NOTIFY_EMAIL || "").trim();
 }
 
-// Optional heads-up for organizers; set ADMIN_NOTIFY_EMAIL (comma-separated) to enable.
 async function sendNewSubmissionAdminEmail({ submission, userEmail }) {
     const recipients = adminNotifyRecipients();
     if (!recipients) return { sent: false, reason: "not_configured" };
@@ -389,7 +384,6 @@ async function sendNewSubmissionAdminEmail({ submission, userEmail }) {
     });
 }
 
-// A participant gave up an approved (or reserve-list) place.
 async function sendWithdrawalAdminEmail({ submission, userEmail, previousStatus, waitlistCount }) {
     const recipients = adminNotifyRecipients();
     if (!recipients) return { sent: false, reason: "not_configured" };
@@ -418,7 +412,6 @@ async function sendWithdrawalAdminEmail({ submission, userEmail, previousStatus,
     });
 }
 
-// Organizer replied in a submission's thread.
 async function sendThreadReplyEmail({ user, submission, body }) {
     if (!user?.email) return { sent: false, reason: "not_applicable" };
     const panelUrl = `${getAppUrl()}/panel`;
@@ -451,7 +444,6 @@ async function sendThreadReplyEmail({ user, submission, body }) {
     });
 }
 
-// Participant wrote in a submission's thread (ADMIN_NOTIFY_EMAIL).
 async function sendThreadAdminEmail({ submission, userEmail, body }) {
     const recipients = adminNotifyRecipients();
     if (!recipients) return { sent: false, reason: "not_configured" };
@@ -470,7 +462,6 @@ async function sendThreadAdminEmail({ submission, userEmail, body }) {
     });
 }
 
-// Admin → System: proves SMTP works end to end. Throws the provider's error.
 async function sendTestEmail(to) {
     const result = await sendMail({
         to,
@@ -491,8 +482,7 @@ function plainTextToHtml(text) {
 
 const GROUP_EMAIL_DELAY_MS = 400;
 
-// Sends one personal message per recipient (no shared To/CC lists, so addresses
-// stay private), slowly enough not to trip SMTP provider rate limits.
+// one mail per recipient (no shared To/CC), throttled for smtp rate limits
 async function sendGroupEmail({ recipients, subject, message }) {
     const results = { sent: 0, failed: 0 };
 
@@ -518,8 +508,6 @@ async function sendGroupEmail({ recipients, subject, message }) {
     return results;
 }
 
-// "Daj mi znać o dacie" double opt-in: the address only joins the list after
-// its owner clicks through (anyone can type someone else's e-mail on the page).
 async function sendDateSubscribeConfirmEmail({ email, token, edition }) {
     const url = `${getAppUrl()}/potwierdz-zapis?token=${encodeURIComponent(token)}`;
     const subject = `Potwierdź zapis – Street Show${edition ? ` ${edition}` : ""}`;
@@ -547,8 +535,7 @@ async function sendDateSubscribeConfirmEmail({ email, token, edition }) {
     });
 }
 
-// "Daj mi znać o dacie" list: no account behind these addresses, so every
-// e-mail carries its own one-click unsubscribe link instead of the settings page.
+// no account behind these addresses, so each mail has its own unsubscribe link
 async function sendDateSubscribersEmail({ subscribers, subject, message, onSent }) {
     const results = { sent: 0, failed: 0 };
 

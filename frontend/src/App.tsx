@@ -5,9 +5,6 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import HomePage from "./pages/HomePage";
 import "./App.css";
 
-// Everything except the landing page is split into its own chunk, so visitors of
-// the home page don't download the panels (the admin panel alone is the biggest part).
-// The Suspense boundary lives in Layout, so header and footer stay visible while loading.
 const GalleryPage = lazy(() => import("./pages/GalleryPage"));
 const FaqPage = lazy(() => import("./pages/FaqPage"));
 const RegulaminPage = lazy(() => import("./pages/RegulaminPage"));

@@ -11,8 +11,6 @@ function formatMoney(value) {
     return new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN", maximumFractionDigits: 0 }).format(value);
 }
 
-// Post-event summary of one edition + comparison with earlier years.
-// The edition comes from the side menu ("" = current).
 export default function AdminReport({ edition = "" }) {
     const [report, setReport] = useState(null);
     const [error, setError] = useState("");

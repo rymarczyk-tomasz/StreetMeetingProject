@@ -2,10 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const Database = require("better-sqlite3");
 
-// SQLite keeps the whole backend self-contained in one file, so moving between
-// mikrus (VPS) and hostinger.pl later only requires copying this data folder.
-// Resolved from process.cwd() (always backend/ via npm scripts) so it stays correct
-// whether running compiled dist/ output or the TS source directly.
+// relative to cwd so it works from both dist/ and the TS source
 const dataDir = path.join(process.cwd(), "data");
 if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
@@ -84,10 +81,7 @@ db.exec(`
     CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token_hash ON refresh_tokens(token_hash);
 `);
 
-// The audit log used to be deleted together with the admin's account (ON DELETE
-// CASCADE), so deleting an account erased the trace of what it did. Entries now
-// outlive the account and keep the e-mail it had. SQLite can't alter a foreign
-// key in place, so older databases get the table rebuilt once.
+// audit log entries must survive account deletion (old schema had ON DELETE CASCADE)
 const auditColumns = new Set(
     db
         .prepare("PRAGMA table_info(audit_log)")
@@ -126,8 +120,6 @@ const userColumns = new Set(
         .map((column) => column.name),
 );
 
-// terms_*: when the user accepted the regulamin/RODO at registration and which
-// regulamin version (revision id) it was; email_verified_at: confirmed address.
 for (const column of [
     "phone",
     "license_plate",
@@ -141,15 +133,11 @@ for (const column of [
     }
 }
 
-// Gate staff ("Obsługa wjazdu"): may only use the check-in screen. A flag rather
-// than a new role, because the role CHECK constraint can't be altered in SQLite
-// without rebuilding the users table. Admins always have gate access.
+// flag instead of a new role - the role CHECK constraint can't be altered in sqlite
 if (!userColumns.has("gate_staff")) {
     db.exec("ALTER TABLE users ADD COLUMN gate_staff INTEGER NOT NULL DEFAULT 0");
 }
 
-// E-mail preferences (Ustawienia konta). Only optional e-mails can be switched
-// off; decisions about submissions and security e-mails always go out.
 for (const column of ["notify_group_email", "notify_payment_reminders", "notify_thread_email"]) {
     if (!userColumns.has(column)) {
         db.exec(`ALTER TABLE users ADD COLUMN ${column} INTEGER NOT NULL DEFAULT 1`);
@@ -169,37 +157,30 @@ if (!submissionColumns.has("payment_status")) {
     );
 }
 
-// Note visible only to admins (admin_note is shown to the participant).
+// admin_note is visible to the participant, this one isn't
 if (!submissionColumns.has("internal_note")) {
     db.exec("ALTER TABLE submissions ADD COLUMN internal_note TEXT");
 }
 
-// Submissions belong to an event edition (year). Everything sent before editions
-// existed was for Street Show 2026.
 if (!submissionColumns.has("edition")) {
     db.exec("ALTER TABLE submissions ADD COLUMN edition INTEGER");
     db.exec("UPDATE submissions SET edition = 2026 WHERE edition IS NULL");
 }
 
-// consent_*: regulamin/RODO acceptance recorded with each submission;
-// photo_publish_consent: optional OK to publish photos of the car;
-// payment_proof: uploaded transfer confirmation; pass_token / checked_in_at:
-// QR entry pass for approved + paid cars and the gate check-in time.
 const newSubmissionColumns = {
     consent_at: "TEXT",
     consent_version: "TEXT",
     photo_publish_consent: "INTEGER NOT NULL DEFAULT 0",
     payment_proof: "TEXT",
     pass_token: "TEXT",
-    // Short code typed in at the gate when there is no camera (e.g. 7Q4K2MXD).
+
     pass_short_code: "TEXT",
     checked_in_at: "TEXT",
-    // approved_at: start of the payment period; withdrawn_at: participant gave
-    // up the place; payment_reminder_sent_at: the "payment due soon" e-mail went out.
+
     approved_at: "TEXT",
     withdrawn_at: "TEXT",
     payment_reminder_sent_at: "TEXT",
-    // Admin hid the car from the public "Auta strefy Select" page.
+
     showcase_hidden: "INTEGER NOT NULL DEFAULT 0",
 };
 for (const [column, type] of Object.entries(newSubmissionColumns)) {
@@ -211,9 +192,7 @@ if (!submissionColumns.has("approved_at")) {
     db.exec("UPDATE submissions SET approved_at = updated_at WHERE status = 'approved'");
 }
 
-// The status CHECK constraint gained 'waitlist' (reserve list) and 'withdrawn'
-// (participant resigned after approval). SQLite can't alter a constraint, so
-// older databases get the table rebuilt once from its own stored definition.
+// sqlite can't alter a CHECK constraint, so old dbs get the table rebuilt once
 const submissionsSql = db
     .prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'submissions'")
     .get().sql;

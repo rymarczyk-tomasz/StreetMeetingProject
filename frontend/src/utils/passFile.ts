@@ -111,7 +111,6 @@ export async function downloadPassPng(pass: Pass) {
     await saveBlob(await canvasBlob(canvas, "image/png"), passFilename(pass, "png"));
 }
 
-// Minimal PDF 1.4: one A4 page showing the pass as a JPEG (DCTDecode).
 function buildPdf(jpeg: Uint8Array, width: number, height: number) {
     const pageWidth = 595.28;
     const pageHeight = 841.89;

@@ -8,7 +8,6 @@ function formatDay(date) {
     );
 }
 
-// Top of the participant panel: the current edition and what the user can do now.
 export default function EventInfoCard({ overview, hasApprovedSubmission }) {
     if (!overview) return null;
     const { edition, availability, participantInfo, contactEmail } = overview;

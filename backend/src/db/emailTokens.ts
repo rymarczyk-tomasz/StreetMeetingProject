@@ -1,8 +1,6 @@
 const crypto = require("crypto");
 const db = require("./database");
 
-// One-time links: "verify" confirms the account's e-mail, "change" confirms a new
-// address before it replaces the old one. Only a hash of the token is stored.
 const TTL_HOURS = { verify: 72, change: 24 };
 
 const insertStmt = db.prepare(`
@@ -31,7 +29,6 @@ function createEmailToken(userId, kind, newEmail = null) {
     return { token, ttlHours: TTL_HOURS[kind] };
 }
 
-// Returns the token row and invalidates it, or null when unknown/expired.
 function consumeEmailToken(token, kind) {
     const row = findValidStmt.get(hashToken(token), kind);
     if (row) deleteForUserStmt.run(row.user_id, kind);

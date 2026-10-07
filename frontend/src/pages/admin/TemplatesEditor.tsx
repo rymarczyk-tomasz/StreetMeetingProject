@@ -16,7 +16,6 @@ const FILTERS = [
     ["note", "Komentarze"],
     ["group", "Do grupy"],
 ];
-// Group messages have no single submission, so only {rok} gets filled in there.
 const VARIABLES = {
     note: ["{rok}", "{marka}", "{rejestracja}"],
     group: ["{rok}"],
@@ -26,7 +25,6 @@ function firstLine(text) {
     return String(text || "").split("\n").find((line) => line.trim()) || "";
 }
 
-// Grows with the text instead of scrolling inside (min. 6 rows from `rows`).
 function AutoTextarea({ textareaRef, value, onChange, ...props }) {
     useLayoutEffect(() => {
         const element = textareaRef.current;

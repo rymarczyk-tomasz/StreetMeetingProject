@@ -1,8 +1,6 @@
 import { useSearchParams } from "react-router-dom";
 import GateCheckin from "../components/GateCheckin";
 
-// /wjazd — the only screen gate staff ("Obsługa wjazdu") can use. Scanning a pass
-// with any phone camera opens /wjazd?kod=SSP-… and shows the result immediately.
 export default function GatePage() {
     const [searchParams] = useSearchParams();
 

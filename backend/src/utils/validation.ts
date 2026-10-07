@@ -1,8 +1,7 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 const PHONE_REGEX = /^\+?[0-9]{9,15}$/;
 const PASSWORD_MIN_LENGTH = 8;
-// bcrypt only looks at the first 72 bytes; anything longer just burns CPU.
-const PASSWORD_MAX_LENGTH = 128;
+const PASSWORD_MAX_LENGTH = 128; // bcrypt ignores everything after 72 bytes anyway
 
 function normalizeText(value) {
     return String(value || "").trim();
@@ -26,8 +25,7 @@ function validatePassword(password) {
     return null;
 }
 
-// CMS links/images may be site-relative ("/formularz", "#contact") or absolute
-// http(s) URLs. Anything else (javascript:, data:, protocol-relative "//") is rejected.
+// site-relative or http(s) only - no javascript:, data: or //
 function isSafeUrl(value, { allowEmpty = false } = {}) {
     const url = normalizeText(value);
     if (!url) return allowEmpty;

@@ -41,7 +41,6 @@ export function submissionSteps(submission) {
     ];
 }
 
-// One sentence telling the participant what happens next (or what to do).
 export function nextStep(submission) {
     const { status, paymentStatus, payment, paymentOverdue } = submission;
 

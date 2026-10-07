@@ -9,13 +9,13 @@ import { TemplatePicker, fillTemplate, useTemplates } from "./templates";
 import { printGateList } from "./gateList";
 import { PAYMENT_STATUS_LABELS, STATUS_LABELS, errorMessage, formatDay } from "./shared";
 
-// Fetched again (not taken from the table) so the backend logs the export.
+// fetched again so the backend logs the export
 async function exportToExcel(filters) {
     const { data } = await api.get("/admin/submissions", {
         params: { ...filters, purpose: "export" },
     });
     const submissions = data.submissions;
-    // SheetJS is large; load it only when someone actually exports.
+
     const XLSX = await import("xlsx");
     const rows = submissions.map((submission) => ({
         "ID zgłoszenia": submission.id,
@@ -68,7 +68,6 @@ const BULK_LABELS = {
 
 const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 992px)").matches;
 
-// "wczoraj", "4 dni", "2 tyg." — the table only needs a rough age.
 function relativeDay(value) {
     const created = new Date(`${value.replace(" ", "T")}Z`);
     const days = Math.floor((Date.now() - created.getTime()) / 86400000);
@@ -79,8 +78,6 @@ function relativeDay(value) {
     return formatDay(value.slice(0, 10));
 }
 
-// Average of all admins' ratings; "bez Twojej oceny" lives in the details panel
-// and the "Do oceny" sort instead of on every row.
 function RatingCell({ rating }) {
     if (!rating?.count) return <span className="subs-no-rating" aria-label="brak ocen">—</span>;
     const filled = Math.round(rating.average || 0);
@@ -92,7 +89,6 @@ function RatingCell({ rating }) {
     );
 }
 
-// URL params of the list (besides the global ?edycja from the side menu).
 function useListParams() {
     const [searchParams, setSearchParams] = useSearchParams();
     const params = useMemo(
@@ -172,7 +168,6 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
             setSubmissions(data.submissions);
             setCounts(data.counts);
             setError("");
-            // Drop selections that are no longer visible after filtering.
             setSelectedIds((current) => current.filter((id) => data.submissions.some((s) => s.id === id)));
         } catch (err) {
             setError(errorMessage(err, "Nie udało się pobrać zgłoszeń."));
@@ -182,7 +177,6 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
     }, [filters]);
 
     useEffect(() => {
-        // Debounce typing in the search box.
         const timeout = setTimeout(loadSubmissions, 250);
         return () => clearTimeout(timeout);
     }, [loadSubmissions]);
@@ -196,7 +190,7 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
     );
     const current = visible.find((s) => s.id === params.id) || submissions.find((s) => s.id === params.id) || null;
 
-    // On a desktop the first submission opens by itself; on phones details are full screen.
+    // desktop: open the first one, phones show details full screen
     useEffect(() => {
         if (!isLoading && !params.id && visible.length && isDesktop()) setParams({ id: visible[0].id });
     }, [isLoading, params.id, visible, setParams]);
@@ -222,7 +216,6 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
         }
     }
 
-    // Approving over the Select zone limit needs a second, explicit confirmation.
     async function withCapacityCheck(send) {
         try {
             return await send(false);
@@ -262,7 +255,7 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                 () => api.patch(`/admin/submissions/${submission.id}/internal-note`, { internalNote }),
                 "Nie udało się zapisać notatki.",
             ),
-        // Updated in place: reloading the whole list after every star would be slow.
+        // update in place instead of reloading the list
         rate: async (submission, score) => {
             try {
                 const { data } = await api.put(`/admin/submissions/${submission.id}/rating`, { score });
@@ -328,7 +321,6 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
         }
     }
 
-    // ↑/↓ moves between submissions, A accepts, R moves to the reserve list.
     useEffect(() => {
         function onKey(event: KeyboardEvent) {
             if (dialog || lightbox.index !== null || event.ctrlKey || event.metaKey || event.altKey) return;
@@ -422,7 +414,6 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                             </button>
                         ))}
                     </div>
-                    {/* Special filters: their own group, so wrapping never strands a separator. */}
                     <div className="subs-chip-group is-special" role="group" aria-label="Filtry specjalne">
                         <button
                             type="button"

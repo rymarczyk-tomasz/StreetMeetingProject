@@ -6,7 +6,6 @@ import { formatDay } from "./shared";
 
 const EDITION_KEYS = ["edition"];
 
-// "3 zgłoszenia czekają" → "Zgłoszenia czekają" (the number is shown separately).
 function words(count, one, few, many) {
     const text = plural(count, one, few, many).replace(/^\d+ /, "");
     return text.charAt(0).toUpperCase() + text.slice(1);
@@ -44,7 +43,6 @@ export function BarList({ title, rows, emptyText }) {
     );
 }
 
-// Last 30 days as columns; the busiest day is yellow, today black.
 function DailyChart({ perDay }) {
     const byDay = new Map<string, number>(perDay.map((row) => [row.day, Number(row.count)]));
     const days = Array.from({ length: 30 }, (_, index) => {
@@ -84,7 +82,6 @@ function DailyChart({ perDay }) {
     );
 }
 
-// Rows link to the filtered lists; rows with nothing to do are left out.
 function buildTodos(stats, system) {
     const { submissions } = stats;
     const todos = [];

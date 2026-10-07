@@ -98,7 +98,6 @@ function Target({ entry }) {
     return null;
 }
 
-// Opening lists and reports is logged too; by default only real changes are shown.
 function isView(action) {
     return /(_viewed|\.viewed|\.listed)$/.test(action);
 }
@@ -116,7 +115,6 @@ function entryDate(value) {
     return new Date(`${value.replace(" ", "T")}Z`);
 }
 
-// "Dziś", "Wczoraj" or "7 października 2026" (local time).
 function dayLabel(date) {
     const day = date.toLocaleDateString("sv-SE");
     const today = new Date();

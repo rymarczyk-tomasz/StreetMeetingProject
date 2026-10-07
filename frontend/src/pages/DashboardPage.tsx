@@ -39,7 +39,6 @@ function EmailVerifyBanner() {
     );
 }
 
-// Empty "Twoje zgłoszenia": points to the garage when there are saved cars.
 function NoSubmissions({ edition, availability, vehicleCount }) {
     const isOpen = availability?.open;
     let text = "Zgłoś auto do strefy Select – decyzję dostaniesz e-mailem.";

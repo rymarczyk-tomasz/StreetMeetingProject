@@ -5,9 +5,6 @@ const path = require("path");
 const { getUserSubmissionsDir, getUserVehiclesDir } = require("./paths");
 const { isAllowedImageFilename } = require("./imageUpload");
 
-// Private photos of submissions and garage vehicles. In the database they are
-// stored as "/uploads/<kind>/<userId>/<file>"; browsers get them only through the
-// authenticated endpoints /api/<kind>/photos/<userId>/<file> (owner or admin).
 const KINDS = {
     submissions: getUserSubmissionsDir,
     vehicles: getUserVehiclesDir,
@@ -71,8 +68,6 @@ function copyStoredPhotos(storedPaths, kind, userId) {
     return copies;
 }
 
-// New photo set = kept photos (identified by the URLs the client has) + uploads.
-// Returns { photos, removed } or { error } — the caller deletes uploads on error.
 function applyPhotoChanges({ currentPhotos, keepUrls, uploadedFiles, kind, userId }) {
     const keep = new Set((Array.isArray(keepUrls) ? keepUrls : [keepUrls]).filter(Boolean));
     const kept = currentPhotos.filter((stored) => keep.has(toPhotoUrl(stored)));
@@ -90,7 +85,6 @@ function applyPhotoChanges({ currentPhotos, keepUrls, uploadedFiles, kind, userI
     return { photos, removed: currentPhotos.filter((stored) => !kept.includes(stored)) };
 }
 
-// Express handler serving one private photo to its owner or an admin.
 function servePhoto(kind) {
     return (req, res) => {
         const ownerId = Number(req.params.userId);

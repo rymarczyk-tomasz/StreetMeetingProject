@@ -55,7 +55,7 @@ const updatePaymentStatusStmt = db.prepare(`
     SET payment_status = ?, updated_at = datetime('now')
     WHERE id = ?
 `);
-// Entering "approved" starts a new payment period (and a new reminder).
+// approving starts a new payment period
 const updateStatusStmt = db.prepare(`
     UPDATE submissions
     SET admin_note = @adminNote,
@@ -82,7 +82,6 @@ const listAwaitingPaymentStmt = db.prepare(`
 const setShowcaseHiddenStmt = db.prepare(
     `UPDATE submissions SET showcase_hidden = ? WHERE id = ?`,
 );
-// Public "Auta strefy Select": approved cars whose owners agreed to photo publishing.
 const listShowcaseStmt = db.prepare(`
     SELECT * FROM submissions
     WHERE edition = ? AND status = 'approved' AND photo_publish_consent = 1
@@ -138,8 +137,7 @@ function setPaymentProof(id, storedPath) {
     return findByIdStmt.get(id);
 }
 
-// Short gate code: 8 characters without look-alikes (no 0/O, 1/I/L), shown as
-// SSP-7Q4K-2MXD. Unique within an edition; stored without the dash.
+// no 0/O/1/I/L, stored without the dash
 const SHORT_CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
 
 function newShortCode(edition) {
@@ -154,7 +152,6 @@ function ensureShortCode(id, edition) {
     setPassShortCodeStmt.run(newShortCode(edition), id);
 }
 
-// The QR entry pass (long token + short code) is created once, on first request.
 function ensurePassToken(id, token) {
     setPassTokenStmt.run(token, id);
     const row = findByIdStmt.get(id);
@@ -162,7 +159,7 @@ function ensurePassToken(id, token) {
     return findByIdStmt.get(id);
 }
 
-// Passes issued before short codes existed get one now.
+// backfill passes issued before short codes existed
 for (const row of missingShortCodeStmt.all()) {
     ensureShortCode(row.id, row.edition);
 }
@@ -175,7 +172,7 @@ function findSubmissionByShortCode(edition, code) {
     return findByShortCodeStmt.get(edition, String(code || "").toUpperCase());
 }
 
-// `at` (a Date) lets a check-in recorded offline at the gate keep its real time.
+// `at` keeps the real time of offline check-ins
 function setCheckedIn(id, checkedIn, at = new Date()) {
     setCheckedInStmt.run(checkedIn ? at.toISOString().slice(0, 19).replace("T", " ") : null, id);
     return findByIdStmt.get(id);
@@ -246,7 +243,6 @@ function listAllSubmissions(filters: SubmissionFilters = {}) {
         .all(...parameters);
 }
 
-// Distinct account e-mails (and first names) for group messages.
 function listRecipients(filters: SubmissionFilters = {}) {
     const { where, parameters } = buildFilters(filters);
     return db
@@ -273,7 +269,6 @@ function countApproved(edition) {
     return countByStatusStmt.get(edition, "approved").count;
 }
 
-// Approved but not paid (nor reported as paid) — candidates for reminders.
 function listAwaitingPayment(edition) {
     return listAwaitingPaymentStmt.all(edition);
 }
@@ -320,13 +315,11 @@ function deleteSubmission(id) {
     deleteStmt.run(id);
 }
 
-// Only the given edition counts, and rejected submissions don't, so a participant
-// can re-apply with another car and starts fresh every year.
+// rejected ones don't count, so the user can apply with another car
 function countActiveForUser(userId, edition) {
     return countActiveForUserStmt.get(userId, edition).count;
 }
 
-// Same car (plate, ignoring spaces/case) already submitted by this user in the edition.
 function hasActiveSubmissionForPlate(userId, edition, licensePlate) {
     return Boolean(findActiveByPlateStmt.get(userId, edition, licensePlate));
 }
@@ -356,7 +349,6 @@ function getSubmissionStats(edition) {
         .get(edition);
 }
 
-// Outcome of an edition, for the post-event report (one row per edition).
 const editionSummaryStmt = db.prepare(`
     SELECT
         edition,

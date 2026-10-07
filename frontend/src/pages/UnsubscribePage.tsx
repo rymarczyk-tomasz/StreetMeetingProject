@@ -3,8 +3,6 @@ import { Link, useSearchParams } from "react-router-dom";
 import api from "../api/client";
 import { SimpleAuthLayout } from "../components/AuthLayout";
 
-// Link from "Daj mi znać o dacie" e-mails. Unsubscribing takes a click, so mail
-// scanners that open every link don't remove people from the list.
 export default function UnsubscribePage() {
     const [searchParams] = useSearchParams();
     const token = searchParams.get("token") || "";

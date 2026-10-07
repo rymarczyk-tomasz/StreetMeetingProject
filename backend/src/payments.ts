@@ -1,6 +1,5 @@
 const siteContentDb = require("./db/siteContent");
 
-// "12345678901234567890123456" → "12 3456 7890 1234 5678 9012 3456" (Polish IBAN layout).
 function formatAccount(account) {
     const digits = String(account || "").replace(/\s+/g, "").replace(/^PL/i, "");
     if (!/^\d{26}$/.test(digits)) return String(account || "").trim();
@@ -11,7 +10,7 @@ function getFeeAmount(settings = siteContentDb.getSettings()) {
     return String(settings.selectFeeAmount || process.env.SELECT_FEE_AMOUNT || "").trim();
 }
 
-// "YYYY-MM-DD" in Poland, so deadlines flip at local midnight, not UTC.
+// deadlines flip at polish midnight, not utc
 function todayInPoland(now = new Date()) {
     return now.toLocaleDateString("sv-SE", { timeZone: "Europe/Warsaw" });
 }
@@ -22,10 +21,8 @@ function addDays(date, days) {
     return value.toISOString().slice(0, 10);
 }
 
-// Last day to pay for one approved submission: N days after approval
-// (Ustawienia → "dni na opłatę") and/or the fixed payment deadline, whichever
-// comes first. A fixed deadline that had already passed at approval (e.g. a car
-// taken from the reserve list late) is ignored when a relative one is set.
+// earlier of: N days after approval / fixed deadline; a fixed deadline already
+// past at approval (late reserve-list pick) is ignored when N is set
 function getPaymentDueDate(submission, settings = siteContentDb.getSettings()) {
     const fixed = String(settings.paymentDeadline || "");
     const days = Number(settings.paymentDaysAfterApproval) || 0;
@@ -47,13 +44,10 @@ function isPaymentOverdue(submission, settings = siteContentDb.getSettings()) {
     return Boolean(due) && due < todayInPoland();
 }
 
-// Without the amount or the account number there is nothing to pay yet.
 function hasPaymentDetails(settings = siteContentDb.getSettings()) {
     return Boolean(getFeeAmount(settings) && String(settings.paymentAccount || "").trim());
 }
 
-// Transfer details for one submission, from Admin → Ustawienia.
-// `complete` is false until the organizer filled in the amount and account number.
 function getPaymentDetails(submission, settings = siteContentDb.getSettings()) {
     const title = String(settings.paymentTitleTemplate || "Strefa Select {rok} – {rejestracja}")
         .replace(/\{rok\}/g, String(submission.edition ?? ""))

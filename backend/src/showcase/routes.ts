@@ -9,11 +9,6 @@ const { diskPathOf } = require("../utils/userPhotos");
 const { SHOWCASE_UPLOAD_ROOT } = require("../utils/paths");
 const { getSharp } = require("../utils/sharp");
 
-// Public "Auta strefy Select" page: approved cars of the current edition whose
-// owners agreed to photo publishing, once the organizer switches it on
-// (Ustawienia). Only the brand and photos are public — no names, plates or
-// descriptions. Photos are resized copies; every request re-checks consent, so a
-// withdrawn consent or a hidden car disappears immediately.
 const router = express.Router();
 
 const WIDTHS = [480, 1200];
@@ -27,7 +22,6 @@ function photosOf(row) {
     return JSON.parse(row.photos || "[]").slice(0, MAX_PHOTOS_PER_CAR);
 }
 
-// Version in the URL changes when the photo set changes, so browsers may cache.
 function photoVersion(storedPath) {
     return crypto.createHash("sha1").update(String(storedPath)).digest("hex").slice(0, 12);
 }
@@ -87,7 +81,6 @@ router.get("/photos/:id/:index", async (req, res) => {
     });
 });
 
-// Deletes the public copies of a submission's photos (submission or account deleted).
 function removeShowcaseCopies(submissionId) {
     const prefix = `${Number(submissionId)}-`;
     fs.promises

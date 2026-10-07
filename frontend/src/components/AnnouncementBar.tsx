@@ -19,12 +19,8 @@ function isExpired(expiresAt) {
     return Date.now() > new Date(`${expiresAt}T23:59:59`).getTime();
 }
 
-// Panel screens need the full height (side menu, gate scanner).
 const HIDDEN_ON = ["/admin", "/wjazd"];
 
-// Site-wide notice edited in Admin → Treści strony → Ogłoszenie. A visitor can
-// close it; it reappears when the text changes. Logged-in visitors get the
-// optional logged-in text and link; without that link they get no link at all.
 export default function AnnouncementBar() {
     const { content } = useContent(CONTENT_KEYS);
     const { user } = useAuth();

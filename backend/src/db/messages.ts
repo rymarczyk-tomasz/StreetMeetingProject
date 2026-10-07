@@ -1,7 +1,5 @@
 const db = require("./database");
 
-// Messages from organizers. Each one is delivered to the participants' panel
-// (and, when SMTP is configured, by e-mail).
 const insertMessageStmt = db.prepare(
     `INSERT INTO messages (admin_id, subject, body) VALUES (?, ?, ?)`,
 );

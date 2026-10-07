@@ -12,11 +12,8 @@ type LightboxProps = {
     title?: string;
 };
 
-// How many thumbnails the strip shows around the current photo.
 const THUMB_WINDOW = 9;
 
-// Full-screen photo viewer with keyboard (←/→/Esc) and swipe navigation.
-// Styles: .lightbox-* in public/css/custom.css.
 export default function Lightbox({
     photos,
     index,

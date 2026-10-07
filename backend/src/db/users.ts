@@ -19,8 +19,6 @@ const updateActiveStmt = db.prepare(
 const updateGateStaffStmt = db.prepare(
     `UPDATE users SET gate_staff = ? WHERE id = ?`,
 );
-// Cars live in the garage (vehicles table) now; license_plate/car_brand on users
-// are legacy columns left untouched.
 const updateProfileStmt = db.prepare(
     `UPDATE users SET first_name = ?, last_name = ?, phone = ? WHERE id = ?`,
 );
@@ -45,7 +43,6 @@ const updateNotificationsStmt = db.prepare(`
     WHERE id = @id
 `);
 
-// API name → column. All default to on.
 const NOTIFICATION_COLUMNS = {
     groupEmail: "notify_group_email",
     paymentReminders: "notify_payment_reminders",
@@ -58,7 +55,6 @@ function notificationPrefs(user) {
     );
 }
 
-// prefs: partial { groupEmail, paymentReminders, threadReplies } booleans.
 function updateNotificationPrefs(id, prefs) {
     const current = notificationPrefs(findByIdStmt.get(id));
     const next = { ...current };
@@ -74,7 +70,6 @@ function updateNotificationPrefs(id, prefs) {
     return findByIdStmt.get(id);
 }
 
-// termsVersion: regulamin version accepted at registration (null for CLI-created admins).
 function createUser({
     email,
     passwordHash,
@@ -106,7 +101,6 @@ function setEmailVerified(id) {
     setEmailVerifiedStmt.run(id);
 }
 
-// The new address was confirmed through a link sent to it, so it is verified.
 function updateUserEmail(id, email) {
     updateEmailStmt.run(email, id);
     return findByIdStmt.get(id);
@@ -181,7 +175,6 @@ function updateUserGateStaff(id, gateStaff) {
     return findByIdStmt.get(id);
 }
 
-// Admins can always check cars in; gate staff can do only that.
 function canCheckIn(user) {
     return Boolean(user && (user.role === "admin" || user.gate_staff));
 }
@@ -199,7 +192,6 @@ function countAdmins() {
     return countAdminsStmt.get().count;
 }
 
-// Cascades to submissions, refresh/reset tokens and the user's audit entries.
 function deleteUser(id) {
     deleteUserStmt.run(id);
 }

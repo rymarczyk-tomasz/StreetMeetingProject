@@ -17,7 +17,6 @@ function ratingLabel(rating) {
     return `średnia ${String(rating.average).replace(".", ",")} (${rating.count} ${word})`;
 }
 
-// 1–5 stars for the signed-in admin; clicking the current score clears it.
 function RatingStars({ rating, disabled, onRate }) {
     const mine = rating?.mine || 0;
     const others = (rating?.scores || []).map((item) => `${item.adminEmail}: ${item.score}`).join("\n");

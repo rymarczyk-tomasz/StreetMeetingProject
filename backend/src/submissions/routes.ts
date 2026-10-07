@@ -151,7 +151,6 @@ function getAvailability(userId) {
     };
 }
 
-// Problem with submitting right now, or null when the user can submit.
 function availabilityError(userId) {
     const availability = getAvailability(userId);
     if (!availability.open) return { status: 403, message: availability.reason };
@@ -193,8 +192,7 @@ function readSubmissionFields(body) {
     return { fields };
 }
 
-// Regulamin + RODO are required for every submission; photo publishing is optional.
-// Multipart sends "true"/"false" strings, JSON sends booleans.
+// multipart sends "true"/"false" strings, json sends booleans
 function readConsents(body) {
     const accepted = body.acceptTerms === true || body.acceptTerms === "true";
     if (!accepted) {
@@ -255,7 +253,6 @@ router.get("/availability", (req, res) => {
     res.json({ availability: getAvailability(req.user.sub) });
 });
 
-// Everything the participant panel shows above the submission list.
 router.get("/overview", (req, res) => {
     const settings = siteContentDb.getSettings();
     res.json({
@@ -313,7 +310,6 @@ router.patch("/:id/payment-status", (req, res) => {
     res.json({ submission: toPublicSubmission(updated) });
 });
 
-// Transfer confirmation (screenshot or PDF); also marks the payment for verification.
 router.post("/:id/payment-proof", (req, res, next) => {
     const submission = findOwnSubmission(req);
     if (!submission) return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
@@ -344,7 +340,6 @@ router.post("/:id/payment-proof", (req, res, next) => {
     });
 });
 
-// Participants may correct a submission until an admin has reviewed it.
 router.patch("/:id", (req, res) => {
     const submission = findOwnSubmission(req);
 
@@ -382,7 +377,6 @@ router.patch("/:id", (req, res) => {
     res.json({ submission: toPublicSubmission(updated) });
 });
 
-// Replace the photo set of a pending submission: keep[] = URLs to keep + new files.
 router.put("/:id/photos", (req, res, next) => {
     const submission = findOwnSubmission(req);
     if (!submission) return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
@@ -433,7 +427,6 @@ router.delete("/:id", (req, res) => {
     res.json({ message: "Zgłoszenie zostało wycofane." });
 });
 
-// Conversation with the organizers about this submission.
 router.get("/:id/messages", (req, res) => {
     const submission = findOwnSubmission(req);
     if (!submission) return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
@@ -457,9 +450,7 @@ router.post("/:id/messages", messageRateLimit, (req, res) => {
     res.status(201).json({ messages });
 });
 
-// Giving up an approved or reserve-list place ("Rezygnuję"). The submission is
-// kept (status "withdrawn") so organizers see the history and any payment;
-// the freed place can go to the next car on the reserve list.
+// submission is kept as "withdrawn" so the history and payment stay visible
 router.post("/:id/withdraw", (req, res) => {
     const submission = findOwnSubmission(req);
     if (!submission) return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
@@ -515,7 +506,6 @@ router.post("/:id/withdraw", (req, res) => {
     });
 });
 
-// "Zgłoś ponownie": copy a submission from an earlier edition into the current one.
 router.post("/:id/resubmit", submissionRateLimit, (req, res) => {
     const source = findOwnSubmission(req);
     if (!source) return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
@@ -563,7 +553,6 @@ router.post("/:id/resubmit", submissionRateLimit, (req, res) => {
     });
 });
 
-// QR entry pass for an approved and paid car.
 router.get("/:id/pass", (req, res) => {
     const submission = findOwnSubmission(req);
     if (!submission) return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
@@ -579,9 +568,7 @@ router.get("/:id/pass", (req, res) => {
     );
     res.json({
         pass: {
-            // Typed in at the gate without a camera: SSP-7Q4K-2MXD.
             code: `SSP-${shortCode.slice(0, 4)}-${shortCode.slice(4)}`,
-            // Encoded in the QR (full token): any phone camera opens the gate screen.
             link: `${getAppUrl()}/wjazd?kod=SSP-${token}`,
             edition: submission.edition,
             name: `${submission.first_name} ${submission.last_name}`,
@@ -630,7 +617,6 @@ router.post(
             storedPathFor("submissions", req.user.sub, file.filename),
         );
 
-        // No new photos: reuse the photos of the chosen garage vehicle.
         if (!photos.length && req.body.vehicleId) {
             const vehicle = vehiclesDb.findVehicle(Number(req.body.vehicleId));
             if (vehicle && Number(vehicle.user_id) === Number(req.user.sub)) {

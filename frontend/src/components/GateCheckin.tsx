@@ -14,24 +14,15 @@ import {
     tokenFromCode,
 } from "../utils/gateOffline";
 
-// Gate check-in screen, used on /wjazd (gate staff and admins) and in Admin → Wjazd.
-// Codes come from: a phone camera opening /wjazd?kod=… (the QR is a link), the
-// in-page camera scanner (BarcodeDetector in Chrome/Edge, jsQR elsewhere — Safari
-// on iPhone has no BarcodeDetector), typing the code, or picking the car from the
-// list by licence plate.
-
 const PAYMENT_LABELS = {
     unpaid: "Nieopłacone",
     verification: "Opłata w weryfikacji",
     paid: "Opłacone",
 };
 
-// Any browser with camera access (HTTPS) can scan; the decoder is picked in QrScanner.
 const canScanInPage = typeof window !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
 const SCAN_INTERVAL_MS = 250;
 
-// Returns frame → QR text (or null). BarcodeDetector when the browser has it,
-// otherwise jsQR on the central square of the frame (loaded only when needed).
 async function createDecoder() {
     if ("BarcodeDetector" in window) {
         const detector = new (window as any).BarcodeDetector({ formats: ["qr_code"] });
@@ -81,11 +72,11 @@ function errorText(err, fallback) {
 function QrScanner({ onCode, onClose }) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [error, setError] = useState("");
-    // Parent passes a new arrow each render; a ref keeps the camera from restarting.
+    // parent passes a new arrow every render - keep it in a ref so the camera doesn't restart
     const onCloseRef = useRef(onClose);
     onCloseRef.current = onClose;
 
-    // Opened from a button click, so getUserMedia runs within the user gesture (iOS).
+    // iOS needs getUserMedia inside a user gesture (we're opened from a click)
     useEffect(() => {
         let stream;
         let timer;
@@ -97,7 +88,6 @@ function QrScanner({ onCode, onClose }) {
             stream?.getTracks().forEach((track) => track.stop());
         }
 
-        // The camera never keeps running in a background tab.
         function handleVisibility() {
             if (document.visibilityState === "hidden") {
                 stop();
@@ -147,7 +137,6 @@ function QrScanner({ onCode, onClose }) {
     );
 }
 
-// Result of a scan: the header colour and text say at a glance whether the car may enter.
 function verdict(car) {
     if (!car.validForCurrentEdition) {
         return { ok: false, text: "Inna edycja", note: `Wejściówka z edycji ${car.edition}` };
@@ -215,7 +204,6 @@ function ResultCard({ car, onToggle, onNext }) {
 
 const SYNC_INTERVAL_MS = 30 * 1000;
 
-// Green "Online" / red "Offline" strip under the header, with the send queue.
 function ConnectionBar({ offline, savedAt, carsCount, queue, syncErrors, isSyncing, onSync }) {
     let text;
     if (offline) {
@@ -252,15 +240,11 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
     const [error, setError] = useState("");
     const [isScanning, setIsScanning] = useState(false);
 
-    // Safari deletes site data (the offline car list) after 7 days without a
-    // visit unless the storage is marked persistent.
-    // The jsQR fallback (Safari) is fetched now, while there is signal, so the
-    // service worker has it for scanning offline later.
+    // safari wipes site data after 7 days unless persisted; prefetch jsQR so the sw caches it for offline
     useEffect(() => {
         navigator.storage?.persist?.().catch(() => {});
         if (!("BarcodeDetector" in window)) import("jsqr").catch(() => {});
     }, []);
-    // Cars as last received from the server (or from the phone's copy offline).
     const [serverCars, setServerCars] = useState([]);
     const [edition, setEdition] = useState(null);
     const [queue, setQueue] = useState(loadQueue);
@@ -305,8 +289,7 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
         }
     }, []);
 
-    // Sends queued offline check-ins in order. Stops at the first connection
-    // failure; entries the server rejects are dropped and shown as errors.
+    // stops on the first network error, rejected entries are dropped
     const syncQueue = useCallback(async () => {
         if (syncing.current || !loadQueue().length) return;
         syncing.current = true;
@@ -389,8 +372,7 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
         loadCars().then(syncQueue);
     }, [loadCars, syncQueue]);
 
-    // Retry when the phone says it's back online, and periodically while
-    // anything is waiting (the "online" event isn't reliable on every phone).
+    // "online" event isn't reliable on every phone, so also retry on a timer
     useEffect(() => {
         const goOnline = () => {
             loadCars().then(syncQueue);
@@ -408,7 +390,6 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
         };
     }, [loadCars, syncQueue]);
 
-    // Opened from a scanned QR link (/wjazd?kod=…): check it right away.
     useEffect(() => {
         if (initialCode) lookup(initialCode);
     }, [initialCode, lookup]);
@@ -427,8 +408,7 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
 
     async function toggleCheckin(car, checkedIn) {
         setError("");
-        // Offline, or earlier taps still queued: queue this one too, so the
-        // server receives them in the order they happened.
+        // keep order: if anything is queued, queue this one too
         if (offline || loadQueue().length) {
             saveOffline(car, checkedIn);
             if (!offline) syncQueue();
@@ -461,7 +441,6 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
         setResult((current) => (current?.id === car.id || checkedIn ? applyQueue([car], [entry])[0] : current));
     }
 
-    // "Skanuj kolejny": back to the camera (or the code field on phones without it).
     function next() {
         setResult(null);
         setInvalid("");

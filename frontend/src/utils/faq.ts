@@ -1,5 +1,3 @@
-// FAQ questions are numbered continuously across categories; returns the number
-// of the first question in each category (1, 7, 12, …).
 export function faqFirstNumbers(faq) {
     const numbers = [];
     let next = 1;

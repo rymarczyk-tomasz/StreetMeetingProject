@@ -5,8 +5,6 @@ import Lightbox from "../components/Lightbox";
 import PageHeader from "../components/PageHeader";
 import { plural } from "../utils/plural";
 
-// Public list of approved Select cars (only owners who agreed to photo publishing;
-// switched on in Admin → Ustawienia). Brand and photos only.
 export default function ShowcasePage() {
     const [data, setData] = useState(null);
     const [error, setError] = useState(false);

@@ -7,9 +7,6 @@ function formatDate(value) {
     );
 }
 
-// Conversation about one submission, used in the participant panel
-// (basePath "/submissions/<id>") and in Admin → Zgłoszenia ("/admin/submissions/<id>").
-// Opening it marks the other side's messages as read.
 export default function SubmissionThread({ basePath, viewer, onRead = () => {} }) {
     const [messages, setMessages] = useState(null);
     const [text, setText] = useState("");

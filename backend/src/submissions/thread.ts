@@ -7,7 +7,6 @@ const { sendThreadReplyEmail, sendThreadAdminEmail } = require("../notifications
 
 const MAX_MESSAGE_LENGTH = 2000;
 
-// Participants see "Organizator" — admin e-mail addresses stay internal.
 function toThreadMessage(row, viewerIsAdmin) {
     return {
         id: row.id,
@@ -34,7 +33,6 @@ function readMessageBody(body) {
     return { text };
 }
 
-// Opening the thread marks the other side's messages as read.
 function getThread(submission, viewerIsAdmin) {
     threadsDb.markThreadRead(submission.id, viewerIsAdmin);
     return threadsDb.listThread(submission.id).map((row) => toThreadMessage(row, viewerIsAdmin));

@@ -6,7 +6,6 @@ import api from "../../api/client";
 
 export type Template = { id: string; kind: "note" | "group"; title: string; subject: string; body: string };
 
-// {rok}, {marka}, {rejestracja} → values; unknown placeholders stay as typed.
 export function fillTemplate(text: string, values: Record<string, string | number | undefined>) {
     return String(text || "").replace(/\{(rok|marka|rejestracja)\}/g, (match, key) =>
         values[key] !== undefined && values[key] !== "" ? String(values[key]) : match,
@@ -29,7 +28,6 @@ export function useTemplates(kind: Template["kind"]) {
     return { templates, currentEdition };
 }
 
-// "Wstaw szablon…" dropdown; resets after each pick so the same one can be reused.
 export function TemplatePicker({ templates, onPick, label = "Wstaw szablon" }) {
     if (!templates.length) return null;
     return (

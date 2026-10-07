@@ -1,4 +1,3 @@
-// Section header in the admin panel: optional eyebrow, title, text and actions on the right.
 export default function AdminHeading({ eyebrow = "", title, description = "", children = null }) {
     return (
         <div className="admin-heading">

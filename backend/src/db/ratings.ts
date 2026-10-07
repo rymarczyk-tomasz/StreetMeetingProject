@@ -29,7 +29,6 @@ const listAllStmt = db.prepare(`
     ORDER BY submission_ratings.updated_at
 `);
 
-// score 1–5 sets the admin's rating, anything else removes it.
 function setRating(submissionId, adminId, score) {
     if (Number.isInteger(score) && score >= 1 && score <= 5) {
         upsertStmt.run(submissionId, adminId, score);
@@ -38,7 +37,6 @@ function setRating(submissionId, adminId, score) {
     }
 }
 
-// submission id → { average, count, mine, scores: [{ adminEmail, score }] }
 function ratingSummaries(viewerAdminId) {
     const summaries = new Map();
     for (const row of listAllStmt.all()) {

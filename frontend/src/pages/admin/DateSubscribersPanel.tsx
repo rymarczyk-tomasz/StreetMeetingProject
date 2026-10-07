@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import api from "../../api/client";
 import { errorMessage } from "./shared";
 
-// People who asked on the home page ("Daj mi znać o dacie") for one e-mail when
-// the date is announced. Each e-mail gets its own unsubscribe link.
 export default function DateSubscribersPanel({ onAction }) {
     const [stats, setStats] = useState(null);
     const [subject, setSubject] = useState("");

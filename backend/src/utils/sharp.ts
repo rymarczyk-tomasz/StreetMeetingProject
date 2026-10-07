@@ -1,5 +1,4 @@
-// sharp is a native module: load it on first use, so a broken install (wrong
-// platform/Node version on the server) only breaks image processing, not the whole API.
+// native module - lazy load so a broken install only breaks images, not the api
 let sharpModule;
 
 function getSharp() {

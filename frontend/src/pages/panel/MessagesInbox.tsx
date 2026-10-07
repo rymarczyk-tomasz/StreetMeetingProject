@@ -7,7 +7,6 @@ function formatDate(value) {
     );
 }
 
-// Messages organizers sent to participants (also e-mailed when possible).
 export default function MessagesInbox({ messages, onChanged }) {
     const [openId, setOpenId] = useState(null);
     if (!messages?.length) return null;

@@ -28,9 +28,7 @@ function signAccessToken(user) {
     );
 }
 
-// jwtid makes every refresh token unique; without it two sessions of the same user
-// started in the same second got identical tokens, so revoking/rotating one also
-// hit the other.
+// jwtid - otherwise two sessions started in the same second get identical tokens
 function signRefreshToken(user) {
     return jwt.sign({ sub: user.id }, getRefreshSecret(), {
         expiresIn: `${REFRESH_TOKEN_TTL_DAYS}d`,

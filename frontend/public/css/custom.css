@@ -6,7 +6,7 @@
     padding: 0;
 }
 
-/* Design tokens (redesign 1a). */
+/* Design tokens. */
 :root {
     --street-yellow: #f4c542;
     --street-yellow-soft: #ffd968;
@@ -949,7 +949,6 @@ body {
     min-height: 560px;
 }
 
-/* Dark on the left behind the text, fading out so the photo shows on the right. */
 .hero-shadow {
     position: absolute;
     inset: 0;
@@ -1095,7 +1094,6 @@ body {
     flex: none;
 }
 
-/* "Co Cię czeka" — flat cards, no shadow or lift on hover. */
 .feature-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1386,7 +1384,6 @@ body {
     opacity: 1;
 }
 
-/* No hover on touch screens, so the logos are shown in colour right away. */
 @media (hover: none) {
     .partners-grid img {
         filter: none;
@@ -1403,7 +1400,6 @@ body {
     text-transform: uppercase;
 }
 
-/* Main sponsor and event partner: large colour logos above the exhibitors. */
 .partners-featured {
     display: flex;
     flex-wrap: wrap;
@@ -1487,7 +1483,6 @@ body {
         font-size: 15px;
     }
 
-    /* First card large, the rest as thumbnail rows. */
     .feature-grid {
         grid-template-columns: 1fr;
         gap: 28px;
@@ -1973,7 +1968,6 @@ body {
     line-height: 1.5;
 }
 
-/* Public sub-pages have a white body under the grey header. */
 .page-section {
     padding: 48px 0 72px;
     background: #fff;
@@ -1994,7 +1988,6 @@ body {
     color: var(--street-link);
 }
 
-/* Two columns: sticky side list (FAQ categories, table of contents) + content. */
 .side-layout {
     display: grid;
     grid-template-columns: 280px minmax(0, 1fr);
@@ -2688,7 +2681,6 @@ body {
     font-weight: 600;
 }
 
-/* Password field: "Pokaż" sits inside the input, on the right. */
 .field-password {
     position: relative;
     display: block;
@@ -2720,7 +2712,6 @@ body {
     color: var(--street-ink);
 }
 
-/* Checkbox 22×22: filled ink with a yellow tick when checked. */
 .check-label {
     display: flex;
     gap: 12px;
@@ -2843,7 +2834,6 @@ body {
         padding: 0;
     }
 
-    /* Swipe is the main gesture on phones; arrows float over the photo edges. */
     .lightbox-arrow {
         position: absolute;
         top: 50%;
@@ -2865,7 +2855,6 @@ body {
         display: none;
     }
 
-    /* FAQ categories as horizontally scrolling chips. */
     .faq-categories {
         flex-direction: row;
         gap: 8px;
@@ -2905,7 +2894,6 @@ body {
         font-size: 17px;
     }
 
-    /* The table of contents would only push the text down on phones. */
     .regulamin-page .side-layout-aside {
         display: none;
     }
@@ -3372,7 +3360,6 @@ body {
     grid-template-columns: 200px minmax(0, 1fr);
 }
 
-/* Fixed 4:5 photo that stays in view while a long card (payment box) scrolls. */
 .account-page .submission-card-photo {
     position: sticky;
     top: calc(var(--navbar-height, 72px) + 16px);
@@ -4002,7 +3989,6 @@ body {
     height: 380px;
 }
 
-/* Empty garage / no submissions: one horizontal card instead of a tall empty tile. */
 .empty-state {
     display: grid;
     grid-template-columns: auto 1fr auto;
@@ -4108,7 +4094,6 @@ body {
     text-transform: uppercase;
 }
 
-/* Legend + text on one line next to it (e.g. "3 z garażu"). */
 .form-card-aside {
     align-self: flex-end;
     margin: -44px 0 0;
@@ -4390,7 +4375,6 @@ textarea.field-input,
     display: none;
 }
 
-/* Header and buttons always visible; only the middle scrolls on short screens. */
 .entry-pass {
     display: flex;
     flex-direction: column;
@@ -4481,7 +4465,6 @@ textarea.field-input,
     text-align: center;
 }
 
-/* Short code for typing in at the gate: SSP-7Q4K-2MXD. */
 .entry-pass-hint strong {
     color: var(--street-ink);
     font-family: ui-monospace, monospace;
@@ -4668,7 +4651,6 @@ textarea.field-input,
         width: 100%;
     }
 
-    /* Pass at the gate: full screen, dark around a big white card. */
     .pass-backdrop {
         justify-content: flex-start;
         padding: 0;

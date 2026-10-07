@@ -4,7 +4,6 @@ import { plural } from "../../utils/plural";
 import AdminHeading from "./AdminHeading";
 import { errorMessage } from "./shared";
 
-// "…" menu of one row; closes on a pick, a click outside or Esc.
 function RowMenu({ label, items }) {
     const [isOpen, setIsOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);

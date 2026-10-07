@@ -2,8 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import api from "../../api/client";
 import { errorMessage } from "./shared";
 
-// Paths and backup file names in a check's text go into <code>, so they break
-// anywhere instead of pushing a bracket onto its own line.
 const PATH_PATTERN = /((?:[A-Za-z]:)?(?:[\/][\w.-]+)+|[\w-]+\.sqlite)/g;
 
 function withCode(text) {

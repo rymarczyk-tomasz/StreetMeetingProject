@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useContent } from "../api/content";
 import PageHeader from "../components/PageHeader";
 
-// Gives every <h2> of the CMS HTML an id and returns the list for the table of
-// contents. The HTML is sanitized on the server when saved.
 function withHeadingIds(html: string) {
     if (!html || typeof DOMParser === "undefined") return { html, headings: [] };
 
@@ -16,7 +14,6 @@ function withHeadingIds(html: string) {
     return { html: doc.body.innerHTML, headings };
 }
 
-// Highlights the heading currently at the top of the screen.
 function useActiveHeading(ids: string[]) {
     const [activeId, setActiveId] = useState("");
 
@@ -40,7 +37,6 @@ function useActiveHeading(ids: string[]) {
     return activeId || ids[0] || "";
 }
 
-// Also renders the privacy policy (contentKey="privacy") — same CMS shape.
 export default function RegulaminPage({ contentKey = "regulamin", fallbackTitle = "Regulamin" }) {
     const contentKeys = useMemo(() => [contentKey], [contentKey]);
     const { content, error } = useContent(contentKeys);

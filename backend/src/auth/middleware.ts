@@ -1,9 +1,7 @@
 const { verifyAccessToken } = require("./tokens");
 const usersDb = require("../db/users");
 
-// The access token only proves identity; role and active flag are re-read from the
-// database on every request, so blocking a user or revoking admin rights takes effect
-// immediately instead of after the token's 15-minute lifetime.
+// role/active are re-read on every request so blocking works immediately
 function resolveUser(token) {
     const payload = verifyAccessToken(token);
     const user = usersDb.findUserById(payload.sub);
@@ -67,7 +65,6 @@ function requireRole(...roles) {
     };
 }
 
-// Gate check-in: admins and users flagged as gate staff ("Obsługa wjazdu").
 function requireCheckInAccess(req, res, next) {
     if (!req.user) {
         return res.status(401).json({ message: "Wymagane logowanie." });

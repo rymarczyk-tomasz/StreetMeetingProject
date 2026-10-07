@@ -1,5 +1,3 @@
-// Polish plural forms: plural(1, "zdjęcie", "zdjęcia", "zdjęć") → "1 zdjęcie",
-// 3 → "3 zdjęcia", 5 / 12 / 25 → "… zdjęć".
 export function plural(count: number, one: string, few: string, many: string) {
     const lastDigit = count % 10;
     const lastTwo = count % 100;

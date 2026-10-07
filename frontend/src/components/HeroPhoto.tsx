@@ -1,10 +1,6 @@
 import { heroCrop } from "../utils/hero";
 import type { HeroCrop } from "../utils/hero";
 
-// The home page hero photo. The same markup is used by the admin crop preview,
-// so what the admin sees is exactly what the page renders.
-// Styles: .hero-photo / .hero-photo-inner in public/css/custom.css; values come
-// from CSS variables set by heroPhotoVars() on the <header class="home">.
 export default function HeroPhoto() {
     return (
         <div className="hero-photo" aria-hidden="true">
@@ -22,7 +18,6 @@ type HeroPreviewProps = {
     label: string;
 };
 
-// Fixed-size preview with explicit values (no media queries), for the admin panel.
 export function HeroPreview({ image, crop, rotated, width, height, label }: HeroPreviewProps) {
     const { x, y, zoom } = heroCrop(crop);
 

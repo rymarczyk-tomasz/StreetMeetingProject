@@ -202,7 +202,6 @@ function ResubmitForm({ submission, edition, onDone, onCancel, notify }) {
     );
 }
 
-// One submission in the participant panel. `archived` = earlier edition.
 export default function SubmissionCard({
     submission: s,
     archived = false,

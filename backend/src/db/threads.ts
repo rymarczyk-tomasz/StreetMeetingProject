@@ -36,7 +36,6 @@ const countsStmt = db.prepare(`
            SUM(CASE WHEN from_admin = ? AND read_at IS NULL THEN 1 ELSE 0 END) AS unread
     FROM submission_messages WHERE submission_id = ?
 `);
-// Unread participant messages per submission, for the admin list.
 const unreadForAdminStmt = db.prepare(`
     SELECT submission_id, COUNT(*) AS unread
     FROM submission_messages
@@ -44,7 +43,6 @@ const unreadForAdminStmt = db.prepare(`
     GROUP BY submission_id
 `);
 
-// One row per submission with messages: last message and unread count (admin side).
 const threadsForAdminStmt = db.prepare(`
     SELECT submissions.id AS submission_id, submissions.car_brand, submissions.license_plate,
            submissions.edition, submissions.first_name, submissions.last_name,
@@ -83,12 +81,10 @@ function listThread(submissionId) {
     return listStmt.all(submissionId);
 }
 
-// The viewer opened the thread: messages from the other side become read.
 function markThreadRead(submissionId, viewerIsAdmin) {
     markReadStmt.run(submissionId, viewerIsAdmin ? 0 : 1);
 }
 
-// { total, unread } where unread counts messages from the other side.
 function threadCounts(submissionId, viewerIsAdmin) {
     const row = countsStmt.get(viewerIsAdmin ? 0 : 1, submissionId);
     return { total: row.total || 0, unread: row.unread || 0 };

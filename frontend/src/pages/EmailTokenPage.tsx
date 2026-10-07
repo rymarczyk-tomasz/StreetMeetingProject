@@ -15,7 +15,6 @@ const ACTIONS = {
     },
 };
 
-// Landing page for the links in "confirm your e-mail" / "confirm new e-mail" messages.
 export default function EmailTokenPage({ action }: { action: "verify" | "change" }) {
     const [searchParams] = useSearchParams();
     const { user, refreshUser } = useAuth();

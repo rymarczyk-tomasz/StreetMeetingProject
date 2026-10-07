@@ -19,7 +19,6 @@ function normalizeMarker(text: string) {
     return text.replace(/[\s ]+/g, "");
 }
 
-// Removes Word's marker ("1.", "a)", "·" + spacing) from the paragraph and returns it.
 function takeMarker(paragraph: HTMLElement) {
     const ignored = paragraph.querySelector<HTMLElement>('[style*="mso-list" i][style*="ignore" i]');
     if (ignored) {

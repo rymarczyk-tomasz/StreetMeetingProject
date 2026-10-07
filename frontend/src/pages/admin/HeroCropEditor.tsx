@@ -2,7 +2,6 @@ import { useState } from "react";
 import { HeroPreview } from "../../components/HeroPhoto";
 import { heroCrop, shouldRotateOnMobile } from "../../utils/hero";
 
-// Preview frames: typical hero shapes (screen minus the header).
 const DESKTOP_FRAMES = [
     { label: "Szeroki monitor", width: 360, height: 150 },
     { label: "Laptop", width: 300, height: 170 },
@@ -18,9 +17,7 @@ function clampPercent(value) {
     return Math.round(Math.min(100, Math.max(0, value)) * 10) / 10;
 }
 
-// The phone picker can show the photo turned 90° clockwise (like the phone does).
-// Crop x/y always refer to the original photo, so screen positions are converted:
-// on screen u (from left) = 100 - y, v (from top) = x.
+// crop x/y refer to the original photo; rotated 90° cw: u = 100 - y, v = x
 function toScreen({ x, y }, rotated) {
     return rotated ? { u: 100 - y, v: x } : { u: x, v: y };
 }
@@ -29,8 +26,6 @@ function fromScreen({ u, v }, rotated) {
     return rotated ? { x: v, y: 100 - u } : { x: u, y: v };
 }
 
-// Click or drag on the photo to choose the point that must stay in view;
-// the slider zooms in around that point. Desktop and phone are set separately.
 export default function HeroCropEditor({ home, update }) {
     const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
     const [imageSize, setImageSize] = useState(null);
@@ -39,7 +34,6 @@ export default function HeroCropEditor({ home, update }) {
     const rotated = shouldRotateOnMobile(home);
     const image =
         device === "mobile" && home.heroImageMobile ? home.heroImageMobile : home.heroImage;
-    // Show the photo upright-as-on-the-phone while framing the phone version.
     const pickerRotated = device === "mobile" && rotated && Boolean(imageSize);
     const marker = toScreen(crop, pickerRotated);
 
@@ -110,7 +104,6 @@ export default function HeroCropEditor({ home, update }) {
                             }
                         }}
                         onKeyDown={(event) => {
-                            // Arrows move the marker on screen (also when rotated).
                             const step = event.shiftKey ? 10 : 2;
                             const moves = {
                                 ArrowLeft: [-step, 0],

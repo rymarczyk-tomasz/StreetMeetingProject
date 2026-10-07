@@ -28,9 +28,7 @@ const { startMaintenance } = require("./src/maintenance");
 const app = express();
 const PORT = process.env.PORT || 33000;
 
-// Which proxies may set X-Forwarded-For. Default "loopback" = nginx on the same
-// server: req.ip is then the address nginx appended, not whatever the client sent.
-// Set TRUST_PROXY to a hop count (e.g. 2) if there is another proxy in front of nginx.
+// "loopback" = nginx on the same server; use a hop count if there's another proxy in front
 const trustProxyEnv = String(process.env.TRUST_PROXY || "loopback").trim();
 app.set(
     "trust proxy",

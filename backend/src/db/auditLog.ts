@@ -1,7 +1,6 @@
 const db = require("./database");
 
-// actor_email is a snapshot taken when the entry is written, so the entry still
-// says who did it after that account is deleted (admin_id then becomes NULL).
+// actor_email is a snapshot so the entry survives account deletion
 const insertAuditStmt = db.prepare(`
     INSERT INTO audit_log (admin_id, actor_email, action, target_type, target_id, details)
     VALUES (?, (SELECT email FROM users WHERE id = ?), ?, ?, ?, ?)
@@ -25,9 +24,7 @@ function createAuditEntry({ adminId, action, targetType, targetId, details }) {
     );
 }
 
-// For reads of personal data (lists of participants): one entry per admin and
-// action every THROTTLE_MS, so the panel's frequent reloads don't flood the log
-// but it still shows who looked at the data and when.
+// personal data reads: one entry per admin/action per 30 min, panel reloads would flood the log
 const THROTTLE_MS = 30 * 60 * 1000;
 const lastLoggedAt = new Map();
 

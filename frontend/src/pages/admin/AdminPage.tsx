@@ -28,9 +28,6 @@ import SubmissionsPanel from "./SubmissionsPanel";
 import UsersPanel from "./UsersPanel";
 import DateSubscribersPanel from "./DateSubscribersPanel";
 
-// /admin/:sekcja + query params for filters (?status=pending&platnosc=overdue&id=184&tab=oplata),
-// so F5 and shared links keep the view. "edycja" is the global edition filter from the side menu
-// (Dashboard, Zgłoszenia, Raport) and is kept when switching sections.
 const NAV_GROUPS: [string, [string, string, string][]][] = [
     [
         "Wydarzenie",

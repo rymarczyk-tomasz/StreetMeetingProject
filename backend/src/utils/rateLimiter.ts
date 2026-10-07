@@ -1,4 +1,3 @@
-// Small in-memory sliding-window rate limiter (no extra infra needed on mikrus/hostinger).
 function createRateLimiter({ windowMs, maxRequests, message }) {
     const attempts = new Map();
 

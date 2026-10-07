@@ -10,7 +10,6 @@ export function heroCrop(crop?: Partial<HeroCrop>): HeroCrop {
     return { ...DEFAULT_HERO_CROP, ...(crop || {}) };
 }
 
-// → CSS variables on <header class="home">, read by .hero-photo-inner in custom.css.
 export function heroPhotoVars(home): CSSProperties {
     const desktop = heroCrop(home.heroCropDesktop);
     const mobile = heroCrop(home.heroCropMobile);
@@ -29,7 +28,6 @@ export function heroPhotoVars(home): CSSProperties {
     return vars as CSSProperties;
 }
 
-// Only rotate the main (landscape) photo; a dedicated phone photo is already upright.
 export function shouldRotateOnMobile(home) {
     return Boolean(home.heroMobileRotate && !home.heroImageMobile);
 }

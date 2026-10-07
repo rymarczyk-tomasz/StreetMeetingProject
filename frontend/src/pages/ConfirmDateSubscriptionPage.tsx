@@ -3,8 +3,6 @@ import { Link, useSearchParams } from "react-router-dom";
 import api from "../api/client";
 import { SimpleAuthLayout } from "../components/AuthLayout";
 
-// Link from the "Potwierdź zapis" e-mail (double opt-in for "Daj mi znać o dacie").
-// Confirming takes a click, so mail scanners that open every link don't sign anyone up.
 export default function ConfirmDateSubscriptionPage() {
     const [searchParams] = useSearchParams();
     const token = searchParams.get("token") || "";

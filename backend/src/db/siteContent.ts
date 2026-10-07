@@ -21,8 +21,6 @@ db.exec(`
     CREATE INDEX IF NOT EXISTS idx_content_revisions_key ON content_revisions(content_key, id);
 `);
 
-// Event cards used to live in their own table; copy them into site_content once.
-// The old table is left in place (unused) rather than dropped.
 const legacyEventTable = db
     .prepare(
         "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'event_content'",
@@ -92,7 +90,6 @@ function getContent(key) {
     }
 }
 
-// Every save is also kept as a revision so an admin can roll back a bad edit.
 const saveContent = db.transaction((key, content, adminId = null) => {
     assertKnownKey(key);
     const serialized = JSON.stringify(content);
@@ -132,7 +129,6 @@ function getCurrentEdition() {
     return Number.isInteger(year) ? year : new Date().getFullYear();
 }
 
-// Deadline is a YYYY-MM-DD date; submissions stay open until the end of that day.
 function getSubmissionsAvailability(settings = getSettings()) {
     if (!settings.submissionsOpen) {
         return { open: false, reason: "Zgłoszenia do strefy Select są zamknięte." };

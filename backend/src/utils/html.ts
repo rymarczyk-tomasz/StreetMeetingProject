@@ -1,8 +1,6 @@
 const sanitizeHtml = require("sanitize-html");
 
-// Rich text from the admin editor (FAQ answers, regulamin) is rendered as HTML on
-// public pages, so only plain formatting survives: no scripts, styles, iframes or
-// event handlers, and links only to http(s)/mailto/tel or site-relative paths.
+// rendered as html on public pages - no scripts/styles/iframes/handlers
 const RICH_TEXT_OPTIONS = {
     allowedTags: [
         "h2",
@@ -69,7 +67,6 @@ function sanitizeRichText(html) {
     return sanitizeHtml(String(html || ""), RICH_TEXT_OPTIONS).trim();
 }
 
-// True when the HTML has no visible text (e.g. "<p></p>" from an emptied editor).
 function isRichTextEmpty(html) {
     return !sanitizeHtml(String(html || ""), { allowedTags: [] }).trim();
 }

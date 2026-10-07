@@ -4,8 +4,6 @@ import { plural } from "../utils/plural";
 const MINUTE_MS = 60 * 1000;
 const DAY_MS = 24 * 60 * MINUTE_MS;
 
-// "Za 12 dni 4 godz." under the hero, from the edition date (+ start time).
-// Shows "Już dziś!" on the event day and nothing after it or without a date.
 export default function Countdown({ date, startTime = "" }) {
     const [now, setNow] = useState(() => Date.now());
 

@@ -9,7 +9,6 @@ import AnnouncementBar from "./AnnouncementBar";
 const LAYOUT_CONTENT_KEYS = ["contact", "home", "edition"];
 const LOGO_SRC = "/img/Logo 2.0/SVG/Logo_4.svg";
 
-// Keeps the fixed navbar from overlapping page content (hero gets its own offset).
 function useNavbarOffset() {
     const location = useLocation();
 
@@ -85,7 +84,6 @@ function useActiveHomeSection(isHome: boolean) {
 
 type NavItem = { label: string; section?: string; to?: string };
 
-// Five links, always: account pages live in the account menu, not in the bar.
 const NAV_ITEMS: NavItem[] = [
     { label: "Event", section: "event" },
     { label: "Strefa Select", section: "select" },
@@ -142,8 +140,6 @@ function accountLinks(user) {
     return links;
 }
 
-// Avatar button → dropdown. Opens on click; Esc, a click outside or picking an
-// item closes it; arrow keys move between items.
 function AccountMenu({ user, onLogout }) {
     const [open, setOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
@@ -236,7 +232,6 @@ function AccountMenu({ user, onLogout }) {
     );
 }
 
-// Full-screen menu on phones; locks page scroll while open.
 function MobileMenu({ user, isHome, activeSection, ticketUrl, ticketLabel, eventLine, onClose, onLogout }) {
     useScrollLock(true);
     useEffect(() => {
@@ -339,7 +334,6 @@ function SocialLinks({ contact }) {
     );
 }
 
-// Home page: the contact section is part of the footer (id="contact").
 function HomeFooter({ contact }) {
     const year = new Date().getFullYear();
     return (

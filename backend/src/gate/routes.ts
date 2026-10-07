@@ -6,8 +6,7 @@ const siteContentDb = require("../db/siteContent");
 const auditLogDb = require("../db/auditLog");
 const { authenticate, requireCheckInAccess } = require("../auth/middleware");
 
-// Gate check-in for admins and gate staff ("Obsługa wjazdu"). Returns only what
-// the gate needs — no phone numbers, e-mails, photos or notes.
+// only what the gate needs - no phones, e-mails, photos or notes
 const router = express.Router();
 
 router.use(authenticate, requireCheckInAccess);
@@ -28,14 +27,12 @@ function toGateView(row) {
     };
 }
 
-// SHA-256 of the pass token: lets the gate phone recognise scanned passes
-// offline without keeping the codes themselves on the device.
+// lets the phone match passes offline without storing the codes
 function passHash(token) {
     return token ? crypto.createHash("sha256").update(String(token).toLowerCase()).digest("hex") : null;
 }
 
-// Time of a check-in made offline and sent later; ignored unless plausible
-// (from the last 2 days, not in the future).
+// offline check-in time is ignored unless from the last 2 days
 const MAX_OFFLINE_AGE_MS = 2 * 24 * 60 * 60 * 1000;
 function readOfflineTime(value) {
     if (!value) return null;
@@ -46,9 +43,7 @@ function readOfflineTime(value) {
         : null;
 }
 
-// Accepts the QR content in any form — the link (…/wjazd?kod=SSP-…), "SSP-<token>",
-// the bare token — and the short code typed by hand (SSP-7Q4K-2MXD, any case,
-// with or without dashes/spaces), which is looked up in the current edition.
+// qr link, SSP-<token>, bare token, or the short code (any case, dashes optional)
 function findByPassCode(code) {
     let value = String(code || "").trim();
     const fromLink = value.match(/[?&]kod=([^&#\s]+)/i);
@@ -76,7 +71,6 @@ router.get("/cars", (req, res) => {
         details: { count: rows.length },
     });
     res.json({
-        // Offline check: hashes of the QR token and of the short code (lower case).
         cars: rows.map((row) => ({
             ...toGateView(row),
             passHash: passHash(row.pass_token),
@@ -106,8 +100,7 @@ router.post("/cars/:id/checkin", (req, res) => {
         return res.status(400).json({ message: "Opłata nie jest potwierdzona — wjazd niemożliwy." });
     }
 
-    // Already let in (e.g. by another gate phone while this one was offline):
-    // keep the first entry time.
+    // already let in (e.g. by another phone while offline) - keep the first time
     if (checkedIn && existing.checked_in_at) {
         return res.json({ car: toGateView(existing) });
     }

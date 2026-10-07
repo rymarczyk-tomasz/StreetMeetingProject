@@ -2,7 +2,6 @@ const { google } = require("googleapis");
 
 const FOLDER_MIME = "application/vnd.google-apps.folder";
 
-// Accepts a folder URL ("…/folders/<id>"), an "?id=<id>" link or a bare id.
 function parseFolderId(value) {
     if (!value) return null;
 
@@ -87,8 +86,6 @@ function listSubfolders(folderId) {
     return listChildren(folderId, `mimeType = '${FOLDER_MIME}'`);
 }
 
-// Returns { id, name } or throws a readable error if the folder isn't reachable
-// (most often: not shared with the service account).
 async function getFolder(folderId) {
     try {
         const response = await getDrive().files.get({

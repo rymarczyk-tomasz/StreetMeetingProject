@@ -31,9 +31,6 @@ function pruneExpiredTokens() {
     }
 }
 
-// Online, consistent SQLite snapshot (safe while the app keeps writing).
-// Copies to another machine are still needed — this only protects against
-// bad writes / accidental deletes, not against losing the server.
 async function backupDatabase() {
     await fs.promises.mkdir(BACKUP_DIR, { recursive: true });
     const stamp = new Date().toISOString().slice(0, 10);

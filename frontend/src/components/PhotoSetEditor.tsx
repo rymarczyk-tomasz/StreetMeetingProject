@@ -11,7 +11,6 @@ type PhotoSetEditorProps = {
     onCancel: () => void;
 };
 
-// Remove some of the current photos and/or add new ones (max 5, 50 MB in total).
 export default function PhotoSetEditor({ photos, onSave, onCancel }: PhotoSetEditorProps) {
     const [removed, setRemoved] = useState<string[]>([]);
     const [newFiles, setNewFiles] = useState<File[]>([]);

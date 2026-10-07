@@ -23,7 +23,6 @@ function readClampedInt(value, fallback, min, max) {
 const GALLERY_SYNC_DAILY_HOUR = readClampedInt(process.env.GALLERY_SYNC_DAILY_HOUR, 3, 0, 23);
 const GALLERY_SYNC_DAILY_MINUTE = readClampedInt(process.env.GALLERY_SYNC_DAILY_MINUTE, 0, 0, 59);
 
-// Shared progress, polled by the admin panel while a sync runs in the background.
 const status = {
     inProgress: false,
     reason: "",
@@ -150,8 +149,6 @@ async function syncAlbum(album) {
     return { added, updated, removed: existing.size, failed, total: files.length };
 }
 
-// Subfolders of the root gallery folder become albums; images placed directly in
-// the root folder go to an "Archiwum" album.
 async function discoverAlbums() {
     const rootId = drive.getRootFolderId();
     if (!rootId) return { created: 0 };
@@ -197,7 +194,6 @@ async function createAlbumFromLink(
     });
 }
 
-// Runs in the background; callers check getSyncStatus().inProgress first.
 async function runGallerySync(reason, { albumId = null } = {}) {
     if (status.inProgress) throw new Error("Synchronizacja galerii już trwa.");
 

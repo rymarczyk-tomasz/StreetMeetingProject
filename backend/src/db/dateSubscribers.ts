@@ -1,10 +1,7 @@
-
 const crypto = require("crypto");
 const db = require("./database");
 
-// "Daj mi znać o dacie" list on the home page: visitors (no account needed) who
-// want one e-mail when the next edition's date is announced. Each row has its own
-// unsubscribe token, put into every e-mail sent to the list.
+// "daj mi znać o dacie" list, no account needed
 db.exec(`
     CREATE TABLE IF NOT EXISTS date_subscribers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -16,8 +13,7 @@ db.exec(`
     );
 `);
 
-// Double opt-in: an address only counts once its owner clicked the link from the
-// confirmation e-mail. Rows from before this existed are treated as confirmed.
+// double opt-in; rows from before it existed count as confirmed
 const subscriberColumns = new Set(
     db
         .prepare("PRAGMA table_info(date_subscribers)")
@@ -38,7 +34,6 @@ db.exec(
     "CREATE UNIQUE INDEX IF NOT EXISTS date_subscribers_confirm_token ON date_subscribers(confirm_token)",
 );
 
-// The confirmation e-mail is re-sent at most this often for the same address.
 const RESEND_MINUTES = 10;
 const TOKEN_PATTERN = /^[a-f0-9]{48}$/;
 
@@ -52,7 +47,7 @@ const renewTokenStmt = db.prepare(`
     SET confirm_token = ?, confirm_sent_at = datetime('now'), edition = COALESCE(?, edition)
     WHERE id = ?
 `);
-// The token stays, so opening the link twice still says "confirmed".
+// token is kept so a second click still works
 const confirmStmt = db.prepare(`
     UPDATE date_subscribers SET confirmed_at = COALESCE(confirmed_at, datetime('now'))
     WHERE confirm_token = ?
@@ -88,8 +83,7 @@ function minutesSince(sqliteDate) {
     return (Date.now() - new Date(`${sqliteDate.replace(" ", "T")}Z`).getTime()) / 60000;
 }
 
-// Returns the confirmation token to e-mail, or null when nothing should be sent:
-// the address is already confirmed, or a link went out less than 10 minutes ago.
+// null = don't send (already confirmed or sent < 10 min ago)
 function addSubscriber(email, edition) {
     const normalized = String(email).trim().toLowerCase();
     const existing = findByEmailStmt.get(normalized);
@@ -117,7 +111,6 @@ function removeByToken(token) {
     return deleteByTokenStmt.run(token).changes > 0;
 }
 
-// Confirmed addresses only — the ones that may be e-mailed.
 function listSubscribers() {
     return listStmt.all();
 }

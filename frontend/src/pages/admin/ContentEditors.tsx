@@ -12,7 +12,7 @@ import {
     newId,
 } from "./fields";
 
-// TipTap is fairly large; only the FAQ, regulamin and privacy tabs need it.
+// tiptap is big, load it only where needed
 const RichTextEditor = lazy(() => import("../../components/RichTextEditor"));
 
 function RichText(props) {
@@ -23,7 +23,6 @@ function RichText(props) {
     );
 }
 
-// Label (.field-label) above the field, optional hint (13px) below it.
 function TextInput({ label, value, onChange, hint = "", ...props }) {
     return (
         <label>
@@ -53,7 +52,6 @@ function TextArea({ label, value, onChange, rows = 3, hint = "", ...props }) {
     );
 }
 
-// Heading of a repeated item: "KAFELEK 1" with the number in the accent colour.
 function ItemLegend({ name, number }) {
     return (
         <legend className="item-legend">
@@ -552,7 +550,7 @@ export function FaqEditor({ onAction }) {
 
 // ---- Regulamin -------------------------------------------------------------------
 
-// Regulamin and privacy policy share the editor; `name` is the genitive ("regulaminu").
+// name = genitive, e.g. "regulaminu"
 function DocumentEditor({ contentKey, name, saveLabel, hint = "", onAction }) {
     const editor = useContentEditor(contentKey, onAction);
     const document = editor.content;
@@ -806,7 +804,6 @@ export function PartnersEditor({ onAction }) {
 
 // ---- Settings: edition + submissions -------------------------------------------------
 
-// After saving a date, reminds about people waiting for it ("Daj mi znać o dacie").
 function DateNotifyBanner({ edition, savedCount, onOpen }) {
     const [pending, setPending] = useState(0);
 
@@ -838,8 +835,7 @@ function DateNotifyBanner({ edition, savedCount, onOpen }) {
     );
 }
 
-// Empty date fields on iOS show no "dd.mm.rrrr" placeholder, so a hint says
-// that leaving them empty is fine.
+// iOS shows no placeholder in empty date inputs
 function DateField({ label, value, onChange, type = "date" }) {
     return (
         <label>
@@ -933,8 +929,7 @@ export function EditionEditor({ onAction, onOpenDateNotify = undefined }) {
     );
 }
 
-// Settings are one CMS section, split into two tabs (Zapisy do Select / Opłaty);
-// each tab saves the whole section with its own fields changed.
+// one cms section split into two tabs, each saves the whole section
 export function SubmissionSettingsEditor({ onAction, part = "zapisy" }) {
     const editor = useContentEditor("settings", onAction);
     const settings = editor.content;
@@ -1078,7 +1073,6 @@ export function SubmissionSettingsEditor({ onAction, part = "zapisy" }) {
     );
 }
 
-// Polish account number: 26 digits (optional "PL"), shown as "12 3456 7890 …".
 function accountDigits(value) {
     return String(value || "").replace(/\s+/g, "").replace(/^PL/i, "");
 }
@@ -1088,7 +1082,5 @@ function formatAccount(value) {
     if (!/^\d{26}$/.test(digits)) return String(value || "").trim();
     return `${digits.slice(0, 2)} ${digits.slice(2).replace(/(\d{4})(?=\d)/g, "$1 ")}`;
 }
-
-// ---- Message templates: TemplatesEditor.tsx ----------------------------------
 
 export { default as TemplatesEditor } from "./TemplatesEditor";

@@ -9,8 +9,6 @@ function escapeHtml(value) {
         .replace(/"/g, "&quot;");
 }
 
-// Printable list of approved cars for the gate staff, sorted by licence plate.
-// Opens in a new tab and triggers the print dialog (choose "Save as PDF" for a file).
 export async function printGateList(edition) {
     // Open synchronously (inside the click) so pop-up blockers allow it.
     const printWindow = window.open("", "_blank");

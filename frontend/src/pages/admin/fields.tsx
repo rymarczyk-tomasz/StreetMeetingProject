@@ -2,7 +2,6 @@ import { useState } from "react";
 import api from "../../api/client";
 import { IMAGE_ACCEPT, errorMessage, uploadContentImage } from "./shared";
 
-// Path/URL input + "upload from computer" + preview, used by every image in the CMS.
 export function ImageField({ label, value, onChange, previewAlt = "Podgląd" }) {
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState("");
@@ -104,7 +103,6 @@ export function PdfField({ label, value, onChange }) {
     );
 }
 
-// ↑ / ↓ / remove controls for items in an editable list.
 export function ListItemControls({ index, count, onMove, onRemove, removeLabel = "Usuń" }) {
     return (
         <div className="list-item-controls">

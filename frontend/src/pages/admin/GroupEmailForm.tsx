@@ -25,7 +25,6 @@ const AUDIENCES = [
     { id: "all", label: "Wszyscy zgłaszający w tej edycji", filters: {} },
 ];
 
-// One personal e-mail per participant ("Cześć <imię>, …"), sent in the background.
 export default function GroupEmailForm({ edition, onSent }) {
     const [audienceId, setAudienceId] = useState("approved");
     const [subject, setSubject] = useState("");

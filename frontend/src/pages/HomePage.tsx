@@ -42,7 +42,7 @@ const DEFAULT_SELECT = {
     ],
 };
 
-// Shown until the API answers (and if it can't), so the page never renders empty.
+// used until the api answers (or if it fails)
 const FALLBACK = {
     home: {
         heroTitle: "Street Show",
@@ -60,7 +60,6 @@ const FALLBACK = {
     edition: null,
 };
 
-// Internal paths go through the router, anchors and external links stay plain.
 function SmartLink({ href, className, children }) {
     if (/^https?:\/\//i.test(href)) {
         return (
@@ -83,7 +82,7 @@ function SmartLink({ href, className, children }) {
     );
 }
 
-// "#bilety" in a card means "the ticket link from Home", so changing it there updates every card.
+// "#bilety" in a card = ticket link from Home
 const TICKET_LINK = "#bilety";
 
 function CardAction({ card, ticketUrl }) {
@@ -126,7 +125,6 @@ function EventCards({ cards, ticketUrl }) {
     );
 }
 
-// Public open/closed state of Select submissions and the per-account limit.
 function useSelectStatus() {
     const [status, setStatus] = useState(null);
 
@@ -145,7 +143,6 @@ function SelectSteps({ select, user }) {
     const steps = content.steps?.length ? content.steps : DEFAULT_SELECT.steps;
     const maxVehicles = status?.maxVehicles || 5;
     const closed = status && !status.open;
-    // Phones show the button under the steps (CSS hides one of the two copies).
     const cta = closed ? (
         <p className="select-closed">{status.reason}</p>
     ) : (
@@ -190,8 +187,6 @@ function SelectSteps({ select, user }) {
 
 const SHOWCASE_PREVIEW = 6;
 
-// Teaser of the public "Auta strefy Select" page; hidden until it's switched on
-// in Admin → Ustawienia and there are cars to show.
 function SelectShowcase() {
     const [data, setData] = useState(null);
 
@@ -257,7 +252,6 @@ function GalleryPreview({ gallery }) {
     );
 }
 
-// "Let me know the date" sign-up; shown while the edition has no date yet.
 function NotifySignup({ edition }) {
     const [email, setEmail] = useState("");
     const [consent, setConsent] = useState(false);
@@ -351,7 +345,7 @@ function NotifySignup({ edition }) {
     );
 }
 
-// [tier, singular label, plural label]; items saved before tiers existed count as exhibitors.
+// items saved before tiers existed count as exhibitors
 const FEATURED_TIERS = [
     ["main", "Sponsor główny wydarzenia", "Sponsorzy główni wydarzenia"],
     ["partner", "Partner wydarzenia", "Partnerzy wydarzenia"],
@@ -400,7 +394,6 @@ function Partners({ partners }) {
                 {exhibitors.length > 0 && (
                     <>
                         {featured.length > 0 && <h3 className="partners-tier-title">Wystawcy</h3>}
-                        {/* 4 logos on a 3-column phone grid would leave one alone: 2 × 2 instead. */}
                         <ul className={`partners-grid${exhibitors.length === 4 ? " is-four" : ""}`}>
                             {exhibitors.map((partner) => (
                                 <li key={partner.id}>
@@ -415,8 +408,7 @@ function Partners({ partners }) {
     );
 }
 
-// Desktop: "STREET" / "SHOW 2027" — the year joins the title's last word.
-// Phones put the year on its own line (CSS), as before.
+// "STREET / SHOW 2027" on desktop, year on its own line on phones (css)
 function HeroTitle({ title, year }) {
     if (!year) return <h1 className="hero-title">{title}</h1>;
 
@@ -440,7 +432,6 @@ function HeroTitle({ title, year }) {
     );
 }
 
-// Structured data lets search engines show the event date in results.
 function useEventJsonLd(edition, home, contact) {
     useEffect(() => {
         const data = buildEventJsonLd(edition, {
@@ -457,8 +448,6 @@ function useEventJsonLd(edition, home, contact) {
     }, [edition, home, contact]);
 }
 
-// "Street Show 2027 – Polsat Plus Arena Gdańsk | Street Meeting Poland", from the edition;
-// the static title from index.html comes back when leaving the home page.
 function useEditionTitle(edition) {
     useEffect(() => {
         if (!edition?.year) return;

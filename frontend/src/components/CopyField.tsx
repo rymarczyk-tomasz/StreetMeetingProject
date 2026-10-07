@@ -16,7 +16,6 @@ async function copyText(text: string) {
     }
 }
 
-// Tile with a label, the value and a copy icon — used for bank transfer details.
 export default function CopyField({ label, value }: { label: string; value: string }) {
     const [copied, setCopied] = useState(false);
 

@@ -9,10 +9,6 @@ type RichTextEditorProps = {
     ariaLabel?: string;
 };
 
-// Word-like editor for non-technical editors (FAQ answers, regulamin). Pasting from
-// Word or Google Docs keeps headings, lists (incl. a/b/c) and bold/italic/underline;
-// the server sanitizes the HTML again on save. Remount (change `key`) to load new
-// content from outside, e.g. after restoring an older version.
 export default function RichTextEditor({
     value,
     onChange,

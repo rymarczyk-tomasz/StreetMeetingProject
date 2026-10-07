@@ -18,7 +18,6 @@ export function formatEditionHours(edition) {
         : `od ${edition.startTime}`;
 }
 
-// schema.org Event for search engines; only when the date is known.
 export function buildEventJsonLd(edition, { ticketUrl, contact }) {
     if (!edition?.date) return null;
 

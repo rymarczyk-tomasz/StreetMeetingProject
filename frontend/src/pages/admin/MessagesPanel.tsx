@@ -3,8 +3,6 @@ import api from "../../api/client";
 import Plate from "../../components/Plate";
 import { errorMessage, formatDate } from "./shared";
 
-// Every conversation with participants (GET /admin/threads), unread first.
-// A row opens the submission in Zgłoszenia on the "Wiadomości" tab.
 export default function MessagesPanel({ refreshKey, onOpen }) {
     const [threads, setThreads] = useState(null);
     const [error, setError] = useState("");

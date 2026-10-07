@@ -45,8 +45,7 @@ const {
 const router = express.Router();
 
 const BCRYPT_ROUNDS = 12;
-// Compared against when the e-mail is unknown, so a login attempt takes the same
-// time whether or not the account exists (no user enumeration via timing).
+// same timing for unknown e-mails (no user enumeration)
 const DUMMY_PASSWORD_HASH = bcrypt.hashSync("street-show-dummy-password", BCRYPT_ROUNDS);
 
 const authRateLimit = createRateLimiter({
@@ -138,7 +137,6 @@ router.post("/register", authRateLimit, async (req, res) => {
     });
 
     issueSession(res, user);
-    // Welcome + "confirm your address" in one message.
     void sendVerification(user).catch(logEmailError("potwierdzenie adresu"));
     res.status(201).json({ user: toPublicUser(user) });
 });
@@ -228,7 +226,6 @@ router.post("/logout", (req, res) => {
 
 router.post("/forgot-password", passwordResetRateLimit, (req, res) => {
     const email = normalizeEmail(req.body.email);
-    // Same answer whether or not the account exists.
     const response = {
         message:
             "Jeśli konto z tym adresem istnieje, wysłaliśmy na nie link do ustawienia nowego hasła.",
@@ -356,7 +353,7 @@ router.post("/resend-verification", authenticate, passwordResetRateLimit, async 
     res.json({ message: `Wysłaliśmy link potwierdzający na ${user.email}.` });
 });
 
-// Two steps: the link goes to the NEW address, so a typo can't lock the user out.
+// link goes to the new address so a typo can't lock the user out
 router.post("/change-email", authenticate, passwordResetRateLimit, async (req, res) => {
     const newEmail = normalizeEmail(req.body?.newEmail);
     const password = String(req.body?.password || "");
@@ -400,7 +397,6 @@ router.post("/confirm-email-change", authRateLimit, (req, res) => {
     res.json({ message: `Adres e-mail zmieniony na ${user.email}.` });
 });
 
-// Ends sessions on all other devices (e.g. a lost phone); this one stays logged in.
 router.post("/logout-all", authenticate, (req, res) => {
     const user = usersDb.findUserById(req.user.sub);
     refreshTokensDb.revokeAllUserTokens(user.id);
@@ -408,7 +404,6 @@ router.post("/logout-all", authenticate, (req, res) => {
     res.json({ message: "Wylogowano ze wszystkich innych urządzeń." });
 });
 
-// RODO: lets a user download everything we store about them.
 router.get("/me/export", authenticate, (req, res) => {
     const user = usersDb.findUserById(req.user.sub);
     const submissions = submissionsDb
@@ -461,7 +456,6 @@ router.get("/me/export", authenticate, (req, res) => {
     });
 });
 
-// RODO: account deletion removes the user, their submissions and uploaded photos.
 router.delete("/me", authenticate, authRateLimit, async (req, res) => {
     const password = String(req.body?.password || "");
     const user = usersDb.findUserById(req.user.sub);
@@ -476,7 +470,7 @@ router.delete("/me", authenticate, authRateLimit, async (req, res) => {
         });
     }
 
-    // Ids first: the submissions rows go away with the user.
+    // ids first, the rows are deleted with the user
     const submissionIds = submissionsDb.listSubmissionsByUser(user.id).map((row) => row.id);
     usersDb.deleteUser(user.id);
     submissionIds.forEach(removeShowcaseCopies);

@@ -23,7 +23,6 @@ const {
 } = require("../utils/userPhotos");
 const { getUserVehiclesDir } = require("../utils/paths");
 
-// "Garage": cars a participant keeps for quick submissions (also next year).
 const router = express.Router();
 
 const MAX_VEHICLES = 20;
@@ -73,8 +72,6 @@ function ensureRoom(req, res, next) {
 
 router.use(authenticate);
 
-// Each car says whether it already has an active submission in the current
-// edition, so the garage can show "Zgłoszone na <rok>" instead of the button.
 router.get("/", (req, res) => {
     const userId = req.user.sub;
     const edition = siteContentDb.getCurrentEdition();
@@ -114,7 +111,6 @@ router.post("/", ensureRoom, upload.array("photos", MAX_PHOTOS), (req, res) => {
     res.status(201).json({ vehicle: toPublicVehicle(vehicle) });
 });
 
-// "Zapisz w garażu" on a submission: copies its data and photos.
 router.post("/from-submission/:id", ensureRoom, (req, res) => {
     const submission = submissionsDb.findSubmissionById(Number(req.params.id));
     if (!submission || Number(submission.user_id) !== Number(req.user.sub)) {

@@ -3,9 +3,8 @@ const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
 
-// The browser-supplied mimetype and filename are untrusted: the stored extension is
-// derived from the mimetype whitelist and the file content is verified afterwards, so
-// nothing like .html/.svg can end up being served from our origin.
+// mimetype/filename from the browser are untrusted - extension comes from this
+// whitelist and the content is checked after upload (no .html/.svg on our origin)
 const MIME_TO_EXTENSION = {
     "image/jpeg": ".jpg",
     "image/jpg": ".jpg",
@@ -17,8 +16,7 @@ const MIME_TO_EXTENSION = {
 
 const ALLOWED_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
 
-// Some browsers send no usable type (e.g. .webp/.avif when the OS has no mime mapping);
-// then trust the filename extension for now — verifyUploadedImages checks the content.
+// some browsers send no type for webp/avif, content is verified later anyway
 function imageExtensionFor(file) {
     const fromMime = MIME_TO_EXTENSION[file.mimetype];
     if (fromMime) return fromMime;
@@ -76,8 +74,7 @@ function removeFiles(files) {
     }
 }
 
-// Checks magic bytes of every uploaded file; fixes the extension when the content
-// is a different allowed format than declared. Throws (after cleanup) otherwise.
+// magic bytes check; fixes the extension if it's another allowed format
 function verifyUploadedImages(files) {
     for (const file of files) {
         const detected = detectImageExtension(readFileHead(file.path));
@@ -124,7 +121,6 @@ function createImageUpload({ destination, maxFiles, maxFileSize }) {
     });
 }
 
-// PDFs (e.g. the regulamin) for the CMS. Same rules: our own filename and a content check.
 function createPdfUpload({ destination, maxFileSize }) {
     return multer({
         storage: multer.diskStorage({
@@ -159,7 +155,6 @@ function verifyUploadedPdf(file) {
     }
 }
 
-// Transfer confirmation from a participant: a screenshot/photo or a bank PDF.
 function createProofUpload({ destination, maxFileSize }) {
     return multer({
         storage: multer.diskStorage({
@@ -208,7 +203,6 @@ function isAllowedImageFilename(filename) {
     );
 }
 
-// Turns multer / validation errors into JSON 400s; anything else goes to the global handler.
 function uploadErrorHandler({ maxFiles, totalSizeLabel }) {
     return (error, req, res, next) => {
         removeFiles(req.files || (req.file ? [req.file] : []));

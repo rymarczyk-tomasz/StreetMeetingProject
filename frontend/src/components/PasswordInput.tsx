@@ -5,7 +5,6 @@ type PasswordInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & 
     invalid?: boolean;
 };
 
-// Password field with a "Pokaż / Ukryj" toggle inside it, on the right.
 export default function PasswordInput({ invalid, className = "", ...props }: PasswordInputProps) {
     const [isVisible, setIsVisible] = useState(false);
 

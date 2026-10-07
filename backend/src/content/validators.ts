@@ -64,7 +64,6 @@ function clampNumber(value, min, max, fallback) {
     return Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : fallback;
 }
 
-// Hero framing from the admin crop tool; out-of-range values are clamped.
 function readCrop(crop) {
     return {
         x: Math.round(clampNumber(crop?.x, 0, 100, 50) * 10) / 10,
@@ -246,7 +245,6 @@ function validateFaq(input) {
     return { content: { title: text(input.title, 120) || "FAQ", categories } };
 }
 
-// Regulamin and privacy policy: rich text and/or a PDF. `name` is the genitive used in errors.
 function documentValidator(name) {
     return (input) => {
         const content = {
@@ -291,7 +289,6 @@ function validateAnnouncement(input) {
     return { content };
 }
 
-// Main sponsor and event partner get large logos above the exhibitor grid.
 const PARTNER_TIERS = ["main", "partner", "exhibitor"];
 
 function validatePartners(input) {

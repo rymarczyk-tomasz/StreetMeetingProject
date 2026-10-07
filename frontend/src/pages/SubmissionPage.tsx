@@ -13,8 +13,6 @@ const ACCEPTED_TYPES = "image/jpeg,image/png,image/webp,image/avif";
 const ACCEPTED_MIME = new Set(ACCEPTED_TYPES.split(","));
 const ACCEPTED_EXTENSION = /\.(jpe?g|png|webp|avif)$/i;
 
-// Some browsers report an empty type (e.g. .webp/.avif without an OS mime mapping),
-// so fall back to the extension; the backend verifies the actual file content.
 function isAcceptedPhoto(file: File) {
     return file.type ? ACCEPTED_MIME.has(file.type) : ACCEPTED_EXTENSION.test(file.name);
 }

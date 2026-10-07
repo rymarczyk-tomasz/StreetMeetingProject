@@ -12,7 +12,6 @@ const OPTIMIZED_PHOTOS = new Set([
 
 const WIDTHS = [400, 800, 1200];
 
-// Card images are full width on phones, half on tablets, a third on desktops.
 const CARD_SIZES = "(min-width: 1200px) 440px, (min-width: 768px) 50vw, 100vw";
 
 export function cardImageProps(url: string) {

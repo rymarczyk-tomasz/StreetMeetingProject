@@ -109,7 +109,6 @@ function findAlbumByFolder(driveFolderId) {
     return findAlbumByFolderStmt.get(driveFolderId);
 }
 
-// New albums go to the top of the list.
 function createAlbum({ title, year, driveFolderId }) {
     const result = insertAlbumStmt.run({ title, year: year || null, driveFolderId });
     return findAlbum(result.lastInsertRowid);

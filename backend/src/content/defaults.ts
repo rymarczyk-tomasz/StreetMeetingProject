@@ -2,11 +2,8 @@ const defaultFaq = require("./defaultFaq");
 const defaultRegulamin = require("./defaultRegulamin");
 const defaultPrivacy = require("./defaultPrivacy");
 
-// Fallback content for every editable section, used until an admin saves it.
-// Saved content is merged over these, so new fields get sensible values.
+// saved content is merged over these, so new fields get defaults too
 const DEFAULTS = {
-    // The current event edition. Its year scopes submissions, limits and stats;
-    // date/venue are shown on the home page and in structured data.
     edition: {
         year: 2027,
         name: "Street Show 2027",
@@ -22,10 +19,8 @@ const DEFAULTS = {
         heroImage: "/img/photos/Hero-image.webp",
         // Optional upright photo for phones; empty = use heroImage.
         heroImageMobile: "",
-        // Lay the (landscape) hero photo on its side on phones held upright.
         heroMobileRotate: true,
-        // Framing set in the admin crop tool: x/y = point of the photo (in %) that
-        // stays in view, zoom = 1 (whole width/height) … 3.
+        // x/y in %, zoom 1-3
         heroCropDesktop: { x: 50, y: 50, zoom: 1 },
         heroCropMobile: { x: 50, y: 50, zoom: 1 },
         ticketLabel: "Kup bilety",
@@ -68,7 +63,6 @@ const DEFAULTS = {
             },
         ],
     },
-    // "Strefa Select" section on the home page: how taking part works, in 4 steps.
     select: {
         eyebrow: "Strefa Select",
         title: "Wjedź autem na murawę",
@@ -147,28 +141,21 @@ const DEFAULTS = {
         title: "Partnerzy",
         items: [],
     },
-    // Not page content, but editable from the admin panel the same way.
     settings: {
         submissionsOpen: true,
         submissionsDeadline: "",
         selectFeeAmount: "",
         selectCapacity: 0,
         maxVehiclesPerUser: 5,
-        // Bank transfer details shown to participants with an approved submission.
-        // In the title, {rok} = edition year, {rejestracja} = licence plate.
+
         paymentRecipient: "",
         paymentAccount: "",
         paymentTitleTemplate: "Strefa Select {rok} – {rejestracja}",
         paymentDeadline: "",
-        // Days to pay counted from approval (0 = only the fixed deadline above).
         paymentDaysAfterApproval: 0,
-        // Public page with approved cars (photo-publishing consent only).
         showcaseEnabled: false,
-        // Practical info for accepted participants (entry hours, what to bring…).
         participantInfo: "",
     },
-    // Ready-made texts: "note" = comment for a participant on a submission,
-    // "group" = group message. {rok}, {marka}, {rejestracja} are filled in.
     templates: {
         items: [
             {
@@ -224,7 +211,6 @@ const DEFAULTS = {
     },
 };
 
-// Sections anyone may read through the public API.
 const PUBLIC_CONTENT_KEYS = [
     "edition",
     "home",

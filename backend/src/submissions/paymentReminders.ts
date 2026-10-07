@@ -4,10 +4,8 @@ const auditLogDb = require("../db/auditLog");
 const { getPaymentDueDate, todayInPoland, addDays } = require("../payments");
 const { isEmailConfigured, sendPaymentReminderEmail } = require("../notifications/email");
 
-// How many days before the payment deadline the single reminder goes out.
 const REMINDER_DAYS_BEFORE = 3;
 
-// Reminders go out during the day in Poland, not in the middle of the night.
 const SEND_FROM_HOUR = 9;
 const SEND_UNTIL_HOUR = 20;
 
@@ -19,9 +17,6 @@ function hourInPoland() {
     );
 }
 
-// One reminder per approval, sent when the deadline is up to REMINDER_DAYS_BEFORE
-// days away. Without SMTP nothing is marked as sent, so reminders still go out
-// once e-mail is configured.
 async function sendDuePaymentReminders() {
     const hour = hourInPoland();
     if (running || !isEmailConfigured() || hour < SEND_FROM_HOUR || hour >= SEND_UNTIL_HOUR) {

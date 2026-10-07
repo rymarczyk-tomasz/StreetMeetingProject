@@ -1,8 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 
-// Modal window for admin forms (group e-mail, bulk decision). Esc / × / backdrop close it;
-// focus moves inside and returns to the opener afterwards.
 export default function AdminDialog({
     title,
     onClose,
