@@ -6,7 +6,7 @@
 // - /assets/* (hashed file names, never change): cache first
 // - /css/*, icons, manifest: network first, cached copy offline
 
-const CACHE = "streetshow-shell-v1";
+const CACHE = "streetshow-shell-v2";
 const MAX_ASSETS = 60;
 
 self.addEventListener("install", (event) => {
@@ -85,6 +85,7 @@ self.addEventListener("fetch", (event) => {
         url.pathname.startsWith("/img/favicon_io/") ||
         url.pathname === "/manifest.webmanifest"
     ) {
-        event.respondWith(networkFirst(request, request));
+        // Keyed without ?v=… so each deploy replaces the copy instead of adding one.
+        event.respondWith(networkFirst(request, url.pathname));
     }
 });
