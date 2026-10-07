@@ -48,6 +48,8 @@ const ACTION_LABELS = {
     "settings.updated": "zmienił ustawienia zgłoszeń",
     "templates.content_updated": "zmienił szablony wiadomości",
     "email.group_sent": "wysłał wiadomość do uczestników",
+    "date_subscribers.notified": "wysłał powiadomienie o dacie do listy zapisanych",
+    "date_subscribers.exported": "pobrał listę zapisanych na powiadomienie o dacie",
     "system.test_email_sent": "wysłał testowy e-mail",
 };
 

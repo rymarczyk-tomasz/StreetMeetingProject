@@ -177,6 +177,12 @@ export function HomeEditor({ onAction }) {
                         value={home.heroTitle}
                         onChange={(heroTitle) => editor.update({ heroTitle })}
                     />
+                    <TextArea
+                        label="Opis pod tytułem (1–2 zdania)"
+                        value={home.heroLead}
+                        maxLength={300}
+                        onChange={(heroLead) => editor.update({ heroLead })}
+                    />
                     <ImageField
                         label="Zdjęcie w tle"
                         value={home.heroImage}
@@ -211,11 +217,60 @@ export function HomeEditor({ onAction }) {
                         value={home.ticketUrl}
                         onChange={(ticketUrl) => editor.update({ ticketUrl })}
                     />
+
+                </>
+            )}
+        </ContentForm>
+    );
+}
+
+// ---- Strefa Select (4 steps on the home page) ----------------------------------
+
+export function SelectEditor({ onAction }) {
+    const editor = useContentEditor("select", onAction);
+    const select = editor.content;
+
+    function updateStep(index, patch) {
+        editor.update({
+            steps: select.steps.map((step, i) => (i === index ? { ...step, ...patch } : step)),
+        });
+    }
+
+    return (
+        <ContentForm editor={editor} saveLabel="Zapisz sekcję Strefa Select">
+            {select && (
+                <>
+                    <p className="admin-hint">
+                        Przycisk w sekcji zmienia się sam: „Załóż konto” dla gości, „Zgłoś
+                        pojazd” po zalogowaniu, a przy zamkniętych zapisach pokazuje powód z
+                        Ustawień. Limit pojazdów pod krokami też pochodzi z Ustawień.
+                    </p>
                     <TextInput
-                        label='Tekst linku "Poznaj atrakcje"'
-                        value={home.exploreLabel}
-                        onChange={(exploreLabel) => editor.update({ exploreLabel })}
+                        label="Nadtytuł"
+                        value={select.eyebrow}
+                        onChange={(eyebrow) => editor.update({ eyebrow })}
                     />
+                    <TextInput
+                        label="Tytuł"
+                        value={select.title}
+                        onChange={(title) => editor.update({ title })}
+                    />
+                    {select.steps.map((step, index) => (
+                        <fieldset className="event-editor-card" key={index}>
+                            <legend>Krok {index + 1}</legend>
+                            <TextInput
+                                label="Tytuł kroku"
+                                value={step.title}
+                                onChange={(title) => updateStep(index, { title })}
+                            />
+                            <TextArea
+                                label="Opis"
+                                value={step.text}
+                                rows={2}
+                                onChange={(text) => updateStep(index, { text })}
+                            />
+                        </fieldset>
+                    ))}
                 </>
             )}
         </ContentForm>

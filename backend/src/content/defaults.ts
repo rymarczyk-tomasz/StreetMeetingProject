@@ -29,49 +29,70 @@ const DEFAULTS = {
         heroCropMobile: { x: 50, y: 50, zoom: 1 },
         ticketLabel: "Kup bilety",
         ticketUrl: "https://bkb.pl/197944-209dd",
-        exploreLabel: "Poznaj atrakcje",
+        heroLead:
+            "Najbardziej unikalne wydarzenie motoryzacyjne w Polsce – auta na murawie stadionu, drift taxi i strefa expo.",
     },
     event: {
-        intro: "Weź udział w najbardziej unikalnym wydarzeniu motoryzacyjnym w Polsce! Niezapomniane emocje, wyjątkowe samochody i atmosfera, jakiej nie znajdziesz nigdzie indziej.",
+        intro: "Niezapomniane emocje, wyjątkowe samochody i atmosfera, jakiej nie znajdziesz nigdzie indziej.",
         cards: [
             {
-                id: "tickets",
-                title: "BILETY",
-                description:
-                    "Zarezerwuj swoje miejsce już teraz!\nBilety na wydarzenie kupisz TUTAJ.",
+                id: "select",
+                title: "Strefa Select",
+                description: "Masz unikalne auto? Zaprezentuj je na murawie stadionu.",
+                image: "/img/photos/6.webp",
+                alt: "Czarno-biały Nissan na wydarzeniu Street Show",
+                actionLabel: "Jak się zgłosić",
+                actionHref: "#select",
+                actionExternal: false,
+            },
+            {
+                id: "drift-taxi",
+                title: "Drift taxi",
+                description: "Widowiskowe pokazy driftu i przejażdżki na fotelu pasażera.",
+                image: "/img/photos/7.webp",
+                alt: "Trzy driftujące samochody podczas pokazu",
+                actionLabel: "Szczegóły w FAQ",
+                actionHref: "/faq",
+                actionExternal: false,
+            },
+            {
+                id: "expo",
+                title: "Strefa expo",
+                description: "Najnowsze trendy i renomowane marki z Polski i Europy.",
                 image: "/img/photos/10.webp",
                 alt: "Samochody na murawie Polsat Plus Arena, Gdańsk",
                 actionLabel: "Kup bilety",
                 actionHref: "https://bkb.pl/197944-209dd",
                 actionExternal: true,
             },
+        ],
+    },
+    // "Strefa Select" section on the home page: how taking part works, in 4 steps.
+    select: {
+        eyebrow: "Strefa Select",
+        title: "Wjedź autem na murawę",
+        steps: [
             {
-                id: "select",
-                title: "STREFA POJAZDÓW SELECT",
-                description:
-                    "Pokaż swój wyjątkowy pojazd!\nMasz unikalne auto? Nie przegap szansy na jego prezentację na murawie stadionu w strefie Select!",
-                image: "/img/photos/6.webp",
-                alt: "Czarno-biały Nissan na wydarzeniu Street Show",
-                actionLabel: "Zgłoś pojazd",
-                actionHref: "/formularz",
-                actionExternal: false,
+                title: "Konto i garaż",
+                text: "Dodaj auta do garażu – w kolejnych latach zgłosisz je jednym kliknięciem.",
             },
             {
-                id: "drift-expo",
-                title: "DRIFT TAXI ORAZ STREFA EXPO",
-                description:
-                    "Doświadcz prawdziwych motoryzacyjnych emocji! Widowiskowe pokazy driftu, przejażdżki na fotelu pasażera i adrenalina na najwyższym poziomie! W specjalnej strefie expo czekają na Ciebie najnowsze trendy motoryzacyjne oraz renomowane marki z Polski i Europy.",
-                image: "/img/photos/7.webp",
-                alt: "Trzy driftujące samochody podczas pokazu",
-                actionLabel: "Sprawdź atrakcje",
-                actionHref: "#contact",
-                actionExternal: false,
+                title: "Zgłoszenie",
+                text: "Dane pojazdu i do 5 zdjęć. Do decyzji możesz je poprawić albo wycofać.",
+            },
+            {
+                title: "Akceptacja i opłata",
+                text: "Decyzja przychodzi e-mailem, dane do przelewu znajdziesz w panelu.",
+            },
+            {
+                title: "Wejściówka QR",
+                text: "Pokazujesz kod przy wjeździe – na telefonie albo wydrukowany.",
             },
         ],
     },
     gallery: {
         intro: "",
-        linkLabel: "Przejdź do galerii",
+        linkLabel: "Wszystkie albumy",
         photos: [
             {
                 id: "default-1",
@@ -199,6 +220,7 @@ const PUBLIC_CONTENT_KEYS = [
     "edition",
     "home",
     "event",
+    "select",
     "gallery",
     "contact",
     "faq",

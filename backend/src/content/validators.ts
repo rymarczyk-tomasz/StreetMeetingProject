@@ -79,7 +79,6 @@ function validateHome(input) {
         heroImage: text(input.heroImage, 500),
         ticketLabel: text(input.ticketLabel, 60),
         ticketUrl: text(input.ticketUrl, 500),
-        exploreLabel: text(input.exploreLabel, 60),
     };
 
     if (Object.values(required).some((value) => !value)) {
@@ -88,6 +87,7 @@ function validateHome(input) {
 
     const content = {
         ...required,
+        heroLead: text(input.heroLead, 300),
         heroImageMobile: text(input.heroImageMobile, 500),
         heroMobileRotate: Boolean(input.heroMobileRotate),
         heroCropDesktop: readCrop(input.heroCropDesktop),
@@ -141,6 +141,25 @@ function validateEvent(input) {
         seen.add(card.id);
     }
     return { content: { intro, cards } };
+}
+
+const SELECT_STEP_COUNT = 4;
+
+function validateSelect(input) {
+    const steps = asArray(input.steps)
+        .slice(0, SELECT_STEP_COUNT)
+        .map((step) => ({ title: text(step?.title, 80), text: text(step?.text, 300) }));
+    const content = {
+        eyebrow: text(input.eyebrow, 60),
+        title: text(input.title, 120),
+        steps,
+    };
+
+    if (!content.title) return { error: "Podaj tytuł sekcji Strefa Select." };
+    if (steps.length !== SELECT_STEP_COUNT || steps.some((step) => !step.title || !step.text)) {
+        return { error: "Uzupełnij tytuł i opis wszystkich 4 kroków." };
+    }
+    return { content };
 }
 
 function validateGalleryPreview(input) {
@@ -361,6 +380,7 @@ const VALIDATORS = {
     edition: validateEdition,
     home: validateHome,
     event: validateEvent,
+    select: validateSelect,
     gallery: validateGalleryPreview,
     contact: validateContact,
     faq: validateFaq,

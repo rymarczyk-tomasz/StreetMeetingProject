@@ -41,7 +41,7 @@ function escapeHtml(value) {
         .replace(/'/g, "&#039;");
 }
 
-async function sendMail({ to, subject, text, html }) {
+async function sendMail({ to, subject, text, html, headers = undefined }) {
     const mailTransporter = getTransporter();
     if (!mailTransporter) {
         console.warn(
@@ -56,6 +56,7 @@ async function sendMail({ to, subject, text, html }) {
         subject,
         text,
         html,
+        headers,
     });
 
     return { sent: true };
@@ -491,9 +492,39 @@ async function sendGroupEmail({ recipients, subject, message }) {
     return results;
 }
 
+// "Daj mi znać o dacie" list: no account behind these addresses, so every
+// e-mail carries its own one-click unsubscribe link instead of the settings page.
+async function sendDateSubscribersEmail({ subscribers, subject, message, onSent }) {
+    const results = { sent: 0, failed: 0 };
+
+    for (const subscriber of subscribers) {
+        const url = `${getAppUrl()}/wypisz?token=${subscriber.unsubscribe_token}`;
+        const body = `Cześć,\n\n${message}\n\nStreet Show Crew`;
+        const note = "Ten adres zapisano na stronie Street Show na powiadomienie o dacie wydarzenia.";
+        try {
+            await sendMail({
+                to: subscriber.email,
+                subject,
+                text: `${body}\n\n—\n${note} Wypisz się: ${url}`,
+                html: `${plainTextToHtml(body)}\n<p style="color:#777;font-size:12px">${note} <a href="${escapeHtml(url)}">Wypisz się</a>.</p>`,
+                headers: { "List-Unsubscribe": `<${url}>` },
+            });
+            results.sent += 1;
+            onSent?.(subscriber);
+        } catch (error) {
+            results.failed += 1;
+            console.error(`[email] Powiadomienie o dacie do ${subscriber.email}:`, error.message);
+        }
+        await new Promise((resolve) => setTimeout(resolve, GROUP_EMAIL_DELAY_MS));
+    }
+
+    return results;
+}
+
 module.exports = {
     isEmailConfigured,
     sendGroupEmail,
+    sendDateSubscribersEmail,
     sendVerificationEmail,
     sendEmailChangeEmail,
     sendSubmissionStatusEmail,

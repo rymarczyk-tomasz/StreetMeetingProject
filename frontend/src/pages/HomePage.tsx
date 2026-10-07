@@ -2,94 +2,333 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/client";
 import { useContent } from "../api/content";
+import { useAuth } from "../context/AuthContext";
 import Countdown from "../components/Countdown";
 import HeroPhoto from "../components/HeroPhoto";
 import { heroPhotoVars, shouldRotateOnMobile } from "../utils/hero";
 import { cardImageProps } from "../utils/photos";
+import { plural } from "../utils/plural";
 import {
     buildEventJsonLd,
     formatEditionDate,
     formatEditionHours,
 } from "../utils/edition";
 
-const CONTENT_KEYS = ["edition", "home", "event", "gallery", "contact", "partners"];
+const CONTENT_KEYS = ["edition", "home", "event", "select", "gallery", "contact", "partners"];
+
+const DEFAULT_HERO_LEAD =
+    "Najbardziej unikalne wydarzenie motoryzacyjne w Polsce – auta na murawie stadionu, drift taxi i strefa expo.";
+
+const DEFAULT_SELECT = {
+    eyebrow: "Strefa Select",
+    title: "Wjedź autem na murawę",
+    steps: [
+        {
+            title: "Konto i garaż",
+            text: "Dodaj auta do garażu – w kolejnych latach zgłosisz je jednym kliknięciem.",
+        },
+        {
+            title: "Zgłoszenie",
+            text: "Dane pojazdu i do 5 zdjęć. Do decyzji możesz je poprawić albo wycofać.",
+        },
+        {
+            title: "Akceptacja i opłata",
+            text: "Decyzja przychodzi e-mailem, dane do przelewu znajdziesz w panelu.",
+        },
+        {
+            title: "Wejściówka QR",
+            text: "Pokazujesz kod przy wjeździe – na telefonie albo wydrukowany.",
+        },
+    ],
+};
 
 // Shown until the API answers (and if it can't), so the page never renders empty.
 const FALLBACK = {
     home: {
         heroTitle: "Street Show",
+        heroLead: DEFAULT_HERO_LEAD,
         heroImage: "/img/photos/Hero-image.webp",
         heroMobileRotate: true,
         ticketLabel: "Kup bilety",
         ticketUrl: "",
-        exploreLabel: "Poznaj atrakcje",
     },
     event: { intro: "", cards: [] },
-    gallery: { intro: "", linkLabel: "Przejdź do galerii", photos: [] },
+    select: DEFAULT_SELECT,
+    gallery: { intro: "", linkLabel: "Wszystkie albumy", photos: [] },
     contact: null,
     partners: { title: "Partnerzy", items: [] },
     edition: null,
 };
 
-function CardAction({ card }) {
-    if (!card.actionHref || !card.actionLabel) return null;
-
-    if (/^https?:\/\//i.test(card.actionHref)) {
+// Internal paths go through the router, anchors and external links stay plain.
+function SmartLink({ href, className, children }) {
+    if (/^https?:\/\//i.test(href)) {
         return (
-            <a
-                className="card-action"
-                href={card.actionHref}
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                {card.actionLabel}
+            <a className={className} href={href} target="_blank" rel="noopener noreferrer">
+                {children}
             </a>
         );
     }
-    if (card.actionHref.startsWith("/")) {
+    if (href.startsWith("/")) {
         return (
-            <Link className="card-action" to={card.actionHref}>
-                {card.actionLabel}
+            <Link className={className} to={href}>
+                {children}
             </Link>
         );
     }
     return (
-        <a className="card-action" href={card.actionHref}>
-            {card.actionLabel}
+        <a className={className} href={href}>
+            {children}
         </a>
+    );
+}
+
+function CardAction({ card }) {
+    if (!card.actionHref || !card.actionLabel) return null;
+    const label = card.actionLabel.replace(/\s*→\s*$/, "");
+    return (
+        <SmartLink className="link-action" href={card.actionHref}>
+            {label} →
+        </SmartLink>
     );
 }
 
 function EventCards({ cards }) {
     return (
-        <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 justify-content-center">
+        <div className="feature-grid">
             {cards.map((card) => (
-                <div className="col" key={card.id}>
-                    <article className="card h-100">
-                        <img
-                            loading="lazy"
-                            {...cardImageProps(card.image)}
-                            className="card-img-top"
-                            alt={card.alt}
-                        />
-                        <div className="card-body">
-                            <h3 className="card-title py-3">{card.title}</h3>
-                            <p className="card-text">
-                                {card.description
-                                    .split("\n")
-                                    .map((line, index) => (
-                                        <span key={`${card.id}-${index}`}>
-                                            {index > 0 && <br />}
-                                            {line}
-                                        </span>
-                                    ))}
-                            </p>
-                            <CardAction card={card} />
-                        </div>
-                    </article>
-                </div>
+                <article className="feature-card" key={card.id}>
+                    <img
+                        loading="lazy"
+                        {...cardImageProps(card.image)}
+                        className="feature-card-img"
+                        alt={card.alt}
+                    />
+                    <div className="feature-card-body">
+                        <h3 className="feature-card-title">{card.title}</h3>
+                        <p className="feature-card-text">
+                            {card.description.split("\n").map((line, index) => (
+                                <span key={`${card.id}-${index}`}>
+                                    {index > 0 && <br />}
+                                    {line}
+                                </span>
+                            ))}
+                        </p>
+                        <CardAction card={card} />
+                    </div>
+                </article>
             ))}
         </div>
+    );
+}
+
+// Public open/closed state of Select submissions and the per-account limit.
+function useSelectStatus() {
+    const [status, setStatus] = useState(null);
+
+    useEffect(() => {
+        api.get("/select-status")
+            .then(({ data }) => setStatus(data))
+            .catch(() => setStatus(null));
+    }, []);
+
+    return status;
+}
+
+function SelectSteps({ select, user }) {
+    const status = useSelectStatus();
+    const content = { ...DEFAULT_SELECT, ...select };
+    const steps = content.steps?.length ? content.steps : DEFAULT_SELECT.steps;
+    const maxVehicles = status?.maxVehicles || 5;
+    const closed = status && !status.open;
+    // Phones show the button under the steps (CSS hides one of the two copies).
+    const cta = closed ? (
+        <p className="select-closed">{status.reason}</p>
+    ) : (
+        <Link className="btn-street btn-street-primary" to={user ? "/formularz" : "/rejestracja"}>
+            {user ? "Zgłoś pojazd" : "Załóż konto"}
+        </Link>
+    );
+
+    return (
+        <section id="select" className="home-section home-select">
+            <div className="site-container">
+                <div className="section-head">
+                    <div className="section-head-title">
+                        <p className="eyebrow">{content.eyebrow}</p>
+                        <h2 className="section-title">{content.title}</h2>
+                    </div>
+                    {cta}
+                </div>
+                <ol className="select-steps">
+                    {steps.map((step, index) => (
+                        <li key={index}>
+                            <span className="select-step-number">
+                                {String(index + 1).padStart(2, "0")}
+                            </span>
+                            <div>
+                                <h3>{step.title}</h3>
+                                <p>{step.text}</p>
+                            </div>
+                        </li>
+                    ))}
+                </ol>
+                <div className="select-cta-mobile">{cta}</div>
+                <p className="select-note">
+                    Do {plural(maxVehicles, "pojazdu", "pojazdów", "pojazdów")} na konto · zdjęcia
+                    JPG, PNG, WEBP lub AVIF, łącznie do 50 MB ·{" "}
+                    <Link to="/faq">Pytania o strefę Select</Link>
+                </p>
+            </div>
+        </section>
+    );
+}
+
+const SHOWCASE_PREVIEW = 6;
+
+// Teaser of the public "Auta strefy Select" page; hidden until it's switched on
+// in Admin → Ustawienia and there are cars to show.
+function SelectShowcase() {
+    const [data, setData] = useState(null);
+
+    useEffect(() => {
+        api.get("/showcase")
+            .then(({ data: response }) => setData(response))
+            .catch(() => setData(null));
+    }, []);
+
+    if (!data?.enabled || !data.cars.length) return null;
+
+    return (
+        <section id="select-cars" className="home-section">
+            <div className="site-container">
+                <div className="section-head">
+                    <h2 className="section-title">Auta strefy Select {data.edition}</h2>
+                    <Link to="/auta-select" className="link-action">
+                        Zobacz wszystkie ({data.cars.length}) →
+                    </Link>
+                </div>
+                <div className="showcase-preview-grid">
+                    {data.cars.slice(0, SHOWCASE_PREVIEW).map((car) => (
+                        <article className="showcase-preview-card" key={car.id}>
+                            {car.photos[0] && (
+                                <img loading="lazy" src={car.photos[0].thumb} alt={car.carBrand} />
+                            )}
+                            <p>{car.carBrand}</p>
+                        </article>
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+}
+
+function GalleryPreview({ gallery }) {
+    const photos = gallery.photos.slice(0, 3);
+
+    return (
+        <section id="gallery" className="home-section home-gallery">
+            <div className="site-container">
+                <div className="section-head">
+                    <h2 className="section-title">Galeria</h2>
+                    <Link to="/galeria" className="link-action">
+                        {(gallery.linkLabel || "Wszystkie albumy").replace(/\s*→\s*$/, "")} →
+                    </Link>
+                </div>
+                {gallery.intro && <p className="section-lead">{gallery.intro}</p>}
+                {photos.length > 0 && (
+                    <div className={`gallery-mosaic is-count-${photos.length}`}>
+                        {photos.map((photo) => (
+                            <img
+                                key={photo.id}
+                                loading="lazy"
+                                {...cardImageProps(photo.url)}
+                                alt={photo.alt || "Zdjęcie z galerii Street Show"}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+        </section>
+    );
+}
+
+// "Let me know the date" sign-up; shown while the edition has no date yet.
+function NotifySignup({ edition }) {
+    const [email, setEmail] = useState("");
+    const [state, setState] = useState({ status: "idle", message: "" });
+
+    async function submit(event: React.FormEvent) {
+        event.preventDefault();
+        setState({ status: "busy", message: "" });
+        try {
+            const { data } = await api.post("/notify", { email, consent: true });
+            setState({ status: "done", message: data.message });
+            setEmail("");
+        } catch (error) {
+            setState({
+                status: "error",
+                message:
+                    error.response?.data?.message ||
+                    "Nie udało się zapisać. Spróbuj ponownie za chwilę.",
+            });
+        }
+    }
+
+    return (
+        <section className="home-notify" aria-labelledby="notify-title">
+            <div className="site-container home-notify-grid">
+                <div>
+                    <h2 id="notify-title" className="block-title">
+                        Daj mi znać o dacie
+                    </h2>
+                    <p className="section-lead">
+                        Jeden e-mail, gdy ogłosimy termin edycji {edition?.year} i ruszy sprzedaż
+                        biletów. Bez spamu.
+                    </p>
+                </div>
+                {state.status === "done" ? (
+                    <p className="form-success" role="status">
+                        {state.message}
+                    </p>
+                ) : (
+                    <form className="notify-form" onSubmit={submit}>
+                        <div className="notify-row">
+                            <label htmlFor="notify-email" className="visually-hidden">
+                                Twój e-mail
+                            </label>
+                            <input
+                                id="notify-email"
+                                type="email"
+                                className="field-input"
+                                placeholder="Twój e-mail"
+                                autoComplete="email"
+                                required
+                                value={email}
+                                onChange={(event) => setEmail(event.target.value)}
+                            />
+                            <button
+                                type="submit"
+                                className="btn-street btn-street-dark"
+                                aria-busy={state.status === "busy"}
+                            >
+                                Powiadom mnie
+                            </button>
+                        </div>
+                        {state.status === "error" && (
+                            <p className="field-error" role="alert">
+                                <i className="bi bi-exclamation-circle" aria-hidden="true" />
+                                {state.message}
+                            </p>
+                        )}
+                        <p className="notify-legal">
+                            Zapisując się, akceptujesz <Link to="/regulamin">politykę prywatności</Link>.
+                            Wypiszesz się jednym kliknięciem.
+                        </p>
+                    </form>
+                )}
+            </div>
+        </section>
     );
 }
 
@@ -97,19 +336,13 @@ function Partners({ partners }) {
     if (!partners?.items?.length) return null;
 
     return (
-        <section id="partners" className="bg-light text-dark py-5 partners">
-            <div className="container text-center">
-                <h2 className="display-5 pb-lg-3 text-uppercase">
-                    {partners.title}
-                </h2>
-                <ul className="partners-list">
+        <section id="partners" className="home-partners">
+            <div className="site-container">
+                <h2 className="eyebrow eyebrow-muted">{partners.title}</h2>
+                <ul className="partners-grid">
                     {partners.items.map((partner) => {
                         const logo = (
-                            <img
-                                src={partner.logo}
-                                alt={partner.name}
-                                loading="lazy"
-                            />
+                            <img src={partner.logo} alt={partner.name} loading="lazy" />
                         );
                         return (
                             <li key={partner.id}>
@@ -134,50 +367,6 @@ function Partners({ partners }) {
     );
 }
 
-const SHOWCASE_PREVIEW = 6;
-
-// Teaser of the public "Auta strefy Select" page; hidden until it's switched on
-// in Admin → Ustawienia and there are cars to show.
-function SelectShowcase() {
-    const [data, setData] = useState(null);
-
-    useEffect(() => {
-        api.get("/showcase")
-            .then(({ data: response }) => setData(response))
-            .catch(() => setData(null));
-    }, []);
-
-    if (!data?.enabled || !data.cars.length) return null;
-
-    return (
-        <section id="select" className="bg-dark text-light py-5">
-            <div className="container text-center">
-                <h2 className="display-5 pb-lg-3 text-uppercase">Strefa Select {data.edition}</h2>
-                <p className="py-3">Auta zakwalifikowane do strefy Select tegorocznej edycji.</p>
-                <div className="row row-cols-2 row-cols-md-3 g-3">
-                    {data.cars.slice(0, SHOWCASE_PREVIEW).map((car) => (
-                        <div className="col" key={car.id}>
-                            <article className="card h-100 showcase-preview-card">
-                                {car.photos[0] && (
-                                    <img loading="lazy" src={car.photos[0].thumb} className="card-img-top" alt={car.carBrand} />
-                                )}
-                                <div className="card-body">
-                                    <p className="card-title m-0">{car.carBrand}</p>
-                                </div>
-                            </article>
-                        </div>
-                    ))}
-                </div>
-            </div>
-            <div className="container text-center">
-                <Link to="/auta-select" className="gallery-btn">
-                    Zobacz wszystkie auta ({data.cars.length})
-                </Link>
-            </div>
-        </section>
-    );
-}
-
 // Structured data lets search engines show the event date in results.
 function useEventJsonLd(edition, home, contact) {
     useEffect(() => {
@@ -196,10 +385,15 @@ function useEventJsonLd(edition, home, contact) {
 }
 
 export default function HomePage() {
+    const { user } = useAuth();
     const { content } = useContent(CONTENT_KEYS);
-    const { edition, home, event, gallery, contact, partners } = content || FALLBACK;
+    const { edition, home, event, select, gallery, contact, partners } = {
+        ...FALLBACK,
+        ...content,
+    };
     const dateLabel = formatEditionDate(edition);
-    const hoursLabel = formatEditionHours(edition);
+    const hoursLabel = edition?.date ? formatEditionHours(edition) : "";
+    const eyebrow = [dateLabel, hoursLabel, edition?.venueName].filter(Boolean).join(" · ");
 
     useEventJsonLd(edition, home, contact);
 
@@ -211,31 +405,24 @@ export default function HomePage() {
                 style={heroPhotoVars(home)}
             >
                 <HeroPhoto />
-                <div className="container-fluid h-100 d-flex flex-column justify-content-center align-items-center text-light text-center">
-                    <h1 className="hero-title text-uppercase">
+                <div className="hero-shadow" aria-hidden="true"></div>
+                <div className="site-container hero-content">
+                    {eyebrow && <p className="eyebrow">{eyebrow}</p>}
+                    <h1 className="hero-title">
                         {home.heroTitle}
+                        {edition?.year && (
+                            <>
+                                <br />
+                                {edition.year}
+                            </>
+                        )}
                     </h1>
-                    {dateLabel && (
-                        <p className="hero-meta">
-                            {dateLabel}
-                            {edition?.date && hoursLabel && (
-                                <span className="hero-hours">
-                                    {" "}
-                                    · {hoursLabel}
-                                </span>
-                            )}
-                        </p>
-                    )}
-                    {edition?.venueName && (
-                        <p className="hero-meta hero-meta-venue">
-                            {edition.venueName}
-                        </p>
-                    )}
                     <Countdown date={edition?.date} startTime={edition?.startTime} />
+                    <p className="hero-lead">{home.heroLead || DEFAULT_HERO_LEAD}</p>
                     <div className="hero-actions">
                         {home.ticketUrl && (
                             <a
-                                className="hero-button"
+                                className="btn-street btn-street-primary btn-street-lg"
                                 href={home.ticketUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
@@ -243,140 +430,39 @@ export default function HomePage() {
                                 {home.ticketLabel}
                             </a>
                         )}
-                        <a className="hero-link" href="#event">
-                            {home.exploreLabel}
-                        </a>
+                        {user ? (
+                            <Link className="btn-street btn-street-light btn-street-lg" to="/formularz">
+                                Zgłoś pojazd
+                            </Link>
+                        ) : (
+                            <a className="btn-street btn-street-light btn-street-lg" href="#select">
+                                Zgłoś pojazd
+                            </a>
+                        )}
                     </div>
-                    <div className="hero-shadow"></div>
                 </div>
             </header>
 
             <main>
-                <section id="event" className="bg-dark text-light event py-5">
-                    <div className="container text-center">
-                        <h2 className="display-3 pb-lg-3 text-uppercase">
-                            event
-                        </h2>
-                        {event.intro && <p className="py-3">{event.intro}</p>}
+                <section id="event" className="home-section">
+                    <div className="site-container">
+                        <div className="section-head">
+                            <h2 className="section-title">Co Cię czeka</h2>
+                            {event.intro && <p className="section-lead">{event.intro}</p>}
+                        </div>
                         <EventCards cards={event.cards} />
                     </div>
                 </section>
 
-                <section id="gallery" className="bg-light text-dark py-5">
-                    <div className="container text-center">
-                        <h2 className="display-3 pb-lg-3 text-uppercase">
-                            Galeria
-                        </h2>
-                        {gallery.intro && (
-                            <p className="py-3">{gallery.intro}</p>
-                        )}
-                        <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
-                            {gallery.photos.slice(0, 3).map((photo) => (
-                                <div className="col" key={photo.id}>
-                                    <article className="card h-100">
-                                        <img
-                                            loading="lazy"
-                                            {...cardImageProps(photo.url)}
-                                            className="card-img-top"
-                                            alt={
-                                                photo.alt ||
-                                                "Zdjęcie z galerii Street Show"
-                                            }
-                                        />
-                                    </article>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="container text-center">
-                        <Link to="/galeria" className="gallery-btn">
-                            {gallery.linkLabel}
-                        </Link>
-                    </div>
-                </section>
+                <SelectSteps select={select} user={user} />
 
                 <SelectShowcase />
 
-                <Partners partners={partners} />
+                <GalleryPreview gallery={gallery} />
 
-                {contact && (
-                    <section
-                        id="contact"
-                        className="contact bg-dark text-light py-5"
-                    >
-                        <div className="container text-center">
-                            <h2 className="display-3 pb-lg-3 text-uppercase">
-                                kontakt
-                            </h2>
-                            <div className="row">
-                                <div className="col-lg-6 mt-4 m-lg-0 contact-info">
-                                    <h3>Social media:</h3>
-                                    {contact.facebookUrl && (
-                                        <a
-                                            className="social-media"
-                                            href={contact.facebookUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            aria-label="Facebook Street Meeting Poland"
-                                        >
-                                            <i
-                                                className="bi bi-facebook"
-                                                aria-hidden="true"
-                                            ></i>
-                                        </a>
-                                    )}
-                                    {contact.instagramUrl && (
-                                        <a
-                                            className="social-media"
-                                            href={contact.instagramUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            aria-label="Instagram Street Meeting Poland"
-                                        >
-                                            <i
-                                                className="bi bi-instagram"
-                                                aria-hidden="true"
-                                            ></i>
-                                        </a>
-                                    )}
-                                </div>
-                                <div className="col-lg-6 mt-4 m-lg-0 contact-info">
-                                    <h3>Adres:</h3>
-                                    <p>{contact.addressName}</p>
-                                    <a
-                                        href={contact.mapUrl || undefined}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="links"
-                                    >
-                                        <p>
-                                            <i
-                                                className="bi bi-geo-alt"
-                                                aria-hidden="true"
-                                            ></i>
-                                            <span>
-                                                {contact.addressLine1} <br />
-                                                {contact.addressLine2}
-                                            </span>
-                                        </p>
-                                    </a>
-                                    <a
-                                        href={`mailto:${contact.email}`}
-                                        className="links"
-                                    >
-                                        <p>
-                                            <i
-                                                className="bi bi-at"
-                                                aria-hidden="true"
-                                            ></i>
-                                            {contact.email}
-                                        </p>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-                )}
+                {edition && !edition.date && <NotifySignup edition={edition} />}
+
+                <Partners partners={partners} />
             </main>
         </>
     );

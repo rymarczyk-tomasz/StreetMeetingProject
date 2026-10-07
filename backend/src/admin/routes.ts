@@ -15,8 +15,10 @@ const {
     isEmailConfigured,
     sendSubmissionStatusEmail,
     sendGroupEmail,
+    sendDateSubscribersEmail,
     sendTestEmail,
 } = require("../notifications/email");
+const dateSubscribersDb = require("../db/dateSubscribers");
 const { getSystemStatus } = require("./system");
 const { normalizeText } = require("../utils/validation");
 const {
@@ -858,6 +860,80 @@ router.post("/emails", (req, res) => {
 
     res.status(202).json({
         message: `Wiadomość jest już w panelu ${recipients.length} uczestników; e-maile są wysyłane (wynik w dzienniku działań).${optedOut ? ` ${optedOut} os. wyłączyło e-maile z wiadomościami — zobaczą ją tylko w panelu.` : ""}`,
+    });
+});
+
+// ---- "Daj mi znać o dacie" list ----------------------------------------
+
+let dateEmailInProgress = false;
+
+router.get("/date-subscribers", (req, res) => {
+    res.json({
+        ...dateSubscribersDb.countSubscribers(),
+        emailConfigured: isEmailConfigured(),
+        inProgress: dateEmailInProgress,
+    });
+});
+
+router.get("/date-subscribers/export", (req, res) => {
+    const rows = dateSubscribersDb.listSubscribers();
+    const csv = [
+        "email;zapisano;powiadomiono",
+        ...rows.map((row) => [row.email, row.created_at, row.notified_at || ""].join(";")),
+    ].join("\r\n");
+    audit(req, "date_subscribers.exported", "date_subscribers", null, { count: rows.length });
+    res.set("Content-Type", "text/csv; charset=utf-8");
+    res.set("Content-Disposition", 'attachment; filename="powiadomienia-o-dacie.csv"');
+    // BOM so Excel opens the file as UTF-8.
+    res.send(`\uFEFF${csv}`);
+});
+
+// By default only addresses that haven't been notified yet; "all" re-sends to everyone.
+router.post("/date-subscribers/send", (req, res) => {
+    if (dateEmailInProgress) {
+        return res.status(409).json({ message: "Poprzednia wysyłka jest jeszcze w toku." });
+    }
+    if (!isEmailConfigured()) {
+        return res.status(400).json({ message: "SMTP nie jest skonfigurowany — e-maile nie wyjdą." });
+    }
+
+    const subject = normalizeText(req.body?.subject).slice(0, 200);
+    const message = String(req.body?.message || "").trim().slice(0, 10000);
+    if (!subject || !message) {
+        return res.status(400).json({ message: "Podaj temat i treść wiadomości." });
+    }
+
+    const subscribers = dateSubscribersDb
+        .listSubscribers()
+        .filter((row) => req.body?.all === true || !row.notified_at);
+    if (!subscribers.length) {
+        return res.status(400).json({ message: "Brak adresów do powiadomienia." });
+    }
+
+    const adminId = req.user.sub;
+    dateEmailInProgress = true;
+    sendDateSubscribersEmail({
+        subscribers,
+        subject,
+        message,
+        onSent: (row) => dateSubscribersDb.markNotified(row.id),
+    })
+        .then((result) =>
+            auditLogDb.createAuditEntry({
+                adminId,
+                action: "date_subscribers.notified",
+                targetType: "date_subscribers",
+                targetId: null,
+                details: { subject, ...result },
+            }),
+        )
+        .catch((sendError) => console.error("[email] Powiadomienie o dacie:", sendError))
+        .finally(() => {
+            dateEmailInProgress = false;
+        });
+
+    res.status(202).json({
+        message: `Wysyłamy e-maile do ${subscribers.length} osób (wynik w dzienniku działań).`,
     });
 });
 

@@ -13,6 +13,7 @@ import {
     GalleryPreviewEditor,
     HomeEditor,
     PartnersEditor,
+    SelectEditor,
     RegulaminEditor,
     SubmissionSettingsEditor,
     TemplatesEditor,
@@ -20,6 +21,7 @@ import {
 import GalleryAlbumsPanel from "./GalleryAlbumsPanel";
 import SubmissionsPanel from "./SubmissionsPanel";
 import UsersPanel from "./UsersPanel";
+import DateSubscribersPanel from "./DateSubscribersPanel";
 
 const SECTIONS = [
     ["dashboard", "Dashboard"],
@@ -36,7 +38,8 @@ const SECTIONS = [
 
 const CONTENT_TABS = [
     ["home", "Home", HomeEditor],
-    ["event", "Event", EventEditor],
+    ["event", "Co Cię czeka", EventEditor],
+    ["select", "Strefa Select", SelectEditor],
     ["gallery", "Podgląd galerii", GalleryPreviewEditor],
     ["partners", "Partnerzy", PartnersEditor],
     ["contact", "Kontakt", ContactEditor],
@@ -189,6 +192,7 @@ export default function AdminPage() {
                         description="Rok, data i miejsce bieżącej edycji — używane na stronie głównej, w Google i do liczenia zgłoszeń."
                     />
                     <EditionEditor onAction={onAction} />
+                    <DateSubscribersPanel onAction={onAction} />
                     <SectionHeading
                         title="Zgłoszenia do strefy Select"
                         description="Otwieranie i zamykanie zapisów, limity i kwota opłaty."

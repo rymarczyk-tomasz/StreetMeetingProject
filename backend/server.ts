@@ -14,6 +14,7 @@ const vehiclesRoutes = require("./src/vehicles/routes");
 const messagesRoutes = require("./src/messages/routes");
 const gateRoutes = require("./src/gate/routes");
 const { router: showcaseRoutes } = require("./src/showcase/routes");
+const dateSubscribersRoutes = require("./src/notifications/dateSubscribersRoutes");
 const siteContentDb = require("./src/db/siteContent");
 const { PUBLIC_CONTENT_KEYS } = require("./src/content/defaults");
 const {
@@ -116,6 +117,20 @@ app.get("/api/content/:key", (req, res) => {
     res.set("Cache-Control", "no-cache");
     res.json({ content: siteContentDb.getContent(req.params.key) });
 });
+// Whether Select submissions are open and the per-account limit, for the home
+// page (the logged-in panel gets the same plus the user's remaining slots).
+app.get("/api/select-status", (req, res) => {
+    const settings = siteContentDb.getSettings();
+    const availability = siteContentDb.getSubmissionsAvailability(settings);
+    res.set("Cache-Control", "no-cache");
+    res.json({
+        ...availability,
+        deadline: settings.submissionsDeadline || "",
+        maxVehicles: settings.maxVehiclesPerUser,
+        edition: siteContentDb.getCurrentEdition(),
+    });
+});
+app.use("/api/notify", dateSubscribersRoutes);
 app.use("/api/gallery", galleryPublicRoutes);
 app.use("/api/showcase", showcaseRoutes);
 app.get("/api/health", (req, res) => {
