@@ -2,6 +2,26 @@ import { useCallback, useEffect, useState } from "react";
 import api from "../../api/client";
 import { errorMessage } from "./shared";
 
+// Paths and backup file names in a check's text go into <code>, so they break
+// anywhere instead of pushing a bracket onto its own line.
+const PATH_PATTERN = /((?:[A-Za-z]:)?(?:[\/][\w.-]+)+|[\w-]+\.sqlite)/g;
+
+function withCode(text) {
+    return String(text || "")
+        .split(PATH_PATTERN)
+        .map((part, index) => {
+            if (index % 2 === 0) return part;
+            const trailingDot = part.endsWith(".") && !part.endsWith(".sqlite");
+            const path = trailingDot ? part.slice(0, -1) : part;
+            return (
+                <span key={index}>
+                    <code className="system-path">{path}</code>
+                    {trailingDot && "."}
+                </span>
+            );
+        });
+}
+
 const LEVEL_LABELS = { ok: "OK", warn: "Uwaga", error: "Problem" };
 
 const UPLOAD_LABELS = {
@@ -68,21 +88,21 @@ export default function SystemStatus({ onAction }) {
             <ul className="system-checks">
                 {status.checks.map((item) => (
                     <li key={item.id} className={`is-${item.level}`}>
-                        <span className={`status-badge system-level-${item.level}`}>{LEVEL_LABELS[item.level]}</span>
-                        <div>
+                        <p className="system-check-head">
+                            <span className={`status-badge system-level-${item.level}`}>{LEVEL_LABELS[item.level]}</span>
                             <strong>{item.label}</strong>
-                            <p>{item.detail}</p>
-                            {item.id === "smtp" && item.level === "ok" && (
-                                <button type="button" className="button-secondary" disabled={isTesting} onClick={sendTest}>
-                                    {isTesting ? "Wysyłanie..." : "Wyślij testowy e-mail do mnie"}
-                                </button>
-                            )}
-                        </div>
+                        </p>
+                        <p>{withCode(item.detail)}</p>
+                        {item.id === "smtp" && item.level === "ok" && (
+                            <button type="button" className="button-secondary" disabled={isTesting} onClick={sendTest}>
+                                {isTesting ? "Wysyłanie..." : "Wyślij testowy e-mail do mnie"}
+                            </button>
+                        )}
                     </li>
                 ))}
             </ul>
 
-            <h3>Dane na serwerze</h3>
+            <h3 className="admin-subheading">Dane na serwerze</h3>
             <div className="admin-table-wrapper">
                 <table className="admin-table">
                     <tbody>

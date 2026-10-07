@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../../api/client";
 import { plural } from "../../utils/plural";
-import { errorMessage, formatDate } from "./shared";
+import AdminHeading from "./AdminHeading";
+import { errorMessage } from "./shared";
 
 const ACTION_LABELS = {
     "submission.pending": "ustawił zgłoszenie jako oczekujące",
@@ -88,17 +90,63 @@ function describeDetails(entry) {
 
 const LIMIT_OPTIONS = [50, 100, 250, 500];
 
-function describeTarget(entry) {
-    if (entry.details?.email) return entry.details.email;
+function Target({ entry }) {
+    if (entry.details?.email) return <>{entry.details.email}</>;
     if (entry.targetType === "submission" && entry.targetId) {
-        return `zgłoszenie #${entry.targetId}`;
+        return <Link to={`/admin/zgloszenia?id=${entry.targetId}`}>zgłoszenie #{entry.targetId}</Link>;
     }
-    return "";
+    return null;
 }
+
+// Opening lists and reports is logged too; by default only real changes are shown.
+function isView(action) {
+    return /(_viewed|\.viewed|\.listed)$/.test(action);
+}
+
+const DECISIONS = /^submission\.(pending|approved|rejected|waitlist|withdrawn|withdrawn_by_user|payment_\w+)$/;
+
+function entryIcon(action) {
+    if (isView(action)) return "bi-eye";
+    if (action === "submission.checked_in" || action === "submission.checkin_undone") return "bi-box-arrow-in-right";
+    if (DECISIONS.test(action)) return "bi-check2";
+    return "bi-pencil";
+}
+
+function entryDate(value) {
+    return new Date(`${value.replace(" ", "T")}Z`);
+}
+
+// "Dziś", "Wczoraj" or "7 października 2026" (local time).
+function dayLabel(date) {
+    const day = date.toLocaleDateString("sv-SE");
+    const today = new Date();
+    const yesterday = new Date(today.getTime() - 86400000);
+    if (day === today.toLocaleDateString("sv-SE")) return "Dziś";
+    if (day === yesterday.toLocaleDateString("sv-SE")) return "Wczoraj";
+    return new Intl.DateTimeFormat("pl-PL", { day: "numeric", month: "long", year: "numeric" }).format(date);
+}
+
+const CATEGORY_OPTIONS = [
+    ["submission.", "Zgłoszenia"],
+    ["user.", "Użytkownicy"],
+    ["settings.", "Ustawienia"],
+    ["templates.", "Szablony wiadomości"],
+    ["edition.", "Edycja wydarzenia"],
+    ["gallery.", "Galeria"],
+    ["email.", "E-maile"],
+    ["event.", "Event"],
+    ["home.", "Home"],
+    ["contact.", "Kontakt"],
+    ["faq.", "FAQ"],
+    ["regulamin.", "Regulamin"],
+    ["announcement.", "Ogłoszenie"],
+    ["partners.", "Partnerzy"],
+];
 
 export default function AuditLog({ refreshKey }) {
     const [entries, setEntries] = useState([]);
     const [limit, setLimit] = useState(100);
+    // "" = changes only, "*" = everything incl. viewing, "prefix." = changes in one area.
     const [actionFilter, setActionFilter] = useState("");
     const [error, setError] = useState("");
 
@@ -112,45 +160,39 @@ export default function AuditLog({ refreshKey }) {
             );
     }, [refreshKey, limit]);
 
-    const visibleEntries = actionFilter
-        ? entries.filter((entry) => entry.action.startsWith(actionFilter))
-        : entries;
+    const visibleEntries = entries.filter((entry) => {
+        if (actionFilter === "*") return true;
+        if (isView(entry.action)) return false;
+        return !actionFilter || entry.action.startsWith(actionFilter);
+    });
+
+    const days = [];
+    for (const entry of visibleEntries) {
+        const date = entryDate(entry.createdAt);
+        const label = dayLabel(date);
+        if (days.at(-1)?.label !== label) days.push({ label, entries: [] });
+        days.at(-1).entries.push({ entry, date });
+    }
 
     return (
-        <section className="audit-section">
-            <h2>Dziennik działań</h2>
-            <div className="admin-filters">
+        <section className="admin-section audit-section">
+            <AdminHeading title="Dziennik działań" description="Kto i kiedy zmienił coś w panelu." />
+            <div className="admin-filters audit-filters">
                 <label>
-                    Rodzaj działań
-                    <select
-                        value={actionFilter}
-                        onChange={(event) => setActionFilter(event.target.value)}
-                    >
-                        <option value="">Wszystkie</option>
-                        <option value="submission.">Zgłoszenia</option>
-                        <option value="user.">Użytkownicy</option>
-                        <option value="settings.">Ustawienia</option>
-                        <option value="templates.">Szablony wiadomości</option>
-                        <option value="edition.">Edycja wydarzenia</option>
-                        <option value="gallery.">Galeria</option>
-                        <option value="email.">E-maile</option>
-                        <option value="event.">Event</option>
-                        <option value="home.">Home</option>
-                        <option value="contact.">Kontakt</option>
-                        <option value="faq.">FAQ</option>
-                        <option value="regulamin.">Regulamin</option>
-                        <option value="announcement.">Ogłoszenie</option>
-                        <option value="partners.">Partnerzy</option>
+                    <span className="field-label">Rodzaj działań</span>
+                    <select value={actionFilter} onChange={(event) => setActionFilter(event.target.value)}>
+                        <option value="">Zmiany</option>
+                        <option value="*">Wszystko, łącznie z przeglądaniem</option>
+                        {CATEGORY_OPTIONS.map(([value, label]) => (
+                            <option key={value} value={value}>
+                                {label}
+                            </option>
+                        ))}
                     </select>
                 </label>
                 <label>
-                    Liczba wpisów
-                    <select
-                        value={limit}
-                        onChange={(event) =>
-                            setLimit(Number(event.target.value))
-                        }
-                    >
+                    <span className="field-label">Wpisów</span>
+                    <select value={limit} onChange={(event) => setLimit(Number(event.target.value))}>
                         {LIMIT_OPTIONS.map((option) => (
                             <option key={option} value={option}>
                                 {option}
@@ -160,21 +202,31 @@ export default function AuditLog({ refreshKey }) {
                 </label>
             </div>
             {error && <p className="form-error">{error}</p>}
-            {visibleEntries.length === 0 ? (
-                <p>Brak zarejestrowanych działań.</p>
+            {days.length === 0 ? (
+                <p className="admin-hint">Brak zarejestrowanych działań.</p>
             ) : (
-                <div className="audit-list">
-                    {visibleEntries.map((entry) => (
-                        <article className="audit-entry" key={entry.id}>
-                            <strong>{entry.adminEmail || "System"}</strong>{" "}
-                            {describeAction(entry)} {describeTarget(entry)}
-                            <span>
-                                {formatDate(entry.createdAt)}
-                                {describeDetails(entry)}
-                            </span>
-                        </article>
-                    ))}
-                </div>
+                days.map((day) => (
+                    <div className="audit-day" key={day.label}>
+                        <h3 className="audit-day-title">{day.label}</h3>
+                        <ul className="audit-list">
+                            {day.entries.map(({ entry, date }) => (
+                                <li className="audit-entry" key={entry.id}>
+                                    <i className={`bi ${entryIcon(entry.action)}`} aria-hidden="true" />
+                                    <div>
+                                        <p>
+                                            <strong>{entry.adminEmail || "System"}</strong> {describeAction(entry)}{" "}
+                                            <Target entry={entry} />
+                                        </p>
+                                        <p className="audit-meta">
+                                            {date.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}
+                                            {describeDetails(entry)}
+                                        </p>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                ))
             )}
         </section>
     );

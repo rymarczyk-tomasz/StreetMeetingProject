@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useContent } from "../api/content";
 import { formatEditionDate } from "../utils/edition";
+import { useScrollLock } from "../utils/useScrollLock";
 import AnnouncementBar from "./AnnouncementBar";
 
 const LAYOUT_CONTENT_KEYS = ["contact", "home", "edition"];
@@ -237,18 +238,19 @@ function AccountMenu({ user, onLogout }) {
 
 // Full-screen menu on phones; locks page scroll while open.
 function MobileMenu({ user, isHome, activeSection, ticketUrl, ticketLabel, eventLine, onClose, onLogout }) {
+    useScrollLock(true);
     useEffect(() => {
-        const previous = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
         function onKeyDown(event: KeyboardEvent) {
             if (event.key === "Escape") onClose();
         }
         document.addEventListener("keydown", onKeyDown);
-        return () => {
-            document.body.style.overflow = previous;
-            document.removeEventListener("keydown", onKeyDown);
-        };
+        return () => document.removeEventListener("keydown", onKeyDown);
     }, [onClose]);
+
+    // Focus goes back to the hamburger button when the menu closes.
+    useEffect(() => {
+        return () => document.querySelector<HTMLElement>(".site-nav-toggle")?.focus();
+    }, []);
 
     return (
         <div className="mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-label="Menu">

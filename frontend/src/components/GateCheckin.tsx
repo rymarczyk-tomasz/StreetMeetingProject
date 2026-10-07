@@ -16,8 +16,9 @@ import {
 
 // Gate check-in screen, used on /wjazd (gate staff and admins) and in Admin → Wjazd.
 // Codes come from: a phone camera opening /wjazd?kod=… (the QR is a link), the
-// in-page camera scanner (BarcodeDetector: Chrome/Edge on Android and desktop),
-// typing the code, or picking the car from the list by licence plate.
+// in-page camera scanner (BarcodeDetector in Chrome/Edge, jsQR elsewhere — Safari
+// on iPhone has no BarcodeDetector), typing the code, or picking the car from the
+// list by licence plate.
 
 const PAYMENT_LABELS = {
     unpaid: "Nieopłacone",
@@ -25,10 +26,41 @@ const PAYMENT_LABELS = {
     paid: "Opłacone",
 };
 
-const canScanInPage =
-    typeof window !== "undefined" &&
-    "BarcodeDetector" in window &&
-    Boolean(navigator.mediaDevices?.getUserMedia);
+// Any browser with camera access (HTTPS) can scan; the decoder is picked in QrScanner.
+const canScanInPage = typeof window !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
+const SCAN_INTERVAL_MS = 250;
+
+// Returns frame → QR text (or null). BarcodeDetector when the browser has it,
+// otherwise jsQR on the central square of the frame (loaded only when needed).
+async function createDecoder() {
+    if ("BarcodeDetector" in window) {
+        const detector = new (window as any).BarcodeDetector({ formats: ["qr_code"] });
+        return async (video: HTMLVideoElement) => (await detector.detect(video))[0]?.rawValue || null;
+    }
+    const { default: jsQR } = await import("jsqr");
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    return async (video: HTMLVideoElement) => {
+        const size = Math.min(video.videoWidth, video.videoHeight);
+        if (!size) return null;
+        const side = Math.min(size, 640);
+        canvas.width = side;
+        canvas.height = side;
+        context.drawImage(
+            video,
+            (video.videoWidth - size) / 2,
+            (video.videoHeight - size) / 2,
+            size,
+            size,
+            0,
+            0,
+            side,
+            side,
+        );
+        const image = context.getImageData(0, 0, side, side);
+        return jsQR(image.data, side, side, { inversionAttempts: "dontInvert" })?.data || null;
+    };
+}
 
 function formatTime(value) {
     if (!value) return "";
@@ -49,41 +81,65 @@ function errorText(err, fallback) {
 function QrScanner({ onCode, onClose }) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [error, setError] = useState("");
+    // Parent passes a new arrow each render; a ref keeps the camera from restarting.
+    const onCloseRef = useRef(onClose);
+    onCloseRef.current = onClose;
 
+    // Opened from a button click, so getUserMedia runs within the user gesture (iOS).
     useEffect(() => {
         let stream;
         let timer;
         let stopped = false;
-        const detector = new (window as any).BarcodeDetector({ formats: ["qr_code"] });
 
-        navigator.mediaDevices
-            .getUserMedia({ video: { facingMode: "environment" } })
-            .then((mediaStream) => {
+        function stop() {
+            stopped = true;
+            clearInterval(timer);
+            stream?.getTracks().forEach((track) => track.stop());
+        }
+
+        // The camera never keeps running in a background tab.
+        function handleVisibility() {
+            if (document.visibilityState === "hidden") {
+                stop();
+                onCloseRef.current();
+            }
+        }
+        document.addEventListener("visibilitychange", handleVisibility);
+
+        Promise.all([navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }), createDecoder()])
+            .then(([mediaStream, decode]) => {
                 stream = mediaStream;
-                if (stopped) return;
+                if (stopped) {
+                    stop();
+                    return;
+                }
                 videoRef.current.srcObject = stream;
-                videoRef.current.play();
+                videoRef.current.play().catch(() => {});
+                let busy = false;
                 timer = setInterval(async () => {
+                    if (busy || !videoRef.current) return;
+                    busy = true;
                     try {
-                        const codes = await detector.detect(videoRef.current);
-                        if (codes[0]?.rawValue) onCode(codes[0].rawValue);
+                        const value = await decode(videoRef.current);
+                        if (value) onCode(value);
                     } catch {
                         // Frame not ready yet.
+                    } finally {
+                        busy = false;
                     }
-                }, 400);
+                }, SCAN_INTERVAL_MS);
             })
             .catch(() => setError("Brak dostępu do aparatu. Wpisz kod albo znajdź auto po rejestracji."));
 
         return () => {
-            stopped = true;
-            clearInterval(timer);
-            stream?.getTracks().forEach((track) => track.stop());
+            document.removeEventListener("visibilitychange", handleVisibility);
+            stop();
         };
     }, [onCode]);
 
     return (
         <div className="qr-scanner">
-            {error ? <p className="form-error">{error}</p> : <video ref={videoRef} muted playsInline />}
+            {error ? <p className="form-error">{error}</p> : <video ref={videoRef} muted playsInline autoPlay />}
             <button type="button" className="gate-button is-outline" onClick={onClose}>
                 Zamknij aparat
             </button>
@@ -195,6 +251,15 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
     const [invalid, setInvalid] = useState("");
     const [error, setError] = useState("");
     const [isScanning, setIsScanning] = useState(false);
+
+    // Safari deletes site data (the offline car list) after 7 days without a
+    // visit unless the storage is marked persistent.
+    // The jsQR fallback (Safari) is fetched now, while there is signal, so the
+    // service worker has it for scanning offline later.
+    useEffect(() => {
+        navigator.storage?.persist?.().catch(() => {});
+        if (!("BarcodeDetector" in window)) import("jsqr").catch(() => {});
+    }, []);
     // Cars as last received from the server (or from the phone's copy offline).
     const [serverCars, setServerCars] = useState([]);
     const [edition, setEdition] = useState(null);

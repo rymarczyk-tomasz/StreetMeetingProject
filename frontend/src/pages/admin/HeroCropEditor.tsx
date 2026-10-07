@@ -155,7 +155,7 @@ export default function HeroCropEditor({ home, update }) {
                         />
                     </div>
                     <label>
-                        Przybliżenie: {Math.round(crop.zoom * 100)}%
+                        <span className="field-label">Przybliżenie: {Math.round(crop.zoom * 100)}%</span>
                         <input
                             type="range"
                             min={1}

@@ -149,7 +149,7 @@ function AlbumEditForm({ album, onSaved, onCancel }) {
     return (
         <form className="event-editor album-edit-form" onSubmit={save}>
             <label>
-                Nazwa albumu
+                <span className="field-label">Nazwa albumu</span>
                 <input
                     value={form.title}
                     onChange={(event) => setForm({ ...form, title: event.target.value })}
@@ -157,7 +157,7 @@ function AlbumEditForm({ album, onSaved, onCancel }) {
                 />
             </label>
             <label>
-                Rok (opcjonalnie)
+                <span className="field-label">Rok (opcjonalnie)</span>
                 <input
                     type="number"
                     min={2000}
@@ -167,7 +167,7 @@ function AlbumEditForm({ album, onSaved, onCancel }) {
                 />
             </label>
             <label>
-                Opis (opcjonalny, widoczny nad zdjęciami)
+                <span className="field-label">Opis (opcjonalny, widoczny nad zdjęciami)</span>
                 <textarea
                     rows={2}
                     value={form.description}
@@ -337,7 +337,7 @@ export default function GalleryAlbumsPanel({ onAction }) {
 
             <form className="admin-bulk-bar" onSubmit={addAlbum}>
                 <label>
-                    Link do folderu na Dysku Google
+                    <span className="field-label">Link do folderu na Dysku Google</span>
                     <input
                         value={newAlbum.driveUrl}
                         onChange={(event) => setNewAlbum({ ...newAlbum, driveUrl: event.target.value })}
@@ -346,7 +346,7 @@ export default function GalleryAlbumsPanel({ onAction }) {
                     />
                 </label>
                 <label>
-                    Nazwa (opcjonalna — domyślnie nazwa folderu)
+                    <span className="field-label">Nazwa (opcjonalna — domyślnie nazwa folderu)</span>
                     <input
                         value={newAlbum.title}
                         onChange={(event) => setNewAlbum({ ...newAlbum, title: event.target.value })}

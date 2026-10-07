@@ -61,6 +61,7 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 - [ ] Utworzyć konto admina skryptem `create-admin` na produkcji
 - [ ] Usunąć / zmienić testowe konto administratora
 - [ ] Nadać uprawnienie „Obsługa wjazdu” osobom na bramie
+- [ ] Wysłać obsłudze bramy instrukcję: „W dniu wydarzenia otwórz /wjazd przy dobrym zasięgu, zanim zaczniesz wpuszczać auta. Na iPhonie korzystaj z Safari, nie z ikony na ekranie głównym” (Safari i ikona mają osobne logowanie i osobną listę offline)
 - [ ] Nie przenosić lokalnej bazy z danymi testowymi na produkcję (albo ją wyczyścić)
 
 ## 7. Treści w panelu admina

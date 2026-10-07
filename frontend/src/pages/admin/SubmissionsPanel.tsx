@@ -661,7 +661,7 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                             onPick={(template) => setBulkNote(fillTemplate(template.body, {}))}
                         />
                         <label>
-                            Komentarz dla uczestników (opcjonalny)
+                            <span className="field-label">Komentarz dla uczestników (opcjonalny)</span>
                             <textarea
                                 rows={4}
                                 maxLength={2000}

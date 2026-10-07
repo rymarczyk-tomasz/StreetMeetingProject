@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
+import { useScrollLock } from "../utils/useScrollLock";
 
 type LightboxPhoto = { src: string; thumb?: string; alt?: string };
 
@@ -39,15 +40,12 @@ export default function Lightbox({
 
     const isOpen = index !== null;
 
+    useScrollLock(isOpen);
     useEffect(() => {
         if (!isOpen) return;
         const previouslyFocused = document.activeElement as HTMLElement | null;
-        document.body.style.overflow = "hidden";
         closeRef.current?.focus();
-        return () => {
-            document.body.style.overflow = "";
-            previouslyFocused?.focus?.();
-        };
+        return () => previouslyFocused?.focus?.();
     }, [isOpen]);
 
     useEffect(() => {

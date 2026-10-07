@@ -23,30 +23,42 @@ function RichText(props) {
     );
 }
 
-function TextInput({ label, value, onChange, ...props }) {
+// Label (.field-label) above the field, optional hint (13px) below it.
+function TextInput({ label, value, onChange, hint = "", ...props }) {
     return (
         <label>
-            {label}
+            <span className="field-label">{label}</span>
             <input
                 value={value ?? ""}
                 onChange={(event) => onChange(event.target.value)}
                 {...props}
             />
+            {hint && <span className="field-hint">{hint}</span>}
         </label>
     );
 }
 
-function TextArea({ label, value, onChange, rows = 3, ...props }) {
+function TextArea({ label, value, onChange, rows = 3, hint = "", ...props }) {
     return (
         <label>
-            {label}
+            <span className="field-label">{label}</span>
             <textarea
                 rows={rows}
                 value={value ?? ""}
                 onChange={(event) => onChange(event.target.value)}
                 {...props}
             />
+            {hint && <span className="field-hint">{hint}</span>}
         </label>
+    );
+}
+
+// Heading of a repeated item: "KAFELEK 1" with the number in the accent colour.
+function ItemLegend({ name, number }) {
+    return (
+        <legend className="item-legend">
+            {name} <span>{number}</span>
+        </legend>
     );
 }
 
@@ -78,14 +90,15 @@ export function EventEditor({ onAction }) {
                     <div className="event-editor-grid">
                         {cards.map((card, index) => (
                             <fieldset className="event-editor-card" key={card.id}>
-                                <legend>Kafelek {index + 1}</legend>
+                                <ItemLegend name="Kafelek" number={index + 1} />
                                 <TextInput
                                     label="Tytuł"
                                     value={card.title}
                                     onChange={(title) => updateCard(index, { title })}
                                 />
                                 <TextArea
-                                    label="Treść (Enter = nowa linia)"
+                                    label="Treść"
+                                    hint="Enter = nowa linia"
                                     rows={6}
                                     value={card.description}
                                     onChange={(description) =>
@@ -99,19 +112,22 @@ export function EventEditor({ onAction }) {
                                     previewAlt="Podgląd kafelka"
                                 />
                                 <TextInput
-                                    label="Tekst alternatywny zdjęcia (opis dla niewidomych i Google)"
+                                    label="Tekst alternatywny zdjęcia"
+                                    hint="Opis dla niewidomych i Google"
                                     value={card.alt}
                                     onChange={(alt) => updateCard(index, { alt })}
                                 />
                                 <TextInput
-                                    label="Tekst przycisku (opcjonalny)"
+                                    label="Tekst przycisku"
+                                    hint="Opcjonalny"
                                     value={card.actionLabel}
                                     onChange={(actionLabel) =>
                                         updateCard(index, { actionLabel })
                                     }
                                 />
                                 <TextInput
-                                    label="Link przycisku (https://…, /faq, #select albo #bilety = link do biletów z Home)"
+                                    label="Link przycisku"
+                                    hint="Np. https://…, /faq, #select albo #bilety (link do biletów z Home)"
                                     value={card.actionHref}
                                     onChange={(actionHref) =>
                                         updateCard(index, { actionHref })
@@ -180,7 +196,8 @@ export function HomeEditor({ onAction }) {
                         onChange={(heroTitle) => editor.update({ heroTitle })}
                     />
                     <TextArea
-                        label="Opis pod tytułem (1–2 zdania)"
+                        label="Opis pod tytułem"
+                        hint="1–2 zdania"
                         value={home.heroLead}
                         maxLength={300}
                         onChange={(heroLead) => editor.update({ heroLead })}
@@ -259,7 +276,7 @@ export function SelectEditor({ onAction }) {
                     />
                     {select.steps.map((step, index) => (
                         <fieldset className="event-editor-card" key={index}>
-                            <legend>Krok {index + 1}</legend>
+                            <ItemLegend name="Krok" number={index + 1} />
                             <TextInput
                                 label="Tytuł kroku"
                                 value={step.title}
@@ -300,7 +317,8 @@ export function GalleryPreviewEditor({ onAction }) {
                         Galeria.
                     </p>
                     <TextArea
-                        label="Opis nad podglądem galerii (opcjonalny)"
+                        label="Opis nad podglądem galerii"
+                        hint="Opcjonalny"
                         value={gallery.intro}
                         onChange={(intro) => editor.update({ intro })}
                     />
@@ -312,7 +330,7 @@ export function GalleryPreviewEditor({ onAction }) {
                     <div className="event-editor-grid">
                         {photos.map((photo, index) => (
                             <fieldset className="event-editor-card" key={photo.id}>
-                                <legend>Zdjęcie {index + 1}</legend>
+                                <ItemLegend name="Zdjęcie" number={index + 1} />
                                 <ImageField
                                     label="Zdjęcie"
                                     value={photo.url}
@@ -430,7 +448,7 @@ export function FaqEditor({ onAction }) {
                     </p>
                     {categories.map((category, categoryIndex) => (
                         <fieldset className="faq-editor-category" key={category.id}>
-                            <legend>Kategoria {categoryIndex + 1}</legend>
+                            <ItemLegend name="Kategoria" number={categoryIndex + 1} />
                             <TextInput
                                 label="Nazwa kategorii"
                                 value={category.title}
@@ -627,7 +645,8 @@ export function AnnouncementEditor({ onAction }) {
                         onChange={(text) => editor.update({ text })}
                     />
                     <TextInput
-                        label="Link (opcjonalny, np. /regulamin albo https://…)"
+                        label="Link"
+                        hint="Opcjonalny, np. /regulamin albo https://…"
                         value={announcement.linkUrl}
                         onChange={(linkUrl) => editor.update({ linkUrl })}
                     />
@@ -649,7 +668,8 @@ export function AnnouncementEditor({ onAction }) {
                         onChange={(loggedInText) => editor.update({ loggedInText })}
                     />
                     <TextInput
-                        label="Link dla zalogowanych (np. /garaz)"
+                        label="Link dla zalogowanych"
+                        hint="Np. /garaz"
                         value={announcement.loggedInLinkUrl || ""}
                         onChange={(loggedInLinkUrl) => editor.update({ loggedInLinkUrl })}
                     />
@@ -660,7 +680,7 @@ export function AnnouncementEditor({ onAction }) {
                         onChange={(loggedInLinkLabel) => editor.update({ loggedInLinkLabel })}
                     />
                     <label>
-                        Kolor
+                        <span className="field-label">Kolor</span>
                         <select
                             value={announcement.variant}
                             onChange={(event) => editor.update({ variant: event.target.value })}
@@ -670,7 +690,7 @@ export function AnnouncementEditor({ onAction }) {
                         </select>
                     </label>
                     <label>
-                        Ukryj automatycznie po dniu (opcjonalnie)
+                        <span className="field-label">Ukryj automatycznie po dniu (opcjonalnie)</span>
                         <input
                             type="date"
                             value={announcement.expiresAt}
@@ -723,9 +743,13 @@ export function PartnersEditor({ onAction }) {
                     <div className="event-editor-grid">
                         {items.map((item, index) => (
                             <fieldset className="event-editor-card" key={item.id}>
-                                <legend>{item.name || `Partner ${index + 1}`}</legend>
+                                {item.name ? (
+                                    <legend className="item-legend">{item.name}</legend>
+                                ) : (
+                                    <ItemLegend name="Partner" number={index + 1} />
+                                )}
                                 <label>
-                                    Rodzaj
+                                    <span className="field-label">Rodzaj</span>
                                     <select
                                         value={item.tier || "exhibitor"}
                                         onChange={(event) => updateItem(index, { tier: event.target.value })}
@@ -749,7 +773,8 @@ export function PartnersEditor({ onAction }) {
                                     previewAlt={item.name || "Logo"}
                                 />
                                 <TextInput
-                                    label="Strona partnera (opcjonalnie)"
+                                    label="Strona partnera"
+                                    hint="Opcjonalnie"
                                     value={item.url}
                                     onChange={(url) => updateItem(index, { url })}
                                 />
@@ -813,11 +838,14 @@ function DateNotifyBanner({ edition, savedCount, onOpen }) {
     );
 }
 
+// Empty date fields on iOS show no "dd.mm.rrrr" placeholder, so a hint says
+// that leaving them empty is fine.
 function DateField({ label, value, onChange, type = "date" }) {
     return (
         <label>
-            {label}
+            <span className="field-label">{label}</span>
             <input type={type} value={value || ""} onChange={(event) => onChange(event.target.value)} />
+            {type === "date" && <span className="field-hint">Zostaw puste, jeśli termin nie jest znany</span>}
         </label>
     );
 }
@@ -937,7 +965,8 @@ export function SubmissionSettingsEditor({ onAction, part = "zapisy" }) {
                             />
                         </div>
                         <TextInput
-                            label="Numer konta (26 cyfr)"
+                            label="Numer konta"
+                            hint="26 cyfr"
                             value={settings.paymentAccount}
                             maxLength={60}
                             placeholder="12 3456 7890 1234 5678 9012 3456"
@@ -963,7 +992,8 @@ export function SubmissionSettingsEditor({ onAction, part = "zapisy" }) {
                                 onChange={(paymentDeadline) => editor.update({ paymentDeadline })}
                             />
                             <TextInput
-                                label="Dni na opłatę od akceptacji (0 = tylko termin)"
+                                label="Dni na opłatę od akceptacji"
+                                hint="0 = tylko termin"
                                 type="number"
                                 min={0}
                                 max={90}
@@ -1014,7 +1044,8 @@ export function SubmissionSettingsEditor({ onAction, part = "zapisy" }) {
                             onChange={(value) => editor.update({ maxVehiclesPerUser: Number(value) })}
                         />
                         <TextInput
-                            label="Miejsc w strefie (0 = bez limitu)"
+                            label="Miejsc w strefie"
+                            hint="0 = bez limitu"
                             type="number"
                             min={0}
                             value={settings.selectCapacity}

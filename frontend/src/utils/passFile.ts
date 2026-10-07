@@ -69,7 +69,22 @@ export async function renderPassCanvas(pass: Pass) {
     return canvas;
 }
 
-function saveBlob(blob: Blob, filename: string) {
+// Safari on iPhone opens a `download` link in a new tab instead of saving it, so
+// touch devices that can share files get the system share sheet ("Zachowaj obraz",
+// "Zachowaj w Plikach"). Desktops keep the normal download.
+async function saveBlob(blob: Blob, filename: string) {
+    const file = new File([blob], filename, { type: blob.type });
+    const isTouch = window.matchMedia?.("(hover: none)").matches;
+    if (isTouch && navigator.canShare?.({ files: [file] })) {
+        try {
+            await navigator.share({ files: [file], title: "Wejściówka Street Show" });
+            return;
+        } catch (error) {
+            // Closed by the user: nothing to do. Anything else: fall back to the download.
+            if ((error as DOMException)?.name === "AbortError") return;
+        }
+    }
+
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -93,7 +108,7 @@ export function passFilename(pass: Pass, extension: string) {
 
 export async function downloadPassPng(pass: Pass) {
     const canvas = await renderPassCanvas(pass);
-    saveBlob(await canvasBlob(canvas, "image/png"), passFilename(pass, "png"));
+    await saveBlob(await canvasBlob(canvas, "image/png"), passFilename(pass, "png"));
 }
 
 // Minimal PDF 1.4: one A4 page showing the pass as a JPEG (DCTDecode).
@@ -150,5 +165,5 @@ function buildPdf(jpeg: Uint8Array, width: number, height: number) {
 export async function downloadPassPdf(pass: Pass) {
     const canvas = await renderPassCanvas(pass);
     const jpeg = new Uint8Array(await (await canvasBlob(canvas, "image/jpeg", 0.92)).arrayBuffer());
-    saveBlob(buildPdf(jpeg, canvas.width, canvas.height), passFilename(pass, "pdf"));
+    await saveBlob(buildPdf(jpeg, canvas.width, canvas.height), passFilename(pass, "pdf"));
 }

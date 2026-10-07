@@ -23,16 +23,17 @@ export function ImageField({ label, value, onChange, previewAlt = "Podgląd" }) 
     return (
         <div className="image-field">
             <label>
-                {label} — ścieżka lub adres
+                <span className="field-label">{label}</span>
                 <input
                     type="text"
                     value={value}
                     onChange={(event) => onChange(event.target.value)}
                     placeholder="/img/photos/nazwa.webp"
                 />
+                <span className="field-hint">Ścieżka lub adres obrazka</span>
             </label>
             <label>
-                …albo prześlij z komputera
+                <span className="field-label">…albo prześlij z komputera</span>
                 <input
                     type="file"
                     accept={IMAGE_ACCEPT}

@@ -92,7 +92,7 @@ export default function DateSubscribersPanel({ onAction }) {
             )}
             <form className="event-editor" onSubmit={send}>
                 <label>
-                    Temat
+                    <span className="field-label">Temat</span>
                     <input
                         value={subject}
                         maxLength={200}
@@ -102,7 +102,7 @@ export default function DateSubscribersPanel({ onAction }) {
                     />
                 </label>
                 <label>
-                    Treść
+                    <span className="field-label">Treść</span>
                     <textarea
                         rows={6}
                         value={message}

@@ -400,7 +400,8 @@ function Partners({ partners }) {
                 {exhibitors.length > 0 && (
                     <>
                         {featured.length > 0 && <h3 className="partners-tier-title">Wystawcy</h3>}
-                        <ul className="partners-grid">
+                        {/* 4 logos on a 3-column phone grid would leave one alone: 2 × 2 instead. */}
+                        <ul className={`partners-grid${exhibitors.length === 4 ? " is-four" : ""}`}>
                             {exhibitors.map((partner) => (
                                 <li key={partner.id}>
                                     <PartnerLogo partner={partner} />

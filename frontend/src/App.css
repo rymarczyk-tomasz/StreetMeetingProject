@@ -74,7 +74,7 @@
 
 .account-settings-button,
 .account-back-link,
-.page button:where(:not(.btn-street, .text-action, .copy-field-button, .submission-card-photo, .field-password-toggle, .lightbox *, .vehicle-icon-button, .photo-slot, .admin-sidenav-item, .admin-todo-item, .subs-chip, .subs-open, .subs-bulk-clear, .detail-photo, .detail-back, .detail-tabs *, .detail-more *, .gate-button, .gate-list-action, .admin-dialog-close, .admin-thread, .admin-tabs *, .templates-grip)) {
+.page button:where(:not(.btn-street, .text-action, .copy-field-button, .submission-card-photo, .field-password-toggle, .lightbox *, .vehicle-icon-button, .photo-slot, .admin-sidenav-item, .admin-todo-item, .subs-chip, .subs-open, .subs-bulk-clear, .detail-photo, .detail-back, .detail-tabs *, .detail-more *, .gate-button, .gate-list-action, .admin-dialog-close, .admin-thread, .admin-tabs *, .templates-grip, .row-menu *)) {
     display: inline-block;
     padding: 7px 10px;
     border: 2px solid var(--street-yellow);
@@ -94,7 +94,7 @@
 
 /* Long labels ("Wyloguj ze wszystkich innych urządzeń") must wrap on narrow phones. */
 @media (max-width: 480px) {
-    .page button:where(:not(.btn-street, .text-action, .copy-field-button, .submission-card-photo, .field-password-toggle, .lightbox *, .vehicle-icon-button, .photo-slot, .admin-sidenav-item, .admin-todo-item, .subs-chip, .subs-open, .subs-bulk-clear, .detail-photo, .detail-back, .detail-tabs *, .detail-more *, .gate-button, .gate-list-action, .admin-dialog-close, .admin-thread, .admin-tabs *, .templates-grip)) {
+    .page button:where(:not(.btn-street, .text-action, .copy-field-button, .submission-card-photo, .field-password-toggle, .lightbox *, .vehicle-icon-button, .photo-slot, .admin-sidenav-item, .admin-todo-item, .subs-chip, .subs-open, .subs-bulk-clear, .detail-photo, .detail-back, .detail-tabs *, .detail-more *, .gate-button, .gate-list-action, .admin-dialog-close, .admin-thread, .admin-tabs *, .templates-grip, .row-menu *)) {
         max-width: 100%;
         white-space: normal;
     }
@@ -102,12 +102,12 @@
 
 .account-settings-button:hover,
 .account-back-link:hover,
-.page button:where(:not(.btn-street, .text-action, .copy-field-button, .submission-card-photo, .field-password-toggle, .lightbox *, .vehicle-icon-button, .photo-slot, .admin-sidenav-item, .admin-todo-item, .subs-chip, .subs-open, .subs-bulk-clear, .detail-photo, .detail-back, .detail-tabs *, .detail-more *, .gate-button, .gate-list-action, .admin-dialog-close, .admin-thread, .admin-tabs *, .templates-grip)):hover:not(:disabled) {
+.page button:where(:not(.btn-street, .text-action, .copy-field-button, .submission-card-photo, .field-password-toggle, .lightbox *, .vehicle-icon-button, .photo-slot, .admin-sidenav-item, .admin-todo-item, .subs-chip, .subs-open, .subs-bulk-clear, .detail-photo, .detail-back, .detail-tabs *, .detail-more *, .gate-button, .gate-list-action, .admin-dialog-close, .admin-thread, .admin-tabs *, .templates-grip, .row-menu *)):hover:not(:disabled) {
     background: var(--street-yellow-soft);
     color: var(--street-ink);
 }
 
-.page button:where(:not(.btn-street, .text-action, .copy-field-button, .submission-card-photo, .field-password-toggle, .lightbox *, .vehicle-icon-button, .photo-slot, .admin-sidenav-item, .admin-todo-item, .subs-chip, .subs-open, .subs-bulk-clear, .detail-photo, .detail-back, .detail-tabs *, .detail-more *, .gate-button, .gate-list-action, .admin-dialog-close, .admin-thread, .admin-tabs *, .templates-grip)):disabled {
+.page button:where(:not(.btn-street, .text-action, .copy-field-button, .submission-card-photo, .field-password-toggle, .lightbox *, .vehicle-icon-button, .photo-slot, .admin-sidenav-item, .admin-todo-item, .subs-chip, .subs-open, .subs-bulk-clear, .detail-photo, .detail-back, .detail-tabs *, .detail-more *, .gate-button, .gate-list-action, .admin-dialog-close, .admin-thread, .admin-tabs *, .templates-grip, .row-menu *)):disabled {
     cursor: not-allowed;
     opacity: 0.55;
 }
@@ -152,7 +152,7 @@
     overflow-wrap: anywhere;
 }
 
-.account-card input {
+.account-card input:not([type="checkbox"]):not([type="radio"]) {
     width: 100%;
     min-height: 44px;
     padding: 8px 12px;
@@ -163,7 +163,7 @@
     font: inherit;
 }
 
-.account-card input:focus,
+.account-card input:not([type="checkbox"]):not([type="radio"]):focus,
 .admin-filters input:focus,
 .admin-filters select:focus,
 .admin-note-field textarea:focus,
@@ -579,23 +579,57 @@
     font-size: 16px;
 }
 
-.audit-section {
-    margin-top: 30px;
+/* Audit log: grouped by day, one icon per kind of entry. */
+.audit-filters.admin-filters {
+    grid-template-columns: minmax(0, 1fr) 96px;
+    max-width: 520px;
+}
+
+.audit-day + .audit-day {
+    margin-top: 24px;
+}
+
+.audit-day-title {
+    margin: 0 0 8px;
+    color: var(--street-muted);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
 }
 
 .audit-list {
-    border-top: 1px solid var(--street-border);
+    margin: 0;
+    padding: 0;
+    border-radius: 4px;
+    background: #fff;
+    list-style: none;
 }
 
 .audit-entry {
-    padding: 12px 0;
-    border-bottom: 1px solid var(--street-border);
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px 16px;
 }
 
-.audit-entry span {
-    display: block;
-    margin-top: 4px;
-    color: var(--street-muted);
+.audit-entry + .audit-entry {
+    border-top: 1px solid #eef0f2;
+}
+
+.audit-entry > .bi {
+    margin-top: 2px;
+    color: var(--street-text-2);
+}
+
+.audit-entry p {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.audit-entry .audit-meta {
+    margin-top: 2px;
+    color: #68707a;
     font-size: 14px;
 }
 
@@ -1661,6 +1695,29 @@
     overflow-wrap: anywhere;
 }
 
+/* Badge and title on one row, the description below at full width. */
+.system-checks li {
+    flex-direction: column;
+    gap: 4px;
+}
+
+.system-checks .system-check-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    margin: 0;
+}
+
+.system-path {
+    padding: 1px 4px;
+    border-radius: 2px;
+    background: var(--street-surface);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
 .system-level-ok {
     background: var(--street-success-bg);
     color: var(--street-success);
@@ -1678,7 +1735,7 @@
 
 /* ---- Admin panel (redesign 1a, see ADMIN.md) ---- */
 /* Default admin buttons and fields: participant-panel scale (44px+ buttons, 52px fields). */
-.admin-page button:where(:not(.btn-street, .text-action, .copy-field-button, .submission-card-photo, .field-password-toggle, .lightbox *, .vehicle-icon-button, .photo-slot, .admin-sidenav-item, .admin-todo-item, .photo-thumb-button, .rich-text-toolbar button, .rating-stars button, .subs-chip, .subs-open, .subs-bulk-clear, .detail-photo, .detail-back, .detail-tabs *, .detail-more *, .gate-button, .gate-list-action, .admin-dialog-close, .admin-thread, .admin-tabs *, .templates-grip)) {
+.admin-page button:where(:not(.btn-street, .text-action, .copy-field-button, .submission-card-photo, .field-password-toggle, .lightbox *, .vehicle-icon-button, .photo-slot, .admin-sidenav-item, .admin-todo-item, .photo-thumb-button, .rich-text-toolbar button, .rating-stars button, .subs-chip, .subs-open, .subs-bulk-clear, .detail-photo, .detail-back, .detail-tabs *, .detail-more *, .gate-button, .gate-list-action, .admin-dialog-close, .admin-thread, .admin-tabs *, .templates-grip, .row-menu *)) {
     min-height: 44px;
     padding: 10px 16px;
     font-size: 15px;
@@ -3648,7 +3705,7 @@ body.is-dialog-open {
 .system-checks li.is-ok,
 .system-checks li.is-warn,
 .system-checks li.is-error {
-    gap: 14px;
+    gap: 4px;
     border: 0;
     border-radius: 4px;
 }
@@ -4024,4 +4081,163 @@ body.is-dialog-open {
     .templates-form-row {
         grid-template-columns: minmax(0, 1fr);
     }
+}
+
+/* ---- Admin: users (cards with a "…" menu) ---- */
+.user-list {
+    margin: 0;
+    padding: 0;
+    border-radius: 4px;
+    background: #fff;
+    list-style: none;
+}
+
+.user-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 8px 12px 20px;
+}
+
+.user-row + .user-row {
+    border-top: 1px solid #eef0f2;
+}
+
+.user-row-main {
+    min-width: 0;
+    flex: 1;
+}
+
+.user-row-email {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    margin: 0;
+}
+
+.user-row-email strong {
+    color: var(--street-ink);
+    font-size: 16px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.user-badge-admin {
+    background: var(--street-yellow-tint);
+    color: var(--street-ink);
+}
+
+.user-row-name {
+    margin: 2px 0 0;
+    color: #68707a;
+    font-size: 14px;
+}
+
+.row-menu {
+    position: relative;
+    flex: none;
+}
+
+.row-menu-toggle {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--street-text-2);
+    cursor: pointer;
+    font-size: 20px;
+}
+
+.row-menu-toggle:hover,
+.row-menu-toggle[aria-expanded="true"] {
+    background: var(--street-surface);
+    color: var(--street-ink);
+}
+
+.row-menu-list {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 5;
+    display: flex;
+    min-width: 240px;
+    flex-direction: column;
+    padding: 8px;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+}
+
+.row-menu-list button {
+    min-height: 44px;
+    padding: 10px 14px;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--street-ink);
+    cursor: pointer;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: left;
+}
+
+.row-menu-list button:hover {
+    background: var(--street-yellow-tint);
+}
+
+.row-menu-list button.is-danger {
+    color: var(--street-danger);
+}
+
+.admin-page .admin-result-count {
+    margin: 0 0 8px;
+}
+
+/* Phones: search on its own row, role + status side by side. */
+@media (max-width: 768px) {
+    .admin-page .user-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .admin-page .user-filters .user-filters-search {
+        grid-column: 1 / -1;
+    }
+
+    .user-row {
+        padding-left: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-page .audit-filters.admin-filters {
+        grid-template-columns: minmax(0, 1fr) 96px;
+    }
+}
+
+.admin-subheading {
+    margin: 24px 0 12px;
+    color: var(--street-ink);
+    font-size: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* Repeated items in content editors: "KAFELEK 1". */
+.event-editor-card legend.item-legend {
+    padding: 0 6px;
+    color: var(--street-ink);
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.item-legend span {
+    color: #8a6500;
 }

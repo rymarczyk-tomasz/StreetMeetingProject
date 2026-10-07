@@ -1386,6 +1386,14 @@ body {
     opacity: 1;
 }
 
+/* No hover on touch screens, so the logos are shown in colour right away. */
+@media (hover: none) {
+    .partners-grid img {
+        filter: none;
+        opacity: 1;
+    }
+}
+
 .partners-tier-title {
     margin: 0 0 16px;
     color: var(--street-muted);
@@ -1648,6 +1656,10 @@ body {
 
     .partners-grid li {
         width: calc((100% - 16px) / 3);
+    }
+
+    .partners-grid.is-four li {
+        width: calc((100% - 8px) / 2);
     }
 
     .partners-featured {
@@ -2719,11 +2731,17 @@ body {
     cursor: pointer;
 }
 
+/* Sizes and the background are pinned here, so broader input rules (min-height,
+   padding, background: #fff) can't stretch the box or repeat the tick. */
 .check-input {
     flex: none;
+    align-self: flex-start;
     width: 22px;
     height: 22px;
-    margin-top: 1px;
+    min-height: 0;
+    aspect-ratio: 1;
+    margin-top: 2px;
+    padding: 0;
     border: 1.5px solid #8a8f96;
     border-radius: 3px;
     background: #fff center / 16px no-repeat;
@@ -2734,6 +2752,9 @@ body {
 .check-input:checked {
     border-color: var(--street-ink);
     background-color: var(--street-ink);
+    background-position: center;
+    background-size: 16px;
+    background-repeat: no-repeat;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23f4c542'%3E%3Cpath d='M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z'/%3E%3C/svg%3E");
 }
 
@@ -4761,4 +4782,60 @@ textarea:focus-visible {
 button[aria-busy="true"] {
     opacity: 0.65;
     pointer-events: none;
+}
+
+/* ---- iPhone / Safari ---- */
+.mobile-menu,
+.lightbox {
+    overscroll-behavior: contain;
+}
+
+/* Safari zooms the page into any field under 16px; desktop keeps the smaller size. */
+@media (max-width: 991px) {
+    input,
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+}
+
+/* Notch and Home bar (viewport-fit=cover in index.html). */
+@media (display-mode: standalone) {
+    #navbar {
+        padding-top: env(safe-area-inset-top);
+        background: var(--street-ink);
+    }
+}
+
+.mobile-menu-bottom {
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+}
+
+.gate {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.lightbox-top,
+.lightbox-stage {
+    padding-left: max(28px, env(safe-area-inset-left));
+    padding-right: max(28px, env(safe-area-inset-right));
+}
+
+/* iOS shows an empty date field without the "dd.mm.rrrr" hint and makes it lower
+   than other fields. */
+@supports (-webkit-touch-callout: none) {
+    input[type="date"] {
+        min-height: 52px;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+}
+
+.field-hint {
+    margin: 4px 0 0;
+    color: #68707a;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
 }

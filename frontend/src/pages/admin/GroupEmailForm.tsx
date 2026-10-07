@@ -99,7 +99,7 @@ export default function GroupEmailForm({ edition, onSent }) {
             </p>
             <form className="event-editor" onSubmit={send}>
                 <label>
-                    Do kogo
+                    <span className="field-label">Do kogo</span>
                     <select value={audienceId} onChange={(event) => setAudienceId(event.target.value)}>
                         {AUDIENCES.map((item) => (
                             <option key={item.id} value={item.id}>
@@ -114,7 +114,7 @@ export default function GroupEmailForm({ edition, onSent }) {
                 </p>
                 <TemplatePicker templates={templates} onPick={applyTemplate} />
                 <label>
-                    Temat
+                    <span className="field-label">Temat</span>
                     <input
                         value={subject}
                         maxLength={200}
@@ -123,7 +123,7 @@ export default function GroupEmailForm({ edition, onSent }) {
                     />
                 </label>
                 <label>
-                    Treść
+                    <span className="field-label">Treść</span>
                     <textarea
                         rows={8}
                         value={message}
