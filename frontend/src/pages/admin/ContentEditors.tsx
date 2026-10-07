@@ -772,15 +772,31 @@ function DateNotifyBanner({ edition, savedCount, onOpen }) {
 
     if (!pending || !edition?.date) return null;
     return (
-        <div className="payment-alert admin-queue-alert">
-            <p>
-                <strong>{plural(pending, "osoba czeka", "osoby czekają", "osób czeka")}</strong> na
-                datę wydarzenia — wyślij im powiadomienie.
-            </p>
-            <button type="button" onClick={onOpen}>
-                Wyślij powiadomienie
+        <div className="admin-dark-banner" role="status">
+            <i className="bi bi-envelope-paper" aria-hidden="true" />
+            <div>
+                <p className="admin-dark-banner-title">
+                    Data zapisana.{" "}
+                    {plural(pending, "osoba czeka", "osoby czekają", "osób czeka")} na powiadomienie.
+                </p>
+                <p>
+                    Formularz „Daj mi znać o dacie” zniknął ze strony. Wyślij jedną wiadomość z
+                    terminem i linkiem do biletów.
+                </p>
+            </div>
+            <button type="button" className="btn-street btn-street-primary" onClick={onOpen}>
+                Napisz wiadomość
             </button>
         </div>
+    );
+}
+
+function DateField({ label, value, onChange, type = "date" }) {
+    return (
+        <label>
+            {label}
+            <input type={type} value={value || ""} onChange={(event) => onChange(event.target.value)} />
+        </label>
     );
 }
 
@@ -790,148 +806,114 @@ export function EditionEditor({ onAction, onOpenDateNotify = undefined }) {
 
     return (
         <>
-        {onOpenDateNotify && (
-            <DateNotifyBanner
-                edition={edition}
-                savedCount={editor.savedCount}
-                onOpen={onOpenDateNotify}
-            />
-        )}
-        <ContentForm editor={editor} saveLabel="Zapisz edycję wydarzenia">
-            {edition && (
-                <>
-                    <p className="admin-hint">
-                        Rok edycji decyduje, do której edycji trafiają nowe
-                        zgłoszenia Select, i od niego liczy się limit pojazdów.
-                        Zgłoszenia z poprzednich lat zostają w archiwum (filtr
-                        „Edycja” w Zgłoszeniach). Data i miejsce pokazują się na
-                        stronie głównej i w Google.
-                    </p>
-                    <TextInput
-                        label="Rok edycji"
-                        type="number"
-                        min={2020}
-                        max={2100}
-                        value={edition.year}
-                        onChange={(year) => editor.update({ year: Number(year) })}
-                    />
-                    <TextInput
-                        label="Nazwa"
-                        value={edition.name}
-                        onChange={(name) => editor.update({ name })}
-                    />
-                    <label>
-                        Data wydarzenia
-                        <input
-                            type="date"
-                            value={edition.date}
-                            onChange={(event) => editor.update({ date: event.target.value })}
-                        />
-                    </label>
-                    <TextInput
-                        label="Tekst, gdy data nie jest jeszcze znana"
-                        value={edition.dateText}
-                        placeholder="Termin wkrótce"
-                        onChange={(dateText) => editor.update({ dateText })}
-                    />
-                    <div className="admin-inline-fields">
-                        <label>
-                            Godzina rozpoczęcia
-                            <input
+            {onOpenDateNotify && (
+                <DateNotifyBanner
+                    edition={edition}
+                    savedCount={editor.savedCount}
+                    onOpen={onOpenDateNotify}
+                />
+            )}
+            <ContentForm editor={editor} saveLabel="Zapisz">
+                {edition && (
+                    <>
+                        <div className="admin-form-row admin-form-row-year">
+                            <TextInput
+                                label="Rok"
+                                type="number"
+                                min={2020}
+                                max={2100}
+                                value={edition.year}
+                                onChange={(year) => editor.update({ year: Number(year) })}
+                            />
+                            <TextInput
+                                label="Nazwa"
+                                value={edition.name}
+                                onChange={(name) => editor.update({ name })}
+                            />
+                        </div>
+                        <div className="admin-form-row admin-form-row-3">
+                            <DateField
+                                label="Data"
+                                value={edition.date}
+                                onChange={(date) => editor.update({ date })}
+                            />
+                            <DateField
+                                label="Start"
                                 type="time"
                                 value={edition.startTime}
-                                onChange={(event) => editor.update({ startTime: event.target.value })}
+                                onChange={(startTime) => editor.update({ startTime })}
                             />
-                        </label>
-                        <label>
-                            Godzina zakończenia
-                            <input
+                            <DateField
+                                label="Koniec"
                                 type="time"
                                 value={edition.endTime}
-                                onChange={(event) => editor.update({ endTime: event.target.value })}
+                                onChange={(endTime) => editor.update({ endTime })}
                             />
-                        </label>
-                    </div>
-                    <TextInput
-                        label="Miejsce"
-                        value={edition.venueName}
-                        onChange={(venueName) => editor.update({ venueName })}
-                    />
-                    <TextInput
-                        label="Adres miejsca"
-                        value={edition.venueAddress}
-                        onChange={(venueAddress) => editor.update({ venueAddress })}
-                    />
-                </>
-            )}
-        </ContentForm>
+                        </div>
+                        <TextInput
+                            label="Tekst, gdy data nie jest jeszcze znana"
+                            value={edition.dateText}
+                            placeholder="Termin wkrótce"
+                            onChange={(dateText) => editor.update({ dateText })}
+                        />
+                        <div className="admin-form-row">
+                            <TextInput
+                                label="Miejsce"
+                                value={edition.venueName}
+                                onChange={(venueName) => editor.update({ venueName })}
+                            />
+                            <TextInput
+                                label="Adres"
+                                value={edition.venueAddress}
+                                onChange={(venueAddress) => editor.update({ venueAddress })}
+                            />
+                        </div>
+                        <p className="admin-info">
+                            <i className="bi bi-info-circle" aria-hidden="true" />
+                            <span>
+                                Zmiana roku rozpoczyna nowy sezon: limity i statystyki liczą się od
+                                zera, starsze zgłoszenia trafiają do archiwum. Data i miejsce
+                                pokazują się na stronie głównej i w Google.
+                            </span>
+                        </p>
+                    </>
+                )}
+            </ContentForm>
         </>
     );
 }
 
-export function SubmissionSettingsEditor({ onAction }) {
+// Settings are one CMS section, split into two tabs (Zapisy do Select / Opłaty);
+// each tab saves the whole section with its own fields changed.
+export function SubmissionSettingsEditor({ onAction, part = "zapisy" }) {
     const editor = useContentEditor("settings", onAction);
     const settings = editor.content;
 
-    return (
-        <ContentForm editor={editor} saveLabel="Zapisz ustawienia zgłoszeń">
-            {settings && (
-                <>
-                    <label className="admin-checkbox-label">
-                        <input
-                            type="checkbox"
-                            checked={settings.submissionsOpen}
-                            onChange={(event) =>
-                                editor.update({ submissionsOpen: event.target.checked })
-                            }
-                        />
-                        Przyjmuj nowe zgłoszenia do strefy Select
-                    </label>
-                    <label>
-                        Termin zgłoszeń (ostatni dzień, opcjonalny)
-                        <input
-                            type="date"
-                            value={settings.submissionsDeadline}
-                            onChange={(event) =>
-                                editor.update({ submissionsDeadline: event.target.value })
-                            }
-                        />
-                    </label>
-                    <TextInput
-                        label="Maksymalna liczba aktywnych zgłoszeń pojazdów na konto (w edycji)"
-                        type="number"
-                        min={1}
-                        max={50}
-                        value={settings.maxVehiclesPerUser}
-                        onChange={(value) => editor.update({ maxVehiclesPerUser: Number(value) })}
-                    />
-                    <TextInput
-                        label="Liczba miejsc w strefie Select (0 = bez limitu). Akceptacja ponad limit wymaga potwierdzenia — nadmiarowe auta trafiają na listę rezerwową"
-                        type="number"
-                        min={0}
-                        value={settings.selectCapacity}
-                        onChange={(value) => editor.update({ selectCapacity: Number(value) })}
-                    />
-                    <fieldset className="faq-editor-category">
-                        <legend>Opłata za strefę Select</legend>
+    if (part === "oplaty") {
+        return (
+            <ContentForm editor={editor} saveLabel="Zapisz">
+                {settings && (
+                    <>
                         <p className="admin-hint">
-                            Uczestnik z zaakceptowanym zgłoszeniem widzi te dane w panelu
-                            (z przyciskami „Kopiuj”) i w e-mailu o akceptacji.
+                            Uczestnik z zaakceptowanym zgłoszeniem widzi te dane w panelu (z
+                            przyciskami „Kopiuj”) i w e-mailu o akceptacji.
                         </p>
-                        <TextInput
-                            label="Kwota"
-                            value={settings.selectFeeAmount}
-                            maxLength={100}
-                            placeholder="np. 150 zł"
-                            onChange={(selectFeeAmount) => editor.update({ selectFeeAmount })}
-                        />
-                        <TextInput
-                            label="Odbiorca przelewu"
-                            value={settings.paymentRecipient}
-                            maxLength={200}
-                            placeholder="np. Street Meeting Poland Sp. z o.o."
-                            onChange={(paymentRecipient) => editor.update({ paymentRecipient })}
-                        />
+                        <div className="admin-form-row">
+                            <TextInput
+                                label="Kwota"
+                                value={settings.selectFeeAmount}
+                                maxLength={100}
+                                placeholder="np. 150 zł"
+                                onChange={(selectFeeAmount) => editor.update({ selectFeeAmount })}
+                            />
+                            <TextInput
+                                label="Odbiorca przelewu"
+                                value={settings.paymentRecipient}
+                                maxLength={200}
+                                placeholder="np. Street Meeting Poland Sp. z o.o."
+                                onChange={(paymentRecipient) => editor.update({ paymentRecipient })}
+                            />
+                        </div>
                         <TextInput
                             label="Numer konta (26 cyfr)"
                             value={settings.paymentAccount}
@@ -945,23 +927,75 @@ export function SubmissionSettingsEditor({ onAction }) {
                             maxLength={140}
                             onChange={(paymentTitleTemplate) => editor.update({ paymentTitleTemplate })}
                         />
-                        <label>
-                            Termin płatności (opcjonalny)
-                            <input
-                                type="date"
+                        <div className="admin-form-row">
+                            <DateField
+                                label="Termin płatności (opcjonalny)"
                                 value={settings.paymentDeadline}
-                                onChange={(event) => editor.update({ paymentDeadline: event.target.value })}
+                                onChange={(paymentDeadline) => editor.update({ paymentDeadline })}
                             />
-                        </label>
+                            <TextInput
+                                label="Dni na opłatę od akceptacji (0 = tylko termin)"
+                                type="number"
+                                min={0}
+                                max={90}
+                                value={settings.paymentDaysAfterApproval ?? 0}
+                                onChange={(value) => editor.update({ paymentDaysAfterApproval: Number(value) })}
+                            />
+                        </div>
+                        <p className="admin-info">
+                            <i className="bi bi-info-circle" aria-hidden="true" />
+                            <span>
+                                Obowiązuje wcześniejszy z terminów. 3 dni przed nim uczestnik dostaje
+                                przypomnienie e-mailem. Po potwierdzeniu opłaty dostaje e-mail z
+                                linkiem do wejściówki QR.
+                            </span>
+                        </p>
+                    </>
+                )}
+            </ContentForm>
+        );
+    }
+
+    return (
+        <ContentForm editor={editor} saveLabel="Zapisz">
+            {settings && (
+                <>
+                    <label className="admin-checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={settings.submissionsOpen}
+                            onChange={(event) =>
+                                editor.update({ submissionsOpen: event.target.checked })
+                            }
+                        />
+                        Przyjmuj nowe zgłoszenia do strefy Select
+                    </label>
+                    <div className="admin-form-row admin-form-row-3">
+                        <DateField
+                            label="Termin zgłoszeń (opcjonalny)"
+                            value={settings.submissionsDeadline}
+                            onChange={(submissionsDeadline) => editor.update({ submissionsDeadline })}
+                        />
                         <TextInput
-                            label="Dni na opłatę od akceptacji (0 = tylko termin powyżej). Obowiązuje wcześniejszy z terminów; 3 dni przed nim uczestnik dostaje przypomnienie e-mailem"
+                            label="Pojazdów na konto"
+                            type="number"
+                            min={1}
+                            max={50}
+                            value={settings.maxVehiclesPerUser}
+                            onChange={(value) => editor.update({ maxVehiclesPerUser: Number(value) })}
+                        />
+                        <TextInput
+                            label="Miejsc w strefie (0 = bez limitu)"
                             type="number"
                             min={0}
-                            max={90}
-                            value={settings.paymentDaysAfterApproval ?? 0}
-                            onChange={(value) => editor.update({ paymentDaysAfterApproval: Number(value) })}
+                            value={settings.selectCapacity}
+                            onChange={(value) => editor.update({ selectCapacity: Number(value) })}
                         />
-                    </fieldset>
+                    </div>
+                    <p className="admin-hint">
+                        Limit pojazdów liczy się w bieżącej edycji. Akceptacja ponad liczbę miejsc
+                        wymaga potwierdzenia — nadmiarowe auta trafiają na listę rezerwową.
+                    </p>
                     <label className="admin-checkbox-label">
                         <input
                             type="checkbox"

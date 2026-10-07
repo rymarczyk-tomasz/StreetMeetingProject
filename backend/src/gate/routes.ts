@@ -70,6 +70,7 @@ router.get("/cars", (req, res) => {
     });
     res.json({
         cars: rows.map((row) => ({ ...toGateView(row), passHash: passHash(row.pass_token) })),
+        edition: siteContentDb.getCurrentEdition(),
         generatedAt: new Date().toISOString(),
     });
 });

@@ -16,7 +16,7 @@ Strona wydarzenia motoryzacyjnego "Street Show": **React + Vite** (`frontend/`) 
 | Dziennik działań | Kto, co i kiedy zmienił |
 | System | Stan kopii bazy, SMTP (z testowym e-mailem), APP_URL, galerii, miejsca na dysku i rozmiaru danych |
 
-Nawigacja panelu jest pogrupowana (Wydarzenie / Strona / Administracja), a sekcja, podzakładka i filtry zgłoszeń są w adresie, np. `/admin?sekcja=zgloszenia&platnosc=overdue` — odświeżenie strony ich nie gubi i można je podlinkować.
+Panel ma boczne menu w grupach (Wydarzenie / Strona / Administracja) z wyborem edycji, a sekcja i filtry są w adresie, np. `/admin/zgloszenia?status=pending&platnosc=overdue&id=184&tab=oplata` — odświeżenie strony ich nie gubi i można je podlinkować. Zgłoszenia to tabela z panelem szczegółów (zakładki Decyzja / Opłata / Wiadomości / Notatka, skróty ↑↓, A, R), a **Wiadomości** zbierają wątki ze wszystkich zgłoszeń (`GET /api/admin/threads`).
 
 ## Struktura repo
 

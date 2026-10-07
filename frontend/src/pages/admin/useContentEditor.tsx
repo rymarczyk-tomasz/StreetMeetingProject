@@ -142,6 +142,25 @@ function RevisionHistory({ editor }) {
     );
 }
 
+// "Ostatnia zmiana: admin, date" next to the save button.
+function LastChange({ editor }) {
+    const [last, setLast] = useState(null);
+
+    useEffect(() => {
+        api.get(`/admin/content/${editor.key}/revisions`)
+            .then(({ data }) => setLast(data.revisions?.[0] || null))
+            .catch(() => setLast(null));
+    }, [editor.key, editor.savedCount]);
+
+    if (!last) return null;
+    return (
+        <span className="admin-last-change">
+            Ostatnia zmiana: {last.adminEmail ? `${last.adminEmail}, ` : ""}
+            {formatDate(last.createdAt)}
+        </span>
+    );
+}
+
 // Form shell shared by all section editors: messages, save button, history.
 export function ContentForm({ editor, saveLabel = "Zapisz zmiany", children }) {
     if (!editor.content) {
@@ -165,10 +184,15 @@ export function ContentForm({ editor, saveLabel = "Zapisz zmiany", children }) {
                     {editor.message}
                 </p>
             )}
-            <div className="submission-actions">
-                <button type="submit" disabled={editor.isSaving}>
+            <div className="admin-form-footer">
+                <button
+                    type="submit"
+                    className="btn-street btn-street-primary btn-street-lg"
+                    disabled={editor.isSaving}
+                >
                     {editor.isSaving ? "Zapisywanie..." : saveLabel}
                 </button>
+                <LastChange editor={editor} />
             </div>
             <RevisionHistory editor={editor} />
         </form>

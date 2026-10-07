@@ -7,9 +7,8 @@ export default function GatePage() {
     const [searchParams] = useSearchParams();
 
     return (
-        <section className="page admin-page gate-page">
-            <p className="page-eyebrow">Obsługa wjazdu</p>
-            <h1>Wjazd na strefę Select</h1>
+        <section className="page gate-page">
+            <h1 className="visually-hidden">Wjazd na strefę Select</h1>
             <GateCheckin initialCode={searchParams.get("kod") || ""} />
         </section>
     );

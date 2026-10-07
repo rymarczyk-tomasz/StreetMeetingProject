@@ -44,6 +44,36 @@ const unreadForAdminStmt = db.prepare(`
     GROUP BY submission_id
 `);
 
+// One row per submission with messages: last message and unread count (admin side).
+const threadsForAdminStmt = db.prepare(`
+    SELECT submissions.id AS submission_id, submissions.car_brand, submissions.license_plate,
+           submissions.edition, submissions.first_name, submissions.last_name,
+           COUNT(m.id) AS total,
+           SUM(CASE WHEN m.from_admin = 0 AND m.read_at IS NULL THEN 1 ELSE 0 END) AS unread,
+           MAX(m.created_at) AS last_at,
+           (SELECT body FROM submission_messages WHERE submission_id = submissions.id ORDER BY id DESC LIMIT 1) AS last_body,
+           (SELECT from_admin FROM submission_messages WHERE submission_id = submissions.id ORDER BY id DESC LIMIT 1) AS last_from_admin
+    FROM submission_messages m
+    JOIN submissions ON submissions.id = m.submission_id
+    GROUP BY submissions.id
+    ORDER BY unread > 0 DESC, last_at DESC
+`);
+
+function listThreadsForAdmin() {
+    return threadsForAdminStmt.all().map((row) => ({
+        submissionId: row.submission_id,
+        carBrand: row.car_brand,
+        licensePlate: row.license_plate,
+        edition: row.edition,
+        name: `${row.first_name || ""} ${row.last_name || ""}`.trim(),
+        total: row.total,
+        unread: row.unread || 0,
+        lastAt: row.last_at,
+        lastBody: row.last_body,
+        lastFromAdmin: Boolean(row.last_from_admin),
+    }));
+}
+
 function addMessage({ submissionId, authorId, fromAdmin, body }) {
     const result = insertStmt.run(submissionId, authorId, fromAdmin ? 1 : 0, body);
     return result.lastInsertRowid;
@@ -74,4 +104,5 @@ module.exports = {
     markThreadRead,
     threadCounts,
     unreadCountsForAdmin,
+    listThreadsForAdmin,
 };

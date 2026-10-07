@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import api from "../api/client";
+import Plate from "./Plate";
 import {
     applyQueue,
     enqueueCheckin,
@@ -36,6 +37,11 @@ function formatTime(value) {
     );
 }
 
+function formatHour(value) {
+    if (!value) return "";
+    return new Intl.DateTimeFormat("pl-PL", { timeStyle: "short" }).format(new Date(`${value.replace(" ", "T")}Z`));
+}
+
 function errorText(err, fallback) {
     return err.response?.data?.message || fallback;
 }
@@ -66,7 +72,7 @@ function QrScanner({ onCode, onClose }) {
                     }
                 }, 400);
             })
-            .catch(() => setError("Brak dostępu do aparatu. Wpisz kod albo znajdź auto na liście."));
+            .catch(() => setError("Brak dostępu do aparatu. Wpisz kod albo znajdź auto po rejestracji."));
 
         return () => {
             stopped = true;
@@ -78,92 +84,130 @@ function QrScanner({ onCode, onClose }) {
     return (
         <div className="qr-scanner">
             {error ? <p className="form-error">{error}</p> : <video ref={videoRef} muted playsInline />}
-            <button type="button" className="button-secondary" onClick={onClose}>
+            <button type="button" className="gate-button is-outline" onClick={onClose}>
                 Zamknij aparat
             </button>
         </div>
     );
 }
 
+// Result of a scan: the header colour and text say at a glance whether the car may enter.
 function verdict(car) {
-    if (!car.validForCurrentEdition) return { ok: false, text: `✗ Wejściówka z innej edycji (${car.edition})` };
-    if (!car.valid) return { ok: false, text: "✗ Zgłoszenie nieopłacone lub niezaakceptowane" };
-    if (car.checkedInAt) return { ok: true, text: "⚠ Już wjechał" };
-    return { ok: true, text: "✓ Wejściówka ważna" };
+    if (!car.validForCurrentEdition) {
+        return { ok: false, text: "Inna edycja", note: `Wejściówka z edycji ${car.edition}` };
+    }
+    if (!car.valid) {
+        return car.paymentStatus !== "paid"
+            ? { ok: false, text: "Nieopłacone", note: PAYMENT_LABELS[car.paymentStatus] }
+            : { ok: false, text: "Kod nieważny", note: "Zgłoszenie nie jest zaakceptowane" };
+    }
+    if (car.checkedInAt) {
+        return { ok: false, text: "Już wjechał", note: `Wjazd zarejestrowany o ${formatHour(car.checkedInAt)}` };
+    }
+    return { ok: true, text: "Może wjechać", note: "" };
 }
 
-function ResultCard({ car, onToggle }) {
-    const { ok, text } = verdict(car);
+function ResultCard({ car, onToggle, onNext }) {
+    const { ok, text, note } = verdict(car);
     return (
-        <div className={`checkin-result ${ok ? "is-valid" : "is-invalid"}`} role="status">
-            <p className="checkin-verdict">{text}</p>
-            <p className="entry-pass-plate">{car.licensePlate}</p>
-            <p>
-                {car.carBrand} · {car.name}
-            </p>
-            <p className="admin-hint">
-                {PAYMENT_LABELS[car.paymentStatus]}
-                {car.checkedInAt && ` · wjazd ${formatTime(car.checkedInAt)}`}
-            </p>
-            {ok && (
-                <button
-                    type="button"
-                    className={car.checkedInAt ? "button-secondary" : "checkin-main-button"}
-                    onClick={() => onToggle(car, !car.checkedInAt)}
-                >
-                    {car.checkedInAt ? "Cofnij wjazd" : "Zarejestruj wjazd"}
-                </button>
+        <>
+            <div className={`gate-result ${ok ? "is-ok" : "is-bad"}`} role="status">
+                <p className="gate-result-head">
+                    <i className={`bi bi-${ok ? "check-circle-fill" : "x-octagon-fill"}`} aria-hidden="true" />
+                    {text}
+                </p>
+                <div className="gate-result-body">
+                    <Plate value={car.licensePlate} size="xl" />
+                    <p className="gate-result-car">{car.carBrand}</p>
+                    <p className="gate-result-name">{car.name}</p>
+                    {note && <p className="gate-result-name">{note}</p>}
+                    {ok && (
+                        <p className="gate-result-badges">
+                            <span className="status-badge payment-status-paid">Opłacone</span>
+                            <span className="status-badge status-pending">Pierwszy wjazd</span>
+                        </p>
+                    )}
+                </div>
+            </div>
+            {ok ? (
+                <>
+                    <button type="button" className="gate-button is-primary" onClick={() => onToggle(car, true)}>
+                        <i className="bi bi-box-arrow-in-right" aria-hidden="true" />
+                        Zarejestruj wjazd
+                    </button>
+                    <button type="button" className="gate-button is-outline" onClick={onNext}>
+                        <i className="bi bi-qr-code-scan" aria-hidden="true" />
+                        Skanuj kolejny
+                    </button>
+                </>
+            ) : (
+                <>
+                    <button type="button" className="gate-button is-dark" onClick={onNext}>
+                        <i className="bi bi-qr-code-scan" aria-hidden="true" />
+                        Skanuj kolejny
+                    </button>
+                    {car.checkedInAt && (
+                        <button type="button" className="text-action gate-undo" onClick={() => onToggle(car, false)}>
+                            Cofnij wjazd (pomyłka)
+                        </button>
+                    )}
+                </>
             )}
-        </div>
+        </>
     );
 }
 
 const SYNC_INTERVAL_MS = 30 * 1000;
 
-function OfflineStatus({ offline, savedAt, queue, syncErrors, isSyncing, onSync }) {
-    if (!offline && !queue.length && !syncErrors.length) return null;
+// Green "Online" / red "Offline" strip under the header, with the send queue.
+function ConnectionBar({ offline, savedAt, carsCount, queue, syncErrors, isSyncing, onSync }) {
+    let text;
+    if (offline) {
+        text = queue.length
+            ? `Offline · ${queue.length} ${queue.length === 1 ? "wjazd czeka" : "wjazdy czekają"} na wysłanie`
+            : `Offline · lista aut z telefonu${savedAt ? ` (${formatTime(toApiTime(savedAt))})` : ""}`;
+    } else {
+        text = queue.length ? `Online · ${queue.length} do wysłania` : `Online · lista aut zapisana w telefonie (${carsCount})`;
+    }
     return (
-        <div className={`gate-offline-status${offline ? " is-offline" : ""}`} role="status">
-            {offline && (
-                <p>
-                    <strong>Brak połączenia</strong> — sprawdzanie działa na liście aut zapisanej w
-                    telefonie{savedAt ? ` (${formatTime(toApiTime(savedAt))})` : ""}. Wjazdy zapisują
-                    się lokalnie i zostaną wysłane, gdy wróci internet.
-                </p>
-            )}
-            {queue.length > 0 && (
-                <p>
-                    Czeka na wysłanie: <strong>{queue.length}</strong> (
-                    {queue.map((item) => item.licensePlate).join(", ")}).{" "}
-                    <button type="button" className="button-secondary" disabled={isSyncing} onClick={onSync}>
+        <>
+            <div className={`gate-connection${offline ? " is-offline" : ""}`} role="status">
+                <i className={`bi bi-${offline ? "wifi-off" : "wifi"}`} aria-hidden="true" />
+                <span>{text}</span>
+                {queue.length > 0 && !offline && (
+                    <button type="button" className="text-action" disabled={isSyncing} onClick={onSync}>
                         {isSyncing ? "Wysyłanie..." : "Wyślij teraz"}
                     </button>
-                </p>
-            )}
+                )}
+            </div>
             {syncErrors.map((message) => (
-                <p key={message} className="form-error">
+                <p key={message} className="form-error gate-sync-error">
                     {message}
                 </p>
             ))}
-        </div>
+        </>
     );
 }
 
 export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
     const [code, setCode] = useState(initialCode);
     const [result, setResult] = useState(null);
+    const [invalid, setInvalid] = useState("");
     const [error, setError] = useState("");
     const [isScanning, setIsScanning] = useState(false);
     // Cars as last received from the server (or from the phone's copy offline).
     const [serverCars, setServerCars] = useState([]);
+    const [edition, setEdition] = useState(null);
     const [queue, setQueue] = useState(loadQueue);
     const [offline, setOffline] = useState(false);
     const [savedAt, setSavedAt] = useState("");
     const [isSyncing, setIsSyncing] = useState(false);
     const [syncErrors, setSyncErrors] = useState<string[]>([]);
     const [search, setSearch] = useState("");
+    const [showAll, setShowAll] = useState(false);
     const lastScanned = useRef("");
     const syncing = useRef(false);
+    const codeInput = useRef<HTMLInputElement>(null);
     // Read by the retry timer without restarting it on every change.
     const offlineRef = useRef(false);
     useEffect(() => {
@@ -176,6 +220,7 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
         try {
             const { data } = await api.get("/gate/cars");
             setServerCars(data.cars);
+            setEdition(data.edition || null);
             saveCars(data.cars, data.generatedAt);
             setSavedAt(data.generatedAt);
             setOffline(false);
@@ -231,30 +276,28 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
         }
     }, [loadCars, onAction]);
 
-    const lookupOffline = useCallback(
-        async (value) => {
-            const token = tokenFromCode(value);
-            const hash = token && (await hashToken(token));
-            const car = hash && applyQueue(loadSavedCars()?.cars || [], loadQueue()).find((row) => row.passHash === hash);
-            if (car) {
-                setResult(car);
-            } else {
-                setResult(null);
-                setError(
-                    token
-                        ? "Brak połączenia i nie ma tego kodu na liście w telefonie. Znajdź auto po rejestracji."
-                        : "Nieprawidłowy kod wejściówki.",
-                );
-            }
-        },
-        [],
-    );
+    const lookupOffline = useCallback(async (value) => {
+        const token = tokenFromCode(value);
+        const hash = token && (await hashToken(token));
+        const car = hash && applyQueue(loadSavedCars()?.cars || [], loadQueue()).find((row) => row.passHash === hash);
+        if (car) {
+            setResult(car);
+        } else {
+            setResult(null);
+            setInvalid(
+                token
+                    ? "Brak połączenia i nie ma tego kodu na liście w telefonie. Znajdź auto po rejestracji."
+                    : "Nieprawidłowy kod wejściówki.",
+            );
+        }
+    }, []);
 
     const lookup = useCallback(
         async (value) => {
             const trimmed = String(value || "").trim();
             if (!trimmed) return;
             setError("");
+            setInvalid("");
             try {
                 const { data } = await api.get("/gate/check", { params: { code: trimmed } });
                 setOffline(false);
@@ -267,7 +310,7 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
                     return;
                 }
                 setResult(null);
-                setError(errorText(err, "Nie znaleziono wejściówki."));
+                setInvalid(errorText(err, "Nie znaleziono wejściówki."));
             }
         },
         [lookupOffline],
@@ -346,9 +389,18 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
         };
         const nextQueue = enqueueCheckin(entry);
         setQueue(nextQueue);
-        setResult((current) =>
-            current?.id === car.id || checkedIn ? applyQueue([car], [entry])[0] : current,
-        );
+        setResult((current) => (current?.id === car.id || checkedIn ? applyQueue([car], [entry])[0] : current));
+    }
+
+    // "Skanuj kolejny": back to the camera (or the code field on phones without it).
+    function next() {
+        setResult(null);
+        setInvalid("");
+        setCode("");
+        setError("");
+        lastScanned.current = "";
+        if (canScanInPage) setIsScanning(true);
+        else codeInput.current?.focus();
     }
 
     const normalized = search.replace(/\s+/g, "").toUpperCase();
@@ -360,123 +412,179 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
     );
     const paidCount = cars.filter((car) => car.paymentStatus === "paid").length;
     const inCount = cars.filter((car) => car.checkedInAt).length;
+    const queuedIds = new Set(queue.map((item) => item.id));
+    const recent = cars
+        .filter((car) => car.checkedInAt)
+        .sort((a, b) => String(b.checkedInAt).localeCompare(String(a.checkedInAt)))
+        .slice(0, 5);
 
     return (
-        <div className="gate-checkin">
-            <p className="admin-hint">
-                Na miejscu: <strong>{inCount}</strong> z {paidCount} opłaconych aut
-                (zaakceptowanych: {cars.length}).
-            </p>
-            <OfflineStatus
+        <div className="gate">
+            <div className="gate-bar">
+                <span>Wjazd · Select {edition || ""}</span>
+                <span title="Na miejscu / opłacone">
+                    <strong>{inCount}</strong> / {paidCount}
+                </span>
+            </div>
+            <ConnectionBar
                 offline={offline}
                 savedAt={savedAt}
+                carsCount={cars.length}
                 queue={queue}
                 syncErrors={syncErrors}
                 isSyncing={isSyncing}
                 onSync={syncQueue}
             />
-            {error && (
-                <p className="form-error" role="alert">
-                    {error}
-                </p>
-            )}
-
-            {result && <ResultCard car={result} onToggle={toggleCheckin} />}
-
-            <form
-                className="admin-bulk-bar"
-                onSubmit={(event) => {
-                    event.preventDefault();
-                    lastScanned.current = "";
-                    lookup(code);
-                }}
-            >
-                <label>
-                    Kod z wejściówki
-                    <input
-                        value={code}
-                        onChange={(event) => setCode(event.target.value)}
-                        placeholder="SSP-…"
-                        autoComplete="off"
-                    />
-                </label>
-                <button type="submit">Sprawdź</button>
-                {canScanInPage && !isScanning && (
-                    <button
-                        type="button"
-                        className="button-secondary"
-                        onClick={() => {
-                            lastScanned.current = "";
-                            setIsScanning(true);
-                        }}
-                    >
-                        Skanuj aparatem
-                    </button>
+            <div className="gate-body">
+                {error && (
+                    <p className="form-error" role="alert">
+                        {error}
+                    </p>
                 )}
-            </form>
-            {!canScanInPage && (
-                <p className="admin-hint">
-                    Na tym telefonie skanuj kod zwykłym aparatem — link otworzy tę stronę z
-                    wynikiem.
-                </p>
-            )}
-            {isScanning && <QrScanner onCode={handleScan} onClose={() => setIsScanning(false)} />}
 
-            <h3 className="checkin-list-heading">Lista aut</h3>
-            <label className="checkin-search">
-                Szukaj po rejestracji lub nazwisku
-                <input
-                    type="search"
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="np. GD 12345"
-                />
-            </label>
-            <div className="admin-table-wrapper">
-                <table className="admin-table">
-                    <thead>
-                        <tr>
-                            <th>Rejestracja</th>
-                            <th>Auto i uczestnik</th>
-                            <th>Opłata</th>
-                            <th>Wjazd</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {visible.map((car) => (
-                            <tr key={car.id}>
-                                <td>
-                                    <strong>{car.licensePlate}</strong>
-                                </td>
-                                <td>
-                                    {car.carBrand} · {car.name}
-                                </td>
-                                <td>{PAYMENT_LABELS[car.paymentStatus]}</td>
-                                <td>
+                {result ? (
+                    <ResultCard car={result} onToggle={toggleCheckin} onNext={next} />
+                ) : invalid ? (
+                    <>
+                        <div className="gate-result is-bad" role="alert">
+                            <p className="gate-result-head">
+                                <i className="bi bi-x-octagon-fill" aria-hidden="true" />
+                                Kod nieważny
+                            </p>
+                            <div className="gate-result-body">
+                                <p className="gate-result-name">{invalid}</p>
+                            </div>
+                        </div>
+                        <button type="button" className="gate-button is-dark" onClick={next}>
+                            <i className="bi bi-qr-code-scan" aria-hidden="true" />
+                            Skanuj kolejny
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        {isScanning ? (
+                            <QrScanner onCode={handleScan} onClose={() => setIsScanning(false)} />
+                        ) : canScanInPage ? (
+                            <button
+                                type="button"
+                                className="gate-button is-dark"
+                                onClick={() => {
+                                    lastScanned.current = "";
+                                    setIsScanning(true);
+                                }}
+                            >
+                                <i className="bi bi-qr-code-scan" aria-hidden="true" />
+                                Skanuj kod
+                            </button>
+                        ) : (
+                            <p className="gate-hint">
+                                Zeskanuj kod zwykłym aparatem telefonu — link otworzy tę stronę z wynikiem.
+                            </p>
+                        )}
+                        <form
+                            className="gate-code"
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                lastScanned.current = "";
+                                lookup(code);
+                            }}
+                        >
+                            <label className="visually-hidden" htmlFor="gate-code">
+                                Kod z wejściówki
+                            </label>
+                            <input
+                                id="gate-code"
+                                ref={codeInput}
+                                className="field-input"
+                                value={code}
+                                onChange={(event) => setCode(event.target.value)}
+                                placeholder="Kod z wejściówki (SSP-…)"
+                                autoComplete="off"
+                            />
+                            <button type="submit" className="btn-street btn-street-dark">
+                                Sprawdź
+                            </button>
+                        </form>
+                    </>
+                )}
+
+                <div className="gate-lookup">
+                    <label className="gate-label" htmlFor="gate-search">
+                        Nie ma kodu?
+                    </label>
+                    <div className="gate-search">
+                        <i className="bi bi-search" aria-hidden="true" />
+                        <input
+                            id="gate-search"
+                            type="search"
+                            className="field-input"
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            placeholder="Szukaj po rejestracji lub nazwisku"
+                        />
+                    </div>
+                    {(search || showAll) && (
+                        <ul className="gate-list">
+                            {visible.length === 0 && <li className="gate-list-empty">Nie ma takiego auta na liście.</li>}
+                            {visible.map((car) => (
+                                <li key={car.id}>
+                                    <span className="gate-list-car">
+                                        <strong>{car.licensePlate}</strong>
+                                        <span>
+                                            {car.carBrand} · {car.name}
+                                        </span>
+                                    </span>
                                     {car.checkedInAt ? (
                                         <button
                                             type="button"
-                                            className="button-secondary"
-                                            onClick={() => toggleCheckin(car, false)}
+                                            className="gate-list-action is-done"
                                             title="Cofnij wjazd"
+                                            onClick={() => toggleCheckin(car, false)}
                                         >
-                                            ✓ {formatTime(car.checkedInAt)}
+                                            <i className="bi bi-check2" aria-hidden="true" /> {formatHour(car.checkedInAt)}
                                         </button>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleCheckin(car, true)}
-                                            disabled={car.paymentStatus !== "paid"}
-                                            title={car.paymentStatus !== "paid" ? "Opłata niepotwierdzona" : undefined}
-                                        >
+                                    ) : car.paymentStatus === "paid" ? (
+                                        <button type="button" className="gate-list-action" onClick={() => toggleCheckin(car, true)}>
                                             Wjechał
                                         </button>
+                                    ) : (
+                                        <span className={`status-badge payment-status-${car.paymentStatus}`}>
+                                            {PAYMENT_LABELS[car.paymentStatus]}
+                                        </span>
                                     )}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                    {!search && cars.length > 0 && (
+                        <button type="button" className="text-action" onClick={() => setShowAll((value) => !value)}>
+                            {showAll ? "Ukryj listę aut" : `Pokaż wszystkie auta (${cars.length})`}
+                        </button>
+                    )}
+                </div>
+
+                {!search && recent.length > 0 && (
+                    <div className="gate-recent">
+                        <p className="gate-label">Ostatnie wjazdy</p>
+                        <ul>
+                            {recent.map((car) => (
+                                <li key={car.id}>
+                                    <strong>{car.licensePlate}</strong>
+                                    <span>
+                                        {formatHour(car.checkedInAt)} ·{" "}
+                                        <i
+                                            className={`bi bi-${queuedIds.has(car.id) ? "cloud-arrow-up" : "check2"}`}
+                                            title={queuedIds.has(car.id) ? "Czeka na wysłanie" : "Wysłane"}
+                                        />
+                                        <span className="visually-hidden">
+                                            {queuedIds.has(car.id) ? "czeka na wysłanie" : "wysłane"}
+                                        </span>
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
             </div>
         </div>
     );

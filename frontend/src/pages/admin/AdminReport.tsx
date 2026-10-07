@@ -12,8 +12,8 @@ function formatMoney(value) {
 }
 
 // Post-event summary of one edition + comparison with earlier years.
-export default function AdminReport() {
-    const [edition, setEdition] = useState("");
+// The edition comes from the side menu ("" = current).
+export default function AdminReport({ edition = "" }) {
     const [report, setReport] = useState(null);
     const [error, setError] = useState("");
 
@@ -42,20 +42,7 @@ export default function AdminReport() {
 
     return (
         <div className="admin-report">
-            <div className="admin-filters">
-                <label>
-                    Edycja
-                    <select value={edition || report.edition} onChange={(event) => setEdition(event.target.value)}>
-                        {report.editions.map((row) => (
-                            <option key={row.edition} value={row.edition}>
-                                {row.edition}
-                            </option>
-                        ))}
-                        {!report.editions.some((row) => row.edition === report.edition) && (
-                            <option value={report.edition}>{report.edition}</option>
-                        )}
-                    </select>
-                </label>
+            <div className="admin-report-actions">
                 <button type="button" className="button-secondary" onClick={() => window.print()}>
                     Drukuj / zapisz jako PDF
                 </button>

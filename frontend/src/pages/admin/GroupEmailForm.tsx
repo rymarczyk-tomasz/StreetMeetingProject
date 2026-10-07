@@ -89,8 +89,7 @@ export default function GroupEmailForm({ edition, onSent }) {
     }
 
     return (
-        <details className="gallery-howto group-email">
-            <summary>Wyślij wiadomość do uczestników</summary>
+        <div className="group-email">
             <p className="admin-hint">
                 Wiadomość pojawi się w panelu każdego uczestnika (sekcja „Komunikaty od
                 organizatora”)
@@ -144,6 +143,6 @@ export default function GroupEmailForm({ edition, onSent }) {
                     </button>
                 </div>
             </form>
-        </details>
+        </div>
     );
 }

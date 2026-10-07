@@ -11,6 +11,7 @@
     --street-yellow: #f4c542;
     --street-yellow-soft: #ffd968;
     --street-yellow-tint: #fff6d6;
+    --street-yellow-wash: #fffdf3;
     --street-ink: #171717;
     --street-muted: #68707a;
     --street-text-2: #4a4c50;
@@ -28,6 +29,7 @@
     --street-success-dot: #4cc38a;
     --street-danger: #b3261e;
     --street-danger-bg: #fbe7e5;
+    --street-danger-on-dark: #f19a93;
     --street-neutral-bg: #eef0f2;
     --street-plate-eu: #1c4ba0;
 }

@@ -347,8 +347,12 @@ router.get("/stats", (req, res) => {
         // "Daj mi znać o dacie": worth sending once the edition has a date.
         dateSubscribers: {
             pending: dateSubscribersDb.countSubscribers().pending || 0,
+            total: dateSubscribersDb.countSubscribers().total || 0,
             editionHasDate: Boolean(siteContentDb.getContent("edition")?.date),
         },
+        oldestPendingAt: submissionsDb
+            .listAllSubmissions({ edition, status: "pending" })
+            .reduce((oldest, row) => (!oldest || row.created_at < oldest ? row.created_at : oldest), null),
         users: {
             total: users.total || 0,
             active: users.active || 0,
@@ -368,7 +372,10 @@ router.get("/stats", (req, res) => {
         },
         capacity,
         freePlaces: capacity ? Math.max(0, capacity - (submissions.approved || 0)) : null,
-        availability: siteContentDb.getSubmissionsAvailability(settings),
+        availability: {
+            ...siteContentDb.getSubmissionsAvailability(settings),
+            deadline: settings.submissionsDeadline || "",
+        },
         perDay: submissionsDb.getSubmissionsPerDay(edition, 30),
         topBrands: submissionsDb.getTopCarBrands(edition, 8),
     });
@@ -524,7 +531,27 @@ router.get("/submissions", (req, res) => {
             ...toAdminSubmission(row),
             rating: ratings.get(row.id) || { average: null, count: 0, mine: null, scores: [] },
         })),
+        counts: countSubmissionsByFilter(filters),
     });
+});
+
+// Counts for the status chips: same edition and search, any status/payment.
+function countSubmissionsByFilter(filters) {
+    const rows = submissionsDb.listAllSubmissions({ edition: filters.edition, search: filters.search });
+    const settings = siteContentDb.getSettings();
+    const unread = threadsDb.unreadCountsForAdmin();
+    const counts = { all: rows.length, pending: 0, approved: 0, waitlist: 0, rejected: 0, withdrawn: 0, overdue: 0, unread: 0 };
+    for (const row of rows) {
+        if (counts[row.status] !== undefined) counts[row.status] += 1;
+        if (row.status === "approved" && isPaymentOverdue(row, settings)) counts.overdue += 1;
+        if (unread.has(row.id)) counts.unread += 1;
+    }
+    return counts;
+}
+
+// Every conversation with participants, unread first (Admin → Wiadomości).
+router.get("/threads", (req, res) => {
+    res.json({ threads: threadsDb.listThreadsForAdmin() });
 });
 
 // The signed-in admin's 1–5 score (0/null clears it).

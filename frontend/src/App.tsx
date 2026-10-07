@@ -90,7 +90,7 @@ function App() {
                     }
                 />
                 <Route
-                    path="admin"
+                    path="admin/:sekcja?"
                     element={
                         <ProtectedRoute roles={["admin"]}>
                             <AdminPage />
