@@ -4,6 +4,7 @@ import ConsentFields from "../../components/ConsentFields";
 import CopyField from "../../components/CopyField";
 import EntryPass from "../../components/EntryPass";
 import PhotoSetEditor from "../../components/PhotoSetEditor";
+import Plate from "../../components/Plate";
 import SubmissionThread from "../../components/SubmissionThread";
 import { nextStep, submissionSteps } from "../../utils/submissionSteps";
 
@@ -46,13 +47,23 @@ function errorText(err, fallback) {
     return err.response?.data?.message || fallback;
 }
 
+const STEP_ICONS = {
+    done: "bi-check-circle-fill",
+    current: "bi-circle-half",
+    todo: "bi-circle",
+    failed: "bi-x-circle-fill",
+};
+
 function Timeline({ submission }) {
     return (
         <ol className="submission-timeline" aria-label="Postęp zgłoszenia">
             {submissionSteps(submission).map((step) => (
                 <li key={step.label} className={`is-${step.state}`}>
-                    <span className="submission-timeline-dot" aria-hidden="true" />
-                    {step.label}
+                    <span className="submission-timeline-bar" aria-hidden="true" />
+                    <span className="submission-timeline-label">
+                        <i className={`bi ${STEP_ICONS[step.state]}`} aria-hidden="true" />
+                        {step.label}
+                    </span>
                 </li>
             ))}
         </ol>
@@ -92,13 +103,13 @@ function PaymentBox({ submission, onChanged, notify }) {
     return (
         <div className="payment-box">
             <h3>
-                Opłata{" "}
+                Opłata
                 <span className={`status-badge payment-status-${paymentStatus}`}>
                     {PAYMENT_STATUS_LABELS[paymentStatus]}
                 </span>
             </h3>
             {paymentStatus === "unpaid" && payment?.deadline && (
-                <p className={submission.paymentOverdue ? "payment-alert" : "admin-hint"}>
+                <p className={submission.paymentOverdue ? "payment-alert" : "payment-deadline"}>
                     {submission.paymentOverdue ? "Termin opłaty minął " : "Termin opłaty: "}
                     <strong>{formatDay(payment.deadline)}</strong>
                 </p>
@@ -109,7 +120,7 @@ function PaymentBox({ submission, onChanged, notify }) {
                         <CopyField label="Kwota" value={payment.amount} />
                         <CopyField label="Odbiorca" value={payment.recipient} />
                         <CopyField label="Numer konta" value={payment.account} />
-                        <CopyField label="Tytuł przelewu" value={payment.title} />
+                        <CopyField label="Tytuł" value={payment.title} />
                     </dl>
                 ) : (
                     <p className="admin-hint">
@@ -118,7 +129,8 @@ function PaymentBox({ submission, onChanged, notify }) {
                     </p>
                 ))}
             {submission.paymentProofUrl && (
-                <p>
+                <p className="payment-proof-link">
+                    <i className="bi bi-file-earmark-check" aria-hidden="true" />{" "}
                     <a href={submission.paymentProofUrl} target="_blank" rel="noopener noreferrer">
                         Twoje potwierdzenie przelewu
                     </a>
@@ -126,23 +138,27 @@ function PaymentBox({ submission, onChanged, notify }) {
             )}
             {paymentStatus !== "paid" && (
                 <div className="payment-actions">
-                    <label>
-                        {submission.paymentProofUrl
-                            ? "Podmień potwierdzenie przelewu"
-                            : "Po przelewie dodaj potwierdzenie (zrzut ekranu lub PDF z banku)"}
+                    <label className={`btn-street btn-street-dark file-button${isUploading ? " is-busy" : ""}`}>
+                        <i className="bi bi-upload" aria-hidden="true" />
+                        {isUploading
+                            ? "Przesyłanie..."
+                            : submission.paymentProofUrl
+                              ? "Podmień potwierdzenie przelewu"
+                              : "Dodaj potwierdzenie przelewu"}
                         <input
                             type="file"
+                            className="visually-hidden"
                             accept="image/jpeg,image/png,image/webp,application/pdf"
                             disabled={isUploading}
                             onChange={(event) => sendProof(event.target.files?.[0])}
                         />
                     </label>
-                    {isUploading && <p className="page-status">Przesyłanie...</p>}
                     {paymentStatus === "unpaid" && (
-                        <button type="button" className="button-secondary" onClick={reportWithoutProof}>
+                        <button type="button" className="text-action" onClick={reportWithoutProof}>
                             Zgłoś opłatę bez potwierdzenia
                         </button>
                     )}
+                    <p className="payment-hint">Zrzut ekranu lub PDF z banku (JPG, PNG, WEBP, PDF).</p>
                 </div>
             )}
         </div>
@@ -291,203 +307,238 @@ export default function SubmissionCard({
         }
     }
 
+    // A submission waiting for the decision is shown as one compact row.
+    const isCompact = isPending && !archived;
+    const coverPhoto = !archived && !isCompact ? s.photos?.[0] : null;
+
     return (
-        <li className={`submission-card${archived ? " is-archived" : ""}`}>
-            <div className="submission-summary">
-                <div>
-                    <strong>
-                        {s.carBrand} — {s.licensePlate}
-                    </strong>
-                    <span className={`status-badge status-${s.status}`}>
-                        {STATUS_LABELS[s.status] || s.status}
-                    </span>
-                    {archived && <span className="status-badge payment-status-unpaid">{s.edition}</span>}
-                </div>
-                {archived && (
-                    <button
-                        type="button"
-                        className="submission-details-button"
-                        onClick={() => setExpanded(!expanded)}
-                        aria-expanded={expanded}
-                    >
-                        {expanded ? "Ukryj szczegóły" : "Zobacz szczegóły"}
-                    </button>
-                )}
-            </div>
-
-            {!archived && (
-                <>
-                    <Timeline submission={s} />
-                    <p className="submission-next-step">{nextStep(s)}</p>
-                </>
+        <li
+            className={`submission-card${archived ? " is-archived" : ""}${isCompact ? " is-compact" : ""}${coverPhoto ? " has-photo" : ""}`}
+        >
+            {coverPhoto && (
+                <button
+                    type="button"
+                    className="submission-card-photo"
+                    onClick={() => onOpenPhotos(s, 0)}
+                    aria-label={`Zdjęcia ${s.carBrand}`}
+                >
+                    <img src={coverPhoto} alt="" loading="lazy" />
+                </button>
             )}
-
-            {!archived && s.status === "approved" && (
-                <PaymentBox submission={s} onChanged={onChanged} notify={notify} />
-            )}
-
-            {s.hasPass && !archived && (
-                <div className="submission-actions">
-                    <button type="button" onClick={() => setShowPass(true)}>
-                        Pokaż wejściówkę (kod QR)
-                    </button>
-                </div>
-            )}
-
-            {s.adminNote && (
-                <p className="submission-note">
-                    <strong>Komentarz organizatora:</strong> {s.adminNote}
-                </p>
-            )}
-
-            {(!archived || s.messages?.total > 0) && (
-                <div className="submission-thread-toggle">
-                    <button
-                        type="button"
-                        className="button-secondary"
-                        onClick={() => setShowThread(!showThread)}
-                        aria-expanded={showThread}
-                    >
-                        {showThread ? "Ukryj wiadomości" : "Wiadomości z organizatorem"}
-                        {s.messages?.total > 0 && ` (${s.messages.total})`}
-                    </button>
-                    {unreadMessages > 0 && !showThread && (
-                        <span className="unread-badge">nowe: {unreadMessages}</span>
+            <div className="submission-card-body">
+                <div className="submission-card-head">
+                    <div className="submission-card-title">
+                        <h3>{s.carBrand}</h3>
+                        <Plate value={s.licensePlate} size={isCompact || archived ? "sm" : "md"} />
+                        {isCompact && (
+                            <span className={`status-badge status-${s.status}`}>
+                                {STATUS_LABELS[s.status] || s.status}
+                            </span>
+                        )}
+                        {archived && <span className="status-badge status-edition">{s.edition}</span>}
+                    </div>
+                    {isCompact ? (
+                        mode === "view" && (
+                            <div className="text-actions">
+                                <button type="button" className="text-action" onClick={startEditing}>
+                                    Edytuj dane
+                                </button>
+                                <button type="button" className="text-action" onClick={() => setMode("photos")}>
+                                    Zmień zdjęcia
+                                </button>
+                                <button type="button" className="text-action is-danger" onClick={withdraw}>
+                                    Wycofaj
+                                </button>
+                            </div>
+                        )
+                    ) : archived ? (
+                        <button
+                            type="button"
+                            className="text-action"
+                            onClick={() => setExpanded(!expanded)}
+                            aria-expanded={expanded}
+                        >
+                            {expanded ? "Ukryj szczegóły" : "Zobacz szczegóły"}
+                        </button>
+                    ) : (
+                        <span className={`status-badge status-${s.status}`}>
+                            {STATUS_LABELS[s.status] || s.status}
+                        </span>
                     )}
                 </div>
-            )}
-            {showThread && (
-                <SubmissionThread basePath={`/submissions/${s.id}`} viewer="user" onRead={onChanged} />
-            )}
 
-            {mode === "edit" && (
-                <form className="auth-form submission-edit-form" onSubmit={saveEdit}>
-                    {EDITABLE_FIELDS.map(([field, label, props]) => (
-                        <label key={field}>
-                            {label}
-                            <input
-                                {...props}
-                                value={editForm[field]}
+                {!archived && !isCompact && (
+                    <>
+                        <Timeline submission={s} />
+                        <p className="submission-next-step">{nextStep(s)}</p>
+                    </>
+                )}
+
+                {!archived && s.status === "approved" && (
+                    <PaymentBox submission={s} onChanged={onChanged} notify={notify} />
+                )}
+
+                {s.hasPass && !archived && (
+                    <div className="submission-actions">
+                        <button
+                            type="button"
+                            className="btn-street btn-street-primary"
+                            onClick={() => setShowPass(true)}
+                        >
+                            <i className="bi bi-qr-code" aria-hidden="true" />
+                            Pokaż wejściówkę
+                        </button>
+                    </div>
+                )}
+
+                {s.adminNote && (
+                    <p className="submission-note">
+                        <strong>Komentarz organizatora:</strong> {s.adminNote}
+                    </p>
+                )}
+
+                {(!archived || s.messages?.total > 0) && (
+                    <div className="submission-thread-toggle">
+                        <button
+                            type="button"
+                            className="text-action"
+                            onClick={() => setShowThread(!showThread)}
+                            aria-expanded={showThread}
+                        >
+                            <i className="bi bi-chat-left-text" aria-hidden="true" />
+                            {showThread ? "Ukryj wiadomości" : "Wiadomości z organizatorem"}
+                            {s.messages?.total > 0 && ` (${s.messages.total})`}
+                        </button>
+                        {unreadMessages > 0 && !showThread && (
+                            <span className="unread-badge">nowe: {unreadMessages}</span>
+                        )}
+                    </div>
+                )}
+                {showThread && (
+                    <SubmissionThread basePath={`/submissions/${s.id}`} viewer="user" onRead={onChanged} />
+                )}
+
+                {mode === "edit" && (
+                    <form className="auth-form submission-edit-form" onSubmit={saveEdit}>
+                        {EDITABLE_FIELDS.map(([field, label, props]) => (
+                            <label key={field}>
+                                {label}
+                                <input
+                                    {...props}
+                                    value={editForm[field]}
+                                    onChange={(event) =>
+                                        setEditForm({ ...editForm, [field]: event.target.value })
+                                    }
+                                    required
+                                />
+                            </label>
+                        ))}
+                        <label>
+                            Opis pojazdu
+                            <textarea
+                                rows={4}
+                                maxLength={3000}
+                                value={editForm.carDescription}
                                 onChange={(event) =>
-                                    setEditForm({ ...editForm, [field]: event.target.value })
+                                    setEditForm({ ...editForm, carDescription: event.target.value })
                                 }
                                 required
                             />
                         </label>
-                    ))}
-                    <label>
-                        Opis pojazdu
-                        <textarea
-                            rows={4}
-                            maxLength={3000}
-                            value={editForm.carDescription}
-                            onChange={(event) =>
-                                setEditForm({ ...editForm, carDescription: event.target.value })
-                            }
-                            required
-                        />
-                    </label>
-                    <div className="submission-actions">
-                        <button type="submit" disabled={isSaving}>
-                            {isSaving ? "Zapisywanie..." : "Zapisz zmiany"}
+                        <div className="submission-actions">
+                            <button type="submit" disabled={isSaving}>
+                                {isSaving ? "Zapisywanie..." : "Zapisz zmiany"}
+                            </button>
+                            <button type="button" className="button-secondary" onClick={() => setMode("view")}>
+                                Anuluj
+                            </button>
+                        </div>
+                    </form>
+                )}
+
+                {mode === "photos" && (
+                    <PhotoSetEditor photos={s.photos} onSave={savePhotos} onCancel={() => setMode("view")} />
+                )}
+
+                {mode === "resubmit" && (
+                    <ResubmitForm
+                        submission={s}
+                        edition={availability.edition}
+                        onDone={async () => {
+                            setMode("view");
+                            await onChanged();
+                        }}
+                        onCancel={() => setMode("view")}
+                        notify={notify}
+                    />
+                )}
+
+                {mode === "view" && expanded && !isCompact && (
+                    <details className="submission-details" open={archived}>
+                        <summary>Szczegóły zgłoszenia</summary>
+                        <dl className="submission-meta">
+                            <div>
+                                <dt>Dodano</dt>
+                                <dd>{formatDate(s.createdAt)}</dd>
+                            </div>
+                            <div>
+                                <dt>Ostatnia zmiana</dt>
+                                <dd>{formatDate(s.updatedAt)}</dd>
+                            </div>
+                            <div>
+                                <dt>Uczestnik</dt>
+                                <dd>
+                                    {s.firstName} {s.lastName}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>Telefon</dt>
+                                <dd>{s.phone}</dd>
+                            </div>
+                        </dl>
+                        <p>
+                            <strong>Opis pojazdu:</strong> {s.carDescription}
+                        </p>
+                        {s.photos?.length > 0 && (
+                            <div className="submission-photos">
+                                {s.photos.map((photo, index) => (
+                                    <button
+                                        type="button"
+                                        className="photo-thumb-button"
+                                        key={photo}
+                                        aria-label={`Powiększ zdjęcie ${index + 1}`}
+                                        onClick={() => onOpenPhotos(s, index)}
+                                    >
+                                        <img src={photo} alt={`Zdjęcie ${s.carBrand}`} loading="lazy" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </details>
+                )}
+
+                {mode === "view" && !isCompact && (
+                    <div className="text-actions submission-footer-actions">
+                        {canResubmit && (
+                            <button
+                                type="button"
+                                className="btn-street btn-street-primary"
+                                onClick={() => setMode("resubmit")}
+                            >
+                                Zgłoś ponownie na edycję {availability.edition}
+                            </button>
+                        )}
+                        <button type="button" className="text-action" onClick={saveToGarage}>
+                            Zapisz w garażu
                         </button>
-                        <button type="button" className="button-secondary" onClick={() => setMode("view")}>
-                            Anuluj
-                        </button>
+                        {canResign && (
+                            <button type="button" className="text-action is-danger" onClick={resign}>
+                                Rezygnuję
+                            </button>
+                        )}
                     </div>
-                </form>
-            )}
-
-            {mode === "photos" && (
-                <PhotoSetEditor photos={s.photos} onSave={savePhotos} onCancel={() => setMode("view")} />
-            )}
-
-            {mode === "resubmit" && (
-                <ResubmitForm
-                    submission={s}
-                    edition={availability.edition}
-                    onDone={async () => {
-                        setMode("view");
-                        await onChanged();
-                    }}
-                    onCancel={() => setMode("view")}
-                    notify={notify}
-                />
-            )}
-
-            {mode === "view" && expanded && (
-                <div className="submission-details">
-                    <dl className="submission-meta">
-                        <div>
-                            <dt>Dodano</dt>
-                            <dd>{formatDate(s.createdAt)}</dd>
-                        </div>
-                        <div>
-                            <dt>Ostatnia zmiana</dt>
-                            <dd>{formatDate(s.updatedAt)}</dd>
-                        </div>
-                        <div>
-                            <dt>Uczestnik</dt>
-                            <dd>
-                                {s.firstName} {s.lastName}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt>Telefon</dt>
-                            <dd>{s.phone}</dd>
-                        </div>
-                    </dl>
-                    <p>
-                        <strong>Opis pojazdu:</strong> {s.carDescription}
-                    </p>
-                    {s.photos?.length > 0 && (
-                        <div className="submission-photos">
-                            {s.photos.map((photo, index) => (
-                                <button
-                                    type="button"
-                                    className="photo-thumb-button"
-                                    key={photo}
-                                    aria-label={`Powiększ zdjęcie ${index + 1}`}
-                                    onClick={() => onOpenPhotos(s, index)}
-                                >
-                                    <img src={photo} alt={`Zdjęcie ${s.carBrand}`} loading="lazy" />
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {mode === "view" && (
-                <div className="submission-actions">
-                    {isPending && !archived && (
-                        <>
-                            <button type="button" onClick={startEditing}>
-                                Edytuj dane
-                            </button>
-                            <button type="button" className="button-secondary" onClick={() => setMode("photos")}>
-                                Zmień zdjęcia
-                            </button>
-                            <button type="button" className="button-danger" onClick={withdraw}>
-                                Wycofaj
-                            </button>
-                        </>
-                    )}
-                    {canResign && (
-                        <button type="button" className="button-danger" onClick={resign}>
-                            Rezygnuję
-                        </button>
-                    )}
-                    {canResubmit && (
-                        <button type="button" onClick={() => setMode("resubmit")}>
-                            Zgłoś ponownie na edycję {availability.edition}
-                        </button>
-                    )}
-                    <button type="button" className="button-secondary" onClick={saveToGarage}>
-                        Zapisz w garażu
-                    </button>
-                </div>
-            )}
+                )}
+            </div>
 
             {showPass && <EntryPass submissionId={s.id} onClose={() => setShowPass(false)} />}
         </li>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import api from "../api/client";
+import Plate from "./Plate";
 import { downloadPassPdf, downloadPassPng } from "../utils/passFile";
 
 // QR entry pass for an approved + paid car; staff scan it at the gate
@@ -66,44 +67,70 @@ export default function EntryPass({ submissionId, onClose }) {
                 if (event.target === event.currentTarget) onClose();
             }}
         >
+            {/* Phones: full-screen pass for the gate. */}
+            <div className="pass-mobile-bar">
+                <button type="button" className="pass-mobile-back" onClick={onClose}>
+                    <i className="bi bi-chevron-left" aria-hidden="true" />
+                    Panel
+                </button>
+                <span>Zwiększ jasność ekranu</span>
+            </div>
             <div className="entry-pass">
-                {error && <p className="form-error">{error}</p>}
-                {!pass && !error && <p className="page-status">Ładowanie...</p>}
-                {pass && (
-                    <>
-                        <p className="page-eyebrow">Street Show {pass.edition} · Strefa Select</p>
-                        <h2>Wejściówka dla pojazdu</h2>
-                        <img src={qr} alt={`Kod QR wejściówki ${pass.code}`} className="entry-pass-qr" />
-                        <p className="entry-pass-plate">{pass.licensePlate}</p>
-                        <p>
-                            {pass.carBrand} · {pass.name}
-                        </p>
-                        <p className="admin-hint">
-                            Pokaż ten kod przy wjeździe (na telefonie albo wydrukowany).
-                            Kod: {pass.code}
-                        </p>
-                        {pass.checkedInAt && (
-                            <p className="form-success">Wjazd zarejestrowany.</p>
-                        )}
-                    </>
-                )}
-                <div className="submission-actions entry-pass-actions">
+                <div className="entry-pass-header">
+                    <div>
+                        <p>Street Show {pass?.edition || ""}</p>
+                        <h2>Strefa Select</h2>
+                    </div>
+                    <img src="/img/Logo 2.0/SVG/Logo_4.svg" alt="" className="entry-pass-logo" />
+                </div>
+                <div className="entry-pass-main">
+                    {error && <p className="form-error">{error}</p>}
+                    {!pass && !error && <p className="page-status">Ładowanie...</p>}
                     {pass && (
                         <>
-                            <button type="button" disabled={isSaving} onClick={() => save(downloadPassPdf)}>
-                                Pobierz PDF
-                            </button>
-                            <button type="button" disabled={isSaving} onClick={() => save(downloadPassPng)}>
-                                Pobierz obraz (PNG)
-                            </button>
-                            <button type="button" className="button-secondary" onClick={() => window.print()}>
-                                Drukuj
-                            </button>
+                            <img src={qr} alt={`Kod QR wejściówki ${pass.code}`} className="entry-pass-qr" />
+                            <Plate value={pass.licensePlate} size="xl" />
+                            <p className="entry-pass-owner">
+                                {pass.carBrand} · {pass.name}
+                            </p>
+                            <p className="entry-pass-code-mobile">{pass.code}</p>
                         </>
                     )}
-                    <button type="button" className="button-secondary" onClick={onClose}>
-                        Zamknij
-                    </button>
+                </div>
+                <div className="entry-pass-footer">
+                    {pass && (
+                        <p className="entry-pass-hint">
+                            Pokaż ten kod przy wjeździe – na telefonie albo wydrukowany.
+                            <br />
+                            Kod: <strong>{pass.code}</strong>
+                        </p>
+                    )}
+                    {pass?.checkedInAt && (
+                        <p className="form-success">
+                            <i className="bi bi-check-circle-fill" aria-hidden="true" /> Wjazd zarejestrowany.
+                        </p>
+                    )}
+                    <div className="entry-pass-actions">
+                        {pass && (
+                            <button type="button" className="btn-street btn-street-dark" onClick={() => window.print()}>
+                                <i className="bi bi-printer" aria-hidden="true" />
+                                Drukuj
+                            </button>
+                        )}
+                        <button type="button" className="btn-street btn-street-outline entry-pass-close" onClick={onClose}>
+                            Zamknij
+                        </button>
+                    </div>
+                    {pass && (
+                        <p className="entry-pass-downloads">
+                            <button type="button" className="text-action" disabled={isSaving} onClick={() => save(downloadPassPdf)}>
+                                Pobierz PDF
+                            </button>
+                            <button type="button" className="text-action" disabled={isSaving} onClick={() => save(downloadPassPng)}>
+                                Pobierz obraz (PNG)
+                            </button>
+                        </p>
+                    )}
                 </div>
             </div>
         </div>

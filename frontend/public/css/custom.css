@@ -2532,6 +2532,1721 @@ body {
     }
 }
 
+/* ---- Account pages (panel, garage, submission form, settings) ---- */
+.page.account-page {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    max-width: calc(1184px + 2 * 48px);
+    padding: 48px 48px 72px;
+}
+
+.account-page h1,
+.account-page h2,
+.account-page h3 {
+    margin: 0;
+}
+
+.account-page > .form-error,
+.account-page > .form-success {
+    margin: 0;
+}
+
+.account-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px 40px;
+}
+
+.account-head-title {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.account-head-title h1 {
+    font-size: 52px;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.account-head-title .section-lead {
+    max-width: 620px;
+    margin-top: 6px;
+}
+
+.account-head-title .back-link {
+    min-height: 0;
+}
+
+.account-head-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.account-section-title {
+    padding-top: 8px;
+    font-size: 26px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.account-empty {
+    margin: 0;
+    color: var(--street-text-2);
+}
+
+.account-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.account-skeleton .skeleton {
+    height: 180px;
+}
+
+/* Text actions ("Edytuj dane · Zmień zdjęcia · Wycofaj"). */
+.text-action {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    min-height: 32px;
+    padding: 0;
+    border: 0;
+    border-bottom: 2px solid currentColor;
+    background: none;
+    color: var(--street-ink);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.text-action .bi {
+    font-size: 15px;
+}
+
+.text-action:hover:not(:disabled) {
+    color: var(--street-link);
+}
+
+.text-action.is-danger {
+    color: var(--street-danger);
+}
+
+.text-action:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.text-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+}
+
+.unread-badge {
+    display: inline-block;
+    margin-left: 12px;
+    padding: 3px 8px;
+    border-radius: 2px;
+    background: var(--street-yellow);
+    color: var(--street-ink);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: normal;
+    text-transform: none;
+    vertical-align: middle;
+}
+
+/* Licence plate */
+.plate {
+    display: inline-flex;
+    flex: none;
+    overflow: hidden;
+    border: 2px solid var(--street-ink);
+    border-radius: 3px;
+    background: #fff;
+    color: var(--street-ink);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.plate-eu {
+    display: flex;
+    align-items: flex-end;
+    padding: 0 4px 2px;
+    background: var(--street-plate-eu);
+    color: #fff;
+    font-size: 10px;
+}
+
+.plate-number {
+    padding: 2px 8px;
+    letter-spacing: 0.06em;
+}
+
+.plate-sm {
+    font-size: 13px;
+}
+
+.plate-sm .plate-eu {
+    padding: 0 3px 2px;
+    font-size: 9px;
+}
+
+.plate-sm .plate-number {
+    padding: 1px 6px;
+}
+
+.plate-xl {
+    border-width: 3px;
+    border-radius: 4px;
+    font-size: 30px;
+}
+
+.plate-xl .plate-eu {
+    padding: 0 6px 4px;
+    font-size: 13px;
+}
+
+.plate-xl .plate-number {
+    padding: 2px 14px;
+}
+
+/* E-mail verification banner */
+.verify-banner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px 20px;
+    padding: 16px 20px;
+    border: 1px solid var(--street-yellow);
+    border-radius: 4px;
+    background: var(--street-yellow-tint);
+    font-size: 16px;
+}
+
+.verify-banner-text {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.verify-banner-text .bi {
+    color: var(--street-link);
+    font-size: 20px;
+}
+
+/* Current edition */
+.panel-event-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    overflow: hidden;
+    border-radius: 4px;
+    background: var(--street-ink);
+    color: #fff;
+}
+
+.panel-event-main,
+.panel-event-status {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 32px;
+}
+
+.panel-event-main {
+    border-right: 1px solid var(--street-dark-line);
+}
+
+.panel-event-main .eyebrow {
+    font-size: 14px;
+}
+
+.panel-event-main h2 {
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.panel-event-main p:last-child {
+    margin: 0;
+    color: var(--street-on-dark);
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.panel-event-status {
+    justify-content: center;
+    gap: 14px;
+}
+
+.panel-event-status p {
+    margin: 0;
+}
+
+.panel-event-state {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    font-size: 17px;
+}
+
+.status-dot {
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--street-success-dot);
+}
+
+.status-dot.is-closed {
+    background: var(--street-danger);
+}
+
+.panel-event-limit {
+    color: var(--street-on-dark);
+    font-size: 15px;
+}
+
+.panel-event-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+}
+
+.panel-event-links {
+    color: var(--street-on-dark);
+    font-size: 14px;
+}
+
+.panel-event-links a {
+    color: var(--street-on-dark);
+}
+
+.panel-event-links a:hover {
+    color: var(--street-yellow);
+}
+
+.panel-event-info {
+    grid-column: 1 / -1;
+    padding: 24px 32px;
+    border-top: 1px solid var(--street-dark-line);
+}
+
+.panel-event-info h3 {
+    margin-bottom: 8px;
+    color: var(--street-yellow);
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.panel-event-info p {
+    margin: 0;
+    color: var(--street-on-dark);
+    white-space: pre-line;
+}
+
+/* Messages */
+.panel-messages {
+    padding: 24px 28px;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.panel-section-heading {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+}
+
+.panel-section-heading h2 {
+    font-size: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.panel-messages ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.panel-messages li {
+    border-top: 1px solid var(--street-border);
+}
+
+.panel-messages li.is-unread {
+    box-shadow: inset 3px 0 0 var(--street-yellow);
+}
+
+.account-page .panel-message-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 4px 16px;
+    width: 100%;
+    padding: 14px 0 14px 14px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--street-text-2);
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 400;
+    text-align: left;
+    white-space: normal;
+    cursor: pointer;
+}
+
+.account-page .panel-message-toggle:hover {
+    background: var(--street-surface);
+}
+
+.panel-messages li.is-unread .panel-message-toggle {
+    color: var(--street-ink);
+    font-weight: 700;
+}
+
+.panel-message-date {
+    color: var(--street-muted);
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.panel-message-body {
+    margin: 0;
+    padding: 0 14px 16px;
+    white-space: pre-line;
+}
+
+/* Submission cards (participant) */
+.account-page .submission-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.account-page .submission-card {
+    display: block;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: none;
+}
+
+.account-page .submission-card.has-photo {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+}
+
+.account-page .submission-card-photo {
+    display: block;
+    padding: 0;
+    border: 0;
+    background: var(--street-surface);
+    cursor: zoom-in;
+}
+
+.submission-card-photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 200px;
+    object-fit: cover;
+}
+
+.submission-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+    padding: 24px 28px;
+}
+
+.submission-card.is-compact .submission-card-body,
+.submission-card.is-archived .submission-card-body {
+    gap: 14px;
+    padding: 20px 28px;
+}
+
+.submission-card-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px 16px;
+}
+
+.submission-card-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+}
+
+.submission-card-title h3 {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.1;
+    text-transform: uppercase;
+}
+
+.submission-card.is-compact .submission-card-title h3,
+.submission-card.is-archived .submission-card-title h3 {
+    font-size: 20px;
+}
+
+.status-edition {
+    background: var(--street-ink);
+    color: #fff;
+}
+
+.submission-timeline {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.submission-timeline li {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.submission-timeline-bar {
+    height: 4px;
+    background: var(--street-border);
+}
+
+.submission-timeline-label {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    color: var(--street-muted);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.submission-timeline .is-done .submission-timeline-bar {
+    background: var(--street-ink);
+}
+
+.submission-timeline .is-done .submission-timeline-label {
+    color: var(--street-ink);
+    font-weight: 700;
+}
+
+.submission-timeline .is-current .submission-timeline-bar {
+    background: var(--street-yellow);
+}
+
+.submission-timeline .is-current .submission-timeline-label {
+    color: var(--street-link);
+    font-weight: 700;
+}
+
+.submission-timeline .is-failed .submission-timeline-bar {
+    background: var(--street-danger);
+}
+
+.submission-timeline .is-failed .submission-timeline-label {
+    color: var(--street-danger);
+    font-weight: 700;
+}
+
+.submission-next-step {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.payment-box {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+    border-radius: 4px;
+    background: var(--street-surface);
+}
+
+.payment-box h3 {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.payment-box .status-badge {
+    padding: 3px 8px;
+    font-size: 12px;
+}
+
+.payment-box p {
+    margin: 0;
+}
+
+.payment-deadline {
+    color: var(--street-text-2);
+    font-size: 15px;
+}
+
+.payment-details {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0;
+}
+
+.copy-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding: 12px;
+    border-radius: 3px;
+    background: #fff;
+}
+
+.copy-field dt {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    color: var(--street-muted);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.copy-field dd {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.copy-field-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    margin: -8px -8px -8px 0;
+    border: 0;
+    border-radius: 3px;
+    background: none;
+    color: var(--street-muted);
+    cursor: pointer;
+}
+
+.copy-field-button:hover {
+    background: var(--street-surface);
+    color: var(--street-ink);
+}
+
+.payment-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+}
+
+.payment-actions .payment-hint {
+    flex-basis: 100%;
+    color: var(--street-muted);
+    font-size: 13px;
+}
+
+.file-button {
+    position: relative;
+    font-size: 14px;
+}
+
+.file-button:focus-within {
+    outline: 3px solid var(--street-yellow);
+    outline-offset: 3px;
+}
+
+.file-button.is-busy {
+    opacity: 0.65;
+    pointer-events: none;
+}
+
+.payment-proof-link {
+    font-size: 15px;
+}
+
+.submission-thread-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.submission-thread-toggle .unread-badge {
+    margin-left: 0;
+}
+
+.account-page .submission-details {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.submission-details summary,
+.panel-archive summary {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: var(--street-text-2);
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    list-style: none;
+}
+
+.submission-details summary::-webkit-details-marker,
+.panel-archive summary::-webkit-details-marker {
+    display: none;
+}
+
+.submission-details summary::before {
+    font-family: "bootstrap-icons";
+    content: "\f285";
+    transition: transform 160ms ease;
+}
+
+.submission-details[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.submission-details[open] summary {
+    margin-bottom: 14px;
+}
+
+.submission-meta {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px 16px;
+    margin: 0 0 12px;
+}
+
+.submission-meta dt {
+    color: var(--street-muted);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.submission-meta dd {
+    margin: 2px 0 0;
+}
+
+.submission-footer-actions {
+    padding-top: 16px;
+    border-top: 1px solid var(--street-border);
+}
+
+.panel-archive {
+    padding-top: 16px;
+    border-top: 1px solid var(--street-input-border);
+}
+
+.panel-archive summary {
+    color: var(--street-text-2);
+    font-size: 16px;
+}
+
+.panel-archive summary .bi {
+    transition: transform 160ms ease;
+}
+
+.panel-archive[open] summary .bi {
+    transform: rotate(90deg);
+}
+
+.panel-archive[open] summary {
+    margin-bottom: 20px;
+}
+
+/* Forms inside account cards (edit submission, garage, settings) */
+.account-page .auth-form > label,
+.account-page .auth-form label:not(.consent-label):not(.admin-checkbox-label) {
+    color: var(--street-ink);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.account-page .auth-form input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.account-page .auth-form select,
+.account-page .auth-form textarea,
+.account-page .account-card input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+    width: 100%;
+    min-height: 52px;
+    padding: 0 16px;
+    border: 1.5px solid var(--street-input-border);
+    border-radius: 4px;
+    background: #fff;
+    color: var(--street-ink);
+    font: inherit;
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+.account-page .auth-form textarea {
+    padding: 14px 16px;
+    line-height: 1.5;
+}
+
+.account-page .auth-form input:focus,
+.account-page .auth-form select:focus,
+.account-page .auth-form textarea:focus,
+.account-page .account-card input:focus {
+    border: 2px solid var(--street-ink);
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(244, 197, 66, 0.45);
+}
+
+.account-card-form,
+.account-page .account-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 28px;
+    border: 0;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: none;
+}
+
+.account-card-form h2,
+.account-page .account-card h2 {
+    font-size: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.account-page .account-settings-grid {
+    gap: 20px;
+}
+
+/* ---- Garage ---- */
+.vehicle-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.vehicle-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.vehicle-card.is-editing {
+    grid-column: span 2;
+}
+
+.vehicle-mosaic {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: 100px 100px;
+    gap: 3px;
+}
+
+.account-page .vehicle-mosaic button,
+.account-page .vehicle-photo-single {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: var(--street-surface);
+    cursor: zoom-in;
+}
+
+.vehicle-mosaic button:first-child {
+    grid-row: 1 / 3;
+}
+
+.vehicle-mosaic img,
+.vehicle-photo-single img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.vehicle-photo-single {
+    height: 203px;
+}
+
+.vehicle-mosaic-more {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(17, 17, 17, 0.6);
+    color: #fff;
+    font-weight: 700;
+}
+
+.vehicle-photo-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 203px;
+    background: var(--street-surface);
+    color: var(--street-muted);
+    font-size: 14px;
+}
+
+.vehicle-photo-empty .bi {
+    font-size: 28px;
+}
+
+.vehicle-card-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+}
+
+.vehicle-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.vehicle-card-head h2 {
+    min-width: 0;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.15;
+    text-transform: uppercase;
+}
+
+.vehicle-card-text {
+    margin: 0;
+    color: var(--street-text-2);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.vehicle-card-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: auto;
+}
+
+.vehicle-card-actions .btn-street {
+    flex: 1;
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: 14px;
+}
+
+.vehicle-submitted {
+    border-color: var(--street-input-border);
+    color: var(--street-muted);
+    cursor: default;
+}
+
+.vehicle-icon-button {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1.5px solid var(--street-input-border);
+    border-radius: 4px;
+    background: #fff;
+    color: var(--street-ink);
+    cursor: pointer;
+    transition: border-color 160ms ease;
+}
+
+.vehicle-icon-button:hover {
+    border-color: var(--street-ink);
+}
+
+.vehicle-icon-button.is-danger {
+    color: var(--street-danger);
+}
+
+.vehicle-icon-button.is-danger:hover {
+    border-color: var(--street-danger);
+}
+
+.account-page .vehicle-add-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    height: 100%;
+    min-height: 380px;
+    padding: 20px;
+    border: 2px dashed var(--street-input-border);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--street-text-2);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 400;
+    white-space: normal;
+    cursor: pointer;
+}
+
+.account-page .vehicle-add-tile:hover {
+    border-color: var(--street-ink);
+    background: transparent;
+    color: var(--street-ink);
+}
+
+.vehicle-add-tile .bi {
+    font-size: 36px;
+}
+
+.vehicle-add-title {
+    font-size: 17px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.vehicle-skeleton {
+    height: 380px;
+}
+
+/* ---- Submission form ---- */
+.submission-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 40px;
+    align-items: start;
+}
+
+.submission-main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.submission-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-card {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0;
+    margin: 0;
+    padding: 28px;
+    border: 0;
+    border-radius: 4px;
+    background: #fff;
+}
+
+/* Floated legend = laid out inside the card like a normal heading. */
+.form-card-title {
+    display: flex;
+    float: left;
+    gap: 12px;
+    align-items: center;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+/* Legend + text on one line next to it (e.g. "3 z garażu"). */
+.form-card-aside {
+    align-self: flex-end;
+    margin: -44px 0 0;
+    color: var(--street-muted);
+    font-size: 14px;
+}
+
+.form-card-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 3px;
+    background: var(--street-ink);
+    color: var(--street-yellow);
+    font-size: 16px;
+}
+
+.form-card-hint {
+    margin: 0;
+    color: var(--street-text-2);
+    font-size: 15px;
+}
+
+.form-row-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.field-select {
+    appearance: none;
+    padding-right: 44px;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23171717'%3E%3Cpath d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E") right 16px center / 14px no-repeat;
+}
+
+textarea.field-input,
+.field-textarea {
+    height: auto;
+    min-height: 96px;
+    padding: 14px 16px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.photo-slots {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.photo-slot {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 4px;
+}
+
+.photo-slot img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-slot.is-drop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px;
+    border: 2px dashed var(--street-input-border);
+    color: var(--street-text-2);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+}
+
+.photo-slot.is-drop .bi {
+    font-size: 24px;
+}
+
+.photo-slot.is-drop:hover,
+.photo-slot.is-drop.is-dragging {
+    border-color: var(--street-ink);
+    background: var(--street-yellow-tint);
+    color: var(--street-ink);
+}
+
+.photo-slot.is-drop:focus-within {
+    outline: 3px solid var(--street-yellow);
+    outline-offset: 3px;
+}
+
+.photo-slot.is-empty {
+    border: 1.5px solid var(--street-neutral-bg);
+    background: #fafbfb;
+}
+
+.account-page .photo-slot-remove {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 3px;
+    background: rgba(17, 17, 17, 0.75);
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.photo-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.photo-progress p {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 16px;
+    margin: 0;
+    color: var(--street-text-2);
+    font-size: 14px;
+}
+
+.progress-bar {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: var(--street-neutral-bg);
+}
+
+.progress-bar span {
+    display: block;
+    max-width: 100%;
+    height: 100%;
+    background: var(--street-ink);
+}
+
+.progress-bar.is-dark {
+    margin-top: 6px;
+    background: #333;
+}
+
+.progress-bar.is-dark span {
+    background: var(--street-yellow);
+}
+
+.submission-form-submit {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+}
+
+.submission-form-submit .btn-street {
+    min-height: 56px;
+    padding: 0 34px;
+    font-size: 16px;
+}
+
+.submission-form-submit .btn-street:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.submission-form-submit p {
+    margin: 0;
+    color: var(--street-muted);
+    font-size: 14px;
+}
+
+.submission-aside {
+    position: sticky;
+    top: calc(var(--navbar-height, 72px) + 24px);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 84px;
+    padding: 28px;
+    border-radius: 4px;
+    background: var(--street-ink);
+    color: #fff;
+}
+
+.submission-aside p {
+    margin: 0;
+}
+
+.submission-aside .eyebrow {
+    font-size: 13px;
+}
+
+.submission-aside-count {
+    margin-top: 6px !important;
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.submission-aside-count span {
+    color: var(--street-on-dark-3);
+    font-size: 20px;
+}
+
+.submission-aside-note {
+    color: var(--street-on-dark);
+    font-size: 14px;
+}
+
+.submission-aside-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 18px;
+    border-top: 1px solid #333;
+}
+
+.submission-aside-title {
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.submission-aside-steps ol {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: aside-step;
+}
+
+.submission-aside-steps li {
+    display: flex;
+    gap: 12px;
+    color: var(--street-on-dark);
+    font-size: 14px;
+    line-height: 1.45;
+    counter-increment: aside-step;
+}
+
+.submission-aside-steps li::before {
+    color: var(--street-yellow);
+    font-weight: 700;
+    content: counter(aside-step, decimal-leading-zero);
+}
+
+.submission-success {
+    border: 0;
+}
+
+/* ---- Entry pass ---- */
+.pass-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(17, 17, 17, 0.7);
+}
+
+.pass-mobile-bar {
+    display: none;
+}
+
+.entry-pass {
+    display: flex;
+    flex-direction: column;
+    width: min(100%, 420px);
+    max-height: 100%;
+    overflow-y: auto;
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+}
+
+.entry-pass-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 28px;
+    background: var(--street-yellow);
+}
+
+.entry-pass-header p {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.entry-pass-header h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.entry-pass-logo {
+    width: 64px;
+}
+
+.entry-pass-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 28px;
+    border-bottom: 3px dashed var(--street-border);
+    text-align: center;
+}
+
+.entry-pass-qr {
+    width: 240px;
+    max-width: 100%;
+    border: 2px solid var(--street-ink);
+    border-radius: 4px;
+}
+
+.entry-pass-owner {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.entry-pass-code-mobile {
+    display: none;
+}
+
+.entry-pass-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px 28px;
+}
+
+.entry-pass-footer p {
+    margin: 0;
+}
+
+.entry-pass-hint {
+    color: var(--street-text-2);
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.entry-pass-hint strong {
+    color: var(--street-ink);
+    font-family: ui-monospace, monospace;
+}
+
+.entry-pass-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.entry-pass-actions .btn-street {
+    flex: 1;
+    min-height: 50px;
+}
+
+.entry-pass-downloads {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 20px;
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    .entry-pass,
+    .entry-pass * {
+        visibility: visible;
+    }
+
+    .pass-backdrop {
+        position: absolute;
+        background: none;
+    }
+
+    .entry-pass {
+        box-shadow: none;
+    }
+
+    .entry-pass-actions,
+    .entry-pass-downloads,
+    .pass-mobile-bar {
+        display: none !important;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+    .vehicle-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .submission-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .submission-aside {
+        position: static;
+        margin-top: 0;
+    }
+
+    .payment-details {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767px) {
+    .page.account-page {
+        gap: 20px;
+        padding: 28px 20px 48px;
+    }
+
+    .account-head-title h1 {
+        font-size: 34px;
+    }
+
+    .account-head-actions .btn-street {
+        flex: 1;
+    }
+
+    .account-section-title {
+        font-size: 20px;
+    }
+
+    .panel-event-card {
+        grid-template-columns: 1fr;
+    }
+
+    .panel-event-main {
+        border-right: 0;
+        border-bottom: 1px solid var(--street-dark-line);
+    }
+
+    .panel-event-main,
+    .panel-event-status {
+        padding: 24px 20px;
+    }
+
+    .panel-event-main h2 {
+        font-size: 28px;
+    }
+
+    .panel-messages {
+        padding: 20px;
+    }
+
+    .account-page .submission-card.has-photo {
+        grid-template-columns: 1fr;
+    }
+
+    .submission-card-photo img {
+        height: 180px;
+        min-height: 0;
+    }
+
+    .submission-card-body,
+    .submission-card.is-compact .submission-card-body,
+    .submission-card.is-archived .submission-card-body {
+        padding: 20px;
+    }
+
+    .submission-card-title h3 {
+        font-size: 20px;
+    }
+
+    .submission-timeline {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 4px;
+    }
+
+    .payment-details,
+    .submission-meta {
+        grid-template-columns: 1fr;
+    }
+
+    .vehicle-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .vehicle-card.is-editing {
+        grid-column: auto;
+    }
+
+    .account-page .vehicle-add-tile {
+        min-height: 160px;
+    }
+
+    .submission-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 24px;
+    }
+
+    .submission-aside {
+        position: static;
+        margin-top: 0;
+    }
+
+    .form-card {
+        padding: 20px;
+    }
+
+    .form-card-aside {
+        margin: -8px 0 0;
+    }
+
+    .form-row-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .photo-slots {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .submission-form-submit .btn-street {
+        width: 100%;
+    }
+
+    /* Pass at the gate: full screen, dark around a big white card. */
+    .pass-backdrop {
+        justify-content: flex-start;
+        padding: 0;
+        background: var(--street-ink);
+    }
+
+    .pass-mobile-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        padding: 8px 12px 0 8px;
+        color: #fff;
+    }
+
+    .pass-mobile-bar span {
+        color: var(--street-on-dark-3);
+        font-size: 13px;
+    }
+
+    .page .pass-mobile-back {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 8px;
+        border: 0;
+        background: none;
+        color: #fff;
+        font-size: 15px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .entry-pass {
+        flex: 1;
+        width: calc(100% - 32px);
+        margin: 8px 16px 0;
+        border-radius: 8px;
+        box-shadow: none;
+    }
+
+    .entry-pass-logo {
+        display: none;
+    }
+
+    .entry-pass-main {
+        flex: 1;
+        justify-content: center;
+        gap: 18px;
+        padding: 20px;
+        border-bottom: 0;
+    }
+
+    .entry-pass-qr {
+        width: 280px;
+    }
+
+    .entry-pass-main .plate-xl {
+        font-size: 32px;
+    }
+
+    .entry-pass-code-mobile {
+        display: block;
+        margin: 0;
+        color: var(--street-text-2);
+        font-family: ui-monospace, monospace;
+        font-size: 14px;
+    }
+
+    .entry-pass-hint,
+    .entry-pass-close {
+        display: none !important;
+    }
+
+    .entry-pass-footer {
+        padding: 0 20px 20px;
+    }
+
+    .entry-pass-actions .btn-street-dark {
+        border-color: var(--street-yellow);
+        background: var(--street-yellow);
+        color: var(--street-ink);
+    }
+}
+
 @media (max-width: 768px) {
     .admin-stats-grid,
     .admin-filters,

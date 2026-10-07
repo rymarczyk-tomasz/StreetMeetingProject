@@ -12,9 +12,10 @@ export default function ConsentFields({
 }) {
     return (
         <div className="consent-fields">
-            <label className="consent-label">
+            <label className="consent-label check-label">
                 <input
                     type="checkbox"
+                    className="check-input"
                     checked={value.acceptTerms}
                     onChange={(event) => onChange({ ...value, acceptTerms: event.target.checked })}
                     required
@@ -28,9 +29,10 @@ export default function ConsentFields({
                     zgłoszenia i organizacji strefy Select. <em>(wymagane)</em>
                 </span>
             </label>
-            <label className="consent-label">
+            <label className="consent-label check-label">
                 <input
                     type="checkbox"
+                    className="check-input"
                     checked={value.photoPublishConsent}
                     onChange={(event) =>
                         onChange({ ...value, photoPublishConsent: event.target.checked })

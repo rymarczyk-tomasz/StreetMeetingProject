@@ -2,6 +2,7 @@ const express = require("express");
 
 const vehiclesDb = require("../db/vehicles");
 const submissionsDb = require("../db/submissions");
+const siteContentDb = require("../db/siteContent");
 const { authenticate } = require("../auth/middleware");
 const { normalizeText } = require("../utils/validation");
 const {
@@ -72,8 +73,22 @@ function ensureRoom(req, res, next) {
 
 router.use(authenticate);
 
+// Each car says whether it already has an active submission in the current
+// edition, so the garage can show "Zgłoszone na <rok>" instead of the button.
 router.get("/", (req, res) => {
-    res.json({ vehicles: vehiclesDb.listVehicles(req.user.sub).map(toPublicVehicle) });
+    const userId = req.user.sub;
+    const edition = siteContentDb.getCurrentEdition();
+    res.json({
+        edition,
+        vehicles: vehiclesDb.listVehicles(userId).map((row) => ({
+            ...toPublicVehicle(row),
+            submittedThisEdition: submissionsDb.hasActiveSubmissionForPlate(
+                userId,
+                edition,
+                row.license_plate,
+            ),
+        })),
+    });
 });
 
 router.get("/photos/:userId/:filename", servePhoto("vehicles"));

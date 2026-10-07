@@ -157,22 +157,19 @@ export default function AccountSettingsPage() {
     }
 
     return (
-        <section className="page account-settings-page">
-            <div className="page-heading-row">
-                <div>
-                    <p className="page-eyebrow">Panel konta</p>
+        <section className="page account-page account-settings-page">
+            <div className="account-head">
+                <div className="account-head-title">
+                    <Link className="back-link" to="/panel">
+                        ← Panel konta
+                    </Link>
                     <h1>Ustawienia konta</h1>
+                    <p className="section-lead">
+                        Zarządzaj swoimi danymi logowania i informacjami wyświetlanymi przy
+                        zgłoszeniach. Swoje auta zapisujesz w <Link to="/garaz">garażu</Link>.
+                    </p>
                 </div>
-                <Link className="account-back-link" to="/panel">
-                    Wróć do panelu
-                </Link>
             </div>
-
-            <p className="account-settings-intro">
-                Zarządzaj swoimi danymi logowania i informacjami wyświetlanymi
-                przy zgłoszeniach. Swoje auta zapisujesz w{" "}
-                <Link to="/garaz">garażu</Link>.
-            </p>
 
             {message && (
                 <p className="form-success" role="status">
@@ -306,9 +303,10 @@ export default function AccountSettingsPage() {
                         ["paymentReminders", "Przypomnienie o zbliżającym się terminie opłaty"],
                         ["threadReplies", "Odpowiedzi organizatora w wiadomościach przy zgłoszeniu"],
                     ].map(([key, label]) => (
-                        <label className="consent-label" key={key}>
+                        <label className="consent-label check-label" key={key}>
                             <input
                                 type="checkbox"
+                                className="check-input"
                                 checked={notifications[key]}
                                 onChange={(event) => toggleNotification(key, event.target.checked)}
                             />

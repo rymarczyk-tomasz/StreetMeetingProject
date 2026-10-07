@@ -18,7 +18,7 @@ export default function EventInfoCard({ overview, hasApprovedSubmission }) {
     return (
         <section className="panel-event-card">
             <div className="panel-event-main">
-                <p className="page-eyebrow">Bieżąca edycja</p>
+                <p className="eyebrow">Bieżąca edycja</p>
                 <h2>{edition.name}</h2>
                 <p>
                     {dateLabel}
@@ -28,35 +28,43 @@ export default function EventInfoCard({ overview, hasApprovedSubmission }) {
                 </p>
             </div>
             <div className="panel-event-status">
-                {availability.open ? (
-                    <>
-                        <p>
+                <p className="panel-event-state">
+                    <span
+                        className={`status-dot${availability.open ? " is-open" : " is-closed"}`}
+                        aria-hidden="true"
+                    />
+                    {availability.open ? (
+                        <span>
                             Zgłoszenia do strefy Select są <strong>otwarte</strong>
                             {availability.deadline && ` do ${formatDay(availability.deadline)}`}.
-                        </p>
-                        <p>
-                            {availability.remaining > 0
-                                ? `Możesz zgłosić jeszcze ${plural(availability.remaining, "pojazd", "pojazdy", "pojazdów")} (limit ${availability.maxVehicles}).`
-                                : `Wykorzystano limit ${availability.maxVehicles} pojazdów w tej edycji.`}
-                        </p>
-                        {availability.remaining > 0 && (
-                            <Link className="account-settings-button" to="/formularz">
-                                Zgłoś pojazd
-                            </Link>
-                        )}
-                    </>
-                ) : (
-                    <p>{availability.reason}</p>
-                )}
-                <p className="panel-event-links">
-                    <Link to="/regulamin">Regulamin</Link>
-                    {contactEmail && (
-                        <>
-                            {" · "}
-                            <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
-                        </>
+                        </span>
+                    ) : (
+                        <span>{availability.reason}</span>
                     )}
                 </p>
+                {availability.open && (
+                    <p className="panel-event-limit">
+                        {availability.remaining > 0
+                            ? `Możesz zgłosić jeszcze ${plural(availability.remaining, "pojazd", "pojazdy", "pojazdów")} (limit ${availability.maxVehicles}).`
+                            : `Wykorzystano limit ${availability.maxVehicles} pojazdów w tej edycji.`}
+                    </p>
+                )}
+                <div className="panel-event-actions">
+                    {availability.open && availability.remaining > 0 && (
+                        <Link className="btn-street btn-street-primary" to="/formularz">
+                            Zgłoś pojazd
+                        </Link>
+                    )}
+                    <p className="panel-event-links">
+                        <Link to="/regulamin">Regulamin</Link>
+                        {contactEmail && (
+                            <>
+                                {" · "}
+                                <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+                            </>
+                        )}
+                    </p>
+                </div>
             </div>
             {hasApprovedSubmission && participantInfo && (
                 <div className="panel-event-info">

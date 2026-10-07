@@ -32,7 +32,7 @@ export default function MessagesInbox({ messages, onChanged }) {
                 {unread > 1 && (
                     <button
                         type="button"
-                        className="button-secondary"
+                        className="text-action"
                         onClick={async () => {
                             await api.post("/messages/read-all").catch(() => {});
                             onChanged();
@@ -51,8 +51,8 @@ export default function MessagesInbox({ messages, onChanged }) {
                             onClick={() => open(message)}
                             aria-expanded={openId === message.id}
                         >
-                            <strong>{message.subject}</strong>
-                            <span>{formatDate(message.createdAt)}</span>
+                            <span className="panel-message-subject">{message.subject}</span>
+                            <span className="panel-message-date">{formatDate(message.createdAt)}</span>
                         </button>
                         {openId === message.id && <p className="panel-message-body">{message.body}</p>}
                     </li>

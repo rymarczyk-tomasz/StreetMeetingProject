@@ -20,15 +20,16 @@ function EmailVerifyBanner() {
     }
 
     return (
-        <div className="payment-alert verify-banner">
-            <span>
-                Potwierdź swój adres e-mail — dzięki temu dostaniesz decyzję w sprawie
+        <div className="verify-banner" role="status">
+            <span className="verify-banner-text">
+                <i className="bi bi-envelope-exclamation" aria-hidden="true" />
+                Potwierdź swój adres e-mail – dzięki temu dostaniesz decyzję w sprawie
                 zgłoszenia i ważne informacje o wydarzeniu.
             </span>
             {feedback ? (
                 <span>{feedback}</span>
             ) : (
-                <button type="button" className="button-secondary" onClick={resend}>
+                <button type="button" className="text-action" onClick={resend}>
                     Wyślij link ponownie
                 </button>
             )}
@@ -43,7 +44,7 @@ export default function DashboardPage() {
     const [messages, setMessages] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [feedback, setFeedback] = useState({ message: "", error: "" });
-    const [lightbox, setLightbox] = useState({ photos: [], index: null });
+    const [lightbox, setLightbox] = useState({ photos: [], index: null, title: "" });
 
     const load = useCallback(async () => {
         try {
@@ -79,24 +80,27 @@ export default function DashboardPage() {
         notify,
         onOpenPhotos: (submission, index) =>
             setLightbox({
-                photos: submission.photos.map((src) => ({ src, alt: `Zdjęcie ${submission.carBrand}` })),
+                photos: submission.photos.map((src) => ({ src, thumb: src, alt: `Zdjęcie ${submission.carBrand}` })),
                 index,
+                title: submission.carBrand,
             }),
     };
 
     return (
-        <section className="page">
-            <div className="page-heading-row">
-                <div>
-                    <p className="page-eyebrow">Panel użytkownika</p>
+        <section className="page account-page">
+            <div className="account-head">
+                <div className="account-head-title">
+                    <p className="eyebrow eyebrow-on-light">Panel użytkownika</p>
                     <h1>Witaj, {user.firstName || user.email}!</h1>
                 </div>
-                <div className="submission-actions">
-                    <Link className="account-settings-button" to="/garaz">
+                <div className="account-head-actions">
+                    <Link className="btn-street btn-street-outline" to="/garaz">
+                        <i className="bi bi-car-front" aria-hidden="true" />
                         Mój garaż
                     </Link>
-                    <Link className="account-settings-button" to="/ustawienia-konta">
-                        Ustawienia konta
+                    <Link className="btn-street btn-street-outline" to="/ustawienia-konta">
+                        <i className="bi bi-gear" aria-hidden="true" />
+                        Ustawienia
                     </Link>
                 </div>
             </div>
@@ -114,7 +118,10 @@ export default function DashboardPage() {
             )}
 
             {isLoading ? (
-                <p className="page-status">Ładowanie...</p>
+                <div aria-hidden="true" className="account-skeleton">
+                    <span className="skeleton" />
+                    <span className="skeleton" />
+                </div>
             ) : (
                 <>
                     <EventInfoCard
@@ -123,9 +130,11 @@ export default function DashboardPage() {
                     />
                     <MessagesInbox messages={messages} onChanged={load} />
 
-                    <h2>Twoje zgłoszenia {currentEdition && `na edycję ${currentEdition}`}</h2>
+                    <h2 className="account-section-title">
+                        Twoje zgłoszenia {currentEdition && `na edycję ${currentEdition}`}
+                    </h2>
                     {current.length === 0 ? (
-                        <p>
+                        <p className="account-empty">
                             Nie masz jeszcze zgłoszeń na tę edycję.
                             {archived.length > 0 &&
                                 " Auto z poprzedniego roku zgłosisz jednym kliknięciem z archiwum poniżej."}
@@ -140,7 +149,10 @@ export default function DashboardPage() {
 
                     {archived.length > 0 && (
                         <details className="panel-archive" open={current.length === 0}>
-                            <summary>Archiwum — poprzednie edycje ({archived.length})</summary>
+                            <summary>
+                                <i className="bi bi-chevron-right" aria-hidden="true" />
+                                Archiwum – poprzednie edycje ({archived.length})
+                            </summary>
                             <ul className="submission-list">
                                 {archived.map((s) => (
                                     <SubmissionCard key={s.id} submission={s} archived {...cardProps} />
@@ -155,6 +167,7 @@ export default function DashboardPage() {
                 photos={lightbox.photos}
                 index={lightbox.index}
                 onIndexChange={(index) => setLightbox((currentBox) => ({ ...currentBox, index }))}
+                title={lightbox.title}
                 label="Zdjęcia zgłoszenia"
             />
         </section>

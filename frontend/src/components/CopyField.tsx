@@ -16,7 +16,7 @@ async function copyText(text: string) {
     }
 }
 
-// "Label: value [Kopiuj]" — used for bank transfer details.
+// Tile with a label, the value and a copy icon — used for bank transfer details.
 export default function CopyField({ label, value }: { label: string; value: string }) {
     const [copied, setCopied] = useState(false);
 
@@ -24,12 +24,12 @@ export default function CopyField({ label, value }: { label: string; value: stri
 
     return (
         <div className="copy-field">
-            <dt>{label}</dt>
-            <dd>
-                <span>{value}</span>
+            <dt>
+                {label}
                 <button
                     type="button"
-                    className="button-secondary"
+                    className="copy-field-button"
+                    aria-label={copied ? `${label}: skopiowano` : `Kopiuj: ${label}`}
                     onClick={async () => {
                         if (await copyText(value)) {
                             setCopied(true);
@@ -37,9 +37,13 @@ export default function CopyField({ label, value }: { label: string; value: stri
                         }
                     }}
                 >
-                    {copied ? "Skopiowano" : "Kopiuj"}
+                    <i className={`bi ${copied ? "bi-check-lg" : "bi-copy"}`} aria-hidden="true" />
                 </button>
-            </dd>
+            </dt>
+            <dd>{value}</dd>
+            <span className="visually-hidden" aria-live="polite">
+                {copied ? "Skopiowano" : ""}
+            </span>
         </div>
     );
 }
