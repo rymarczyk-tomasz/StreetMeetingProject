@@ -10,7 +10,7 @@ import {
     newId,
 } from "./fields";
 
-// TipTap is fairly large; only the FAQ and regulamin tabs need it.
+// TipTap is fairly large; only the FAQ, regulamin and privacy tabs need it.
 const RichTextEditor = lazy(() => import("../../components/RichTextEditor"));
 
 function RichText(props) {
@@ -532,42 +532,66 @@ export function FaqEditor({ onAction }) {
 
 // ---- Regulamin -------------------------------------------------------------------
 
-export function RegulaminEditor({ onAction }) {
-    const editor = useContentEditor("regulamin", onAction);
-    const regulamin = editor.content;
+// Regulamin and privacy policy share the editor; `name` is the genitive ("regulaminu").
+function DocumentEditor({ contentKey, name, saveLabel, hint = "", onAction }) {
+    const editor = useContentEditor(contentKey, onAction);
+    const document = editor.content;
 
     return (
-        <ContentForm editor={editor} saveLabel="Zapisz regulamin">
-            {regulamin && (
+        <ContentForm editor={editor} saveLabel={saveLabel}>
+            {document && (
                 <>
                     <p className="admin-hint">
-                        Najprościej: otwórz regulamin w Wordzie, zaznacz całość
+                        Najprościej: otwórz dokument w Wordzie, zaznacz całość
                         (Ctrl+A), skopiuj (Ctrl+C) i wklej tutaj (Ctrl+V) w miejsce
                         starej treści. Nagłówki, listy (także a, b, c) i
                         pogrubienia zostaną zachowane. Możesz też dodać PDF — na
-                        stronie pojawi się przycisk „Pobierz regulamin (PDF)”.
+                        stronie pojawi się przycisk „Pobierz PDF”. {hint}
                     </p>
                     <TextInput
                         label="Tytuł"
-                        value={regulamin.title}
+                        value={document.title}
                         onChange={(title) => editor.update({ title })}
                     />
                     <PdfField
-                        label="Plik PDF regulaminu (opcjonalny)"
-                        value={regulamin.pdfUrl}
+                        label={`Plik PDF ${name} (opcjonalny)`}
+                        value={document.pdfUrl}
                         onChange={(pdfUrl) => editor.update({ pdfUrl })}
                     />
-                    <span className="field-label">Treść regulaminu</span>
+                    <span className="field-label">Treść {name}</span>
                     <RichText
                         key={editor.version}
-                        value={regulamin.html}
+                        value={document.html}
                         minHeight={400}
-                        ariaLabel="Treść regulaminu"
+                        ariaLabel={`Treść ${name}`}
                         onChange={(html) => editor.update({ html })}
                     />
                 </>
             )}
         </ContentForm>
+    );
+}
+
+export function RegulaminEditor({ onAction }) {
+    return (
+        <DocumentEditor
+            contentKey="regulamin"
+            name="regulaminu"
+            saveLabel="Zapisz regulamin"
+            onAction={onAction}
+        />
+    );
+}
+
+export function PrivacyEditor({ onAction }) {
+    return (
+        <DocumentEditor
+            contentKey="privacy"
+            name="polityki prywatności"
+            saveLabel="Zapisz politykę prywatności"
+            hint="Domyślna treść opisuje dane, które zbiera ta strona — przed publikacją daj ją do sprawdzenia."
+            onAction={onAction}
+        />
     );
 }
 

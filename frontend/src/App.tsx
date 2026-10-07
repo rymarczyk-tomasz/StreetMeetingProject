@@ -35,6 +35,10 @@ function App() {
                 <Route path="auta-select" element={<ShowcasePage />} />
                 <Route path="faq" element={<FaqPage />} />
                 <Route path="regulamin" element={<RegulaminPage />} />
+                <Route
+                    path="polityka-prywatnosci"
+                    element={<RegulaminPage contentKey="privacy" fallbackTitle="Polityka prywatności" />}
+                />
                 <Route path="logowanie" element={<LoginPage />} />
                 <Route path="rejestracja" element={<RegisterPage />} />
                 <Route

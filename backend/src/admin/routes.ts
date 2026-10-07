@@ -14,6 +14,7 @@ const {
 const {
     isEmailConfigured,
     sendSubmissionStatusEmail,
+    sendPaymentConfirmedEmail,
     sendGroupEmail,
     sendDateSubscribersEmail,
     sendTestEmail,
@@ -725,6 +726,18 @@ router.patch("/submissions/:id/payment-status", (req, res) => {
         previousPaymentStatus: existing.payment_status || "unpaid",
         paymentStatus,
     });
+
+    if (paymentStatus === "paid" && existing.payment_status !== "paid") {
+        void sendPaymentConfirmedEmail({
+            submission: updated,
+            user: usersDb.findUserById(existing.user_id),
+        }).catch((error) => {
+            console.error(
+                `[email] Nie udało się wysłać potwierdzenia opłaty dla zgłoszenia ${existing.id}:`,
+                error.message,
+            );
+        });
+    }
 
     res.json({ submission: toAdminSubmission(updated) });
 });

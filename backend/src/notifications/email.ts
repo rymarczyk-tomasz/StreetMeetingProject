@@ -245,6 +245,32 @@ async function sendPaymentReminderEmail({ submission, email, firstName }) {
     });
 }
 
+// Organizer confirmed the payment, so the QR entry pass is now in the participant's panel.
+// Transactional like the status e-mails, so it is not tied to the optional notification settings.
+async function sendPaymentConfirmedEmail({ submission, user }) {
+    const email = user?.email;
+    if (!email) return { sent: false, reason: "not_applicable" };
+    const panelUrl = `${getAppUrl()}/panel`;
+    const name = user.first_name || submission.first_name || "Uczestniku";
+    const summary = `${submission.car_brand} (${submission.license_plate})`;
+    const lines = [
+        `Potwierdziliśmy opłatę za miejsce w strefie Select dla auta ${summary}. Dzięki!`,
+        "Twoja wejściówka z kodem QR czeka w panelu. Pokaż ją na bramie przy wjeździe — z telefonu albo wydrukowaną. W panelu pobierzesz ją też jako PDF lub PNG.",
+    ];
+
+    return sendMail({
+        to: email,
+        subject: "Street Show: opłata potwierdzona — Twoja wejściówka",
+        text: [`Cześć ${name},`, "", ...lines, "", `Wejściówka: ${panelUrl}`, "", "Street Show Crew"].join("\n"),
+        html: `
+            <p>Cześć ${escapeHtml(name)},</p>
+            ${lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}
+            <p><a href="${escapeHtml(panelUrl)}">Otwórz wejściówkę w panelu</a></p>
+            <p>Street Show Crew</p>
+        `,
+    });
+}
+
 async function sendPasswordResetEmail({ user, token, ttlMinutes }) {
     const resetUrl = `${getAppUrl()}/reset-hasla?token=${encodeURIComponent(token)}`;
     const firstName = user.first_name || "Użytkowniku";
@@ -499,14 +525,15 @@ async function sendDateSubscribersEmail({ subscribers, subject, message, onSent 
 
     for (const subscriber of subscribers) {
         const url = `${getAppUrl()}/wypisz?token=${subscriber.unsubscribe_token}`;
+        const privacyUrl = `${getAppUrl()}/polityka-prywatnosci`;
         const body = `Cześć,\n\n${message}\n\nStreet Show Crew`;
         const note = "Ten adres zapisano na stronie Street Show na powiadomienie o dacie wydarzenia.";
         try {
             await sendMail({
                 to: subscriber.email,
                 subject,
-                text: `${body}\n\n—\n${note} Wypisz się: ${url}`,
-                html: `${plainTextToHtml(body)}\n<p style="color:#777;font-size:12px">${note} <a href="${escapeHtml(url)}">Wypisz się</a>.</p>`,
+                text: `${body}\n\n—\n${note} Wypisz się: ${url}\nPolityka prywatności: ${privacyUrl}`,
+                html: `${plainTextToHtml(body)}\n<p style="color:#777;font-size:12px">${note} <a href="${escapeHtml(url)}">Wypisz się</a> · <a href="${escapeHtml(privacyUrl)}">Polityka prywatności</a>.</p>`,
                 headers: { "List-Unsubscribe": `<${url}>` },
             });
             results.sent += 1;
@@ -532,6 +559,7 @@ module.exports = {
     sendNewSubmissionAdminEmail,
     sendWithdrawalAdminEmail,
     sendPaymentReminderEmail,
+    sendPaymentConfirmedEmail,
     sendThreadReplyEmail,
     sendThreadAdminEmail,
     sendTestEmail,

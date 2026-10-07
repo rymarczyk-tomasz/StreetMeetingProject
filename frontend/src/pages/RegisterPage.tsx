@@ -182,7 +182,11 @@ export default function RegisterPage() {
                             regulamin
                         </Link>{" "}
                         i wyrażam zgodę na przetwarzanie moich danych w celu prowadzenia konta
-                        i obsługi zgłoszeń.
+                        i obsługi zgłoszeń (
+                        <Link to="/polityka-prywatnosci" target="_blank">
+                            polityka prywatności
+                        </Link>
+                        ).
                     </span>
                 </label>
                 {error && (

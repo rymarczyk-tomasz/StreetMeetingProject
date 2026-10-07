@@ -42,6 +42,8 @@ const ACTION_LABELS = {
     "contact.content_updated": "zaktualizował treść Kontaktu",
     "faq.content_updated": "zaktualizował FAQ",
     "regulamin.content_updated": "zaktualizował regulamin",
+    "privacy.content_updated": "zaktualizował politykę prywatności",
+    "select.content_updated": "zaktualizował sekcję Strefa Select",
     "announcement.content_updated": "zmienił ogłoszenie na stronie",
     "partners.content_updated": "zaktualizował partnerów",
     "edition.content_updated": "zmienił edycję wydarzenia",

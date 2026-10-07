@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useContent } from "../api/content";
 import PageHeader from "../components/PageHeader";
 
-const CONTENT_KEYS = ["regulamin"];
-
 // Gives every <h2> of the CMS HTML an id and returns the list for the table of
 // contents. The HTML is sanitized on the server when saved.
 function withHeadingIds(html: string) {
@@ -42,9 +40,11 @@ function useActiveHeading(ids: string[]) {
     return activeId || ids[0] || "";
 }
 
-export default function RegulaminPage() {
-    const { content, error } = useContent(CONTENT_KEYS);
-    const regulamin = content?.regulamin;
+// Also renders the privacy policy (contentKey="privacy") — same CMS shape.
+export default function RegulaminPage({ contentKey = "regulamin", fallbackTitle = "Regulamin" }) {
+    const contentKeys = useMemo(() => [contentKey], [contentKey]);
+    const { content, error } = useContent(contentKeys);
+    const regulamin = content?.[contentKey];
     const { html, headings } = useMemo(() => withHeadingIds(regulamin?.html || ""), [regulamin?.html]);
     const headingIds = useMemo(() => headings.map((heading) => heading.id), [headings]);
     const activeId = useActiveHeading(headingIds);
@@ -53,7 +53,7 @@ export default function RegulaminPage() {
         <>
             <PageHeader
                 eyebrow="Dokumenty"
-                title={regulamin?.title || "Regulamin"}
+                title={regulamin?.title || fallbackTitle}
                 action={
                     regulamin?.pdfUrl && (
                         <a
@@ -72,7 +72,7 @@ export default function RegulaminPage() {
                 <div className="site-container">
                     {error && (
                         <p className="page-status">
-                            Nie udało się wczytać regulaminu. Odśwież stronę za chwilę.
+                            Nie udało się wczytać dokumentu. Odśwież stronę za chwilę.
                         </p>
                     )}
                     {!regulamin && !error && <p className="page-status">Ładowanie...</p>}

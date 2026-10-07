@@ -1,10 +1,10 @@
 {
-    "name": "Street Meeting Poland",
-    "short_name": "Street Meeting",
+    "name": "Street Show",
+    "short_name": "Street Show",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#0f172a",
+    "background_color": "#171717",
+    "theme_color": "#171717",
     "icons": [
         {
             "src": "/img/favicon_io/android-icon-36x36.png",

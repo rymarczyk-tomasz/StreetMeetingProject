@@ -246,19 +246,22 @@ function validateFaq(input) {
     return { content: { title: text(input.title, 120) || "FAQ", categories } };
 }
 
-function validateRegulamin(input) {
-    const content = {
-        title: text(input.title, 200),
-        html: sanitizeRichText(input.html),
-        pdfUrl: text(input.pdfUrl, 500),
-    };
+// Regulamin and privacy policy: rich text and/or a PDF. `name` is the genitive used in errors.
+function documentValidator(name) {
+    return (input) => {
+        const content = {
+            title: text(input.title, 200),
+            html: sanitizeRichText(input.html),
+            pdfUrl: text(input.pdfUrl, 500),
+        };
 
-    if (!content.title) return { error: "Podaj tytuł regulaminu." };
-    if (isRichTextEmpty(content.html) && !content.pdfUrl) {
-        return { error: "Wpisz treść regulaminu albo dodaj plik PDF." };
-    }
-    if (!isSafeUrl(content.pdfUrl, { allowEmpty: true })) return { error: urlError("Plik PDF") };
-    return { content };
+        if (!content.title) return { error: `Podaj tytuł ${name}.` };
+        if (isRichTextEmpty(content.html) && !content.pdfUrl) {
+            return { error: `Wpisz treść ${name} albo dodaj plik PDF.` };
+        }
+        if (!isSafeUrl(content.pdfUrl, { allowEmpty: true })) return { error: urlError("Plik PDF") };
+        return { content };
+    };
 }
 
 function validateAnnouncement(input) {
@@ -388,7 +391,8 @@ const VALIDATORS = {
     gallery: validateGalleryPreview,
     contact: validateContact,
     faq: validateFaq,
-    regulamin: validateRegulamin,
+    regulamin: documentValidator("regulaminu"),
+    privacy: documentValidator("polityki prywatności"),
     announcement: validateAnnouncement,
     partners: validatePartners,
     settings: validateSettings,

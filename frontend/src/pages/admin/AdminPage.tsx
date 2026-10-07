@@ -15,6 +15,7 @@ import {
     PartnersEditor,
     SelectEditor,
     RegulaminEditor,
+    PrivacyEditor,
     SubmissionSettingsEditor,
     TemplatesEditor,
 } from "./ContentEditors";
@@ -45,6 +46,7 @@ const CONTENT_TABS = [
     ["contact", "Kontakt", ContactEditor],
     ["faq", "FAQ", FaqEditor],
     ["regulamin", "Regulamin", RegulaminEditor],
+    ["privacy", "Polityka prywatności", PrivacyEditor],
     ["announcement", "Ogłoszenie", AnnouncementEditor],
 ] as const;
 

@@ -1,5 +1,6 @@
 const defaultFaq = require("./defaultFaq");
 const defaultRegulamin = require("./defaultRegulamin");
+const defaultPrivacy = require("./defaultPrivacy");
 
 // Fallback content for every editable section, used until an admin saves it.
 // Saved content is merged over these, so new fields get sensible values.
@@ -126,6 +127,11 @@ const DEFAULTS = {
         html: defaultRegulamin.html,
         pdfUrl: "",
     },
+    privacy: {
+        title: defaultPrivacy.title,
+        html: defaultPrivacy.html,
+        pdfUrl: "",
+    },
     announcement: {
         enabled: false,
         text: "",
@@ -225,6 +231,7 @@ const PUBLIC_CONTENT_KEYS = [
     "contact",
     "faq",
     "regulamin",
+    "privacy",
     "announcement",
     "partners",
 ];

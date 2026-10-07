@@ -26,7 +26,11 @@ export default function ConsentFields({
                         regulamin wydarzenia
                     </Link>{" "}
                     i wyrażam zgodę na przetwarzanie moich danych w celu rozpatrzenia
-                    zgłoszenia i organizacji strefy Select. <em>(wymagane)</em>
+                    zgłoszenia i organizacji strefy Select (
+                    <Link to="/polityka-prywatnosci" target="_blank">
+                        polityka prywatności
+                    </Link>
+                    ). <em>(wymagane)</em>
                 </span>
             </label>
             <label className="consent-label check-label">
@@ -40,7 +44,8 @@ export default function ConsentFields({
                 />
                 <span>
                     Zgadzam się na publikację zdjęć mojego auta w galerii i mediach
-                    społecznościowych Street Show. <em>(opcjonalne)</em>
+                    społecznościowych Street Show. Publicznie pokazujemy tylko markę i zdjęcia —
+                    na zdjęciach może być widoczna tablica rejestracyjna. <em>(opcjonalne)</em>
                 </span>
             </label>
         </div>

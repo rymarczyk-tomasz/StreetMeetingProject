@@ -55,7 +55,9 @@ Lista rzeczy do dodania lub dopracowania w projekcie.
 - [ ] Dodac automatyczne testy backendu i frontendu
 - [ ] Dodac monitoring bledow i logow produkcyjnych (np. Sentry + uptime check na /api/health)
 - [x] Usunac stara statyczna strone i pliki Azure z repo
-- [ ] Usunac nieuzywane `frontend/public/img/gallery/` i `frontend/public/img/optimized/` oraz stary katalog `img/` w glownym folderze
+- [ ] Usunac nieuzywane `frontend/public/img/gallery/` oraz stary katalog `img/` w glownym folderze (NIE usuwac `frontend/public/img/optimized/` — `utils/photos.ts` serwuje z niego wersje 400/800/1200 zdjec)
 - [x] Sprawdzic limity uploadu (5 zdjec / 50 MB, 5 pojazdow na konto)
-- [ ] Ustalic retencje przeslanych zdjec po wydarzeniu (RODO)
+- [ ] Ustalic retencje przeslanych zdjec po wydarzeniu (RODO) i wpisac ja do polityki prywatnosci
+- [ ] Dac do sprawdzenia domyslna polityke prywatnosci (Panel → Tresci strony → Polityka prywatnosci)
+- [ ] Rozwazyc potwierdzenie zapisu na "Powiadom o dacie" e-mailem (double opt-in)
 - [ ] Przejrzec polityke prywatnosci i regulamin przed uruchomieniem produkcyjnym

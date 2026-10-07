@@ -1,0 +1,31 @@
+// Starting point for the privacy policy, editable in the admin panel (Treści strony → Polityka
+// prywatności). It describes what this site actually collects; have it checked before publishing.
+module.exports = {
+    title: "Polityka prywatności",
+    html: [
+        "<h2>1. Administrator danych</h2>",
+        "<p>Administratorem danych osobowych jest Street Meeting Poland Sp. z o.o. z siedzibą w Elblągu (82-300), ul. Królewiecka 205/15, NIP 5783153201 (dalej „Organizator”). W sprawach dotyczących danych osobowych napisz na adres <a href=\"mailto:streetmeetingpolska@gmail.com\">streetmeetingpolska@gmail.com</a>.</p>",
+        "<h2>2. Jakie dane zbieramy i po co</h2>",
+        "<ul>",
+        "<li><strong>Konto uczestnika</strong> – imię, nazwisko, adres e-mail i hasło (przechowywane wyłącznie w postaci zaszyfrowanej). Cel: prowadzenie konta i obsługa zgłoszeń (art. 6 ust. 1 lit. b RODO).</li>",
+        "<li><strong>Zgłoszenie do strefy Select</strong> – dane kontaktowe, numer telefonu, marka, opis i numer rejestracyjny pojazdu, zdjęcia pojazdu, informacje o opłacie. Cel: rozpatrzenie zgłoszenia, organizacja strefy Select i wjazdu na teren wydarzenia (art. 6 ust. 1 lit. b RODO) oraz rozliczenia (art. 6 ust. 1 lit. c RODO).</li>",
+        "<li><strong>Publikacja zdjęć auta</strong> – tylko jeśli zaznaczysz zgodę w zgłoszeniu (art. 6 ust. 1 lit. a RODO). Publicznie pokazujemy wyłącznie markę i zdjęcia auta, bez imienia, nazwiska i opisu. Na zdjęciach może być widoczna tablica rejestracyjna.</li>",
+        "<li><strong>Powiadomienie o dacie wydarzenia</strong> – adres e-mail. Cel: jednorazowa informacja o terminie kolejnej edycji, na podstawie Twojej zgody (art. 6 ust. 1 lit. a RODO). Wypiszesz się linkiem w wiadomości.</li>",
+        "<li><strong>Bezpieczeństwo</strong> – adres IP i dziennik logowań. Cel: ochrona kont przed nadużyciami (art. 6 ust. 1 lit. f RODO).</li>",
+        "</ul>",
+        "<h2>3. Pliki cookies</h2>",
+        "<p>Strona używa wyłącznie niezbędnych plików cookies, które utrzymują zalogowanie (access_token, refresh_token). Nie używamy cookies reklamowych ani analitycznych.</p>",
+        "<h2>4. Odbiorcy danych</h2>",
+        "<p>Dane mogą być powierzane podmiotom, które świadczą dla Organizatora usługi hostingu serwera i poczty e-mail, wyłącznie w zakresie niezbędnym do działania strony. Nie sprzedajemy danych i nie przekazujemy ich do celów marketingowych.</p>",
+        "<h2>5. Jak długo przechowujemy dane</h2>",
+        "<ul>",
+        "<li>Dane konta – do czasu jego usunięcia (możesz to zrobić samodzielnie w ustawieniach konta).</li>",
+        "<li>Zgłoszenia i zdjęcia – przez czas edycji wydarzenia oraz okres potrzebny do rozliczeń i dochodzenia roszczeń.</li>",
+        "<li>Adres e-mail do powiadomienia o dacie – do wysłania powiadomienia lub wypisania się.</li>",
+        "</ul>",
+        "<h2>6. Twoje prawa</h2>",
+        "<p>Masz prawo dostępu do swoich danych, ich sprostowania, usunięcia, ograniczenia przetwarzania, przenoszenia oraz wniesienia sprzeciwu. Zgodę możesz wycofać w każdej chwili – nie wpływa to na zgodność z prawem przetwarzania przed jej wycofaniem. Dane konta pobierzesz i usuniesz samodzielnie w ustawieniach konta. Masz też prawo wnieść skargę do Prezesa Urzędu Ochrony Danych Osobowych.</p>",
+        "<h2>7. Zmiany polityki</h2>",
+        "<p>O istotnych zmianach tej polityki poinformujemy na stronie.</p>",
+    ].join(""),
+};

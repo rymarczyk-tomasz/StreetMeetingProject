@@ -256,15 +256,17 @@ function GalleryPreview({ gallery }) {
 // "Let me know the date" sign-up; shown while the edition has no date yet.
 function NotifySignup({ edition }) {
     const [email, setEmail] = useState("");
+    const [consent, setConsent] = useState(false);
     const [state, setState] = useState({ status: "idle", message: "" });
 
     async function submit(event: React.FormEvent) {
         event.preventDefault();
         setState({ status: "busy", message: "" });
         try {
-            const { data } = await api.post("/notify", { email, consent: true });
+            const { data } = await api.post("/notify", { email, consent });
             setState({ status: "done", message: data.message });
             setEmail("");
+            setConsent(false);
         } catch (error) {
             setState({
                 status: "error",
@@ -321,10 +323,20 @@ function NotifySignup({ edition }) {
                                 {state.message}
                             </p>
                         )}
-                        <p className="notify-legal">
-                            Zapisując się, akceptujesz <Link to="/regulamin">politykę prywatności</Link>.
-                            Wypiszesz się jednym kliknięciem.
-                        </p>
+                        <label className="check-label notify-legal">
+                            <input
+                                type="checkbox"
+                                className="check-input"
+                                checked={consent}
+                                onChange={(event) => setConsent(event.target.checked)}
+                                required
+                            />
+                            <span>
+                                Zgadzam się na jednorazowy e-mail z datą wydarzenia (
+                                <Link to="/polityka-prywatnosci">polityka prywatności</Link>).
+                                Wypiszesz się jednym kliknięciem.
+                            </span>
+                        </label>
                     </form>
                 )}
             </div>
@@ -412,6 +424,20 @@ function useEventJsonLd(edition, home, contact) {
     }, [edition, home, contact]);
 }
 
+// "Street Show 2027 – Polsat Plus Arena Gdańsk | Street Meeting Poland", from the edition;
+// the static title from index.html comes back when leaving the home page.
+function useEditionTitle(edition) {
+    useEffect(() => {
+        if (!edition?.year) return;
+        const previous = document.title;
+        const venue = edition.venueName ? ` – ${edition.venueName}` : "";
+        document.title = `Street Show ${edition.year}${venue} | Street Meeting Poland`;
+        return () => {
+            document.title = previous;
+        };
+    }, [edition?.year, edition?.venueName]);
+}
+
 export default function HomePage() {
     const { user } = useAuth();
     const { content } = useContent(CONTENT_KEYS);
@@ -424,6 +450,7 @@ export default function HomePage() {
     const eyebrow = [dateLabel, hoursLabel, edition?.venueName].filter(Boolean).join(" · ");
 
     useEventJsonLd(edition, home, contact);
+    useEditionTitle(edition);
 
     return (
         <>
