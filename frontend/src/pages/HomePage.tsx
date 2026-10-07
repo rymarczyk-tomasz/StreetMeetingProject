@@ -332,36 +332,64 @@ function NotifySignup({ edition }) {
     );
 }
 
+// [tier, singular label, plural label]; items saved before tiers existed count as exhibitors.
+const FEATURED_TIERS = [
+    ["main", "Sponsor główny wydarzenia", "Sponsorzy główni wydarzenia"],
+    ["partner", "Partner wydarzenia", "Partnerzy wydarzenia"],
+];
+
+function PartnerLogo({ partner }) {
+    const logo = <img src={partner.logo} alt={partner.name} loading="lazy" />;
+    if (!partner.url) return logo;
+    return (
+        <a href={partner.url} target="_blank" rel="noopener noreferrer" title={partner.name}>
+            {logo}
+        </a>
+    );
+}
+
 function Partners({ partners }) {
     if (!partners?.items?.length) return null;
+
+    const tierOf = (partner) => partner.tier || "exhibitor";
+    const featured = FEATURED_TIERS.map(([tier, one, many]) => {
+        const items = partners.items.filter((partner) => tierOf(partner) === tier);
+        return { tier, label: items.length > 1 ? many : one, items };
+    }).filter((group) => group.items.length);
+    const exhibitors = partners.items.filter((partner) => tierOf(partner) === "exhibitor");
 
     return (
         <section id="partners" className="home-partners">
             <div className="site-container">
                 <h2 className="eyebrow eyebrow-muted">{partners.title}</h2>
-                <ul className="partners-grid">
-                    {partners.items.map((partner) => {
-                        const logo = (
-                            <img src={partner.logo} alt={partner.name} loading="lazy" />
-                        );
-                        return (
-                            <li key={partner.id}>
-                                {partner.url ? (
-                                    <a
-                                        href={partner.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        title={partner.name}
-                                    >
-                                        {logo}
-                                    </a>
-                                ) : (
-                                    logo
-                                )}
-                            </li>
-                        );
-                    })}
-                </ul>
+                {featured.length > 0 && (
+                    <div className="partners-featured">
+                        {featured.map((group) => (
+                            <div className={`partners-featured-group is-${group.tier}`} key={group.tier}>
+                                <h3 className="partners-tier-title">{group.label}</h3>
+                                <ul>
+                                    {group.items.map((partner) => (
+                                        <li key={partner.id}>
+                                            <PartnerLogo partner={partner} />
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {exhibitors.length > 0 && (
+                    <>
+                        {featured.length > 0 && <h3 className="partners-tier-title">Wystawcy</h3>}
+                        <ul className="partners-grid">
+                            {exhibitors.map((partner) => (
+                                <li key={partner.id}>
+                                    <PartnerLogo partner={partner} />
+                                </li>
+                            ))}
+                        </ul>
+                    </>
+                )}
             </div>
         </section>
     );

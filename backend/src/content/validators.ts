@@ -281,11 +281,15 @@ function validateAnnouncement(input) {
     return { content };
 }
 
+// Main sponsor and event partner get large logos above the exhibitor grid.
+const PARTNER_TIERS = ["main", "partner", "exhibitor"];
+
 function validatePartners(input) {
     const items = asArray(input.items)
         .slice(0, 40)
         .map((item, index) => ({
             id: makeId(item.id, `partner-${index + 1}`),
+            tier: PARTNER_TIERS.includes(item.tier) ? item.tier : "exhibitor",
             name: text(item.name, 120),
             logo: text(item.logo, 500),
             url: text(item.url, 500),

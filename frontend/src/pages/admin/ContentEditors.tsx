@@ -637,6 +637,12 @@ export function AnnouncementEditor({ onAction }) {
 
 // ---- Partners ------------------------------------------------------------------------
 
+const PARTNER_TIERS = [
+    ["main", "Sponsor główny wydarzenia"],
+    ["partner", "Partner wydarzenia"],
+    ["exhibitor", "Wystawca"],
+];
+
 export function PartnersEditor({ onAction }) {
     const editor = useContentEditor("partners", onAction);
     const partners = editor.content;
@@ -655,9 +661,11 @@ export function PartnersEditor({ onAction }) {
             {partners && (
                 <>
                     <p className="admin-hint">
-                        Logotypy partnerów i sponsorów pokazują się na stronie
-                        głównej nad kontaktem. Bez partnerów sekcja jest ukryta.
-                        Najlepiej wyglądają logotypy PNG/WEBP z przezroczystym tłem.
+                        Logotypy pokazują się na stronie głównej nad kontaktem.
+                        Sponsor główny i partner wydarzenia mają duże, kolorowe logo
+                        na górze sekcji, wystawcy są w siatce pod nimi. Bez wpisów
+                        sekcja jest ukryta. Najlepiej wyglądają logotypy PNG/WEBP
+                        z przezroczystym tłem.
                     </p>
                     <TextInput
                         label="Nagłówek sekcji"
@@ -668,6 +676,19 @@ export function PartnersEditor({ onAction }) {
                         {items.map((item, index) => (
                             <fieldset className="event-editor-card" key={item.id}>
                                 <legend>{item.name || `Partner ${index + 1}`}</legend>
+                                <label>
+                                    Rodzaj
+                                    <select
+                                        value={item.tier || "exhibitor"}
+                                        onChange={(event) => updateItem(index, { tier: event.target.value })}
+                                    >
+                                        {PARTNER_TIERS.map(([value, label]) => (
+                                            <option key={value} value={value}>
+                                                {label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
                                 <TextInput
                                     label="Nazwa"
                                     value={item.name}
@@ -698,7 +719,7 @@ export function PartnersEditor({ onAction }) {
                             type="button"
                             className="button-secondary"
                             onClick={() =>
-                                setItems([...items, { id: newId("partner"), name: "", logo: "", url: "" }])
+                                setItems([...items, { id: newId("partner"), tier: "exhibitor", name: "", logo: "", url: "" }])
                             }
                         >
                             + Dodaj partnera
