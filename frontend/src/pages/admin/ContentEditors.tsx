@@ -1,4 +1,6 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
+import api from "../../api/client";
+import { plural } from "../../utils/plural";
 import { faqFirstNumbers } from "../../utils/faq";
 import HeroCropEditor from "./HeroCropEditor";
 import { ContentForm, useContentEditor } from "./useContentEditor";
@@ -757,11 +759,44 @@ export function PartnersEditor({ onAction }) {
 
 // ---- Settings: edition + submissions -------------------------------------------------
 
-export function EditionEditor({ onAction }) {
+// After saving a date, reminds about people waiting for it ("Daj mi znać o dacie").
+function DateNotifyBanner({ edition, savedCount, onOpen }) {
+    const [pending, setPending] = useState(0);
+
+    useEffect(() => {
+        if (!savedCount || !edition?.date) return;
+        api.get("/admin/date-subscribers")
+            .then(({ data }) => setPending(data.pending || 0))
+            .catch(() => setPending(0));
+    }, [savedCount, edition?.date]);
+
+    if (!pending || !edition?.date) return null;
+    return (
+        <div className="payment-alert admin-queue-alert">
+            <p>
+                <strong>{plural(pending, "osoba czeka", "osoby czekają", "osób czeka")}</strong> na
+                datę wydarzenia — wyślij im powiadomienie.
+            </p>
+            <button type="button" onClick={onOpen}>
+                Wyślij powiadomienie
+            </button>
+        </div>
+    );
+}
+
+export function EditionEditor({ onAction, onOpenDateNotify = undefined }) {
     const editor = useContentEditor("edition", onAction);
     const edition = editor.content;
 
     return (
+        <>
+        {onOpenDateNotify && (
+            <DateNotifyBanner
+                edition={edition}
+                savedCount={editor.savedCount}
+                onOpen={onOpenDateNotify}
+            />
+        )}
         <ContentForm editor={editor} saveLabel="Zapisz edycję wydarzenia">
             {edition && (
                 <>
@@ -830,6 +865,7 @@ export function EditionEditor({ onAction }) {
                 </>
             )}
         </ContentForm>
+        </>
     );
 }
 

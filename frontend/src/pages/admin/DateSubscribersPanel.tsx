@@ -64,10 +64,10 @@ export default function DateSubscribersPanel({ onAction }) {
     const sendCount = resendAll ? stats?.total : stats?.pending;
 
     return (
-        <details className="gallery-howto group-email">
-            <summary>
+        <div className="gallery-howto group-email">
+            <h3 className="admin-subheading">
                 Lista „Daj mi znać o dacie” ({stats ? stats.total : "…"})
-            </summary>
+            </h3>
             <p className="admin-hint">
                 Adresy zapisane na stronie głównej, gdy edycja nie ma jeszcze daty. Gdy
                 ustawisz datę, formularz znika ze strony — wyślij wtedy jedną wiadomość z
@@ -127,6 +127,6 @@ export default function DateSubscribersPanel({ onAction }) {
                     </button>
                 </div>
             </form>
-        </details>
+        </div>
     );
 }

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import api from "../../api/client";
 import Lightbox from "../../components/Lightbox";
 import SubmissionThread from "../../components/SubmissionThread";
@@ -109,6 +110,46 @@ function RatingStars({ rating, disabled, onRate }) {
     );
 }
 
+// Filter → URL param, so a filtered list survives F5 and can be linked
+// (/admin?sekcja=zgloszenia&platnosc=overdue).
+const URL_FILTERS = {
+    edition: "edycja",
+    status: "status",
+    paymentStatus: "platnosc",
+    search: "szukaj",
+    unread: "nieprzeczytane",
+};
+
+function useUrlFilters() {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const filters = useMemo(
+        () =>
+            Object.fromEntries(
+                Object.entries(URL_FILTERS).map(([key, param]) => [key, searchParams.get(param) || ""]),
+            ) as Record<keyof typeof URL_FILTERS, string>,
+        [searchParams],
+    );
+
+    const setFilters = useCallback(
+        (next: Record<string, string>) => {
+            setSearchParams(
+                (current) => {
+                    const params = new URLSearchParams(current);
+                    for (const [key, param] of Object.entries(URL_FILTERS)) {
+                        if (next[key]) params.set(param, next[key]);
+                        else params.delete(param);
+                    }
+                    return params;
+                },
+                { replace: true },
+            );
+        },
+        [setSearchParams],
+    );
+
+    return [filters, setFilters] as const;
+}
+
 export default function SubmissionsPanel({ onAction }) {
     const [submissions, setSubmissions] = useState([]);
     const [adminNotes, setAdminNotes] = useState({});
@@ -116,13 +157,7 @@ export default function SubmissionsPanel({ onAction }) {
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [bulkNote, setBulkNote] = useState("");
     // edition "" = the current edition (server default), "all" = every year.
-    const [filters, setFilters] = useState({
-        edition: "",
-        status: "",
-        paymentStatus: "",
-        search: "",
-        unread: "",
-    });
+    const [filters, setFilters] = useUrlFilters();
     const [openThreads, setOpenThreads] = useState<number[]>([]);
     const [sort, setSort] = useState("newest");
     const [onlyUnrated, setOnlyUnrated] = useState(false);

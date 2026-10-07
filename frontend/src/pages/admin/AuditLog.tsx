@@ -43,6 +43,7 @@ const ACTION_LABELS = {
     "faq.content_updated": "zaktualizował FAQ",
     "regulamin.content_updated": "zaktualizował regulamin",
     "privacy.content_updated": "zaktualizował politykę prywatności",
+    "submission.internal_note_updated": "zmienił notatkę wewnętrzną zgłoszenia",
     "select.content_updated": "zaktualizował sekcję Strefa Select",
     "announcement.content_updated": "zmienił ogłoszenie na stronie",
     "partners.content_updated": "zaktualizował partnerów",

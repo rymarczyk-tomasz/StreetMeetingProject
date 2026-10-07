@@ -344,6 +344,11 @@ router.get("/stats", (req, res) => {
         edition,
         currentEdition: siteContentDb.getCurrentEdition(),
         unreadMessages: [...threadsDb.unreadCountsForAdmin().values()].reduce((sum, count) => sum + count, 0),
+        // "Daj mi znać o dacie": worth sending once the edition has a date.
+        dateSubscribers: {
+            pending: dateSubscribersDb.countSubscribers().pending || 0,
+            editionHasDate: Boolean(siteContentDb.getContent("edition")?.date),
+        },
         users: {
             total: users.total || 0,
             active: users.active || 0,
@@ -700,6 +705,12 @@ router.patch("/submissions/:id/internal-note", (req, res) => {
         existing.id,
         internalNote,
     );
+    if ((existing.internal_note || "") !== internalNote) {
+        audit(req, "submission.internal_note_updated", "submission", existing.id, {
+            licensePlate: existing.license_plate,
+            cleared: !internalNote,
+        });
+    }
     res.json({ submission: toAdminSubmission(updated) });
 });
 
