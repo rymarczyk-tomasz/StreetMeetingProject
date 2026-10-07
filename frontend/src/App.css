@@ -176,10 +176,6 @@
     outline-offset: 1px;
 }
 
-.form-success {
-    color: #18794e;
-}
-
 .admin-stats-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -393,55 +389,74 @@
     padding: 20px;
 }
 
+/* Small single-form pages (forgotten password, reset, e-mail links, unsubscribe). */
 .auth-page {
-    max-width: 420px;
+    max-width: calc(480px + 32px);
+    padding-top: 64px;
+    padding-bottom: 88px;
+}
+
+.auth-page h1 {
+    margin-bottom: 24px;
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
 }
 
 .auth-form {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 16px;
 }
 
 .auth-form label {
     display: flex;
     flex-direction: column;
-    gap: 3.5px;
+    gap: 8px;
 }
 
-/* Login, registration etc.: the form sits on the same card as the account panel. */
 .auth-page .auth-form {
-    padding: 20px;
-    border: 1px solid var(--street-border);
-    border-top: 4px solid var(--street-yellow);
+    padding: 32px;
     border-radius: 4px;
     background: #fff;
-    box-shadow: var(--street-shadow);
+}
+
+.auth-page .auth-form > label {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
 .auth-page .auth-form input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
 .auth-page .auth-form select,
 .auth-page .auth-form textarea {
     width: 100%;
-    min-height: 44px;
-    padding: 5.5px 8px;
-    border: 1px solid var(--street-border);
-    border-radius: 3px;
+    height: 52px;
+    padding: 0 16px;
+    border: 1.5px solid var(--street-input-border);
+    border-radius: 4px;
     background: #fff;
     color: var(--street-ink);
     font: inherit;
+    font-size: 16px;
+    letter-spacing: normal;
+    text-transform: none;
 }
 
 .auth-page .auth-form input:focus,
 .auth-page .auth-form select:focus,
 .auth-page .auth-form textarea:focus {
-    border-color: var(--street-yellow);
-    outline: 2px solid rgba(244, 197, 66, 0.35);
-    outline-offset: 1px;
+    border: 2px solid var(--street-ink);
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(244, 197, 66, 0.45);
 }
 
-.auth-page .auth-form button[type="submit"] {
-    min-height: 44px;
+.auth-page .auth-form button[type="submit"],
+.auth-page .auth-form > button {
+    min-height: 54px;
+    text-transform: uppercase;
 }
 
 .page input[type="file"]::file-selector-button {
@@ -461,8 +476,7 @@
     background: var(--street-yellow);
 }
 
-/* Secondary action (e.g. "Zarejestruj się" under the login form): outlined, so it
-   doesn't compete with the main yellow submit button. */
+/* Secondary action: outlined, so it doesn't compete with the main yellow button. */
 .page button.text-button {
     padding: 3.5px 8px;
     background: transparent;
@@ -480,10 +494,25 @@
     display: inline-flex;
     align-items: center;
     min-height: 44px;
+    font-weight: 700;
+}
+
+.form-error,
+.form-success {
+    margin: 0;
+    padding: 12px 16px;
+    border-radius: 4px;
+    font-size: 15px;
 }
 
 .form-error {
-    color: #e5484d;
+    background: var(--street-danger-bg);
+    color: var(--street-danger);
+}
+
+.form-success {
+    background: var(--street-success-bg);
+    color: var(--street-success);
 }
 
 .password-field {
@@ -780,26 +809,6 @@
     }
 }
 
-.regulamin-page h1,
-.regulamin-page h2 {
-    text-align: center;
-    margin-bottom: 40px;
-    font-weight: bold;
-}
-
-.regulamin-page section {
-    margin-bottom: 30px;
-}
-
-.regulamin-page ul {
-    padding-left: 40px;
-}
-
-.regulamin-page li {
-    margin-bottom: 10px;
-}
-
-
 /* Secondary / destructive variants of the default yellow panel button. */
 .page button.button-secondary {
     border-color: var(--street-border);
@@ -950,82 +959,11 @@
     background: #e5484d;
 }
 
-/* ---- Gallery albums ---- */
-.album-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 12.5px;
-}
-
-.album-card {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border-radius: 8px;
-    background: #fff;
-    box-shadow: var(--street-shadow);
-    color: var(--street-ink);
-    text-decoration: none;
-    transition: transform 160ms ease;
-}
-
-.album-card:hover {
-    color: var(--street-ink);
-    transform: translateY(-3px);
-}
-
-.album-card img,
-.album-card-placeholder {
-    display: block;
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    object-fit: cover;
-    background: var(--street-surface);
-}
-
-.album-card-body {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5px;
-    padding: 9px 10px;
-}
-
-.album-card-body small {
-    color: var(--street-muted);
-}
-
-.album-header {
-    margin-bottom: 10px;
-    text-align: center;
-}
-
-.album-back {
-    display: inline-block;
-    margin-bottom: 5px;
-}
-
 /* ---- Rich text (FAQ answers, regulamin) ---- */
-.faq-item + .faq-item {
-    margin-top: 12.5px;
-}
-
-.faq-question {
-    margin-bottom: 2.5px;
-}
-
 .rich-text > :last-child {
     margin-bottom: 0;
 }
 
-.regulamin-page h2 {
-    text-transform: uppercase;
-}
-
-.regulamin-download {
-    margin-bottom: 20px;
-    text-align: center;
-    font-weight: 600;
-}
 
 /* ---- Admin: rich text editor ---- */
 .rich-text-editor {

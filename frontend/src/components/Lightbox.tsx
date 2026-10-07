@@ -1,23 +1,30 @@
 import { useCallback, useEffect, useRef } from "react";
 
-type LightboxPhoto = { src: string; alt?: string };
+type LightboxPhoto = { src: string; thumb?: string; alt?: string };
 
 type LightboxProps = {
     photos: LightboxPhoto[];
     index: number | null;
     onIndexChange: (index: number | null) => void;
     label?: string;
+    // Shown in the top bar (album name).
+    title?: string;
 };
 
+// How many thumbnails the strip shows around the current photo.
+const THUMB_WINDOW = 9;
+
 // Full-screen photo viewer with keyboard (←/→/Esc) and swipe navigation.
-// Styles (.modal, .modal-image, .navigation…) live in public/css/custom.css.
+// Styles: .lightbox-* in public/css/custom.css.
 export default function Lightbox({
     photos,
     index,
     onIndexChange,
     label = "Podgląd zdjęcia",
+    title = "",
 }: LightboxProps) {
     const touchStartX = useRef(0);
+    const closeRef = useRef<HTMLButtonElement>(null);
     const count = photos.length;
 
     const close = useCallback(() => onIndexChange(null), [onIndexChange]);
@@ -30,9 +37,21 @@ export default function Lightbox({
         [index, count, onIndexChange],
     );
 
+    const isOpen = index !== null;
+
     useEffect(() => {
-        if (index === null) return;
+        if (!isOpen) return;
+        const previouslyFocused = document.activeElement as HTMLElement | null;
         document.body.style.overflow = "hidden";
+        closeRef.current?.focus();
+        return () => {
+            document.body.style.overflow = "";
+            previouslyFocused?.focus?.();
+        };
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return;
 
         function handleKeydown(event) {
             if (event.key === "ArrowRight") showNext();
@@ -41,25 +60,22 @@ export default function Lightbox({
         }
 
         window.addEventListener("keydown", handleKeydown);
-        return () => {
-            document.body.style.overflow = "";
-            window.removeEventListener("keydown", handleKeydown);
-        };
-    }, [index, showNext, showPrev, close]);
+        return () => window.removeEventListener("keydown", handleKeydown);
+    }, [isOpen, showNext, showPrev, close]);
 
     if (index === null || !photos[index]) return null;
     const photo = photos[index];
 
+    const hasThumbs = count > 1 && photos.every((item) => item.thumb);
+    const windowStart = Math.max(0, Math.min(index - Math.floor(THUMB_WINDOW / 2), count - THUMB_WINDOW));
+    const thumbs = hasThumbs ? photos.slice(windowStart, windowStart + THUMB_WINDOW) : [];
+
     return (
         <div
-            className="modal lightbox-modal"
+            className="lightbox"
             role="dialog"
             aria-modal="true"
             aria-label={label}
-            style={{ display: "block" }}
-            onClick={(event) => {
-                if (event.target === event.currentTarget) close();
-            }}
             onTouchStart={(event) => {
                 touchStartX.current = event.changedTouches[0].screenX;
             }}
@@ -69,40 +85,72 @@ export default function Lightbox({
                 else if (delta < -50) showPrev();
             }}
         >
-            <button
-                type="button"
-                className="close"
-                aria-label="Zamknij podgląd"
-                onClick={close}
+            <div className="lightbox-top">
+                <p className="lightbox-title">{title}</p>
+                <div className="lightbox-top-right">
+                    <p className="lightbox-counter" aria-live="polite">
+                        {index + 1} / {count}
+                    </p>
+                    <button
+                        ref={closeRef}
+                        type="button"
+                        className="lightbox-button lightbox-close"
+                        aria-label="Zamknij podgląd"
+                        onClick={close}
+                    >
+                        <i className="bi bi-x" aria-hidden="true" />
+                    </button>
+                </div>
+            </div>
+            <div
+                className="lightbox-stage"
+                onClick={(event) => {
+                    if (event.target === event.currentTarget) close();
+                }}
             >
-                &times;
-            </button>
-            <img
-                className="modal-image"
-                src={photo.src}
-                alt={photo.alt || `Zdjęcie ${index + 1} z ${count}`}
-            />
-            <p className="lightbox-counter" aria-live="polite">
-                {index + 1} / {count}
-            </p>
-            {count > 1 && (
-                <div className="navigation">
+                {count > 1 && (
                     <button
                         type="button"
-                        className="prev"
+                        className="lightbox-button lightbox-arrow"
                         aria-label="Poprzednie zdjęcie"
                         onClick={showPrev}
                     >
-                        &#10094;
+                        <i className="bi bi-chevron-left" aria-hidden="true" />
                     </button>
+                )}
+                <img
+                    className="lightbox-image"
+                    src={photo.src}
+                    alt={photo.alt || `Zdjęcie ${index + 1} z ${count}`}
+                />
+                {count > 1 && (
                     <button
                         type="button"
-                        className="next"
+                        className="lightbox-button lightbox-arrow is-next"
                         aria-label="Następne zdjęcie"
                         onClick={showNext}
                     >
-                        &#10095;
+                        <i className="bi bi-chevron-right" aria-hidden="true" />
                     </button>
+                )}
+            </div>
+            {thumbs.length > 0 && (
+                <div className="lightbox-thumbs">
+                    {thumbs.map((item, offset) => {
+                        const thumbIndex = windowStart + offset;
+                        return (
+                            <button
+                                key={thumbIndex}
+                                type="button"
+                                className={thumbIndex === index ? "is-active" : ""}
+                                aria-label={`Zdjęcie ${thumbIndex + 1}`}
+                                aria-current={thumbIndex === index || undefined}
+                                onClick={() => onIndexChange(thumbIndex)}
+                            >
+                                <img src={item.thumb} alt="" />
+                            </button>
+                        );
+                    })}
                 </div>
             )}
         </div>

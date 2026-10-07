@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import AuthLayout from "../components/AuthLayout";
+import PasswordInput from "../components/PasswordInput";
+
+const BENEFITS = [
+    "Status zgłoszenia na bieżąco",
+    "Auta z garażu zgłaszasz jednym kliknięciem",
+    "Wejściówka QR na telefonie",
+];
 
 export default function LoginPage() {
     const { login } = useAuth();
@@ -8,7 +16,6 @@ export default function LoginPage() {
     const location = useLocation();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,65 +44,70 @@ export default function LoginPage() {
     }
 
     return (
-        <section className="page auth-page">
+        <AuthLayout
+            image="/img/optimized/photos/6-1200.webp"
+            eyebrow="Konto Street Show"
+            headline={
+                <>
+                    Zgłoszenia, garaż
+                    <br />i wejściówki w jednym miejscu
+                </>
+            }
+            aside={
+                <ul className="auth-split-benefits">
+                    {BENEFITS.map((benefit) => (
+                        <li key={benefit}>
+                            <i className="bi bi-check2" aria-hidden="true" />
+                            {benefit}
+                        </li>
+                    ))}
+                </ul>
+            }
+        >
             <h1>Logowanie</h1>
-            <form onSubmit={handleSubmit} className="auth-form">
-                <label>
-                    E-mail
+            <form onSubmit={handleSubmit} className="form-stack">
+                <label className="form-field">
+                    <span className="field-label">E-mail</span>
                     <input
                         type="email"
+                        className="field-input"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         autoComplete="email"
                         required
                     />
                 </label>
-                <label>
-                    Hasło
-                    <span className="password-field">
-                        <input
-                            type={isPasswordVisible ? "text" : "password"}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            autoComplete="current-password"
-                            required
-                        />
-                        <button
-                            type="button"
-                            className="password-toggle"
-                            onClick={() =>
-                                setIsPasswordVisible((value) => !value)
-                            }
-                            aria-pressed={isPasswordVisible}
-                        >
-                            {isPasswordVisible ? "Ukryj" : "Pokaż"}
-                        </button>
-                    </span>
-                </label>
+                <div className="form-field">
+                    <div className="field-label-row">
+                        <label htmlFor="login-password" className="field-label">
+                            Hasło
+                        </label>
+                        <Link to="/nie-pamietam-hasla">Nie pamiętasz hasła?</Link>
+                    </div>
+                    <PasswordInput
+                        id="login-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        autoComplete="current-password"
+                        required
+                    />
+                </div>
                 {error && (
                     <p className="form-error" role="alert">
                         {error}
                     </p>
                 )}
-                <button type="submit" disabled={isSubmitting}>
+                <button
+                    type="submit"
+                    className="btn-street btn-street-primary btn-street-block"
+                    aria-busy={isSubmitting}
+                >
                     {isSubmitting ? "Logowanie..." : "Zaloguj się"}
                 </button>
-
-                <p className="auth-switch-text">
-                    <Link to="/nie-pamietam-hasla">Nie pamiętasz hasła?</Link>
-                </p>
-
-                <p className="auth-switch-text">
-                    Nie masz jeszcze konta?{" "}
-                    <button
-                        type="button"
-                        className="text-button"
-                        onClick={() => navigate("/rejestracja")}
-                    >
-                        Zarejestruj się
-                    </button>
-                </p>
             </form>
-        </section>
+            <p className="auth-split-switch">
+                Nie masz jeszcze konta? <Link to="/rejestracja">Zarejestruj się</Link>
+            </p>
+        </AuthLayout>
     );
 }
