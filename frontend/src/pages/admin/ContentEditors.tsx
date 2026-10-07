@@ -637,6 +637,28 @@ export function AnnouncementEditor({ onAction }) {
                         placeholder="Więcej"
                         onChange={(linkLabel) => editor.update({ linkLabel })}
                     />
+                    <p className="admin-hint">
+                        Dla zalogowanych (opcjonalnie). Puste pole „Treść” = ta sama treść co
+                        wyżej. Bez linku dla zalogowanych link z góry jest dla nich ukryty —
+                        np. „Załóż konto” nie ma sensu, gdy ktoś już je ma.
+                    </p>
+                    <TextInput
+                        label="Treść dla zalogowanych"
+                        value={announcement.loggedInText || ""}
+                        maxLength={300}
+                        onChange={(loggedInText) => editor.update({ loggedInText })}
+                    />
+                    <TextInput
+                        label="Link dla zalogowanych (np. /garaz)"
+                        value={announcement.loggedInLinkUrl || ""}
+                        onChange={(loggedInLinkUrl) => editor.update({ loggedInLinkUrl })}
+                    />
+                    <TextInput
+                        label="Tekst linku dla zalogowanych"
+                        value={announcement.loggedInLinkLabel || ""}
+                        placeholder="Więcej"
+                        onChange={(loggedInLinkLabel) => editor.update({ loggedInLinkLabel })}
+                    />
                     <label>
                         Kolor
                         <select
@@ -919,8 +941,15 @@ export function SubmissionSettingsEditor({ onAction, part = "zapisy" }) {
                             value={settings.paymentAccount}
                             maxLength={60}
                             placeholder="12 3456 7890 1234 5678 9012 3456"
+                            inputMode="numeric"
                             onChange={(paymentAccount) => editor.update({ paymentAccount })}
+                            onBlur={() => editor.update({ paymentAccount: formatAccount(settings.paymentAccount) })}
                         />
+                        {settings.paymentAccount && accountDigits(settings.paymentAccount).length !== 26 && (
+                            <p className="form-error">
+                                Numer konta ma 26 cyfr — teraz: {accountDigits(settings.paymentAccount).length}.
+                            </p>
+                        )}
                         <TextInput
                             label="Tytuł przelewu — {rok} i {rejestracja} zostaną podmienione"
                             value={settings.paymentTitleTemplate}
@@ -1018,103 +1047,17 @@ export function SubmissionSettingsEditor({ onAction, part = "zapisy" }) {
     );
 }
 
-// ---- Message templates -------------------------------------------------------
-
-const TEMPLATE_KIND_LABELS = {
-    note: "Komentarz do zgłoszenia",
-    group: "Wiadomość do grupy",
-};
-
-export function TemplatesEditor({ onAction }) {
-    const editor = useContentEditor("templates", onAction);
-    const items = editor.content?.items || [];
-
-    function setItems(next) {
-        editor.update({ items: next });
-    }
-
-    function updateItem(index, patch) {
-        setItems(items.map((item, i) => (i === index ? { ...item, ...patch } : item)));
-    }
-
-    return (
-        <ContentForm editor={editor} saveLabel="Zapisz szablony">
-            {editor.content && (
-                <>
-                    <p className="admin-hint">
-                        Szablony wybierasz w Zgłoszeniach („Wstaw szablon komentarza”) i w
-                        wiadomości do grupy. <code>{"{rok}"}</code>, <code>{"{marka}"}</code> i{" "}
-                        <code>{"{rejestracja}"}</code> zostaną uzupełnione danymi zgłoszenia (w
-                        wiadomości do grupy tylko <code>{"{rok}"}</code>). Tekst po wstawieniu
-                        można jeszcze poprawić.
-                    </p>
-                    <div className="event-editor-grid">
-                        {items.map((item, index) => (
-                            <fieldset className="event-editor-card" key={item.id}>
-                                <legend>{item.title || `Szablon ${index + 1}`}</legend>
-                                <label>
-                                    Rodzaj
-                                    <select
-                                        value={item.kind}
-                                        onChange={(event) => updateItem(index, { kind: event.target.value })}
-                                    >
-                                        {Object.entries(TEMPLATE_KIND_LABELS).map(([kind, label]) => (
-                                            <option key={kind} value={kind}>
-                                                {label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-                                <TextInput
-                                    label="Nazwa (widoczna tylko w panelu)"
-                                    value={item.title}
-                                    maxLength={120}
-                                    onChange={(title) => updateItem(index, { title })}
-                                />
-                                {item.kind === "group" && (
-                                    <TextInput
-                                        label="Temat wiadomości"
-                                        value={item.subject}
-                                        maxLength={200}
-                                        onChange={(subject) => updateItem(index, { subject })}
-                                    />
-                                )}
-                                <TextArea
-                                    label="Treść"
-                                    rows={6}
-                                    maxLength={5000}
-                                    value={item.body}
-                                    onChange={(body) => updateItem(index, { body })}
-                                />
-                                <ListItemControls
-                                    index={index}
-                                    count={items.length}
-                                    onMove={(from, to) => setItems(moveItem(items, from, to))}
-                                    onRemove={() => setItems(items.filter((_, i) => i !== index))}
-                                    removeLabel="Usuń szablon"
-                                />
-                            </fieldset>
-                        ))}
-                    </div>
-                    <div className="submission-actions">
-                        {Object.entries(TEMPLATE_KIND_LABELS).map(([kind, label]) => (
-                            <button
-                                key={kind}
-                                type="button"
-                                className="button-secondary"
-                                onClick={() =>
-                                    setItems([
-                                        ...items,
-                                        { id: newId("template"), kind, title: "", subject: "", body: "" },
-                                    ])
-                                }
-                            >
-                                + {label}
-                            </button>
-                        ))}
-                    </div>
-                </>
-            )}
-        </ContentForm>
-    );
+// Polish account number: 26 digits (optional "PL"), shown as "12 3456 7890 …".
+function accountDigits(value) {
+    return String(value || "").replace(/\s+/g, "").replace(/^PL/i, "");
 }
+
+function formatAccount(value) {
+    const digits = accountDigits(value);
+    if (!/^\d{26}$/.test(digits)) return String(value || "").trim();
+    return `${digits.slice(0, 2)} ${digits.slice(2).replace(/(\d{4})(?=\d)/g, "$1 ")}`;
+}
+
+// ---- Message templates: TemplatesEditor.tsx ----------------------------------
+
+export { default as TemplatesEditor } from "./TemplatesEditor";

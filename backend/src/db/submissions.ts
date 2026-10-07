@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const db = require("./database");
 
 const insertStmt = db.prepare(`
@@ -21,6 +22,20 @@ const setPaymentProofStmt = db.prepare(`
 `);
 const setPassTokenStmt = db.prepare(
     `UPDATE submissions SET pass_token = ? WHERE id = ? AND pass_token IS NULL`,
+);
+const setPassShortCodeStmt = db.prepare(
+    `UPDATE submissions SET pass_short_code = ? WHERE id = ? AND pass_short_code IS NULL`,
+);
+const shortCodeTakenStmt = db.prepare(
+    `SELECT 1 FROM submissions WHERE edition IS ? AND pass_short_code = ?`,
+);
+const findByShortCodeStmt = db.prepare(`
+    SELECT submissions.*, users.email AS user_email
+    FROM submissions JOIN users ON users.id = submissions.user_id
+    WHERE edition = ? AND pass_short_code = ?
+`);
+const missingShortCodeStmt = db.prepare(
+    `SELECT id, edition FROM submissions WHERE pass_token IS NOT NULL AND pass_short_code IS NULL`,
 );
 const findByPassTokenStmt = db.prepare(`
     SELECT submissions.*, users.email AS user_email
@@ -123,14 +138,41 @@ function setPaymentProof(id, storedPath) {
     return findByIdStmt.get(id);
 }
 
-// The QR entry pass token is created once, on first request.
+// Short gate code: 8 characters without look-alikes (no 0/O, 1/I/L), shown as
+// SSP-7Q4K-2MXD. Unique within an edition; stored without the dash.
+const SHORT_CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
+
+function newShortCode(edition) {
+    for (;;) {
+        const bytes = crypto.randomBytes(8);
+        const code = Array.from(bytes as Uint8Array, (byte: number) => SHORT_CODE_ALPHABET[byte % SHORT_CODE_ALPHABET.length]).join("");
+        if (!shortCodeTakenStmt.get(edition ?? null, code)) return code;
+    }
+}
+
+function ensureShortCode(id, edition) {
+    setPassShortCodeStmt.run(newShortCode(edition), id);
+}
+
+// The QR entry pass (long token + short code) is created once, on first request.
 function ensurePassToken(id, token) {
     setPassTokenStmt.run(token, id);
-    return findByIdStmt.get(id).pass_token;
+    const row = findByIdStmt.get(id);
+    if (!row.pass_short_code) ensureShortCode(id, row.edition);
+    return findByIdStmt.get(id);
+}
+
+// Passes issued before short codes existed get one now.
+for (const row of missingShortCodeStmt.all()) {
+    ensureShortCode(row.id, row.edition);
 }
 
 function findSubmissionByPassToken(token) {
     return findByPassTokenStmt.get(String(token || ""));
+}
+
+function findSubmissionByShortCode(edition, code) {
+    return findByShortCodeStmt.get(edition, String(code || "").toUpperCase());
 }
 
 // `at` (a Date) lets a check-in recorded offline at the gate keep its real time.
@@ -389,6 +431,7 @@ module.exports = {
     updateSubmissionPhotos,
     setPaymentProof,
     ensurePassToken,
+    findSubmissionByShortCode,
     findSubmissionByPassToken,
     setCheckedIn,
     findSubmissionById,

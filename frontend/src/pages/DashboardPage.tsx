@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/client";
+import EmptyState from "../components/EmptyState";
 import Lightbox from "../components/Lightbox";
+import { plural } from "../utils/plural";
 import EventInfoCard from "./panel/EventInfoCard";
 import MessagesInbox from "./panel/MessagesInbox";
 import SubmissionCard from "./panel/SubmissionCard";
@@ -37,25 +39,62 @@ function EmailVerifyBanner() {
     );
 }
 
+// Empty "Twoje zgłoszenia": points to the garage when there are saved cars.
+function NoSubmissions({ edition, availability, vehicleCount }) {
+    const isOpen = availability?.open;
+    let text = "Zgłoś auto do strefy Select – decyzję dostaniesz e-mailem.";
+    let action = (
+        <Link className="btn-street btn-street-primary" to="/formularz">
+            Zgłoś pojazd
+        </Link>
+    );
+    if (vehicleCount > 0) {
+        text = `Masz ${plural(vehicleCount, "auto", "auta", "aut")} w garażu – zgłoś je jednym kliknięciem.`;
+        action = (
+            <Link className="btn-street btn-street-primary" to="/garaz">
+                Zgłoś z garażu
+            </Link>
+        );
+    }
+    if (!isOpen) {
+        text = availability?.reason || "Zapisy do strefy Select są zamknięte.";
+        action = null;
+    }
+
+    return (
+        <EmptyState
+            icon="bi-clipboard-check"
+            title={`Nie masz jeszcze zgłoszeń${edition ? ` na ${edition}` : ""}`}
+            action={action}
+        >
+            {text}
+        </EmptyState>
+    );
+}
+
 export default function DashboardPage() {
     const { user } = useAuth();
     const [submissions, setSubmissions] = useState([]);
     const [overview, setOverview] = useState(null);
     const [messages, setMessages] = useState([]);
+    const [vehicleCount, setVehicleCount] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [feedback, setFeedback] = useState({ message: "", error: "" });
     const [lightbox, setLightbox] = useState({ photos: [], index: null, title: "" });
 
     const load = useCallback(async () => {
         try {
-            const [submissionsResponse, overviewResponse, messagesResponse] = await Promise.all([
-                api.get("/submissions"),
-                api.get("/submissions/overview"),
-                api.get("/messages"),
-            ]);
+            const [submissionsResponse, overviewResponse, messagesResponse, vehiclesResponse] =
+                await Promise.all([
+                    api.get("/submissions"),
+                    api.get("/submissions/overview"),
+                    api.get("/messages"),
+                    api.get("/vehicles"),
+                ]);
             setSubmissions(submissionsResponse.data.submissions);
             setOverview(overviewResponse.data);
             setMessages(messagesResponse.data.messages);
+            setVehicleCount(vehiclesResponse.data.vehicles.length);
         } catch (err) {
             setFeedback({ message: "", error: err.response?.data?.message || "Nie udało się pobrać danych." });
         } finally {
@@ -134,11 +173,11 @@ export default function DashboardPage() {
                         Twoje zgłoszenia {currentEdition && `na edycję ${currentEdition}`}
                     </h2>
                     {current.length === 0 ? (
-                        <p className="account-empty">
-                            Nie masz jeszcze zgłoszeń na tę edycję.
-                            {archived.length > 0 &&
-                                " Auto z poprzedniego roku zgłosisz jednym kliknięciem z archiwum poniżej."}
-                        </p>
+                        <NoSubmissions
+                            edition={currentEdition}
+                            availability={overview?.availability}
+                            vehicleCount={vehicleCount}
+                        />
                     ) : (
                         <ul className="submission-list">
                             {current.map((s) => (

@@ -31,7 +31,7 @@ const {
 } = require("../utils/imageUpload");
 const { CONTENT_UPLOAD_ROOT } = require("../utils/paths");
 const { validateContent } = require("../content/validators");
-const { isPaymentOverdue, getFeeAmount } = require("../payments");
+const { isPaymentOverdue, getFeeAmount, hasPaymentDetails } = require("../payments");
 const threadsDb = require("../db/threads");
 const ratingsDb = require("../db/ratings");
 const { getThread, postToThread, readMessageBody } = require("../submissions/thread");
@@ -343,6 +343,8 @@ router.get("/stats", (req, res) => {
     res.json({
         edition,
         currentEdition: siteContentDb.getCurrentEdition(),
+        // Approved participants see empty transfer details until this is filled in.
+        paymentDetailsMissing: !hasPaymentDetails(settings),
         unreadMessages: [...threadsDb.unreadCountsForAdmin().values()].reduce((sum, count) => sum + count, 0),
         // "Daj mi znać o dacie": worth sending once the edition has a date.
         dateSubscribers: {

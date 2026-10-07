@@ -14,6 +14,8 @@ export function submissionSteps(submission) {
     const approved = status === "approved";
     const rejected = status === "rejected" || status === "withdrawn";
     const paid = paymentStatus === "paid";
+    // "Opłacone" only becomes the current step once there is something to pay.
+    const paymentReady = submission.payment?.complete !== false;
 
     return [
         { label: "Zgłoszone", state: "done" as StepState },
@@ -30,7 +32,7 @@ export function submissionSteps(submission) {
         },
         {
             label: "Opłacone",
-            state: (rejected ? "todo" : paid ? "done" : approved ? "current" : "todo") as StepState,
+            state: (rejected ? "todo" : paid ? "done" : approved && paymentReady ? "current" : "todo") as StepState,
         },
         {
             label: checkedInAt ? "Na miejscu" : "Gotowe do wjazdu",
@@ -60,6 +62,9 @@ export function nextStep(submission) {
     }
     if (paymentStatus === "paid") {
         return "Wszystko gotowe! Pokaż wejściówkę z kodem QR przy wjeździe.";
+    }
+    if (payment && !payment.complete) {
+        return "Gratulacje, auto jest zakwalifikowane! Dane do opłaty wyślemy wkrótce.";
     }
     if (paymentOverdue) {
         return "Termin opłaty minął. Opłać składkę jak najszybciej i zgłoś ją poniżej — inaczej miejsce może przejść na osobę z listy rezerwowej.";

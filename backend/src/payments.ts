@@ -47,8 +47,13 @@ function isPaymentOverdue(submission, settings = siteContentDb.getSettings()) {
     return Boolean(due) && due < todayInPoland();
 }
 
+// Without the amount or the account number there is nothing to pay yet.
+function hasPaymentDetails(settings = siteContentDb.getSettings()) {
+    return Boolean(getFeeAmount(settings) && String(settings.paymentAccount || "").trim());
+}
+
 // Transfer details for one submission, from Admin → Ustawienia.
-// `complete` is false until the organizer filled in the account number.
+// `complete` is false until the organizer filled in the amount and account number.
 function getPaymentDetails(submission, settings = siteContentDb.getSettings()) {
     const title = String(settings.paymentTitleTemplate || "Strefa Select {rok} – {rejestracja}")
         .replace(/\{rok\}/g, String(submission.edition ?? ""))
@@ -60,12 +65,13 @@ function getPaymentDetails(submission, settings = siteContentDb.getSettings()) {
         account: formatAccount(settings.paymentAccount),
         title: title.trim(),
         deadline: getPaymentDueDate(submission, settings),
-        complete: Boolean(String(settings.paymentAccount || "").trim()),
+        complete: hasPaymentDetails(settings),
     };
 }
 
 module.exports = {
     getPaymentDetails,
+    hasPaymentDetails,
     getPaymentDueDate,
     isPaymentOverdue,
     getFeeAmount,

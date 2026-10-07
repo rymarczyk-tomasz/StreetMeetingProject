@@ -79,8 +79,9 @@ export function applyQueue(cars, queue: QueuedCheckin[]) {
     });
 }
 
-// Same accepted forms as the server: the QR link (…?kod=SSP-…), "SSP-<token>"
-// or the bare 24-character token.
+// Same accepted forms as the server: the QR link (…?kod=SSP-…), "SSP-<token>",
+// the bare 24-character token or the short code (SSP-7Q4K-2MXD). Returns the
+// lower-case value whose hash is in the saved list (passHash / shortHash).
 export function tokenFromCode(code) {
     let value = String(code || "").trim();
     const fromLink = value.match(/[?&]kod=([^&#\s]+)/i);
@@ -91,8 +92,8 @@ export function tokenFromCode(code) {
             return null;
         }
     }
-    const token = value.replace(/^SSP-/i, "").toLowerCase();
-    return /^[a-f0-9]{24}$/.test(token) ? token : null;
+    const token = value.replace(/^SSP/i, "").replace(/[-\s]/g, "").toLowerCase();
+    return /^[a-f0-9]{24}$/.test(token) || /^[2-9a-hjkmnp-z]{8}$/.test(token) ? token : null;
 }
 
 export async function hashToken(token: string) {

@@ -279,7 +279,11 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
     const lookupOffline = useCallback(async (value) => {
         const token = tokenFromCode(value);
         const hash = token && (await hashToken(token));
-        const car = hash && applyQueue(loadSavedCars()?.cars || [], loadQueue()).find((row) => row.passHash === hash);
+        const car =
+            hash &&
+            applyQueue(loadSavedCars()?.cars || [], loadQueue()).find(
+                (row) => row.passHash === hash || row.shortHash === hash,
+            );
         if (car) {
             setResult(car);
         } else {
@@ -489,7 +493,7 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
                                 lookup(code);
                             }}
                         >
-                            <label className="visually-hidden" htmlFor="gate-code">
+                            <label className="gate-label" htmlFor="gate-code">
                                 Kod z wejściówki
                             </label>
                             <input
@@ -498,7 +502,7 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
                                 className="field-input"
                                 value={code}
                                 onChange={(event) => setCode(event.target.value)}
-                                placeholder="Kod z wejściówki (SSP-…)"
+                                placeholder="Kod SSP-…"
                                 autoComplete="off"
                             />
                             <button type="submit" className="btn-street btn-street-dark">

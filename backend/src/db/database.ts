@@ -191,6 +191,8 @@ const newSubmissionColumns = {
     photo_publish_consent: "INTEGER NOT NULL DEFAULT 0",
     payment_proof: "TEXT",
     pass_token: "TEXT",
+    // Short code typed in at the gate when there is no camera (e.g. 7Q4K2MXD).
+    pass_short_code: "TEXT",
     checked_in_at: "TEXT",
     // approved_at: start of the payment period; withdrawn_at: participant gave
     // up the place; payment_reminder_sent_at: the "payment due soon" e-mail went out.
@@ -242,6 +244,7 @@ db.exec(`
     CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status);
     CREATE INDEX IF NOT EXISTS idx_submissions_edition ON submissions(edition, user_id);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_submissions_pass_token ON submissions(pass_token);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_submissions_pass_short_code ON submissions(edition, pass_short_code);
 
     -- "Garage": cars a user keeps for quick submissions in later editions.
     CREATE TABLE IF NOT EXISTS vehicles (

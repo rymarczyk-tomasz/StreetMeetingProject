@@ -46,14 +46,21 @@ function readOfflineTime(value) {
         : null;
 }
 
-// Accepts the QR content in any form: the link (…/wjazd?kod=SSP-…), "SSP-<token>"
-// or the bare token.
+// Accepts the QR content in any form — the link (…/wjazd?kod=SSP-…), "SSP-<token>",
+// the bare token — and the short code typed by hand (SSP-7Q4K-2MXD, any case,
+// with or without dashes/spaces), which is looked up in the current edition.
 function findByPassCode(code) {
     let value = String(code || "").trim();
     const fromLink = value.match(/[?&]kod=([^&#\s]+)/i);
     if (fromLink) value = decodeURIComponent(fromLink[1]);
-    const token = value.replace(/^SSP-/i, "");
-    return /^[a-f0-9]{24}$/i.test(token) ? submissionsDb.findSubmissionByPassToken(token) : null;
+    const normalized = value.replace(/^SSP/i, "").replace(/[-\s]/g, "");
+    if (/^[a-f0-9]{24}$/i.test(normalized)) {
+        return submissionsDb.findSubmissionByPassToken(normalized.toLowerCase());
+    }
+    if (/^[2-9A-HJKMNP-Z]{8}$/i.test(normalized)) {
+        return submissionsDb.findSubmissionByShortCode(siteContentDb.getCurrentEdition(), normalized);
+    }
+    return null;
 }
 
 router.get("/cars", (req, res) => {
@@ -69,7 +76,12 @@ router.get("/cars", (req, res) => {
         details: { count: rows.length },
     });
     res.json({
-        cars: rows.map((row) => ({ ...toGateView(row), passHash: passHash(row.pass_token) })),
+        // Offline check: hashes of the QR token and of the short code (lower case).
+        cars: rows.map((row) => ({
+            ...toGateView(row),
+            passHash: passHash(row.pass_token),
+            shortHash: passHash(row.pass_short_code),
+        })),
         edition: siteContentDb.getCurrentEdition(),
         generatedAt: new Date().toISOString(),
     });

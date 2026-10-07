@@ -26,21 +26,25 @@ export function useContentEditor(key: string, onAction: () => void) {
             );
     }, [key, replaceContent]);
 
-    async function save(event?) {
+    // `nextContent` saves that version instead of the form state (editors that
+    // save one list row at a time). Resolves to true when saved.
+    async function save(event?, nextContent = null) {
         event?.preventDefault();
         setIsSaving(true);
         setError("");
         setMessage("");
         try {
             const { data } = await api.patch(`/admin/content/${key}`, {
-                content,
+                content: nextContent || content,
             });
             setContent(data.content);
             setSavedCount((value) => value + 1);
             setMessage("Zmiany zostały zapisane i są już widoczne na stronie.");
             onAction();
+            return true;
         } catch (err) {
             setError(errorMessage(err, "Nie udało się zapisać zmian."));
+            return false;
         } finally {
             setIsSaving(false);
         }
@@ -162,7 +166,8 @@ function LastChange({ editor }) {
 }
 
 // Form shell shared by all section editors: messages, save button, history.
-export function ContentForm({ editor, saveLabel = "Zapisz zmiany", children }) {
+// `showSave={false}` for editors that save from their own buttons.
+export function ContentForm({ editor, saveLabel = "Zapisz zmiany", showSave = true, children }) {
     if (!editor.content) {
         return editor.error ? (
             <p className="form-error">{editor.error}</p>
@@ -172,7 +177,10 @@ export function ContentForm({ editor, saveLabel = "Zapisz zmiany", children }) {
     }
 
     return (
-        <form className="event-editor" onSubmit={editor.save}>
+        <form
+            className="event-editor"
+            onSubmit={showSave ? editor.save : (event) => event.preventDefault()}
+        >
             {children}
             {editor.error && (
                 <p className="form-error" role="alert">
@@ -185,13 +193,15 @@ export function ContentForm({ editor, saveLabel = "Zapisz zmiany", children }) {
                 </p>
             )}
             <div className="admin-form-footer">
-                <button
-                    type="submit"
-                    className="btn-street btn-street-primary btn-street-lg"
-                    disabled={editor.isSaving}
-                >
-                    {editor.isSaving ? "Zapisywanie..." : saveLabel}
-                </button>
+                {showSave && (
+                    <button
+                        type="submit"
+                        className="btn-street btn-street-primary btn-street-lg"
+                        disabled={editor.isSaving}
+                    >
+                        {editor.isSaving ? "Zapisywanie..." : saveLabel}
+                    </button>
+                )}
                 <LastChange editor={editor} />
             </div>
             <RevisionHistory editor={editor} />

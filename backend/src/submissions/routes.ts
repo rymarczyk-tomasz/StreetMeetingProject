@@ -573,16 +573,16 @@ router.get("/:id/pass", (req, res) => {
         });
     }
 
-    const token = submissionsDb.ensurePassToken(
+    const { pass_token: token, pass_short_code: shortCode } = submissionsDb.ensurePassToken(
         submission.id,
         crypto.randomBytes(12).toString("hex"),
     );
-    const code = `SSP-${token}`;
     res.json({
         pass: {
-            code,
-            // Encoded in the QR: any phone camera opens the gate screen with this code.
-            link: `${getAppUrl()}/wjazd?kod=${code}`,
+            // Typed in at the gate without a camera: SSP-7Q4K-2MXD.
+            code: `SSP-${shortCode.slice(0, 4)}-${shortCode.slice(4)}`,
+            // Encoded in the QR (full token): any phone camera opens the gate screen.
+            link: `${getAppUrl()}/wjazd?kod=SSP-${token}`,
             edition: submission.edition,
             name: `${submission.first_name} ${submission.last_name}`,
             carBrand: submission.car_brand,

@@ -79,8 +79,10 @@ function relativeDay(value) {
     return formatDay(value.slice(0, 10));
 }
 
+// Average of all admins' ratings; "bez Twojej oceny" lives in the details panel
+// and the "Do oceny" sort instead of on every row.
 function RatingCell({ rating }) {
-    if (!rating?.mine) return <span className="subs-muted">bez Twojej oceny</span>;
+    if (!rating?.count) return <span className="subs-no-rating" aria-label="brak ocen">—</span>;
     const filled = Math.round(rating.average || 0);
     return (
         <span className="subs-stars" aria-label={`średnia ${rating.average}`}>
@@ -400,49 +402,53 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                 {error && <p className="form-error">{error}</p>}
                 {message && <p className="form-success">{message}</p>}
 
-                <div className="subs-chips" role="group" aria-label="Status zgłoszeń">
-                    {STATUS_CHIPS.map(([status, label, countKey]) => (
+                <div className="subs-chips">
+                    <div className="subs-chip-group" role="group" aria-label="Status zgłoszeń">
+                        {STATUS_CHIPS.map(([status, label, countKey]) => (
+                            <button
+                                key={label}
+                                type="button"
+                                className={`subs-chip${params.status === status && params.paymentStatus !== "overdue" ? " is-active" : ""}`}
+                                aria-pressed={params.status === status}
+                                onClick={() =>
+                                    setParams({
+                                        status,
+                                        paymentStatus: params.paymentStatus === "overdue" ? "" : params.paymentStatus,
+                                        id: null,
+                                    })
+                                }
+                            >
+                                {label} <span>{counts?.[countKey] ?? ""}</span>
+                            </button>
+                        ))}
+                    </div>
+                    {/* Special filters: their own group, so wrapping never strands a separator. */}
+                    <div className="subs-chip-group is-special" role="group" aria-label="Filtry specjalne">
                         <button
-                            key={label}
                             type="button"
-                            className={`subs-chip${params.status === status && params.paymentStatus !== "overdue" ? " is-active" : ""}`}
-                            aria-pressed={params.status === status}
+                            className={`subs-chip${params.paymentStatus === "overdue" ? " is-active" : ""}`}
+                            aria-pressed={params.paymentStatus === "overdue"}
                             onClick={() =>
                                 setParams({
-                                    status,
-                                    paymentStatus: params.paymentStatus === "overdue" ? "" : params.paymentStatus,
+                                    paymentStatus: params.paymentStatus === "overdue" ? "" : "overdue",
+                                    status: "",
                                     id: null,
                                 })
                             }
                         >
-                            {label} <span>{counts?.[countKey] ?? ""}</span>
+                            <span className="subs-dot" aria-hidden="true" />
+                            Po terminie <span>{counts?.overdue ?? ""}</span>
                         </button>
-                    ))}
-                    <span className="subs-chips-sep" aria-hidden="true" />
-                    <button
-                        type="button"
-                        className={`subs-chip${params.paymentStatus === "overdue" ? " is-active" : ""}`}
-                        aria-pressed={params.paymentStatus === "overdue"}
-                        onClick={() =>
-                            setParams({
-                                paymentStatus: params.paymentStatus === "overdue" ? "" : "overdue",
-                                status: "",
-                                id: null,
-                            })
-                        }
-                    >
-                        <span className="subs-dot" aria-hidden="true" />
-                        Po terminie <span>{counts?.overdue ?? ""}</span>
-                    </button>
-                    <button
-                        type="button"
-                        className={`subs-chip${params.unread ? " is-active" : ""}`}
-                        aria-pressed={Boolean(params.unread)}
-                        onClick={() => setParams({ unread: params.unread ? "" : "1", id: null })}
-                    >
-                        <i className="bi bi-chat-dots" aria-hidden="true" />
-                        Nowe wiadomości <span>{counts?.unread ?? ""}</span>
-                    </button>
+                        <button
+                            type="button"
+                            className={`subs-chip${params.unread ? " is-active" : ""}`}
+                            aria-pressed={Boolean(params.unread)}
+                            onClick={() => setParams({ unread: params.unread ? "" : "1", id: null })}
+                        >
+                            <i className="bi bi-chat-dots" aria-hidden="true" />
+                            Nowe wiadomości <span>{counts?.unread ?? ""}</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div className="subs-filters">
@@ -613,8 +619,8 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                     </div>
                 )}
                 <p className="subs-hint">
-                    {visible.length} z {counts?.all ?? submissions.length} zgłoszeń · ↑↓ zmienia zgłoszenie, A
-                    akceptuje, R rezerwowa
+                    {visible.length} z {counts?.all ?? submissions.length} zgłoszeń
+                    <span className="subs-hint-keys"> · ↑↓ zmienia zgłoszenie, A akceptuje, R rezerwowa</span>
                 </p>
             </div>
 

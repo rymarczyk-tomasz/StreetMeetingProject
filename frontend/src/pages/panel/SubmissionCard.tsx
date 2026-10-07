@@ -123,9 +123,9 @@ function PaymentBox({ submission, onChanged, notify }) {
                         <CopyField label="Tytuł" value={payment.title} />
                     </dl>
                 ) : (
-                    <p className="admin-hint">
-                        Dane do przelewu{payment?.amount ? ` (kwota: ${payment.amount})` : ""}{" "}
-                        organizator poda wkrótce — sprawdź komunikaty lub e-mail.
+                    <p className="payment-pending">
+                        <i className="bi bi-hourglass-split" aria-hidden="true" />
+                        Dane do przelewu poda organizator – dostaniesz e-mail.
                     </p>
                 ))}
             {submission.paymentProofUrl && (
@@ -136,7 +136,8 @@ function PaymentBox({ submission, onChanged, notify }) {
                     </a>
                 </p>
             )}
-            {paymentStatus !== "paid" && (
+            {/* Nothing to report before the participant knows how much and where to pay. */}
+            {paymentStatus !== "paid" && (payment?.complete || submission.paymentProofUrl) && (
                 <div className="payment-actions">
                     <label className={`btn-street btn-street-dark file-button${isUploading ? " is-busy" : ""}`}>
                         <i className="bi bi-upload" aria-hidden="true" />
@@ -323,6 +324,9 @@ export default function SubmissionCard({
                     aria-label={`Zdjęcia ${s.carBrand}`}
                 >
                     <img src={coverPhoto} alt="" loading="lazy" />
+                    {s.photos.length > 1 && (
+                        <span className="submission-card-photo-count">1/{s.photos.length}</span>
+                    )}
                 </button>
             )}
             <div className="submission-card-body">

@@ -298,11 +298,11 @@ export default function AdminPage() {
 
                     {activeSection === "wjazd" && (
                         <div className="admin-section admin-gate">
+                            <AdminHeading
+                                title="Wjazd"
+                                description="Osobom z uprawnieniem „Obsługa wjazdu” (Użytkownicy) ten sam ekran działa pod adresem /wjazd."
+                            />
                             <GateCheckin onAction={onAction} />
-                            <p className="admin-hint">
-                                Osobom z uprawnieniem „Obsługa wjazdu” (Użytkownicy) ten sam ekran
-                                działa pod adresem /wjazd.
-                            </p>
                         </div>
                     )}
 

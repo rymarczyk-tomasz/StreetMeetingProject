@@ -414,6 +414,31 @@ function Partners({ partners }) {
     );
 }
 
+// Desktop: "STREET" / "SHOW 2027" — the year joins the title's last word.
+// Phones put the year on its own line (CSS), as before.
+function HeroTitle({ title, year }) {
+    if (!year) return <h1 className="hero-title">{title}</h1>;
+
+    const split = String(title || "").trim().lastIndexOf(" ");
+    const head = split > 0 ? title.slice(0, split) : "";
+    const last = split > 0 ? title.slice(split + 1) : title;
+
+    return (
+        <h1 className="hero-title">
+            {head && (
+                <>
+                    {head}
+                    <br />
+                </>
+            )}
+            <span className="hero-title-line">
+                {last}
+                <span className="hero-title-year"> {year}</span>
+            </span>
+        </h1>
+    );
+}
+
 // Structured data lets search engines show the event date in results.
 function useEventJsonLd(edition, home, contact) {
     useEffect(() => {
@@ -470,15 +495,7 @@ export default function HomePage() {
                 <div className="hero-shadow" aria-hidden="true"></div>
                 <div className="site-container hero-content">
                     {eyebrow && <p className="eyebrow">{eyebrow}</p>}
-                    <h1 className="hero-title">
-                        {home.heroTitle}
-                        {edition?.year && (
-                            <>
-                                <br />
-                                {edition.year}
-                            </>
-                        )}
-                    </h1>
+                    <HeroTitle title={home.heroTitle} year={edition?.year} />
                     <Countdown date={edition?.date} startTime={edition?.startTime} />
                     <p className="hero-lead">{home.heroLead || DEFAULT_HERO_LEAD}</p>
                     <div className="hero-actions">

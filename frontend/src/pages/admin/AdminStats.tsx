@@ -88,6 +88,15 @@ function DailyChart({ perDay }) {
 function buildTodos(stats, system) {
     const { submissions } = stats;
     const todos = [];
+    if (submissions.approved > 0 && stats.paymentDetailsMissing) {
+        todos.push({
+            alert: true,
+            title: "Brak danych do przelewu",
+            text: "Zaakceptowani uczestnicy nie widzą, ile i gdzie zapłacić",
+            action: "Uzupełnij",
+            open: ["ustawienia", { zakladka: "oplaty" }],
+        });
+    }
     if (submissions.pending) {
         todos.push({
             count: submissions.pending,

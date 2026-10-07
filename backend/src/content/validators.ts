@@ -270,6 +270,10 @@ function validateAnnouncement(input) {
         text: text(input.text, 300),
         linkUrl: text(input.linkUrl, 500),
         linkLabel: text(input.linkLabel, 60),
+        // Optional version for logged-in visitors ("Załóż konto" makes no sense to them).
+        loggedInText: text(input.loggedInText, 300),
+        loggedInLinkUrl: text(input.loggedInLinkUrl, 500),
+        loggedInLinkLabel: text(input.loggedInLinkLabel, 60),
         variant: input.variant === "warning" ? "warning" : "info",
         expiresAt: text(input.expiresAt, 10),
     };
@@ -278,6 +282,9 @@ function validateAnnouncement(input) {
         return { error: "Wpisz treść ogłoszenia albo je wyłącz." };
     }
     if (!isSafeUrl(content.linkUrl, { allowEmpty: true })) return { error: urlError("Link ogłoszenia") };
+    if (!isSafeUrl(content.loggedInLinkUrl, { allowEmpty: true })) {
+        return { error: urlError("Link dla zalogowanych") };
+    }
     if (content.expiresAt && !DATE_REGEX.test(content.expiresAt)) {
         return { error: "Data wygaśnięcia musi mieć format RRRR-MM-DD." };
     }

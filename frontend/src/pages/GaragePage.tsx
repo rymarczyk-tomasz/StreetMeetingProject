@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/client";
+import EmptyState from "../components/EmptyState";
 import Lightbox from "../components/Lightbox";
 import PhotoSetEditor from "../components/PhotoSetEditor";
 import Plate from "../components/Plate";
@@ -275,7 +276,7 @@ export default function GaragePage() {
                         jednym kliknięciem, także w kolejnych latach.
                     </p>
                 </div>
-                {!isAdding && (
+                {!isAdding && vehicles?.length > 0 && (
                     <button type="button" className="btn-street btn-street-dark" onClick={startAdding}>
                         <i className="bi bi-plus-lg" aria-hidden="true" />
                         Dodaj pojazd
@@ -314,6 +315,21 @@ export default function GaragePage() {
                     <span className="skeleton vehicle-skeleton" />
                     <span className="skeleton vehicle-skeleton" />
                 </div>
+            ) : vehicles.length === 0 ? (
+                !isAdding && (
+                    <EmptyState
+                        icon="bi-car-front"
+                        title="Garaż jest pusty"
+                        action={
+                            <button type="button" className="btn-street btn-street-primary" onClick={startAdding}>
+                                Dodaj pierwszy pojazd
+                            </button>
+                        }
+                    >
+                        Dodaj auto raz – ze zdjęciami i opisem – a do strefy Select zgłosisz je
+                        jednym kliknięciem, także w kolejnych latach.
+                    </EmptyState>
+                )
             ) : (
                 <ul className="vehicle-grid">
                     {vehicles.map((vehicle) => (
@@ -342,11 +358,6 @@ export default function GaragePage() {
                         </li>
                     )}
                 </ul>
-            )}
-            {vehicles?.length === 0 && (
-                <p className="account-empty">
-                    Garaż jest pusty. Dodaj auto albo użyj „Zapisz w garażu” przy zgłoszeniu w panelu.
-                </p>
             )}
             <Lightbox
                 photos={lightbox.photos}
