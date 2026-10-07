@@ -11,8 +11,8 @@ Strona wydarzenia motoryzacyjnego "Street Show": **React + Vite** (`frontend/`) 
 | Zgłoszenia | Filtr edycji (archiwum lat), akceptacja/odrzucenie/lista rezerwowa pojedynczo i zbiorczo, **oceny 1–5 od każdego admina**, **wątek wiadomości z uczestnikiem**, notatki, **szablony komentarzy**, opłaty, eksport do Excela, **lista na bramę do druku**, **wiadomość e-mail do grupy uczestników** |
 | Użytkownicy | Role, blokada, wylogowanie ze wszystkich urządzeń |
 | Galeria | Albumy z folderów Dysku Google (jeden folder = jeden album), synchronizacja, ukrywanie zdjęć, okładki, kolejność |
-| Treści strony | Home, Event (1–6 kafelków), podgląd galerii, partnerzy, kontakt, **FAQ** i **regulamin** (edytor jak w Wordzie + PDF), pasek ogłoszeń. Każda sekcja ma **historię zmian** z przywracaniem |
-| Ustawienia | **Edycja wydarzenia** (rok, data, godziny, miejsce), zapisy do Select (otwarte/zamknięte, termin, limity, kwota i termin opłaty, strona „Auta strefy Select”) oraz **szablony wiadomości** |
+| Treści strony | Home (z leadem pod tytułem), „Co Cię czeka” (1–6 kafelków), **Strefa Select** (4 kroki „Jak to działa”), podgląd galerii, partnerzy, kontakt, **FAQ** i **regulamin** (edytor jak w Wordzie + PDF), pasek ogłoszeń. Każda sekcja ma **historię zmian** z przywracaniem |
+| Ustawienia | **Edycja wydarzenia** (rok, data, godziny, miejsce), **lista „Powiadom o dacie”** (eksport CSV, wysyłka e-maila do zapisanych), zapisy do Select (otwarte/zamknięte, termin, limity, kwota i termin opłaty, strona „Auta strefy Select”) oraz **szablony wiadomości** |
 | Dziennik działań | Kto, co i kiedy zmienił |
 | System | Stan kopii bazy, SMTP (z testowym e-mailem), APP_URL, galerii, miejsca na dysku i rozmiaru danych |
 
@@ -23,10 +23,10 @@ frontend/                 # React + Vite (SPA)
   src/
     pages/                # strony publiczne i panel użytkownika
     pages/admin/          # panel administratora (każda zakładka w osobnym pliku)
-    components/           # Layout, AnnouncementBar, Lightbox, RichTextEditor (TipTap), ProtectedRoute
+    components/           # Layout (nawigacja, menu konta, stopka), PageHeader, AuthLayout, Plate, EntryPass, Lightbox, RichTextEditor (TipTap), ProtectedRoute
     api/                  # axios z odświeżaniem sesji, useContent() do treści z CMS
     utils/                # edycja wydarzenia, wklejanie list z Worda, odmiana liczebników
-  public/                 # statyczne assety (img/, css/custom.css, manifest, robots, sitemap)
+  public/                 # statyczne assety (img/, css/custom.css — tokeny i style redesignu, manifest, robots, sitemap)
 
 backend/                  # Node.js + Express (TypeScript → dist/)
   server.ts               # montuje routery, publiczne API treści i galerii
@@ -34,10 +34,14 @@ backend/                  # Node.js + Express (TypeScript → dist/)
     auth/                 # rejestracja, logowanie, reset hasła, usuwanie konta, JWT
     admin/                # API panelu administratora
     submissions/          # zgłoszenia Select (zdjęcia prywatne, limity per edycja)
+    vehicles/             # garaż użytkownika (zapisane auta do kolejnych zgłoszeń)
+    gate/                 # wjazd na strefę Select (QR)
+    messages/             # wątki wiadomości organizator ↔ uczestnik
+    showcase/             # publiczna strona „Auta strefy Select”
     content/              # domyślne treści sekcji CMS + walidacja
     gallery/              # albumy z Dysku Google, miniatury WEBP (sharp), synchronizacja
     db/                   # SQLite (better-sqlite3)
-    notifications/        # e-maile (nodemailer)
+    notifications/        # e-maile (nodemailer), lista „Powiadom o dacie”
     utils/                # walidacja, czyszczenie HTML, upload plików, rate limiter
   scripts/                # create-admin, backup-db
   data/                   # baza app.sqlite — w .gitignore
@@ -55,8 +59,11 @@ Wymagany Node.js 18+ (używane 20/24 w trakcie developmentu).
 ```bash
 cd backend
 npm install
+npm run build        # TypeScript → dist/ (po każdej zmianie w backendzie)
 npm run start        # startuje na http://localhost:33000
 ```
+
+Frontend w trybie dev (`npm run dev`) przekazuje `/api` i `/uploads` do `localhost:33000` — bez działającego backendu w konsoli Vite pojawiają się błędy `http proxy error … ECONNREFUSED`.
 
 Backend czyta konfigurację z `backend/config/.env` (Google Drive dla synchronizacji galerii, oraz `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `CORS_ORIGINS`). Plik już istnieje lokalnie z wygenerowanymi sekretami — **nie commitować** (jest w `.gitignore`).
 
@@ -147,7 +154,13 @@ Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do
 
 - Strona `/auta-select` (i zapowiedź na stronie głównej) pokazuje zaakceptowane auta bieżącej edycji, ale tylko te, których właściciele zaznaczyli w zgłoszeniu zgodę na publikację zdjęć. Domyślnie wyłączona — włącza się w Ustawieniach. Pojedyncze auto można ukryć w Zgłoszeniach.
 - Publicznie widać tylko markę i zdjęcia (bez nazwisk, rejestracji i opisów). `GET /api/showcase` zwraca listę, a `GET /api/showcase/photos/:id/:n?w=480|1200` zmniejszone kopie WEBP bez EXIF (`backend/uploads/showcase/`). Każde żądanie ponownie sprawdza zgodę i widoczność, więc nie serwuj tego katalogu statycznie z nginx.
+- Sekcja „Strefa Select” na stronie głównej (4 kroki z CMS) pobiera stan zapisów z `GET /api/select-status` (`open`, `reason`, `deadline`, `maxVehicles`, `edition`) i pokazuje odpowiedni przycisk.
 - Na stronie głównej pod datą jest odliczanie do wydarzenia (`Countdown`), liczone z daty i godziny w sekcji Edycja.
+
+## Powiadom o dacie
+
+- Gdy w sekcji Edycja nie ma jeszcze daty, strona główna pokazuje formularz „Powiadom mnie o dacie” (`POST /api/notify`, wymagana zgoda, rate limit 5 / 15 min). Adresy trafiają do tabeli `date_subscribers`.
+- Panel admina → Ustawienia: lista zapisanych, eksport CSV i wysyłka e-maila z datą (`/api/admin/date-subscribers*`). Mail ma nagłówek `List-Unsubscribe` i link do `/wypisz?token=…` (`POST /api/notify/unsubscribe`). Wymaga SMTP.
 
 ## Treści strony (CMS)
 
@@ -166,6 +179,8 @@ Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do
 - nginx: `/api` przekazuj do backendu z `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`, a **nie serwuj katalogu `backend/uploads/submissions` bezpośrednio** (tylko `/uploads/content`, jeśli w ogóle — backend robi to sam).
 
 ## Plany pod wdrożenie (mikrus / hostinger.pl)
+
+Pełna checklista przed uruchomieniem produkcyjnym (SMTP, `.env`, nginx, SSL, backupy, testy): [DEPLOYMENT.md](DEPLOYMENT.md).
 
 Backend jest zwykłym Node/Express (bez zależności od Azure Functions w nowym kodzie auth/submissions), więc powinien działać identycznie na VPS (mikrus) i na hostingu z obsługą Node.js (hostinger — wymaga planu VPS/Cloud lub hostingu z Node, zwykły shared hosting z samym PHP nie wystarczy). Do zrobienia przed wdrożeniem:
 
