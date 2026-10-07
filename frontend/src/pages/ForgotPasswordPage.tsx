@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/client";
+import { SimpleAuthLayout } from "../components/AuthLayout";
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("");
@@ -28,10 +29,10 @@ export default function ForgotPasswordPage() {
     }
 
     return (
-        <section className="page auth-page">
+        <SimpleAuthLayout>
             <h1>Nie pamiętasz hasła?</h1>
             {message ? (
-                <div className="auth-form">
+                <div className="form-stack">
                     <p className="form-success" role="status">
                         {message}
                     </p>
@@ -39,18 +40,21 @@ export default function ForgotPasswordPage() {
                         Nie widzisz wiadomości? Sprawdź folder spam. Link jest
                         ważny przez 60 minut.
                     </p>
-                    <Link to="/logowanie">Wróć do logowania</Link>
+                    <p className="auth-split-switch">
+                        <Link to="/logowanie">Wróć do logowania</Link>
+                    </p>
                 </div>
             ) : (
-                <form onSubmit={handleSubmit} className="auth-form">
+                <form onSubmit={handleSubmit} className="form-stack">
                     <p>
                         Podaj adres e-mail konta, a wyślemy Ci link do ustawienia
                         nowego hasła.
                     </p>
-                    <label>
-                        E-mail
+                    <label className="form-field">
+                        <span className="field-label">E-mail</span>
                         <input
                             type="email"
+                            className="field-input"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             autoComplete="email"
@@ -62,14 +66,19 @@ export default function ForgotPasswordPage() {
                             {error}
                         </p>
                     )}
-                    <button type="submit" disabled={isSubmitting}>
+                    <button
+                        type="submit"
+                        className="btn-street btn-street-primary btn-street-block"
+                        aria-busy={isSubmitting}
+                        disabled={isSubmitting}
+                    >
                         {isSubmitting ? "Wysyłanie..." : "Wyślij link"}
                     </button>
-                    <p className="auth-switch-text">
+                    <p className="auth-split-switch">
                         <Link to="/logowanie">Wróć do logowania</Link>
                     </p>
                 </form>
             )}
-        </section>
+        </SimpleAuthLayout>
     );
 }

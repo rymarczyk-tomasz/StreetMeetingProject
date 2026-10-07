@@ -111,7 +111,7 @@ export function EventEditor({ onAction }) {
                                     }
                                 />
                                 <TextInput
-                                    label="Link przycisku (https://…, /formularz albo #contact)"
+                                    label="Link przycisku (https://…, /faq, #select albo #bilety = link do biletów z Home)"
                                     value={card.actionHref}
                                     onChange={(actionHref) =>
                                         updateCard(index, { actionHref })

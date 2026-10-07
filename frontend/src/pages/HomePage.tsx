@@ -83,17 +83,21 @@ function SmartLink({ href, className, children }) {
     );
 }
 
-function CardAction({ card }) {
-    if (!card.actionHref || !card.actionLabel) return null;
+// "#bilety" in a card means "the ticket link from Home", so changing it there updates every card.
+const TICKET_LINK = "#bilety";
+
+function CardAction({ card, ticketUrl }) {
+    const href = card.actionHref === TICKET_LINK ? ticketUrl : card.actionHref;
+    if (!href || !card.actionLabel) return null;
     const label = card.actionLabel.replace(/\s*→\s*$/, "");
     return (
-        <SmartLink className="link-action" href={card.actionHref}>
+        <SmartLink className="link-action" href={href}>
             {label} →
         </SmartLink>
     );
 }
 
-function EventCards({ cards }) {
+function EventCards({ cards, ticketUrl }) {
     return (
         <div className="feature-grid">
             {cards.map((card) => (
@@ -114,7 +118,7 @@ function EventCards({ cards }) {
                                 </span>
                             ))}
                         </p>
-                        <CardAction card={card} />
+                        <CardAction card={card} ticketUrl={ticketUrl} />
                     </div>
                 </article>
             ))}
@@ -505,7 +509,7 @@ export default function HomePage() {
                             <h2 className="section-title">Co Cię czeka</h2>
                             {event.intro && <p className="section-lead">{event.intro}</p>}
                         </div>
-                        <EventCards cards={event.cards} />
+                        <EventCards cards={event.cards} ticketUrl={home.ticketUrl} />
                     </div>
                 </section>
 

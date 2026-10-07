@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import api from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { SimpleAuthLayout } from "../components/AuthLayout";
 
 const ACTIONS = {
     verify: {
@@ -46,9 +47,9 @@ export default function EmailTokenPage({ action }: { action: "verify" | "change"
     }, [endpoint, refreshUser, searchParams]);
 
     return (
-        <section className="page auth-page">
+        <SimpleAuthLayout>
             <h1>{title}</h1>
-            <div className="auth-form">
+            <div className="form-stack">
                 {!result.message && !result.error && <p className="page-status">Sprawdzanie linku...</p>}
                 {result.message && (
                     <p className="form-success" role="status">
@@ -60,10 +61,13 @@ export default function EmailTokenPage({ action }: { action: "verify" | "change"
                         {result.error}
                     </p>
                 )}
-                <Link to={user ? "/panel" : "/logowanie"}>
+                <Link
+                    className="btn-street btn-street-primary btn-street-block"
+                    to={user ? "/panel" : "/logowanie"}
+                >
                     {user ? "Przejdź do panelu" : "Zaloguj się"}
                 </Link>
             </div>
-        </section>
+        </SimpleAuthLayout>
     );
 }

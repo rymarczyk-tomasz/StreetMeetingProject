@@ -39,7 +39,7 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 - [ ] nginx: **nie** serwować bezpośrednio `backend/uploads/submissions`, `vehicles` ani `showcase` (prywatne zdjęcia — backend sprawdza uprawnienia)
 - [ ] nginx: `client_max_body_size 55m` (zgłoszenia do 50 MB zdjęć)
 - [ ] nginx: `sw.js` z `Cache-Control: no-cache`, `/assets/*` z długim cache
-- [ ] nginx: nagłówek CSP dla frontendu (pamiętać o cdn.jsdelivr.net i fonts.googleapis.com / fonts.gstatic.com)
+- [ ] nginx: nagłówek CSP dla frontendu (pamiętać o cdn.jsdelivr.net — ikony Bootstrap Icons — i fonts.googleapis.com / fonts.gstatic.com)
 - [ ] Backend przez PM2 (`streetshow-api`) z `pm2 startup` + `pm2 save`, żeby wstawał po restarcie serwera
 - [ ] Uruchamiać backend jako osobny użytkownik zamiast `root` (dotyczy też ścieżek w `deploy.yml`)
 - [ ] Firewall: otwarte tylko SSH, 80, 443 — port backendu niedostępny z zewnątrz
@@ -69,14 +69,14 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 - [ ] Ustawienia: zapisy do Select (termin, limity, liczba miejsc, kwota i termin opłaty, dane do przelewu)
 - [ ] Wkleić regulamin 2027 i FAQ, uzupełnić kontakt i partnerów
 - [ ] Treści strony → Home: lead pod tytułem; „Co Cię czeka”: sprawdzić kafelki (zapisana wcześniej treść ma stary kafelek BILETY i link drift — po redesignie domyślnie: Strefa Select → `#select`, Drift taxi → `/faq`, Expo → bilety); „Strefa Select”: 4 kroki
-- [ ] Polityka prywatności: osobna strona/URL — formularz „Powiadom o dacie” linkuje teraz do `/regulamin`
+- [ ] Polityka prywatności (`/polityka-prywatnosci`, Treści strony → Polityka prywatności): domyślna treść opisuje dane zbierane przez stronę — dać do sprawdzenia, dopisać retencję zdjęć
 - [ ] Po ogłoszeniu daty: Ustawienia → lista „Powiadom o dacie” → wysłać e-mail do zapisanych (najpierw sprawdzić na prawdziwym SMTP, w tym link „Wypisz”)
 - [ ] Przejrzeć politykę prywatności / RODO, ustalić retencję zdjęć po wydarzeniu
 - [ ] Galeria: udostępnić folder na Dysku kontu serwisowemu („Przeglądający”) i zrobić pierwszą synchronizację
 
 ## 8. SEO i wygląd linków
 
-- [ ] Dodać brakujące pliki `frontend/public/img/og-image.jpg` i `twitter-image.jpg` (są w `index.html`, ale ich nie ma — podgląd linku na FB/Messengerze będzie bez obrazka)
+- [x] Obrazek podglądu linku `frontend/public/img/og-image.jpg` (1200×630) — przy zmianie zdjęcia hero warto go odświeżyć
 - [ ] Google Search Console: weryfikacja (`googlebc20c8e2109ced24.html` już jest) i zgłoszenie `sitemap.xml`
 - [ ] Sprawdzić podgląd linku w Facebook Sharing Debugger
 

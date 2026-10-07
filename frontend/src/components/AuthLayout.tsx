@@ -24,3 +24,22 @@ export default function AuthLayout({ image, eyebrow, headline, aside, children }
         </section>
     );
 }
+
+// Short account screens (password reset, e-mail links, unsubscribe, no access):
+// the same split layout with a default photo and pitch.
+export function SimpleAuthLayout({ children }: { children: ReactNode }) {
+    return (
+        <AuthLayout
+            image="/img/optimized/photos/7-1200.webp"
+            eyebrow="Konto Street Show"
+            headline={
+                <>
+                    Zgłoszenia, garaż
+                    <br />i wejściówki w jednym miejscu
+                </>
+            }
+        >
+            {children}
+        </AuthLayout>
+    );
+}

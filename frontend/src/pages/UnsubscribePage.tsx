@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import api from "../api/client";
+import { SimpleAuthLayout } from "../components/AuthLayout";
 
 // Link from "Daj mi znać o dacie" e-mails. Unsubscribing takes a click, so mail
 // scanners that open every link don't remove people from the list.
@@ -26,9 +27,9 @@ export default function UnsubscribePage() {
     }
 
     return (
-        <section className="page auth-page">
+        <SimpleAuthLayout>
             <h1>Powiadomienie o dacie</h1>
-            <div className="auth-form">
+            <div className="form-stack">
                 {!token ? (
                     <p className="form-error" role="alert">
                         Brak tokenu w linku. Użyj linku z wiadomości e-mail.
@@ -45,15 +46,20 @@ export default function UnsubscribePage() {
                                 {result.error}
                             </p>
                         )}
-                        <button type="button" onClick={unsubscribe} aria-busy={isBusy}>
+                        <button
+                            type="button"
+                            className="btn-street btn-street-primary btn-street-block"
+                            onClick={unsubscribe}
+                            aria-busy={isBusy}
+                        >
                             Wypisz mnie
                         </button>
                     </>
                 )}
-                <p className="auth-switch-text">
+                <p className="auth-split-switch">
                     <Link to="/">Wróć na stronę główną</Link>
                 </p>
             </div>
-        </section>
+        </SimpleAuthLayout>
     );
 }

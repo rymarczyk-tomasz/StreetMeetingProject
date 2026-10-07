@@ -6,15 +6,17 @@ Strona wydarzenia motoryzacyjnego "Street Show": **React + Vite** (`frontend/`) 
 
 | Zakładka | Co tam jest |
 | --- | --- |
-| Dashboard | Statystyki bieżącej edycji: zgłoszenia, opłaty, wykres z 30 dni, najczęstsze marki, zapełnienie strefy Select |
+| Dashboard | **Do zrobienia** (oczekujące, opłaty do weryfikacji, po terminie, nieprzeczytane wiadomości, lista rezerwowa, osoby czekające na datę — każdy wiersz otwiera przefiltrowaną listę) i statystyki bieżącej edycji: zgłoszenia, opłaty, wykres z 30 dni, najczęstsze marki, zapełnienie strefy Select |
 | Raport | Podsumowanie edycji po wydarzeniu: opłaty, wjazdy, nieobecni, rezygnacje, przychód, przyjazdy wg godziny, porównanie lat (do druku) |
 | Zgłoszenia | Filtr edycji (archiwum lat), akceptacja/odrzucenie/lista rezerwowa pojedynczo i zbiorczo, **oceny 1–5 od każdego admina**, **wątek wiadomości z uczestnikiem**, notatki, **szablony komentarzy**, opłaty, eksport do Excela, **lista na bramę do druku**, **wiadomość e-mail do grupy uczestników** |
 | Użytkownicy | Role, blokada, wylogowanie ze wszystkich urządzeń |
 | Galeria | Albumy z folderów Dysku Google (jeden folder = jeden album), synchronizacja, ukrywanie zdjęć, okładki, kolejność |
-| Treści strony | Home (z leadem pod tytułem), „Co Cię czeka” (1–6 kafelków), **Strefa Select** (4 kroki „Jak to działa”), podgląd galerii, partnerzy (sponsor główny, partner wydarzenia, wystawcy), kontakt, **FAQ** i **regulamin** (edytor jak w Wordzie + PDF), pasek ogłoszeń. Każda sekcja ma **historię zmian** z przywracaniem |
-| Ustawienia | **Edycja wydarzenia** (rok, data, godziny, miejsce), **lista „Powiadom o dacie”** (eksport CSV, wysyłka e-maila do zapisanych), zapisy do Select (otwarte/zamknięte, termin, limity, kwota i termin opłaty, strona „Auta strefy Select”) oraz **szablony wiadomości** |
+| Treści strony | Home (z leadem pod tytułem), „Co Cię czeka” (1–6 kafelków), **Strefa Select** (4 kroki „Jak to działa”), podgląd galerii, partnerzy (sponsor główny, partner wydarzenia, wystawcy), kontakt, **FAQ**, **regulamin** i **polityka prywatności** (edytor jak w Wordzie + PDF), pasek ogłoszeń. Każda sekcja ma **historię zmian** z przywracaniem |
+| Ustawienia | Podzakładki: **Edycja wydarzenia** (rok, data, godziny, miejsce), **Powiadom o dacie** (eksport CSV, wysyłka e-maila do zapisanych), zapisy do Select (otwarte/zamknięte, termin, limity, kwota i termin opłaty, strona „Auta strefy Select”) oraz **szablony wiadomości** |
 | Dziennik działań | Kto, co i kiedy zmienił |
 | System | Stan kopii bazy, SMTP (z testowym e-mailem), APP_URL, galerii, miejsca na dysku i rozmiaru danych |
+
+Nawigacja panelu jest pogrupowana (Wydarzenie / Strona / Administracja), a sekcja, podzakładka i filtry zgłoszeń są w adresie, np. `/admin?sekcja=zgloszenia&platnosc=overdue` — odświeżenie strony ich nie gubi i można je podlinkować.
 
 ## Struktura repo
 

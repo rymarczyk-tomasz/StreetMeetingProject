@@ -63,7 +63,7 @@ const DEFAULTS = {
                 image: "/img/photos/10.webp",
                 alt: "Samochody na murawie Polsat Plus Arena, Gdańsk",
                 actionLabel: "Kup bilety",
-                actionHref: "https://bkb.pl/197944-209dd",
+                actionHref: "#bilety",
                 actionExternal: true,
             },
         ],

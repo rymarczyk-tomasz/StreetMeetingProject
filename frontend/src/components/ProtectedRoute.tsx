@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { SimpleAuthLayout } from "./AuthLayout";
 
 type ProtectedRouteProps = {
     children: ReactNode;
@@ -31,14 +32,17 @@ export default function ProtectedRoute({
 
     if (requireCheckIn && !user.canCheckIn) {
         return (
-            <section className="page auth-page">
+            <SimpleAuthLayout>
                 <h1>Brak uprawnień</h1>
                 <p>
                     Ta strona jest dla obsługi wjazdu. Jeśli pomagasz przy bramie, poproś
                     organizatora o nadanie uprawnienia „Obsługa wjazdu” dla konta{" "}
                     <strong>{user.email}</strong>.
                 </p>
-            </section>
+                <Link className="btn-street btn-street-outline btn-street-block" to="/panel">
+                    Przejdź do panelu
+                </Link>
+            </SimpleAuthLayout>
         );
     }
 

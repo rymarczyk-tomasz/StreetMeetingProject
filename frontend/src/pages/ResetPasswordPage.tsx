@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import api from "../api/client";
+import { SimpleAuthLayout } from "../components/AuthLayout";
+import PasswordInput from "../components/PasswordInput";
 
 export default function ResetPasswordPage() {
     const [searchParams] = useSearchParams();
@@ -39,34 +41,40 @@ export default function ResetPasswordPage() {
 
     if (!token) {
         return (
-            <section className="page auth-page">
+            <SimpleAuthLayout>
                 <h1>Reset hasła</h1>
-                <div className="auth-form">
+                <div className="form-stack">
                     <p className="form-error">
                         Brak tokenu resetu. Użyj linku z wiadomości e-mail.
                     </p>
-                    <Link to="/nie-pamietam-hasla">Wyślij nowy link</Link>
+                    <p className="auth-split-switch">
+                        <Link to="/nie-pamietam-hasla">Wyślij nowy link</Link>
+                    </p>
                 </div>
-            </section>
+            </SimpleAuthLayout>
         );
     }
 
     return (
-        <section className="page auth-page">
+        <SimpleAuthLayout>
             <h1>Ustaw nowe hasło</h1>
             {message ? (
-                <div className="auth-form">
+                <div className="form-stack">
                     <p className="form-success" role="status">
                         {message}
                     </p>
-                    <Link to="/logowanie">Przejdź do logowania</Link>
+                    <Link className="btn-street btn-street-primary btn-street-block" to="/logowanie">
+                        Przejdź do logowania
+                    </Link>
                 </div>
             ) : (
-                <form onSubmit={handleSubmit} className="auth-form">
-                    <label>
-                        Nowe hasło
-                        <input
-                            type="password"
+                <form onSubmit={handleSubmit} className="form-stack">
+                    <div className="form-field">
+                        <label htmlFor="reset-password" className="field-label">
+                            Nowe hasło
+                        </label>
+                        <PasswordInput
+                            id="reset-password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             autoComplete="new-password"
@@ -74,11 +82,13 @@ export default function ResetPasswordPage() {
                             maxLength={128}
                             required
                         />
-                    </label>
-                    <label>
-                        Powtórz nowe hasło
-                        <input
-                            type="password"
+                    </div>
+                    <div className="form-field">
+                        <label htmlFor="reset-password-confirm" className="field-label">
+                            Powtórz nowe hasło
+                        </label>
+                        <PasswordInput
+                            id="reset-password-confirm"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             autoComplete="new-password"
@@ -86,24 +96,27 @@ export default function ResetPasswordPage() {
                             maxLength={128}
                             required
                         />
-                    </label>
+                    </div>
                     {error && (
                         <p className="form-error" role="alert">
                             {error}
                         </p>
                     )}
-                    <button type="submit" disabled={isSubmitting}>
+                    <button
+                        type="submit"
+                        className="btn-street btn-street-primary btn-street-block"
+                        aria-busy={isSubmitting}
+                        disabled={isSubmitting}
+                    >
                         {isSubmitting ? "Zapisywanie..." : "Ustaw hasło"}
                     </button>
                     {error && (
-                        <p className="auth-switch-text">
-                            <Link to="/nie-pamietam-hasla">
-                                Wyślij nowy link
-                            </Link>
+                        <p className="auth-split-switch">
+                            <Link to="/nie-pamietam-hasla">Wyślij nowy link</Link>
                         </p>
                     )}
                 </form>
             )}
-        </section>
+        </SimpleAuthLayout>
     );
 }
