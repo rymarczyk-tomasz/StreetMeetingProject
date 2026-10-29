@@ -384,6 +384,34 @@ async function sendNewSubmissionAdminEmail({ submission, userEmail }) {
     });
 }
 
+async function sendPaymentProofAdminEmail({ submission, userEmail }) {
+    const recipients = adminNotifyRecipients();
+    if (!recipients) return { sent: false, reason: "not_configured" };
+
+    const adminUrl = `${getAppUrl()}/admin/zgloszenia?id=${encodeURIComponent(submission.id)}&tab=oplata`;
+    const name = `${submission.first_name} ${submission.last_name}`;
+    const summary = `${submission.car_brand} — ${submission.license_plate}`;
+
+    return sendMail({
+        to: recipients,
+        subject: `Street Show: nowe potwierdzenie przelewu (${submission.car_brand}, ${name})`,
+        text: [
+            "Uczestnik dodał potwierdzenie przelewu za strefę Select:",
+            "",
+            `Pojazd: ${summary}`,
+            `Zgłaszający: ${name} (${userEmail})`,
+            "",
+            `Sprawdź opłatę w panelu: ${adminUrl}`,
+        ].join("\n"),
+        html: `
+            <p>Uczestnik dodał potwierdzenie przelewu za strefę Select:</p>
+            <p><strong>${escapeHtml(summary)}</strong><br>
+            ${escapeHtml(name)} (${escapeHtml(userEmail)})</p>
+            <p><a href="${escapeHtml(adminUrl)}">Sprawdź opłatę w panelu administratora</a></p>
+        `,
+    });
+}
+
 async function sendWithdrawalAdminEmail({ submission, userEmail, previousStatus, waitlistCount }) {
     const recipients = adminNotifyRecipients();
     if (!recipients) return { sent: false, reason: "not_configured" };
@@ -574,6 +602,7 @@ module.exports = {
     sendSubmissionStatusEmail,
     sendPasswordResetEmail,
     sendNewSubmissionAdminEmail,
+    sendPaymentProofAdminEmail,
     sendWithdrawalAdminEmail,
     sendPaymentReminderEmail,
     sendPaymentConfirmedEmail,

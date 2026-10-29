@@ -41,6 +41,7 @@ const threadsDb = require("../db/threads");
 const { getThread, postToThread, readMessageBody } = require("./thread");
 const {
     sendNewSubmissionAdminEmail,
+    sendPaymentProofAdminEmail,
     sendWithdrawalAdminEmail,
 } = require("../notifications/email");
 
@@ -333,6 +334,10 @@ router.post("/:id/payment-proof", (req, res, next) => {
     const updated = submissionsDb.setPaymentProof(
         req.submission.id,
         storedPathFor("submissions", req.user.sub, req.file.filename),
+    );
+    void sendPaymentProofAdminEmail({ submission: updated, userEmail: req.user.email }).catch(
+        (emailError) =>
+            console.error("[email] Powiadomienie o potwierdzeniu przelewu:", emailError.message),
     );
     res.json({
         submission: toPublicSubmission(updated),
