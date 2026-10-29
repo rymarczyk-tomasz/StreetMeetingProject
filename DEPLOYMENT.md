@@ -54,8 +54,60 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 ## 5. Kopie zapasowe
 
 - [ ] Codzienna kopia bazy działa (Panel → System pokazuje ostatnią kopię)
-- [ ] Kopiować `backend/backups/` i `backend/uploads/` **poza serwer** (rclone/rsync z crona)
-- [ ] Raz przetestować odtworzenie bazy z kopii
+- [ ] Kopia poza serwerem: `backend/scripts/offsite-backup.sh` z crona (opis niżej)
+- [ ] Raz przetestować odtworzenie systemu z archiwum (opis niżej)
+
+### Kopia poza serwerem (rclone)
+
+Skrypt `backend/scripts/offsite-backup.sh` robi świeżą kopię bazy (`npm run backup`), pakuje katalog kopii bazy (`BACKUP_DIR`, domyślnie `backend/backups/`) i `backend/uploads/` do `streetshow-RRRR-MM-DD.tar.gz`, wysyła archiwum przez rclone na `OFFSITE_REMOTE` i usuwa tam archiwa starsze niż 14 dni. Przy każdym błędzie kończy się kodem ≠ 0. Dane dostępowe trzyma rclone w swojej konfiguracji (`~/.config/rclone/rclone.conf`), nie skrypt ani repo.
+
+1. Konto u innego dostawcy niż hosting serwera (np. Backblaze B2, Wasabi, Hetzner Storage Box) i bucket/katalog, np. `streetshow-backups`. Klucz API z dostępem tylko do tego bucketu.
+   - B2: przy usuwaniu plików B2 domyślnie zostawia ukryte stare wersje — ustaw w buckecie lifecycle „Keep only the last version” albo dopisz do remote'a `hard_delete = true`, inaczej stare archiwa dalej zajmują (i kosztują) miejsce.
+2. Instalacja rclone na serwerze:
+   ```bash
+   curl https://rclone.org/install.sh | sudo bash
+   rclone version
+   ```
+3. Konfiguracja remote'a (jako ten sam użytkownik, z którego będzie działał cron):
+   ```bash
+   rclone config            # n → nazwa np. "b2" → typ "b2" → account (keyID) + key (applicationKey)
+   rclone lsd b2:           # powinien pokazać bucket streetshow-backups
+   ```
+4. W `backend/config/.env` dopisać `OFFSITE_REMOTE=b2:streetshow-backups` (skrypt czyta ją stamtąd, jeśli nie ma jej w środowisku).
+5. Test ręczny:
+   ```bash
+   cd /root/streetshow/backend
+   chmod +x scripts/offsite-backup.sh
+   ./scripts/offsite-backup.sh
+   rclone ls b2:streetshow-backups
+   ```
+6. Cron (`crontab -e`), codziennie o 4:00 — po nocnej synchronizacji galerii. Cron ma pusty `PATH`, więc trzeba podać katalog z `node`/`npm` (`dirname $(which npm)`) i `rclone`:
+   ```cron
+   PATH=/usr/local/bin:/usr/bin:/bin
+   0 4 * * * flock -n /tmp/streetshow-offsite.lock /root/streetshow/backend/scripts/offsite-backup.sh >> /var/log/streetshow-offsite.log 2>&1
+   ```
+   Warto dodać monitoring nieudanych kopii (np. sprawdzać log albo dopiąć healthchecks.io po udanym przebiegu).
+
+### Odtworzenie na nowym serwerze
+
+1. Postawić serwer według sekcji 3 (Node, nginx, PM2), sklonować repo do `/root/streetshow`, odtworzyć `backend/config/.env` (sekrety trzymać osobno, np. w menedżerze haseł — nie ma ich w archiwum).
+2. Zainstalować i skonfigurować rclone jak wyżej, pobrać najnowsze archiwum:
+   ```bash
+   rclone lsl b2:streetshow-backups
+   rclone copy b2:streetshow-backups/streetshow-RRRR-MM-DD.tar.gz /root/restore/
+   cd /root/restore && tar -xzf streetshow-RRRR-MM-DD.tar.gz
+   ```
+   W archiwum są katalogi `uploads/` i `backups/` (albo nazwa katalogu z `BACKUP_DIR`).
+3. Przy zatrzymanym backendzie (`pm2 stop streetshow-api`, jeśli już działa):
+   ```bash
+   cd /root/streetshow/backend
+   mkdir -p data
+   cp -a /root/restore/uploads ./uploads
+   cp /root/restore/backups/app-RRRR-MM-DD.sqlite data/app.sqlite   # najnowsza kopia
+   rm -f data/app.sqlite-wal data/app.sqlite-shm
+   ```
+4. `npm ci && npm run build` w `backend/` i `frontend/`, `pm2 start` / `pm2 restart streetshow-api`, potem Panel → System: baza, uploady, galeria. Zalogować się i otworzyć kilka zgłoszeń ze zdjęciami oraz wejściówkę.
+5. Jeśli zmienił się adres serwera — zaktualizować DNS i sekrety deployu (`MIKRUS_HOST`); `APP_URL` zostawić bez zmian, bo od niego zależą kody QR na wejściówkach.
 
 ## 6. Konta i dane
 
