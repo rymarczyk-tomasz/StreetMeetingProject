@@ -11,6 +11,7 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 - [ ] Wpisać do `.env`: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`
   - port 587 → `SMTP_SECURE=false`, port 465 → `SMTP_SECURE=true`
   - przy Gmailu/Google Workspace: hasło aplikacji, nie zwykłe hasło
+- [ ] Opcjonalnie `SMTP_REPLY_TO` — adres, na który trafią odpowiedzi na maile (np. `kontakt@streetshow.pl`, gdy nadawcą jest `no-reply@…`); bez niej odpowiedzi idą na `SMTP_FROM`
 - [ ] DNS domeny: rekord **SPF**, **DKIM** i **DMARC** dla serwera pocztowego — inaczej maile lądują w spamie
 - [ ] `ADMIN_NOTIFY_EMAIL` — adres(y) organizatorów, po przecinku
 - [ ] Panel admina → System → wysłać testowy e-mail

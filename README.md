@@ -78,6 +78,7 @@ SMTP_SECURE=false
 SMTP_USER=adres@example.com
 SMTP_PASSWORD=haslo-aplikacji
 SMTP_FROM=Street Show <adres@example.com>
+SMTP_REPLY_TO=kontakt@example.com   # opcjonalnie: adres w nagłówku Reply-To każdego maila
 SELECT_FEE_AMOUNT=150 zł
 ```
 

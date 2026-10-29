@@ -49,8 +49,11 @@ async function sendMail({ to, subject, text, html, headers = undefined }) {
         return { sent: false, reason: "smtp_not_configured" };
     }
 
+    const replyTo = String(process.env.SMTP_REPLY_TO || "").trim();
+
     await mailTransporter.sendMail({
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
+        ...(replyTo ? { replyTo } : {}),
         to,
         subject,
         text,
