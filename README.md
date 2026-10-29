@@ -177,7 +177,7 @@ Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do
 - `helmet` (nagłówki bezpieczeństwa, `nosniff`) na API; rola i blokada konta sprawdzane w bazie przy każdym żądaniu (zablokowanie działa natychmiast).
 - Rate limit liczony po `req.ip` z `trust proxy` — nagłówek `X-Forwarded-For` od klienta nie pozwala go obejść.
 - Linki i obrazy w CMS muszą zaczynać się od `https://`, `http://`, `/` lub `#` (blokada `javascript:`).
-- Codzienna kopia bazy SQLite do `backend/backups/` (`npm run backup` ręcznie). **To nie zastępuje kopii poza serwerem** — kopiuj `backups/` i `uploads/` gdzie indziej (np. rclone/rsync z crona).
+- Codzienna kopia bazy SQLite do `backend/backups/` (`npm run backup` ręcznie). **To nie zastępuje kopii poza serwerem** — do tego służy [`backend/scripts/offsite-backup.sh`](backend/scripts/offsite-backup.sh) (baza + `uploads/` przez rclone, 14 dni wstecz); konfiguracja i odtwarzanie: [DEPLOYMENT.md, sekcja 5](DEPLOYMENT.md#5-kopie-zapasowe).
 - nginx: `sw.js` serwuj z `Cache-Control: no-cache` (inaczej telefony długo trzymają starą wersję), `/assets/*` może mieć długi cache.
 - nginx: `/api` przekazuj do backendu z `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`, a **nie serwuj katalogu `backend/uploads/submissions` bezpośrednio** (tylko `/uploads/content`, jeśli w ogóle — backend robi to sam).
 

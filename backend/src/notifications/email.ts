@@ -40,6 +40,10 @@ function escapeHtml(value) {
         .replace(/'/g, "&#039;");
 }
 
+function getReplyTo() {
+    return String(process.env.SMTP_REPLY_TO || "").trim();
+}
+
 async function sendMail({ to, subject, text, html, headers = undefined }) {
     const mailTransporter = getTransporter();
     if (!mailTransporter) {
@@ -49,7 +53,7 @@ async function sendMail({ to, subject, text, html, headers = undefined }) {
         return { sent: false, reason: "smtp_not_configured" };
     }
 
-    const replyTo = String(process.env.SMTP_REPLY_TO || "").trim();
+    const replyTo = getReplyTo();
 
     await mailTransporter.sendMail({
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
@@ -448,6 +452,13 @@ async function sendThreadReplyEmail({ user, submission, body }) {
     const panelUrl = `${getAppUrl()}/panel`;
     const firstName = user.first_name || submission.first_name || "Uczestniku";
     const summary = `${submission.car_brand} (${submission.license_plate})`;
+    const canReplyByEmail = Boolean(getReplyTo());
+    const replyText = canReplyByEmail
+        ? `Możesz odpowiedzieć na ten e-mail albo napisać w panelu przy zgłoszeniu: ${panelUrl}`
+        : `Odpowiedz w swoim panelu: ${panelUrl}`;
+    const replyHtml = canReplyByEmail
+        ? `Możesz odpowiedzieć na ten e-mail albo napisać w <a href="${escapeHtml(panelUrl)}">panelu</a> przy zgłoszeniu.`
+        : `<a href="${escapeHtml(panelUrl)}">Odpowiedz w swoim panelu</a> — odpowiedzi na ten e-mail nie trafią do organizatora.`;
 
     return sendMail({
         to: user.email,
@@ -459,7 +470,7 @@ async function sendThreadReplyEmail({ user, submission, body }) {
             "",
             body,
             "",
-            `Odpowiedz w swoim panelu: ${panelUrl}`,
+            replyText,
             "",
             "Street Show Crew",
             preferencesFooter().text,
@@ -468,7 +479,7 @@ async function sendThreadReplyEmail({ user, submission, body }) {
             <p>Cześć ${escapeHtml(firstName)},</p>
             <p>Organizator napisał w sprawie zgłoszenia <strong>${escapeHtml(summary)}</strong>:</p>
             <blockquote>${escapeHtml(body).replace(/\n/g, "<br>")}</blockquote>
-            <p><a href="${escapeHtml(panelUrl)}">Odpowiedz w swoim panelu</a> — odpowiedzi na ten e-mail nie trafią do organizatora.</p>
+            <p>${replyHtml}</p>
             <p>Street Show Crew</p>
             ${preferencesFooter().html}
         `,
