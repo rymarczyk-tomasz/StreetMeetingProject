@@ -79,7 +79,7 @@ export default function EntryPass({ submissionId, onClose }) {
                         <p>Street Show {pass?.edition || ""}</p>
                         <h2>Strefa Select</h2>
                     </div>
-                    <img src="/img/Logo 2.0/SVG/Logo_4.svg" alt="" className="entry-pass-logo" />
+                    <img src="/img/logo-street-show-black.png" alt="" className="entry-pass-logo" />
                 </div>
                 <div className="entry-pass-main">
                     {error && <p className="form-error">{error}</p>}

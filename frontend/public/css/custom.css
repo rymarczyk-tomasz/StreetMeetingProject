@@ -588,7 +588,6 @@ body {
 .site-nav-logo img {
     display: block;
     width: 92px;
-    filter: invert(1);
 }
 
 .site-nav-right {
@@ -1795,7 +1794,6 @@ body {
 
 .site-footer-logo {
     width: 110px;
-    filter: invert(1);
 }
 
 .site-footer-col {
@@ -1816,6 +1814,23 @@ body {
 .site-footer-line {
     display: flex;
     gap: 8px;
+}
+
+.site-footer-credit {
+    display: inline-block;
+    opacity: 0.7;
+    white-space: nowrap;
+}
+
+.site-footer-credit::before {
+    content: "·";
+    margin: 0 6px;
+}
+
+.site-footer-credit a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
 .site-footer-bottom {

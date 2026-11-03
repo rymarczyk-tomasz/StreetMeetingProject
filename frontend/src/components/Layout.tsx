@@ -7,7 +7,9 @@ import { useScrollLock } from "../utils/useScrollLock";
 import AnnouncementBar from "./AnnouncementBar";
 
 const LAYOUT_CONTENT_KEYS = ["contact", "home", "edition"];
-const LOGO_SRC = "/img/Logo 2.0/SVG/Logo_4.svg";
+const LOGO_SRC = "/img/logo-street-show-white.png";
+// site author credit, kept out of the CMS on purpose
+const AUTHOR = { name: "Tomasz Rymarczyk", url: "https://github.com/rymarczyk-tomasz" };
 
 function useNavbarOffset() {
     const location = useLocation();
@@ -40,6 +42,55 @@ function useNavbarOffset() {
         if (navbar) observer.observe(navbar);
         return () => observer.disconnect();
     }, [location.pathname]);
+}
+
+// "/#select" from another page: the section only exists once the page has
+// rendered its content, and sections above it keep growing while their data
+// and images load, so the browser's own anchor jump misses it. Follow the
+// section until the page settles or the user scrolls.
+const HASH_FOLLOW_MS = 3000;
+const USER_SCROLL_EVENTS = ["wheel", "touchstart", "keydown", "mousedown"];
+
+function useScrollToHash() {
+    const { pathname, hash, key } = useLocation();
+
+    useEffect(() => {
+        if (!hash) return;
+        let id;
+        try {
+            id = decodeURIComponent(hash.slice(1));
+        } catch {
+            return;
+        }
+
+        let found = false;
+        function scroll() {
+            const target = document.getElementById(id);
+            if (!target) return;
+            found = true;
+            target.scrollIntoView({ block: "start" });
+        }
+
+        const observer = new MutationObserver(scroll);
+        const resizeObserver = new ResizeObserver(() => found && scroll());
+        function stop() {
+            observer.disconnect();
+            resizeObserver.disconnect();
+            USER_SCROLL_EVENTS.forEach((type) => window.removeEventListener(type, stop));
+        }
+
+        scroll();
+        observer.observe(document.body, { childList: true, subtree: true });
+        resizeObserver.observe(document.body);
+        USER_SCROLL_EVENTS.forEach((type) =>
+            window.addEventListener(type, stop, { passive: true }),
+        );
+        const timeout = window.setTimeout(stop, HASH_FOLLOW_MS);
+        return () => {
+            stop();
+            window.clearTimeout(timeout);
+        };
+    }, [pathname, hash, key]);
 }
 
 function useActiveHomeSection(isHome: boolean) {
@@ -101,9 +152,14 @@ function NavItems({ isHome, activeSection, className, onNavigate }) {
             (item.section && activeSection === item.section);
         const cls = `${className}${active ? " is-active" : ""}`;
 
-        if (item.to) {
+        if (item.to || !isHome) {
             return (
-                <Link key={item.label} className={cls} to={item.to} onClick={onNavigate}>
+                <Link
+                    key={item.label}
+                    className={cls}
+                    to={item.to || `/#${item.section}`}
+                    onClick={onNavigate}
+                >
                     {item.label}
                 </Link>
             );
@@ -112,7 +168,7 @@ function NavItems({ isHome, activeSection, className, onNavigate }) {
             <a
                 key={item.label}
                 className={cls}
-                href={isHome ? `#${item.section}` : `/#${item.section}`}
+                href={`#${item.section}`}
                 onClick={onNavigate}
             >
                 {item.label}
@@ -251,7 +307,7 @@ function MobileMenu({ user, isHome, activeSection, ticketUrl, ticketLabel, event
         <div className="mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-label="Menu">
             <div className="mobile-menu-top">
                 <Link to="/" onClick={onClose} className="site-nav-logo">
-                    <img src={LOGO_SRC} alt="Street Meeting Poland – strona główna" />
+                    <img src={LOGO_SRC} alt="Street Show – strona główna" />
                 </Link>
                 <button type="button" className="site-nav-icon-button" onClick={onClose} aria-label="Zamknij menu">
                     <i className="bi bi-x" aria-hidden="true" />
@@ -334,6 +390,17 @@ function SocialLinks({ contact }) {
     );
 }
 
+function AuthorCredit() {
+    return (
+        <span className="site-footer-credit">
+            Strona:{" "}
+            <a href={AUTHOR.url} target="_blank" rel="noopener">
+                {AUTHOR.name}
+            </a>
+        </span>
+    );
+}
+
 function HomeFooter({ contact }) {
     const year = new Date().getFullYear();
     return (
@@ -341,7 +408,7 @@ function HomeFooter({ contact }) {
             <div className="site-container">
                 <div className="site-footer-grid">
                     <div className="site-footer-about">
-                        <img src={LOGO_SRC} alt="Street Meeting Poland" className="site-footer-logo" />
+                        <img src={LOGO_SRC} alt="Street Show" className="site-footer-logo" />
                         <p>
                             Organizator Street Show – największego motoryzacyjnego show na
                             Polsat Plus Arena Gdańsk.
@@ -379,7 +446,9 @@ function HomeFooter({ contact }) {
                     )}
                 </div>
                 <div className="site-footer-bottom">
-                    <p>&copy; {year} Street Meeting Poland</p>
+                    <p>
+                        &copy; {year} Street Meeting Poland <AuthorCredit />
+                    </p>
                     <nav className="site-footer-links" aria-label="Stopka">
                         <Link to="/faq">FAQ</Link>
                         <Link to="/regulamin">Regulamin</Link>
@@ -395,7 +464,9 @@ function PageFooter({ contact }) {
     return (
         <footer className="site-footer">
             <div className="site-container site-footer-row">
-                <p>&copy; {new Date().getFullYear()} Street Meeting Poland</p>
+                <p>
+                    &copy; {new Date().getFullYear()} Street Meeting Poland <AuthorCredit />
+                </p>
                 <div className="site-footer-row-links">
                     <nav className="site-footer-links" aria-label="Stopka">
                         <Link to="/faq">FAQ</Link>
@@ -420,6 +491,7 @@ export default function Layout() {
     const closeMenu = useCallback(() => setMenuOpen(false), []);
 
     useNavbarOffset();
+    useScrollToHash();
     const activeHomeSection = useActiveHomeSection(isHome);
     const { content } = useContent(LAYOUT_CONTENT_KEYS);
     const contact = content?.contact;
@@ -437,7 +509,7 @@ export default function Layout() {
                 <nav className="site-nav" aria-label="Główna">
                     <div className="site-container site-nav-inner">
                         <Link className="site-nav-logo" to="/">
-                            <img src={LOGO_SRC} alt="Street Meeting Poland – strona główna" />
+                            <img src={LOGO_SRC} alt="Street Show – strona główna" />
                         </Link>
                         <div className="site-nav-right">
                             <div className="site-nav-links">
