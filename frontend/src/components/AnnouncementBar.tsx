@@ -19,6 +19,17 @@ function isExpired(expiresAt) {
     return Date.now() > new Date(`${expiresAt}T23:59:59`).getTime();
 }
 
+// full links to this site (e.g. pasted from the address bar) stay in the same tab
+function sitePath(url) {
+    try {
+        const parsed = new URL(url, window.location.origin);
+        if (parsed.origin !== window.location.origin) return null;
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    } catch {
+        return null;
+    }
+}
+
 const HIDDEN_ON = ["/admin", "/wjazd"];
 
 export default function AnnouncementBar() {
@@ -50,6 +61,7 @@ export default function AnnouncementBar() {
 
     const linkUrl = user ? announcement.loggedInLinkUrl : announcement.linkUrl;
     const linkLabel = user ? announcement.loggedInLinkLabel : announcement.linkLabel;
+    const internalPath = linkUrl ? sitePath(linkUrl) : null;
 
     return (
         <div
@@ -58,8 +70,8 @@ export default function AnnouncementBar() {
         >
             <span>{text}</span>
             {linkUrl &&
-                (linkUrl.startsWith("/") ? (
-                    <Link to={linkUrl}>{linkLabel || "Więcej"}</Link>
+                (internalPath ? (
+                    <Link to={internalPath}>{linkLabel || "Więcej"}</Link>
                 ) : (
                     <a href={linkUrl} target="_blank" rel="noopener noreferrer">
                         {linkLabel || "Więcej"}
