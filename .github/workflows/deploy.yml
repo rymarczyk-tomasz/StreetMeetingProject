@@ -34,25 +34,31 @@ jobs:
         needs: build
         runs-on: ubuntu-latest
         steps:
-            - name: Deploy to Mikrus
+            # Target server: secrets DEPLOY_HOST / DEPLOY_SSH_KEY and repo variables
+            # DEPLOY_USER / DEPLOY_PORT / DEPLOY_PATH / API_PORT. Unset = old Mikrus values.
+            - name: Deploy over SSH
               uses: appleboy/ssh-action@v1.2.2
+              env:
+                  APP_DIR: ${{ vars.DEPLOY_PATH || '/root/streetshow' }}
+                  API_PORT: ${{ vars.API_PORT || '4001' }}
               with:
-                  host: ${{ secrets.MIKRUS_HOST }}
-                  username: root
-                  key: ${{ secrets.MIKRUS_SSH_KEY }}
-                  port: 10192
+                  host: ${{ secrets.DEPLOY_HOST || secrets.MIKRUS_HOST }}
+                  username: ${{ vars.DEPLOY_USER || 'root' }}
+                  key: ${{ secrets.DEPLOY_SSH_KEY || secrets.MIKRUS_SSH_KEY }}
+                  port: ${{ vars.DEPLOY_PORT || '10192' }}
+                  envs: APP_DIR,API_PORT
                   script: |
                       set -eu
 
-                      cd /root/streetshow
+                      cd "$APP_DIR"
                       git restore backend/package-lock.json frontend/package-lock.json
                       git pull --ff-only origin newProject
 
-                      cd /root/streetshow/backend
+                      cd "$APP_DIR/backend"
                       npm ci
                       npm run build
 
-                      cd /root/streetshow/frontend
+                      cd "$APP_DIR/frontend"
                       npm ci
                       npm run build
 
@@ -60,7 +66,7 @@ jobs:
                       pm2 save
 
                       for attempt in $(seq 1 15); do
-                        if curl --fail --silent http://127.0.0.1:4001/api/health >/dev/null; then
+                        if curl --fail --silent "http://127.0.0.1:$API_PORT/api/health" >/dev/null; then
                           echo "Healthcheck OK"
                           exit 0
                         fi

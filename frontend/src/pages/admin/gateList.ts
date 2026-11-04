@@ -62,7 +62,9 @@ export async function printGateList(edition) {
         <thead><tr><th>#</th><th>Rejestracja</th><th>Marka</th><th>Uczestnik</th><th>Telefon</th><th>Opłata</th><th>Wjazd ✓</th></tr></thead>
         <tbody>${tableRows || '<tr><td colspan="7">Brak zaakceptowanych zgłoszeń.</td></tr>'}</tbody>
     </table>
-    <script>window.onload = () => window.print();</script>
 </body></html>`);
     printWindow.document.close();
+    // Printed from here, not by an inline script: the new window inherits the site's CSP.
+    printWindow.focus();
+    printWindow.print();
 }
