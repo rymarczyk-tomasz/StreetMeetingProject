@@ -245,6 +245,16 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                     ),
                 "Nie udało się zmienić statusu zgłoszenia.",
             ),
+        requestChanges: (submission, note) =>
+            runAction(
+                () =>
+                    api.patch(`/admin/submissions/${submission.id}/status`, {
+                        status: "pending",
+                        adminNote: note,
+                        requestChanges: true,
+                    }),
+                "Nie udało się wysłać prośby o poprawki.",
+            ),
         setPaymentStatus: (submission, paymentStatus) =>
             runAction(
                 () => api.patch(`/admin/submissions/${submission.id}/payment-status`, { paymentStatus }),

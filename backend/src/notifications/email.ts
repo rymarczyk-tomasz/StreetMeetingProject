@@ -202,6 +202,41 @@ async function sendSubmissionStatusEmail({
     });
 }
 
+// status back to (or kept) pending with a note: the participant can edit again
+async function sendChangesRequestedEmail({ submission, user, adminNote }) {
+    if (!user?.email || !adminNote) return { sent: false, reason: "not_applicable" };
+
+    const firstName = user.first_name || submission.first_name || "Użytkowniku";
+    const carBrand = submission.car_brand || "Twój pojazd";
+    const panelUrl = `${getAppUrl()}/panel`;
+    const intro = `Organizator prosi o uzupełnienie zgłoszenia ${carBrand} (${submission.license_plate}) do strefy Select.`;
+    const after = "Zaloguj się do panelu, popraw dane lub zdjęcia — zgłoszenie czeka na decyzję.";
+
+    return sendMail({
+        to: user.email,
+        subject: "Street Show: prośba o uzupełnienie zgłoszenia",
+        text: [
+            `Cześć ${firstName},`,
+            "",
+            intro,
+            "",
+            "Wiadomość od organizatora:",
+            String(adminNote),
+            "",
+            `${after} ${panelUrl}`,
+            "",
+            "Street Show Crew",
+        ].join("\n"),
+        html: `
+            <p>Cześć ${escapeHtml(firstName)},</p>
+            <p>${escapeHtml(intro)}</p>
+            <p><strong>Wiadomość od organizatora:</strong><br>${escapeHtml(adminNote).replace(/\n/g, "<br>")}</p>
+            <p>${escapeHtml(after)} <a href="${escapeHtml(panelUrl)}">Przejdź do panelu</a>.</p>
+            <p>Street Show Crew</p>
+        `,
+    });
+}
+
 async function sendPaymentReminderEmail({ submission, email, firstName }) {
     const payment = getPaymentDetails(submission);
     const panelUrl = `${getAppUrl()}/panel`;
@@ -360,6 +395,110 @@ async function sendEmailChangeEmail({ user, newEmail, token, ttlHours }) {
 
 function adminNotifyRecipients() {
     return String(process.env.ADMIN_NOTIFY_EMAIL || "").trim();
+}
+
+function formatPolishDateTime(date = new Date()) {
+    return date.toLocaleString("pl-PL", {
+        timeZone: "Europe/Warsaw",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+}
+
+// after change-password and reset-password; the link lets the real owner take the account back
+async function sendPasswordChangedEmail({ user }) {
+    const firstName = user.first_name || "Użytkowniku";
+    const resetUrl = `${getAppUrl()}/nie-pamietam-hasla`;
+    const when = formatPolishDateTime();
+
+    return sendMail({
+        to: user.email,
+        subject: "Street Show: hasło zostało zmienione",
+        text: [
+            `Cześć ${firstName},`,
+            "",
+            `Hasło do Twojego konta Street Show zostało zmienione (${when}).`,
+            "Jeśli to Ty — nic nie musisz robić.",
+            "",
+            "Jeśli to nie Ty, od razu ustaw nowe hasło. Link do zmiany przyjdzie na ten adres e-mail, a wszystkie urządzenia zostaną wylogowane:",
+            resetUrl,
+            "Odpisz też na tę wiadomość, żebyśmy mogli sprawdzić konto.",
+            "",
+            "Street Show",
+        ].join("\n"),
+        html: `
+            <p>Cześć ${escapeHtml(firstName)},</p>
+            <p>Hasło do Twojego konta Street Show zostało zmienione (${escapeHtml(when)}).<br>Jeśli to Ty — nic nie musisz robić.</p>
+            <p><strong>Jeśli to nie Ty</strong>, od razu <a href="${escapeHtml(resetUrl)}">ustaw nowe hasło</a>. Link do zmiany przyjdzie na ten adres e-mail, a wszystkie urządzenia zostaną wylogowane. Odpisz też na tę wiadomość, żebyśmy mogli sprawdzić konto.</p>
+            <p>Street Show</p>
+        `,
+    });
+}
+
+// the row is already gone, so everything comes from a snapshot taken before deletion
+async function sendAccountDeletedEmail({ email, firstName }) {
+    const name = firstName || "Użytkowniku";
+    return sendMail({
+        to: email,
+        subject: "Street Show: konto zostało usunięte",
+        text: [
+            `Cześć ${name},`,
+            "",
+            `Twoje konto Street Show (${email}) zostało usunięte (${formatPolishDateTime()}).`,
+            "Usunęliśmy dane konta, zgłoszenia pojazdów, auta z garażu i wszystkie zdjęcia.",
+            "",
+            "Jeśli to nie Ty usunąłeś konto, odpisz na tę wiadomość.",
+            "W każdej chwili możesz założyć nowe konto.",
+            "",
+            "Street Show",
+        ].join("\n"),
+        html: `
+            <p>Cześć ${escapeHtml(name)},</p>
+            <p>Twoje konto Street Show (${escapeHtml(email)}) zostało usunięte (${escapeHtml(formatPolishDateTime())}).
+            Usunęliśmy dane konta, zgłoszenia pojazdów, auta z garażu i wszystkie zdjęcia.</p>
+            <p>Jeśli to nie Ty usunąłeś konto, odpisz na tę wiadomość. W każdej chwili możesz założyć nowe konto.</p>
+            <p>Street Show</p>
+        `,
+    });
+}
+
+const STATUS_NAMES = {
+    pending: "oczekuje",
+    approved: "zaakceptowane",
+    waitlist: "lista rezerwowa",
+    rejected: "odrzucone",
+    withdrawn: "rezygnacja",
+};
+const PAYMENT_NAMES = { unpaid: "nieopłacone", verification: "do weryfikacji", paid: "opłacone" };
+
+async function sendAccountDeletedAdminEmail({ email, name, submissions }) {
+    const recipients = adminNotifyRecipients();
+    if (!recipients || !submissions.length) return { sent: false, reason: "not_applicable" };
+
+    const lines = submissions.map(
+        (s) =>
+            `${s.car_brand} — ${s.license_plate} (edycja ${s.edition}): ${STATUS_NAMES[s.status] || s.status}, ${PAYMENT_NAMES[s.payment_status] || s.payment_status}, tel. ${s.phone}`,
+    );
+
+    return sendMail({
+        to: recipients,
+        subject: `Street Show: uczestnik usunął konto (${email})`,
+        text: [
+            `${name || email} (${email}) usunął konto. Te zgłoszenia zniknęły z panelu:`,
+            "",
+            ...lines,
+            "",
+            "Wpis zostaje w dzienniku zdarzeń w panelu administratora.",
+        ].join("\n"),
+        html: `
+            <p>${escapeHtml(name || email)} (${escapeHtml(email)}) usunął konto. Te zgłoszenia zniknęły z panelu:</p>
+            <ul>${lines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>
+            <p>Wpis zostaje w dzienniku zdarzeń w panelu administratora.</p>
+        `,
+    });
 }
 
 async function sendNewSubmissionAdminEmail({ submission, userEmail }) {
@@ -614,7 +753,11 @@ module.exports = {
     sendVerificationEmail,
     sendEmailChangeEmail,
     sendSubmissionStatusEmail,
+    sendChangesRequestedEmail,
     sendPasswordResetEmail,
+    sendPasswordChangedEmail,
+    sendAccountDeletedEmail,
+    sendAccountDeletedAdminEmail,
     sendNewSubmissionAdminEmail,
     sendPaymentProofAdminEmail,
     sendWithdrawalAdminEmail,

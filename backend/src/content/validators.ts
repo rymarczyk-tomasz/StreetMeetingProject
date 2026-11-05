@@ -309,7 +309,14 @@ function validatePartners(input) {
         if (!isSafeUrl(item.logo)) return { error: urlError(`Logo „${item.name}”`) };
         if (!isSafeUrl(item.url, { allowEmpty: true })) return { error: urlError(`Link „${item.name}”`) };
     }
-    return { content: { title: text(input.title, 120) || "Partnerzy", items } };
+    return {
+        content: {
+            // missing = shown, so sections saved before the switch existed stay visible
+            enabled: input.enabled !== false,
+            title: text(input.title, 120) || "Partnerzy",
+            items,
+        },
+    };
 }
 
 function validateSettings(input) {

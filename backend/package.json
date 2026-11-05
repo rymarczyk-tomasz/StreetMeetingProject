@@ -21,7 +21,8 @@
         "build": "tsc -p tsconfig.json",
         "start": "node dist/server.js",
         "start:prod": "npm run build && node dist/server.js",
-        "backup": "node dist/scripts/backup-db.js"
+        "backup": "node dist/scripts/backup-db.js",
+        "test": "node --import tsx --test --test-reporter=spec \"test/**/*.test.ts\""
     },
     "keywords": [],
     "author": "",
@@ -38,6 +39,9 @@
         "@types/node": "^26.5.0",
         "@types/nodemailer": "^8.0.1",
         "@types/sanitize-html": "^2.16.2",
+        "@types/supertest": "^7.2.1",
+        "supertest": "^7.3.1",
+        "tsx": "^4.23.15",
         "typescript": "^7.0.2"
     }
 }

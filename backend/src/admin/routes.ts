@@ -14,6 +14,7 @@ const {
 const {
     isEmailConfigured,
     sendSubmissionStatusEmail,
+    sendChangesRequestedEmail,
     sendPaymentConfirmedEmail,
     sendGroupEmail,
     sendDateSubscribersEmail,
@@ -668,6 +669,18 @@ router.patch("/submissions/:id/status", (req, res) => {
     if (problem) return res.status(409).json(problem);
 
     const updated = changeSubmissionStatus(req, existing, status, adminNote);
+
+    // "Poproś o poprawki" - not for a plain "Przywróć do oczekujących" or bulk changes
+    if (status === "pending" && adminNote && req.body.requestChanges === true) {
+        void sendChangesRequestedEmail({
+            submission: updated,
+            user: usersDb.findUserById(existing.user_id),
+            adminNote,
+        }).catch((error) =>
+            console.error(`[email] Prośba o poprawki (zgłoszenie ${existing.id}):`, error.message),
+        );
+    }
+
     res.json({ submission: toAdminSubmission(updated) });
 });
 

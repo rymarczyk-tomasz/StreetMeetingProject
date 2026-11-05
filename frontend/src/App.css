@@ -3052,6 +3052,10 @@
     padding: 0 8px;
 }
 
+.detail-decision .detail-decision-wide {
+    grid-column: 1 / -1;
+}
+
 .detail-note {
     margin: 0;
     color: var(--street-muted);

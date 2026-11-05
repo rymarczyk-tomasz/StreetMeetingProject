@@ -31,7 +31,9 @@ frontend/                 # React + Vite (SPA)
   public/                 # statyczne assety (img/, css/custom.css — tokeny i główne style, manifest, robots, sitemap)
 
 backend/                  # Node.js + Express (TypeScript → dist/)
-  server.ts               # montuje routery, publiczne API treści i galerii
+  app.ts                  # aplikacja Express: routery, publiczne API treści i galerii
+  server.ts               # ładuje config/.env, startuje app.ts i zadania w tle
+  test/                   # testy API i jednostkowe (node:test + supertest)
   src/
     auth/                 # rejestracja, logowanie, reset hasła, usuwanie konta, JWT
     admin/                # API panelu administratora
@@ -105,6 +107,17 @@ npm install
 npm run dev
 npm run build          
 ```
+
+### Testy
+
+```bash
+cd backend && npm test     # API (auth, uprawnienia, zgłoszenia, opłaty, bramka) + funkcje czyste
+cd frontend && npm test    # funkcje z src/utils (Vitest)
+```
+
+Testy backendu nie dotykają `data/` ani `uploads/` — każdy plik testów dostaje własny katalog tymczasowy ze świeżą bazą, a e-maile są pomijane (brak SMTP). Pomocnicze funkcje (konta, zgłoszenia, zalogowany klient HTTP) są w `backend/test/helpers.ts`.
+
+GitHub Actions: `ci.yml` uruchamia build, lint i testy na każdym branchu i PR; `deploy.yml` robi to samo przed wdrożeniem z `newProject` — czerwone testy blokują deploy.
 
 ### Utworzenie/nadanie roli administratora
 

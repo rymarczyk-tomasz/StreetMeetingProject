@@ -9,7 +9,11 @@ import AnnouncementBar from "./AnnouncementBar";
 const LAYOUT_CONTENT_KEYS = ["contact", "home", "edition"];
 const LOGO_SRC = "/img/logo-street-show-white.png";
 // site author credit, kept out of the CMS on purpose
-const AUTHOR = { name: "Tomasz Rymarczyk", url: "https://github.com/rymarczyk-tomasz" };
+const AUTHOR = {
+    name: "Tomasz Rymarczyk",
+    url: "https://tomaszrymarczyk.pl",
+    github: "https://github.com/rymarczyk-tomasz",
+};
 
 function useNavbarOffset() {
     const location = useLocation();
@@ -396,6 +400,10 @@ function AuthorCredit() {
             Strona:{" "}
             <a href={AUTHOR.url} target="_blank" rel="noopener">
                 {AUTHOR.name}
+            </a>
+            {" · "}
+            <a href={AUTHOR.github} target="_blank" rel="noopener">
+                GitHub
             </a>
         </span>
     );

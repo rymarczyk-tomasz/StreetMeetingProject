@@ -176,9 +176,18 @@ function DecisionTab({ submission, isBusy, actions, noteTemplates, queue }) {
                 >
                     Odrzuć
                 </button>
+                <button
+                    type="button"
+                    className="btn-street btn-street-outline detail-decision-wide"
+                    disabled={isBusy || !note.trim()}
+                    title={note.trim() ? "" : "Najpierw wpisz, co uczestnik ma poprawić"}
+                    onClick={() => actions.requestChanges(submission, note.trim())}
+                >
+                    Poproś o poprawki
+                </button>
             </div>
             <p className="detail-note">
-                Uczestnik dostanie e-mail.
+                Uczestnik dostanie e-mail. „Poproś o poprawki” zostawia zgłoszenie jako oczekujące, więc uczestnik może zmienić dane i zdjęcia.
                 {queue?.capacity ? ` Wolne miejsca: ${queue.freePlaces} z ${queue.capacity}.` : ""}
             </p>
             <div className="detail-footer">

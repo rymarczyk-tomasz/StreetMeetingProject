@@ -4,6 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/client";
 import ConsentFields from "../components/ConsentFields";
+import EmailVerifyBanner from "../components/EmailVerifyBanner";
 import { photosLabel, plural } from "../utils/plural";
 
 // Must match the backend limits in backend/src/submissions/routes.ts.
@@ -212,6 +213,15 @@ export default function SubmissionPage() {
         );
     } else if (!availability) {
         body = error && <p className="form-error">{error}</p>;
+    } else if (availability.emailUnverified) {
+        body = (
+            <div className="account-card-form">
+                <EmailVerifyBanner />
+                <Link className="back-link" to="/panel">
+                    ← Wróć do panelu
+                </Link>
+            </div>
+        );
     } else if (!availability.open) {
         body = (
             <div className="account-card-form">

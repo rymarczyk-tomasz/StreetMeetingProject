@@ -11,7 +11,7 @@ concurrency:
     cancel-in-progress: true
 
 jobs:
-    # Catch TypeScript/build errors on GitHub before anything touches the server.
+    # Catch build errors and failing tests on GitHub before anything touches the server.
     build:
         runs-on: ubuntu-latest
         steps:
@@ -19,16 +19,19 @@ jobs:
             - uses: actions/setup-node@v4
               with:
                   node-version: 22
-            - name: Build backend
+            - name: Build and test backend
               working-directory: backend
               run: |
                   npm ci
                   npm run build
-            - name: Build frontend
+                  npm test
+            - name: Build and test frontend
               working-directory: frontend
               run: |
                   npm ci
+                  npm run lint
                   npm run build
+                  npm test
 
     deploy:
         needs: build

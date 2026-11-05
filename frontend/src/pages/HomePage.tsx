@@ -56,7 +56,7 @@ const FALLBACK = {
     select: DEFAULT_SELECT,
     gallery: { intro: "", linkLabel: "Wszystkie albumy", photos: [] },
     contact: null,
-    partners: { title: "Partnerzy", items: [] },
+    partners: { enabled: true, title: "Partnerzy", items: [] },
     edition: null,
 };
 
@@ -362,7 +362,7 @@ function PartnerLogo({ partner }) {
 }
 
 function Partners({ partners }) {
-    if (!partners?.items?.length) return null;
+    if (partners?.enabled === false || !partners?.items?.length) return null;
 
     const tierOf = (partner) => partner.tier || "exhibitor";
     const featured = FEATURED_TIERS.map(([tier, one, many]) => {

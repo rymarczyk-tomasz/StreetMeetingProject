@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 
 const submissionsDb = require("../db/submissions");
+const usersDb = require("../db/users");
 const siteContentDb = require("../db/siteContent");
 const vehiclesDb = require("../db/vehicles");
 const { authenticate } = require("../auth/middleware");
@@ -40,6 +41,7 @@ const { removeShowcaseCopies } = require("../showcase/routes");
 const threadsDb = require("../db/threads");
 const { getThread, postToThread, readMessageBody } = require("./thread");
 const {
+    isEmailConfigured,
     sendNewSubmissionAdminEmail,
     sendPaymentProofAdminEmail,
     sendWithdrawalAdminEmail,
@@ -137,8 +139,15 @@ function getMaxVehicles() {
     return Number.isInteger(value) && value > 0 ? value : DEFAULT_MAX_VEHICLES;
 }
 
+const EMAIL_UNVERIFIED_REASON =
+    "Potwierdź adres e-mail, aby zgłosić pojazd. Link wysłaliśmy po rejestracji — możesz wysłać go ponownie z panelu.";
+
 function getAvailability(userId) {
-    const availability = siteContentDb.getSubmissionsAvailability();
+    let availability = siteContentDb.getSubmissionsAvailability();
+    // a closed zone keeps its own reason; without SMTP nobody could confirm, so no block then
+    if (availability.open && isEmailConfigured() && !usersDb.findUserById(userId)?.email_verified_at) {
+        availability = { open: false, reason: EMAIL_UNVERIFIED_REASON, emailUnverified: true };
+    }
     const maxVehicles = getMaxVehicles();
     const edition = siteContentDb.getCurrentEdition();
     const activeCount = submissionsDb.countActiveForUser(userId, edition);

@@ -2,42 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/client";
+import EmailVerifyBanner from "../components/EmailVerifyBanner";
 import EmptyState from "../components/EmptyState";
 import Lightbox from "../components/Lightbox";
 import { plural } from "../utils/plural";
 import EventInfoCard from "./panel/EventInfoCard";
 import MessagesInbox from "./panel/MessagesInbox";
 import SubmissionCard from "./panel/SubmissionCard";
-
-function EmailVerifyBanner() {
-    const [feedback, setFeedback] = useState("");
-
-    async function resend() {
-        try {
-            const { data } = await api.post("/auth/resend-verification");
-            setFeedback(data.message);
-        } catch (err) {
-            setFeedback(err.response?.data?.message || "Nie udało się wysłać linku.");
-        }
-    }
-
-    return (
-        <div className="verify-banner" role="status">
-            <span className="verify-banner-text">
-                <i className="bi bi-envelope-exclamation" aria-hidden="true" />
-                Potwierdź swój adres e-mail – dzięki temu dostaniesz decyzję w sprawie
-                zgłoszenia i ważne informacje o wydarzeniu.
-            </span>
-            {feedback ? (
-                <span>{feedback}</span>
-            ) : (
-                <button type="button" className="text-action" onClick={resend}>
-                    Wyślij link ponownie
-                </button>
-            )}
-        </div>
-    );
-}
 
 function NoSubmissions({ edition, availability, vehicleCount }) {
     const isOpen = availability?.open;

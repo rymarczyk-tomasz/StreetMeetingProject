@@ -138,6 +138,7 @@ const DEFAULTS = {
         expiresAt: "",
     },
     partners: {
+        enabled: true,
         title: "Partnerzy",
         items: [],
     },

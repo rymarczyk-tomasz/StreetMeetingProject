@@ -733,6 +733,20 @@ export function PartnersEditor({ onAction }) {
                         sekcja jest ukryta. Najlepiej wyglądają logotypy PNG/WEBP
                         z przezroczystym tłem.
                     </p>
+                    <label className="admin-checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={partners.enabled !== false}
+                            onChange={(event) => editor.update({ enabled: event.target.checked })}
+                        />
+                        Pokazuj sekcję na stronie głównej
+                    </label>
+                    {partners.enabled === false && (
+                        <p className="admin-hint">
+                            Sekcja jest ukryta. Partnerzy zostają zapisani i wrócą na stronę po
+                            ponownym włączeniu.
+                        </p>
+                    )}
                     <TextInput
                         label="Nagłówek sekcji"
                         value={partners.title}

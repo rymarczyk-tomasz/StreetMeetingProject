@@ -35,9 +35,13 @@ const siteContentDb = require("../db/siteContent");
 const vehiclesDb = require("../db/vehicles");
 const { removeShowcaseCopies } = require("../showcase/routes");
 const threadsDb = require("../db/threads");
+const auditLogDb = require("../db/auditLog");
 const {
     isEmailConfigured,
     sendPasswordResetEmail,
+    sendPasswordChangedEmail,
+    sendAccountDeletedEmail,
+    sendAccountDeletedAdminEmail,
     sendVerificationEmail,
     sendEmailChangeEmail,
 } = require("../notifications/email");
@@ -281,6 +285,7 @@ router.post("/reset-password", passwordResetRateLimit, async (req, res) => {
     // The owner proved access to the mailbox, so a lockout no longer applies.
     clearLoginFailures(user.email);
     clearAuthCookies(res);
+    void sendPasswordChangedEmail({ user }).catch(logEmailError("zmiana hasła"));
 
     res.json({
         message: "Hasło zostało zmienione. Możesz się teraz zalogować.",
@@ -470,8 +475,57 @@ router.delete("/me", authenticate, authRateLimit, async (req, res) => {
         });
     }
 
+    const submissions = submissionsDb.listSubmissionsByUser(user.id);
+    const currentEdition = siteContentDb.getCurrentEdition();
+
+    // a paid (or being verified) place needs the organizer first - refund, reserve list
+    const paidPlace = submissions.find(
+        (row) =>
+            row.edition === currentEdition &&
+            row.status === "approved" &&
+            ["paid", "verification"].includes(row.payment_status) &&
+            !row.checked_in_at,
+    );
+    if (paidPlace) {
+        return res.status(409).json({
+            code: "paid_submission",
+            message: `Masz opłacone miejsce w strefie Select ${currentEdition} (${paidPlace.car_brand}, ${paidPlace.license_plate}). Zanim usuniesz konto, zrezygnuj z udziału w panelu albo napisz do organizatora w sprawie zwrotu opłaty.`,
+        });
+    }
+
+    // what the organizer still needs to know about once the rows are gone
+    const relevant = submissions.filter(
+        (row) =>
+            row.edition === currentEdition &&
+            (["pending", "approved", "waitlist"].includes(row.status) ||
+                ["paid", "verification"].includes(row.payment_status)),
+    );
+    const snapshot = {
+        email: user.email,
+        firstName: user.first_name,
+        name: [user.first_name, user.last_name].filter(Boolean).join(" "),
+    };
+
+    // before deleteUser, so the entry keeps the e-mail of its author
+    auditLogDb.createAuditEntry({
+        adminId: user.id,
+        action: "user.self_deleted",
+        targetType: "user",
+        targetId: user.id,
+        details: {
+            email: user.email,
+            submissions: relevant.map((row) => ({
+                licensePlate: row.license_plate,
+                carBrand: row.car_brand,
+                edition: row.edition,
+                status: row.status,
+                paymentStatus: row.payment_status,
+            })),
+        },
+    });
+
     // ids first, the rows are deleted with the user
-    const submissionIds = submissionsDb.listSubmissionsByUser(user.id).map((row) => row.id);
+    const submissionIds = submissions.map((row) => row.id);
     usersDb.deleteUser(user.id);
     submissionIds.forEach(removeShowcaseCopies);
     for (const dir of [getUserSubmissionsDir(user.id), getUserVehiclesDir(user.id)]) {
@@ -483,6 +537,10 @@ router.delete("/me", authenticate, authRateLimit, async (req, res) => {
         );
     }
     clearAuthCookies(res);
+    void sendAccountDeletedEmail(snapshot).catch(logEmailError("usunięcie konta"));
+    void sendAccountDeletedAdminEmail({ ...snapshot, submissions: relevant }).catch(
+        logEmailError("usunięcie konta (organizator)"),
+    );
 
     res.json({ message: "Konto zostało usunięte." });
 });
@@ -521,6 +579,7 @@ router.post(
         refreshTokensDb.revokeAllUserTokens(user.id);
         passwordResetTokensDb.deleteResetTokensForUser(user.id);
         issueSession(res, user);
+        void sendPasswordChangedEmail({ user }).catch(logEmailError("zmiana hasła"));
 
         res.json({ message: "Hasło zostało zmienione." });
     },
