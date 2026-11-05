@@ -25,11 +25,18 @@ npm run build                 # tsc -b && vite build (typechecks test files too)
 npm run lint                  # oxlint (warnings only, exit 0 is expected)
 npm test                      # vitest run (src/**/*.test.ts)
 npx vitest run -t "plural"    # one test by name
+
+# e2e (Playwright, real Chromium; needs backend built first: cd backend && npm run build)
+cd e2e
+npx playwright install chromium          # once
+npx playwright test                      # whole suite, starts its own backend + Vite
+npx playwright test account --project=desktop   # one file, desktop only
+npx playwright test --headed --debug     # watch / step through
 ```
 
 Backend config lives in `backend/config/.env` (gitignored): JWT secrets, `SMTP_*`, `ADMIN_NOTIFY_EMAIL`, `APP_URL`, Google Drive credentials. Without SMTP, e-mails are skipped and logged, nothing else breaks.
 
-CI: `.github/workflows/ci.yml` runs build + lint + tests on every branch except `newProject`; `deploy.yml` runs the same checks on push to `newProject`, then deploys over SSH (pm2 `streetshow-api`, healthcheck `/api/health`). **Pushing to `newProject` deploys to production.**
+CI: `.github/workflows/checks.yml` (backend build + tests, frontend lint + build + tests, Playwright e2e) is shared by `ci.yml` (every branch except `newProject`, PRs) and `deploy.yml` (push to `newProject`: checks, then deploy over SSH (pm2 `streetshow-api`, healthcheck `/api/health`). **Pushing to `newProject` deploys to production.**
 
 ## Backend architecture
 
@@ -55,6 +62,10 @@ CI: `.github/workflows/ci.yml` runs build + lint + tests on every branch except 
 - `saveSettings(patch)`.
 
 Each test file runs in its own process. Assert e-mails through `mails`/`mailsTo` and reset with `mails.length = 0` in `beforeEach`.
+
+## E2E tests
+
+`e2e/` is its own npm package. `playwright.config.ts` starts `start-backend.cjs` (requires `backend/dist`; temp data dir, admin `admin@streetshow.test` / `Admin-e2e-123` from `config.cjs`, payment settings and one partner seeded, fake SMTP) on port 33100, plus Vite on 5199 with `API_TARGET` pointing the proxy at it, so it runs alongside a normal dev setup. Sent e-mails are readable at `http://localhost:33101/mails?to=…`; tests follow links from them (`waitForMail`, `linkFrom` in `tests/fixtures.ts`). The suite runs serially against one shared DB, so use `uniqueEmail()` for new accounts. Every browser context gets its own `X-Forwarded-For` so the per-IP login limiter doesn't trip. The `consoleErrors` fixture fails a test on uncaught page errors. Selectors use Polish labels and button texts, so renaming UI text means updating the specs.
 
 ## Frontend architecture
 

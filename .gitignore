@@ -60,3 +60,7 @@ backend/backups/
 # Local reports / OS junk
 lighthouse-report*.json
 .DS_Store
+
+# Playwright e2e artifacts
+e2e/test-results/
+e2e/playwright-report/

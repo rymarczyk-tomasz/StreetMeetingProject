@@ -146,8 +146,9 @@ export default function AccountSettingsPage() {
         setIsDeleting(true);
         try {
             await api.delete("/auth/me", { data: { password: deletePassword } });
-            await refreshUser();
+            // leave the protected page first, otherwise it bounces to /logowanie
             navigate("/", { replace: true });
+            await refreshUser();
         } catch (err) {
             setError(
                 err.response?.data?.message || "Nie udało się usunąć konta.",

@@ -117,7 +117,16 @@ cd frontend && npm test    # funkcje z src/utils (Vitest)
 
 Testy backendu nie dotykają `data/` ani `uploads/` — każdy plik testów dostaje własny katalog tymczasowy ze świeżą bazą, a e-maile są pomijane (brak SMTP). Pomocnicze funkcje (konta, zgłoszenia, zalogowany klient HTTP) są w `backend/test/helpers.ts`.
 
-GitHub Actions: `ci.yml` uruchamia build, lint i testy na każdym branchu i PR; `deploy.yml` robi to samo przed wdrożeniem z `newProject` — czerwone testy blokują deploy.
+Testy E2E (Playwright) przeklikują aplikację w prawdziwej przeglądarce: rejestracja z potwierdzeniem maila, zgłoszenie, prośba o poprawki, akceptacja, potwierdzenie przelewu, wejściówka, bramka, reset i zmiana hasła, usuwanie konta, ukrywanie partnerów, a do tego smoke test publicznych stron na komputerze i telefonie. Uruchamiają własny backend (czysta baza w katalogu tymczasowym, maile przechwytywane) i Vite na innych portach, więc nie kolidują z `npm run dev`:
+
+```bash
+cd backend && npm run build
+cd ../e2e && npm install && npx playwright install chromium
+npx playwright test              # całość
+npx playwright test --headed     # z widoczną przeglądarką
+```
+
+GitHub Actions: `checks.yml` (testy backendu, frontendu i E2E) uruchamia `ci.yml` na każdym branchu i PR oraz `deploy.yml` przed wdrożeniem z `newProject` — czerwone testy blokują deploy. Przy błędzie E2E raport ze zrzutami ekranu jest w artefaktach przebiegu.
 
 ### Utworzenie/nadanie roli administratora
 

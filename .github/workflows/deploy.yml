@@ -11,30 +11,12 @@ concurrency:
     cancel-in-progress: true
 
 jobs:
-    # Catch build errors and failing tests on GitHub before anything touches the server.
-    build:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: 22
-            - name: Build and test backend
-              working-directory: backend
-              run: |
-                  npm ci
-                  npm run build
-                  npm test
-            - name: Build and test frontend
-              working-directory: frontend
-              run: |
-                  npm ci
-                  npm run lint
-                  npm run build
-                  npm test
+    # unit, api and e2e tests must pass before anything touches the server
+    checks:
+        uses: ./.github/workflows/checks.yml
 
     deploy:
-        needs: build
+        needs: checks
         runs-on: ubuntu-latest
         steps:
             - name: Deploy to Mikrus

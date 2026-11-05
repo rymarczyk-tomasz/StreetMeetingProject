@@ -17,17 +17,20 @@ function versionCustomCss(): Plugin {
     };
 }
 
+// e2e runs its own backend on another port
+const apiTarget = process.env.API_TARGET || "http://localhost:33000";
+
 // https://vite.dev/config/
 export default defineConfig({
     plugins: [react(), versionCustomCss()],
     server: {
         proxy: {
             "/api": {
-                target: "http://localhost:33000",
+                target: apiTarget,
                 changeOrigin: true,
             },
             "/uploads": {
-                target: "http://localhost:33000",
+                target: apiTarget,
                 changeOrigin: true,
             },
         },
