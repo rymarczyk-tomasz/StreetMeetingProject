@@ -27,6 +27,9 @@ import MessagesPanel from "./MessagesPanel";
 import SubmissionsPanel from "./SubmissionsPanel";
 import UsersPanel from "./UsersPanel";
 import DateSubscribersPanel from "./DateSubscribersPanel";
+import StepUpDialog from "../../components/StepUpDialog";
+import TwoFactorSetup from "../../components/TwoFactorSetup";
+import { useAuth } from "../../context/auth";
 
 const NAV_GROUPS: [string, [string, string, string][]][] = [
     [
@@ -181,7 +184,7 @@ function Sidebar({ active, rail, counts, editions, edition, onEdition, onOpen })
     );
 }
 
-export default function AdminPage() {
+function AdminPanel() {
     const { sekcja } = useParams();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -401,5 +404,31 @@ export default function AdminPage() {
                 </div>
             </div>
         </section>
+    );
+}
+
+// the API refuses admin requests until two-step login is on, so set it up first
+export default function AdminPage() {
+    const { user, refreshUser } = useAuth();
+
+    if (!user?.twoFactorEnabled) {
+        return (
+            <section className="page admin-page">
+                <div className="admin-card two-factor-gate">
+                    <AdminHeading
+                        title="Włącz logowanie dwuetapowe"
+                        description="Panel administratora otworzy się po skonfigurowaniu kodów z aplikacji w telefonie."
+                    />
+                    <TwoFactorSetup onDone={refreshUser} />
+                </div>
+            </section>
+        );
+    }
+
+    return (
+        <>
+            <AdminPanel />
+            <StepUpDialog />
+        </>
     );
 }

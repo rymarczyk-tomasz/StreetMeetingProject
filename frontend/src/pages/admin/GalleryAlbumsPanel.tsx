@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import api from "../../api/client";
 import { errorMessage, formatDate } from "./shared";
-import { moveItem } from "./fields";
+import { moveItem } from "./shared";
 import { photosLabel } from "../../utils/plural";
 
 const POLL_INTERVAL_MS = 2000;
@@ -201,14 +201,14 @@ export default function GalleryAlbumsPanel({ onAction }) {
     const [editingId, setEditingId] = useState(null);
     const [openPhotosId, setOpenPhotosId] = useState(null);
 
-    const load = useCallback(async () => {
-        try {
-            const { data: response } = await api.get("/admin/albums");
-            setData(response);
-        } catch (err) {
-            setError(errorMessage(err, "Nie udało się pobrać albumów."));
-        }
-    }, []);
+    const load = useCallback(
+        () =>
+            api.get("/admin/albums").then(
+                ({ data: response }) => setData(response),
+                (err) => setError(errorMessage(err, "Nie udało się pobrać albumów.")),
+            ),
+        [],
+    );
 
     useEffect(() => {
         load();

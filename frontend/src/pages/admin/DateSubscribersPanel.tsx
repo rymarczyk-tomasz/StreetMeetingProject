@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../api/client";
+import { withStepUp } from "../../api/stepUp";
 import { errorMessage } from "./shared";
 
 export default function DateSubscribersPanel({ onAction }) {
@@ -42,11 +43,9 @@ export default function DateSubscribersPanel({ onAction }) {
         setIsBusy(true);
         setFeedback({ error: "", success: "" });
         try {
-            const { data } = await api.post("/admin/date-subscribers/send", {
-                subject,
-                message,
-                all: resendAll,
-            });
+            const { data } = await withStepUp((stepUp) =>
+                api.post("/admin/date-subscribers/send", { subject, message, all: resendAll, stepUp }),
+            );
             setFeedback({ error: "", success: data.message });
             setSubject("");
             setMessage("");

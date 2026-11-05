@@ -216,15 +216,18 @@ export default function GaragePage() {
     const [feedback, setFeedback] = useState({ message: "", error: "" });
     const [lightbox, setLightbox] = useState({ photos: [], index: null, title: "" });
 
-    const load = useCallback(async () => {
-        try {
-            const { data } = await api.get("/vehicles");
-            setVehicles(data.vehicles);
-            setEdition(data.edition);
-        } catch (err) {
-            setFeedback({ message: "", error: err.response?.data?.message || "Nie udało się pobrać garażu." });
-        }
-    }, []);
+    const load = useCallback(
+        () =>
+            api.get("/vehicles").then(
+                ({ data }) => {
+                    setVehicles(data.vehicles);
+                    setEdition(data.edition);
+                },
+                (err) =>
+                    setFeedback({ message: "", error: err.response?.data?.message || "Nie udało się pobrać garażu." }),
+            ),
+        [],
+    );
 
     useEffect(() => {
         load();

@@ -196,6 +196,10 @@ Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do
 
 ## Bezpieczeństwo (skrót)
 
+- Rolę admina nadaje tylko inny admin (z potwierdzeniem hasłem i kodem) albo skrypt `create-admin` na serwerze; rejestracja zawsze tworzy zwykłe konto.
+- **Admini logują się dwuetapowo** (hasło + 6-cyfrowy kod TOTP z aplikacji, albo jednorazowy kod zapasowy). Bez włączonego 2FA API panelu odpowiada 403, a panel pokazuje ekran konfiguracji. Kod nie zadziała dwa razy, a złe kody liczą się do blokady konta jak złe hasła.
+- **Wrażliwe operacje wymagają ponownie hasła i kodu:** zmiana danych do przelewu (także przez przywrócenie starej wersji ustawień), nadanie roli admina, wiadomości grupowe, wysyłka do listy „Daj mi znać”, reset 2FA innego admina. Zmiany danych do przelewu, nowi admini i resety 2FA wysyłają alert e-mail do wszystkich adminów (z tym, kto i z jakiego IP).
+- Hasła adminów: min. 12 znaków (zwykłych kont: 8).
 - `helmet` (nagłówki bezpieczeństwa, `nosniff`) na API; rola i blokada konta sprawdzane w bazie przy każdym żądaniu (zablokowanie działa natychmiast).
 - Rate limit liczony po `req.ip` z `trust proxy` — nagłówek `X-Forwarded-For` od klienta nie pozwala go obejść.
 - Linki i obrazy w CMS muszą zaczynać się od `https://`, `http://`, `/` lub `#` (blokada `javascript:`).

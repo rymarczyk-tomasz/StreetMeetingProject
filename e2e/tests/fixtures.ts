@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { test as base, expect, type Page, type Browser } from "@playwright/test";
 import config from "../config.cjs";
 
@@ -70,12 +71,72 @@ export function linkFrom(mail: Mail, path: string) {
     return match![0];
 }
 
-export async function login(page: Page, email: string, password = PASSWORD) {
+// ---- TOTP (same algorithm as backend/src/auth/totp.ts) ----
+
+function base32Decode(text: string) {
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    let bits = 0;
+    let value = 0;
+    const bytes: number[] = [];
+    for (const char of text.replace(/=+$/, "")) {
+        value = (value << 5) | alphabet.indexOf(char);
+        bits += 5;
+        if (bits >= 8) {
+            bytes.push((value >>> (bits - 8)) & 255);
+            bits -= 8;
+        }
+    }
+    return Buffer.from(bytes);
+}
+
+function codeForStep(secret: string, step: number) {
+    const counter = Buffer.alloc(8);
+    counter.writeBigUInt64BE(BigInt(step));
+    const hmac = createHmac("sha1", base32Decode(secret)).update(counter).digest();
+    const offset = hmac[hmac.length - 1] & 15;
+    return String((hmac.readUInt32BE(offset) & 0x7fffffff) % 1_000_000).padStart(6, "0");
+}
+
+// the server rejects a step it has already accepted; ask it which one that was
+// (a retried test runs in a fresh worker, so local memory isn't enough)
+async function lastAcceptedStep(email: string) {
+    const res = await fetch(`http://localhost:${MAIL_PORT}/totp-step?email=${encodeURIComponent(email)}`);
+    const { step } = await res.json();
+    return step ?? -Infinity;
+}
+
+export async function totpCode(secret: string, email: string) {
+    for (;;) {
+        const step = Math.floor(Date.now() / 30_000);
+        const candidate = Math.max(step - 1, (await lastAcceptedStep(email)) + 1);
+        if (candidate <= step + 1) return codeForStep(secret, candidate);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+}
+
+export async function login(page: Page, email: string, password = PASSWORD, totpSecret = "") {
     await page.goto("/logowanie");
     await page.getByLabel("E-mail").fill(email);
     await page.getByLabel("Hasło", { exact: true }).fill(password);
     await page.getByRole("button", { name: "Zaloguj się" }).click();
+    if (totpSecret) {
+        await page.getByLabel("Kod z aplikacji").fill(await totpCode(totpSecret, email));
+        await page.getByRole("button", { name: "Potwierdź" }).click();
+    }
     await expect(page).not.toHaveURL(/logowanie/);
+}
+
+// fills the password + code dialog that sensitive admin actions open
+export async function confirmStepUp(
+    page: Page,
+    { password = ADMIN.password, totpSecret = ADMIN.totpSecret, email = ADMIN.email } = {},
+) {
+    const dialog = page.getByRole("dialog", { name: "Potwierdź operację" });
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel("Twoje hasło").fill(password);
+    await dialog.getByLabel("Kod z aplikacji").fill(await totpCode(totpSecret, email));
+    await dialog.getByRole("button", { name: "Potwierdź" }).click();
+    await expect(dialog).toHaveCount(0);
 }
 
 export async function register(page: Page, email: string, password = PASSWORD) {
@@ -100,7 +161,7 @@ export async function registerVerified(page: Page, email: string) {
 export async function adminPage(browser: Browser) {
     const context = await browser.newContext({ extraHTTPHeaders: { "X-Forwarded-For": nextIp() } });
     const page = await context.newPage();
-    await login(page, ADMIN.email, ADMIN.password);
+    await login(page, ADMIN.email, ADMIN.password, ADMIN.totpSecret);
     return page;
 }
 

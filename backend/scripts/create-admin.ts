@@ -5,6 +5,7 @@ require("dotenv").config({
 
 const bcrypt = require("bcryptjs");
 const usersDb = require("../src/db/users");
+const { validatePassword } = require("../src/utils/validation");
 
 async function main() {
     const [email, password, firstName, lastName] = process.argv.slice(2);
@@ -16,8 +17,9 @@ async function main() {
         process.exit(1);
     }
 
-    if (password.length < 8) {
-        console.error("Hasło musi mieć co najmniej 8 znaków.");
+    const passwordError = validatePassword(password, { admin: true });
+    if (passwordError) {
+        console.error(passwordError);
         process.exit(1);
     }
 
@@ -27,7 +29,7 @@ async function main() {
     if (existing) {
         usersDb.updateUserRole(existing.id, "admin");
         console.log(
-            `Użytkownik ${normalizedEmail} ma teraz rolę administratora.`,
+            `Użytkownik ${normalizedEmail} ma teraz rolę administratora (hasło bez zmian). Przy pierwszym wejściu do panelu włączy logowanie dwuetapowe.`,
         );
         return;
     }
@@ -41,7 +43,10 @@ async function main() {
         role: "admin",
     });
 
-    console.log(`Utworzono administratora: ${user.email} (id: ${user.id}).`);
+    usersDb.setEmailVerified(user.id);
+    console.log(
+        `Utworzono administratora: ${user.email} (id: ${user.id}). Po zalogowaniu panel poprosi o włączenie logowania dwuetapowego.`,
+    );
 }
 
 main().catch((error) => {

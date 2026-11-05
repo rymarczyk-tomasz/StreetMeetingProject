@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth";
 import { SimpleAuthLayout } from "./AuthLayout";
 
 type ProtectedRouteProps = {

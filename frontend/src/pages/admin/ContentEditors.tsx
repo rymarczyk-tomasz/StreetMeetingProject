@@ -3,14 +3,10 @@ import api from "../../api/client";
 import { plural } from "../../utils/plural";
 import { faqFirstNumbers } from "../../utils/faq";
 import HeroCropEditor from "./HeroCropEditor";
-import { ContentForm, useContentEditor } from "./useContentEditor";
-import {
-    ImageField,
-    ListItemControls,
-    PdfField,
-    moveItem,
-    newId,
-} from "./fields";
+import { ContentForm } from "./ContentForm";
+import { useContentEditor } from "./useContentEditor";
+import { ImageField, ListItemControls, PdfField } from "./fields";
+import { moveItem, newId } from "./shared";
 
 // tiptap is big, load it only where needed
 const RichTextEditor = lazy(() => import("../../components/RichTextEditor"));

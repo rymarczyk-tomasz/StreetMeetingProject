@@ -36,6 +36,7 @@ const usersDb = require("../src/db/users");
 const submissionsDb = require("../src/db/submissions");
 const siteContentDb = require("../src/db/siteContent");
 const { signAccessToken } = require("../src/auth/tokens");
+const totp = require("../src/auth/totp");
 
 process.on("exit", () => {
     try {
@@ -62,7 +63,14 @@ function mailsTo(address) {
     return mails.filter((mail) => String(mail.to).split(",").map((a) => a.trim()).includes(address));
 }
 
-function createUser({ role = "user", gateStaff = false, email = undefined, verified = true } = {}) {
+// admins get two-step login by default, otherwise the admin API answers 403
+function createUser({
+    role = "user",
+    gateStaff = false,
+    email = undefined,
+    verified = true,
+    twoFactor = role === "admin",
+} = {}) {
     const user = usersDb.createUser({
         email: email || `user${nextId()}@example.com`,
         passwordHash,
@@ -73,7 +81,26 @@ function createUser({ role = "user", gateStaff = false, email = undefined, verif
     });
     if (gateStaff) usersDb.updateUserGateStaff(user.id, true);
     if (verified) usersDb.setEmailVerified(user.id);
+    if (twoFactor) {
+        db.prepare(
+            "UPDATE users SET totp_secret = ?, totp_enabled_at = datetime('now') WHERE id = ?",
+        ).run(totp.generateSecret(), user.id);
+    }
     return usersDb.findUserById(user.id);
+}
+
+// a code the server will still accept: inside the ±1 step window and newer than
+// the last one used (codes can't be replayed)
+function totpCode(user) {
+    const row = usersDb.findUserById(user.id);
+    const step = Math.floor(Date.now() / 30000);
+    const candidate = Math.max(step - 1, (row.totp_last_step ?? -Infinity) + 1);
+    if (candidate > step + 1) throw new Error("no unused TOTP step left in this window");
+    return totp.codeForStep(row.totp_secret, candidate);
+}
+
+function stepUpFor(user, password = PASSWORD) {
+    return { password, code: totpCode(user) };
 }
 
 // supertest wrapper that sends the user's session cookie (or none)
@@ -128,6 +155,8 @@ module.exports = {
     PASSWORD,
     mails,
     mailsTo,
+    totpCode,
+    stepUpFor,
     submissionsDb,
     usersDb,
 };

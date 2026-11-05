@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import api from "../../api/client";
+import { withStepUp } from "../../api/stepUp";
 import { plural } from "../../utils/plural";
 import AdminHeading from "./AdminHeading";
 import { errorMessage } from "./shared";
@@ -107,9 +108,12 @@ export default function UsersPanel({ onAction }) {
         const nextRole = targetUser.role === "admin" ? "user" : "admin";
         return runAction(
             () =>
-                api.patch(`/admin/users/${targetUser.id}/role`, {
-                    role: nextRole,
-                }),
+                withStepUp((stepUp) =>
+                    api.patch(`/admin/users/${targetUser.id}/role`, {
+                        role: nextRole,
+                        stepUp,
+                    }),
+                ),
             "Nie udało się zmienić roli.",
         );
     }
@@ -140,6 +144,21 @@ export default function UsersPanel({ onAction }) {
         );
     }
 
+    async function resetTwoFactor(targetUser) {
+        if (
+            !window.confirm(
+                `Wyłączyć logowanie dwuetapowe dla ${targetUser.email}? Użyj tylko, gdy ta osoba zgubiła telefon i kody zapasowe — przy następnym wejściu do panelu ustawi je od nowa.`,
+            )
+        ) {
+            return;
+        }
+        const data = await runAction(
+            () => withStepUp((stepUp) => api.post(`/admin/users/${targetUser.id}/2fa-reset`, { stepUp })),
+            "Nie udało się zresetować logowania dwuetapowego.",
+        );
+        if (data) setMessage(`Logowanie dwuetapowe ${targetUser.email} zostało zresetowane.`);
+    }
+
     async function revokeSessions(targetUser) {
         if (!window.confirm(`Wylogować ${targetUser.email} na wszystkich urządzeniach?`)) return;
         const data = await runAction(
@@ -156,6 +175,12 @@ export default function UsersPanel({ onAction }) {
                 label: u.gate_staff ? "Odbierz obsługę wjazdu" : "Nadaj obsługę wjazdu",
                 title: "Dostęp tylko do ekranu wjazdu (/wjazd) — skanowanie wejściówek przy bramie",
                 run: () => toggleGateStaff(u),
+            },
+            Boolean(u.two_factor) && {
+                label: "Resetuj logowanie dwuetapowe",
+                title: "Gdy administrator zgubił telefon i kody zapasowe",
+                danger: true,
+                run: () => resetTwoFactor(u),
             },
             { label: u.is_active ? "Zablokuj" : "Odblokuj", danger: u.is_active, run: () => toggleActive(u) },
             {
@@ -229,6 +254,11 @@ export default function UsersPanel({ onAction }) {
                                     <p className="user-row-email">
                                         <strong>{u.email}</strong>
                                         {u.role === "admin" && <span className="status-badge user-badge-admin">admin</span>}
+                                        {u.role === "admin" && !u.two_factor && (
+                                            <span className="status-badge status-pending" title="Panel otworzy się po włączeniu logowania dwuetapowego">
+                                                bez 2FA
+                                            </span>
+                                        )}
                                         {Boolean(u.gate_staff) && u.role !== "admin" && (
                                             <span className="status-badge">wjazd</span>
                                         )}

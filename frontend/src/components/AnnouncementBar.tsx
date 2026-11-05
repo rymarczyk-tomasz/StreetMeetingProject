@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useContent } from "../api/content";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth";
 
 const CONTENT_KEYS = ["announcement"];
 const DISMISS_KEY = "announcement-dismissed";

@@ -1,6 +1,6 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth";
 import { useContent } from "../api/content";
 import { formatEditionDate } from "../utils/edition";
 import { useScrollLock } from "../utils/useScrollLock";
@@ -201,8 +201,11 @@ function AccountMenu({ user, onLogout }) {
     const rootRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const { pathname } = useLocation();
-
-    useEffect(() => setOpen(false), [pathname]);
+    const [openedOn, setOpenedOn] = useState(pathname);
+    if (openedOn !== pathname) {
+        setOpenedOn(pathname);
+        setOpen(false);
+    }
 
     useEffect(() => {
         if (!open) return;
@@ -500,7 +503,11 @@ export default function Layout() {
     const edition = content?.edition;
     const eventLine = [formatEditionDate(edition), edition?.venueName].filter(Boolean).join(" · ");
 
-    useEffect(() => setMenuOpen(false), [location.pathname]);
+    const [menuPath, setMenuPath] = useState(location.pathname);
+    if (menuPath !== location.pathname) {
+        setMenuPath(location.pathname);
+        setMenuOpen(false);
+    }
 
     return (
         <>

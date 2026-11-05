@@ -1,5 +1,6 @@
 const { verifyAccessToken } = require("./tokens");
 const usersDb = require("../db/users");
+const twoFactorDb = require("../db/twoFactor");
 
 // role/active are re-read on every request so blocking works immediately
 function resolveUser(token) {
@@ -11,6 +12,7 @@ function resolveUser(token) {
         email: user.email,
         role: user.role,
         canCheckIn: usersDb.canCheckIn(user),
+        twoFactorEnabled: twoFactorDb.isEnabled(user),
     };
 }
 
@@ -59,6 +61,14 @@ function requireRole(...roles) {
 
         if (!roles.includes(req.user.role)) {
             return res.status(403).json({ message: "Brak uprawnień." });
+        }
+
+        // the admin panel is closed until two-step login is set up
+        if (req.user.role === "admin" && !req.user.twoFactorEnabled) {
+            return res.status(403).json({
+                code: "two_factor_setup_required",
+                message: "Włącz logowanie dwuetapowe, aby korzystać z panelu administratora.",
+            });
         }
 
         return next();

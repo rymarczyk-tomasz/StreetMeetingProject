@@ -36,6 +36,25 @@ function signRefreshToken(user) {
     });
 }
 
+// between password and code: own key, so it can never pass as an access token
+const TWO_FACTOR_CHALLENGE_TTL = "5m";
+
+function getChallengeSecret() {
+    return `${getAccessSecret()}:two-factor-challenge`;
+}
+
+function signTwoFactorChallenge(user) {
+    return jwt.sign({ sub: user.id, purpose: "2fa" }, getChallengeSecret(), {
+        expiresIn: TWO_FACTOR_CHALLENGE_TTL,
+    });
+}
+
+function verifyTwoFactorChallenge(token) {
+    const payload = jwt.verify(String(token || ""), getChallengeSecret());
+    if (payload.purpose !== "2fa") throw new Error("Invalid challenge");
+    return payload;
+}
+
 function verifyAccessToken(token) {
     return jwt.verify(token, getAccessSecret());
 }
@@ -82,6 +101,8 @@ module.exports = {
     signRefreshToken,
     verifyAccessToken,
     verifyRefreshToken,
+    signTwoFactorChallenge,
+    verifyTwoFactorChallenge,
     getRefreshTokenExpiryDate,
     setAuthCookies,
     clearAuthCookies,

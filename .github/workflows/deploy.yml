@@ -20,7 +20,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Deploy to Mikrus
-              uses: appleboy/ssh-action@v1.2.2
+              uses: appleboy/ssh-action@v1.2.5
               with:
                   host: ${{ secrets.MIKRUS_HOST }}
                   username: root

@@ -19,7 +19,10 @@ const {
     sendGroupEmail,
     sendDateSubscribersEmail,
     sendTestEmail,
+    sendSecurityAlertEmail,
 } = require("../notifications/email");
+const twoFactorDb = require("../db/twoFactor");
+const { confirmStepUp } = require("../auth/stepUp");
 const dateSubscribersDb = require("../db/dateSubscribers");
 const { getSystemStatus } = require("./system");
 const { normalizeText } = require("../utils/validation");
@@ -70,6 +73,30 @@ function audit(req, action, targetType, targetId, details = {}) {
     });
 }
 
+function alertAdmins(req, title, lines) {
+    void sendSecurityAlertEmail({
+        recipients: usersDb.listAdminEmails(),
+        title,
+        lines,
+        actor: req.user.email,
+        ip: req.ip,
+    }).catch((error) => console.error(`[email] Alert bezpieczeństwa (${title}):`, error.message));
+}
+
+// changing any of these redirects participants' money, so it needs a step-up and an alert
+const PAYMENT_SETTING_FIELDS = [
+    ["paymentAccount", "Numer konta"],
+    ["paymentRecipient", "Odbiorca"],
+    ["selectFeeAmount", "Kwota"],
+    ["paymentTitleTemplate", "Tytuł przelewu"],
+];
+
+function changedPaymentFields(previous, next) {
+    return PAYMENT_SETTING_FIELDS.filter(
+        ([field]) => String(previous?.[field] ?? "") !== String(next?.[field] ?? ""),
+    );
+}
+
 function toAdminSubmission(row) {
     return {
         ...toPublicSubmission(row),
@@ -94,6 +121,7 @@ function toAdminUser(user) {
         role: user.role,
         isActive: !!user.is_active,
         gateStaff: !!user.gate_staff,
+        twoFactorEnabled: twoFactorDb.isEnabled(user),
     };
 }
 
@@ -155,7 +183,7 @@ router.get("/content/:key", (req, res) => {
     res.json({ content: siteContentDb.getContent(key) });
 });
 
-router.patch("/content/:key", (req, res) => {
+router.patch("/content/:key", async (req, res) => {
     const key = findContentKey(req, res);
     if (!key) return;
 
@@ -163,7 +191,19 @@ router.patch("/content/:key", (req, res) => {
     if (error) return res.status(400).json({ message: error });
 
     const previous = siteContentDb.getContent(key);
+    const paymentChanges = key === "settings" ? changedPaymentFields(previous, content) : [];
+    if (paymentChanges.length && !(await confirmStepUp(req, res))) return;
+
     const saved = siteContentDb.saveContent(key, content, req.user.sub);
+    if (paymentChanges.length) {
+        alertAdmins(
+            req,
+            "zmieniono dane do przelewu",
+            paymentChanges.map(
+                ([field, label]) => `${label}: „${previous[field] || "—"}” → „${saved[field] || "—"}”`,
+            ),
+        );
+    }
     audit(
         req,
         key === "settings" ? "settings.updated" : `${key}.content_updated`,
@@ -189,7 +229,7 @@ router.get("/content/:key/revisions", (req, res) => {
     });
 });
 
-router.post("/content/:key/revisions/:revisionId/restore", (req, res) => {
+router.post("/content/:key/revisions/:revisionId/restore", async (req, res) => {
     const key = findContentKey(req, res);
     if (!key) return;
 
@@ -205,8 +245,22 @@ router.post("/content/:key/revisions/:revisionId/restore", (req, res) => {
     const { content, error } = validateContent(key, revision);
     if (error) return res.status(400).json({ message: error });
 
+    // an old revision can carry other payment details - same rules as a normal save
+    const previous = siteContentDb.getContent(key);
+    const paymentChanges = key === "settings" ? changedPaymentFields(previous, content) : [];
+    if (paymentChanges.length && !(await confirmStepUp(req, res))) return;
+
     const saved = siteContentDb.saveContent(key, content, req.user.sub);
     audit(req, `${key}.content_restored`, key, Number(req.params.revisionId));
+    if (paymentChanges.length) {
+        alertAdmins(
+            req,
+            "zmieniono dane do przelewu (przywrócono starszą wersję)",
+            paymentChanges.map(
+                ([field, label]) => `${label}: „${previous[field] || "—"}” → „${saved[field] || "—"}”`,
+            ),
+        );
+    }
     res.json({ content: saved });
 });
 
@@ -238,7 +292,7 @@ router.get("/users", (req, res) => {
     res.json({ users });
 });
 
-router.patch("/users/:id/role", (req, res) => {
+router.patch("/users/:id/role", async (req, res) => {
     const id = Number(req.params.id);
     const role = req.body.role;
 
@@ -261,8 +315,22 @@ router.patch("/users/:id/role", (req, res) => {
         });
     }
 
+    const granting = role === "admin" && target.role !== "admin";
+    if (granting && !(await confirmStepUp(req, res))) return;
+
     const updated = usersDb.updateUserRole(id, role);
     audit(req, "user.role_changed", "user", id, { email: updated.email, role });
+    if (role !== target.role) {
+        alertAdmins(
+            req,
+            granting ? "nowy administrator" : "odebrano uprawnienia administratora",
+            [
+                granting
+                    ? `Konto ${updated.email} dostało uprawnienia administratora. Przy pierwszym wejściu do panelu musi włączyć logowanie dwuetapowe.`
+                    : `Konto ${updated.email} nie jest już administratorem.`,
+            ],
+        );
+    }
     res.json({ user: toAdminUser(updated) });
 });
 
@@ -312,6 +380,32 @@ router.patch("/users/:id/gate-staff", (req, res) => {
         email: updated.email,
     });
     res.json({ user: toAdminUser(updated) });
+});
+
+// lost phone and backup codes: another admin turns two-step login off, the owner sets it up again
+router.post("/users/:id/2fa-reset", async (req, res) => {
+    const id = Number(req.params.id);
+    const target = usersDb.findUserById(id);
+    if (!target) {
+        return res.status(404).json({ message: "Nie znaleziono użytkownika." });
+    }
+    if (id === Number(req.user.sub)) {
+        return res.status(400).json({
+            message: "Własnego logowania dwuetapowego nie możesz wyłączyć. Poproś innego administratora.",
+        });
+    }
+    if (!twoFactorDb.isEnabled(target)) {
+        return res.status(400).json({ message: "To konto nie ma włączonego logowania dwuetapowego." });
+    }
+    if (!(await confirmStepUp(req, res))) return;
+
+    twoFactorDb.reset(id);
+    refreshTokensDb.revokeAllUserTokens(id);
+    audit(req, "user.two_factor_reset", "user", id, { email: target.email });
+    alertAdmins(req, "wyłączono logowanie dwuetapowe", [
+        `Logowanie dwuetapowe konta ${target.email} zostało zresetowane, a konto wylogowane ze wszystkich urządzeń. Przy następnym wejściu do panelu trzeba je włączyć ponownie.`,
+    ]);
+    res.json({ user: toAdminUser(usersDb.findUserById(id)) });
 });
 
 router.post("/users/:id/logout", (req, res) => {
@@ -853,7 +947,7 @@ router.get("/emails/recipients", (req, res) => {
 
 // Every message lands in the participants' panel ("Komunikaty"); it is also
 // e-mailed when SMTP is configured.
-router.post("/emails", (req, res) => {
+router.post("/emails", async (req, res) => {
     if (groupEmailInProgress) {
         return res
             .status(409)
@@ -872,6 +966,10 @@ router.post("/emails", (req, res) => {
     const recipients = findRecipients(filters);
     if (!recipients.length) {
         return res.status(400).json({ message: "Brak odbiorców dla wybranych filtrów." });
+    }
+    if (!(await confirmStepUp(req, res))) return;
+    if (groupEmailInProgress) {
+        return res.status(409).json({ message: "Poprzednia wiadomość grupowa jest jeszcze wysyłana." });
     }
 
     const adminId = req.user.sub;
@@ -945,7 +1043,7 @@ router.get("/date-subscribers/export", (req, res) => {
 });
 
 // By default only addresses that haven't been notified yet; "all" re-sends to everyone.
-router.post("/date-subscribers/send", (req, res) => {
+router.post("/date-subscribers/send", async (req, res) => {
     if (dateEmailInProgress) {
         return res.status(409).json({ message: "Poprzednia wysyłka jest jeszcze w toku." });
     }
@@ -964,6 +1062,10 @@ router.post("/date-subscribers/send", (req, res) => {
         .filter((row) => req.body?.all === true || !row.notified_at);
     if (!subscribers.length) {
         return res.status(400).json({ message: "Brak adresów do powiadomienia." });
+    }
+    if (!(await confirmStepUp(req, res))) return;
+    if (dateEmailInProgress) {
+        return res.status(409).json({ message: "Poprzednia wysyłka jest jeszcze w toku." });
     }
 
     const adminId = req.user.sub;

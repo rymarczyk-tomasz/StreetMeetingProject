@@ -56,6 +56,11 @@ const ACTION_LABELS = {
     "date_subscribers.notified": "wysłał powiadomienie o dacie do listy zapisanych",
     "date_subscribers.exported": "pobrał listę zapisanych na powiadomienie o dacie",
     "system.test_email_sent": "wysłał testowy e-mail",
+    "user.two_factor_enabled": "włączył logowanie dwuetapowe",
+    "user.two_factor_reset": "zresetował logowanie dwuetapowe",
+    "user.recovery_code_used": "zalogował się kodem zapasowym",
+    "user.recovery_codes_regenerated": "wygenerował nowe kody zapasowe",
+    "user.self_deleted": "usunął swoje konto",
 };
 
 function describeAction(entry) {

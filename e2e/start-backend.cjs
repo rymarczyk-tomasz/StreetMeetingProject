@@ -38,6 +38,7 @@ const app = require(path.join(backendDir, "dist/app.js"));
 const usersDb = require(path.join(backendDir, "dist/src/db/users.js"));
 const siteContentDb = require(path.join(backendDir, "dist/src/db/siteContent.js"));
 const bcrypt = fromBackend("bcryptjs");
+const db = require(path.join(backendDir, "dist/src/db/database.js"));
 
 const admin = usersDb.createUser({
     email: ADMIN.email,
@@ -48,6 +49,8 @@ const admin = usersDb.createUser({
     termsVersion: "default",
 });
 usersDb.setEmailVerified(admin.id);
+db.prepare("UPDATE users SET totp_secret = ?, totp_enabled_at = datetime('now') WHERE id = ?")
+    .run(ADMIN.totpSecret, admin.id);
 
 siteContentDb.saveContent("settings", {
     ...siteContentDb.getSettings(),
@@ -65,6 +68,12 @@ app.listen(API_PORT, () => console.log(`e2e api on ${API_PORT}, data in ${dataDi
 
 http.createServer((req, res) => {
     const url = new URL(req.url, "http://localhost");
+    // last accepted 2FA step, so tests never offer a code the server already used
+    if (url.pathname === "/totp-step") {
+        const row = db.prepare("SELECT totp_last_step FROM users WHERE email = ?").get(url.searchParams.get("email"));
+        res.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({ step: row?.totp_last_step ?? null }));
+        return;
+    }
     if (url.pathname !== "/mails") {
         res.writeHead(404).end();
         return;

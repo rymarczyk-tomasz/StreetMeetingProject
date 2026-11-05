@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useContent } from "../../api/content";
 import { formatEditionDate } from "../../utils/edition";
 import { plural } from "../../utils/plural";
@@ -220,6 +221,8 @@ function Tile({ label, value, note = "", children = null }) {
 
 export default function AdminStats({ stats, error, system, onOpen }) {
     const { content } = useContent(EDITION_KEYS);
+    // "last 7 days" is relative to when the dashboard was opened
+    const [openedAt] = useState(() => Date.now());
     const edition = content?.edition;
 
     if (error && !stats) return <p className="form-error">{error}</p>;
@@ -228,7 +231,7 @@ export default function AdminStats({ stats, error, system, onOpen }) {
     const { submissions, capacity, availability } = stats;
     const capacityPercent = capacity ? Math.min(100, Math.round((submissions.approved / capacity) * 100)) : 0;
     const lastWeek = stats.perDay
-        .filter((row) => Date.now() - new Date(`${row.day}T12:00:00`).getTime() < 7 * 86400000)
+        .filter((row) => openedAt - new Date(`${row.day}T12:00:00`).getTime() < 7 * 86400000)
         .reduce((sum, row) => sum + row.count, 0);
     const editionName = edition?.name || `Street Show ${stats.edition}`;
     const dateLabel = edition?.date ? formatEditionDate(edition) : "termin wkrótce";

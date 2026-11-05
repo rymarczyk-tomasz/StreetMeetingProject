@@ -133,6 +133,17 @@ for (const column of [
     }
 }
 
+// two-step login (admins): pending = scanned but not yet confirmed with a code
+for (const column of ["totp_secret", "totp_pending_secret", "totp_enabled_at"]) {
+    if (!userColumns.has(column)) {
+        db.exec(`ALTER TABLE users ADD COLUMN ${column} TEXT`);
+    }
+}
+// last accepted 30 s step, so the same code can't be used twice
+if (!userColumns.has("totp_last_step")) {
+    db.exec("ALTER TABLE users ADD COLUMN totp_last_step INTEGER");
+}
+
 // flag instead of a new role - the role CHECK constraint can't be altered in sqlite
 if (!userColumns.has("gate_staff")) {
     db.exec("ALTER TABLE users ADD COLUMN gate_staff INTEGER NOT NULL DEFAULT 0");
@@ -253,6 +264,16 @@ db.exec(`
         PRIMARY KEY (message_id, user_id)
     );
     CREATE INDEX IF NOT EXISTS idx_message_recipients_user ON message_recipients(user_id);
+
+    -- One-time backup codes for two-step login (only hashes are stored).
+    CREATE TABLE IF NOT EXISTS recovery_codes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        code_hash TEXT NOT NULL,
+        used_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_recovery_codes_user ON recovery_codes(user_id);
 
     -- One-time links for confirming an e-mail address or an e-mail change.
     CREATE TABLE IF NOT EXISTS email_tokens (

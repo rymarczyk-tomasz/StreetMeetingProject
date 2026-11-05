@@ -474,6 +474,32 @@ const STATUS_NAMES = {
 };
 const PAYMENT_NAMES = { unpaid: "nieopłacone", verification: "do weryfikacji", paid: "opłacone" };
 
+// to every admin: payment details changed, a new admin, two-step login reset…
+async function sendSecurityAlertEmail({ recipients, title, lines, actor = "", ip = "" }) {
+    const to = [...new Set((recipients || []).filter(Boolean))].join(", ");
+    if (!to) return { sent: false, reason: "no_recipients" };
+
+    const meta = [
+        `Kiedy: ${formatPolishDateTime()}`,
+        actor ? `Kto: ${actor}` : "",
+        ip ? `Adres IP: ${ip}` : "",
+    ].filter(Boolean);
+    const footer =
+        "Jeśli to nie Ty ani nikt z organizatorów, od razu zmień hasło, sprawdź Dziennik działań w panelu administratora i ustawienia opłat.";
+
+    return sendMail({
+        to,
+        subject: `Street Show — alert bezpieczeństwa: ${title}`,
+        text: [title, "", ...lines, "", ...meta, "", footer].join("\n"),
+        html: `
+            <p><strong>${escapeHtml(title)}</strong></p>
+            ${lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}
+            <p style="color:#555">${meta.map((line) => escapeHtml(line)).join("<br>")}</p>
+            <p>${escapeHtml(footer)}</p>
+        `,
+    });
+}
+
 async function sendAccountDeletedAdminEmail({ email, name, submissions }) {
     const recipients = adminNotifyRecipients();
     if (!recipients || !submissions.length) return { sent: false, reason: "not_applicable" };
@@ -758,6 +784,7 @@ module.exports = {
     sendPasswordChangedEmail,
     sendAccountDeletedEmail,
     sendAccountDeletedAdminEmail,
+    sendSecurityAlertEmail,
     sendNewSubmissionAdminEmail,
     sendPaymentProofAdminEmail,
     sendWithdrawalAdminEmail,

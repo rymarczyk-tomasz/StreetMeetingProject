@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import api from "../../api/client";
 import { errorMessage } from "./shared";
 
-const PATH_PATTERN = /((?:[A-Za-z]:)?(?:[\/][\w.-]+)+|[\w-]+\.sqlite)/g;
+const PATH_PATTERN = /((?:[A-Za-z]:)?(?:\/[\w.-]+)+|[\w-]+\.sqlite)/g;
 
 function withCode(text) {
     return String(text || "")

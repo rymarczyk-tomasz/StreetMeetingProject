@@ -42,3 +42,22 @@ export function formatDate(value) {
         timeStyle: "short",
     }).format(new Date(`${value.replace(" ", "T")}Z`));
 }
+
+export function moveItem(list, from, to) {
+    if (to < 0 || to >= list.length) return list;
+    const next = [...list];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    return next;
+}
+
+export function newId(prefix) {
+    return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+}
+
+export const DETAIL_TABS = [
+    ["decyzja", "Decyzja"],
+    ["oplata", "Opłata"],
+    ["wiadomosci", "Wiadomości"],
+    ["notatka", "Notatka"],
+] as const;

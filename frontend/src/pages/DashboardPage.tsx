@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth";
 import api from "../api/client";
 import EmailVerifyBanner from "../components/EmailVerifyBanner";
 import EmptyState from "../components/EmptyState";
@@ -52,25 +52,26 @@ export default function DashboardPage() {
     const [feedback, setFeedback] = useState({ message: "", error: "" });
     const [lightbox, setLightbox] = useState({ photos: [], index: null, title: "" });
 
-    const load = useCallback(async () => {
-        try {
-            const [submissionsResponse, overviewResponse, messagesResponse, vehiclesResponse] =
-                await Promise.all([
-                    api.get("/submissions"),
-                    api.get("/submissions/overview"),
-                    api.get("/messages"),
-                    api.get("/vehicles"),
-                ]);
-            setSubmissions(submissionsResponse.data.submissions);
-            setOverview(overviewResponse.data);
-            setMessages(messagesResponse.data.messages);
-            setVehicleCount(vehiclesResponse.data.vehicles.length);
-        } catch (err) {
-            setFeedback({ message: "", error: err.response?.data?.message || "Nie udało się pobrać danych." });
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+    const load = useCallback(
+        () =>
+            Promise.all([
+                api.get("/submissions"),
+                api.get("/submissions/overview"),
+                api.get("/messages"),
+                api.get("/vehicles"),
+            ])
+                .then(([submissionsResponse, overviewResponse, messagesResponse, vehiclesResponse]) => {
+                    setSubmissions(submissionsResponse.data.submissions);
+                    setOverview(overviewResponse.data);
+                    setMessages(messagesResponse.data.messages);
+                    setVehicleCount(vehiclesResponse.data.vehicles.length);
+                })
+                .catch((err) =>
+                    setFeedback({ message: "", error: err.response?.data?.message || "Nie udało się pobrać danych." }),
+                )
+                .finally(() => setIsLoading(false)),
+        [],
+    );
 
     useEffect(() => {
         load();

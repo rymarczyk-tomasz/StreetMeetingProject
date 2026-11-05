@@ -9,6 +9,8 @@ const submissionsDb = require("../db/submissions");
 const {
     signAccessToken,
     signRefreshToken,
+    signTwoFactorChallenge,
+    verifyTwoFactorChallenge,
     verifyRefreshToken,
     getRefreshTokenExpiryDate,
     setAuthCookies,
@@ -36,8 +38,12 @@ const vehiclesDb = require("../db/vehicles");
 const { removeShowcaseCopies } = require("../showcase/routes");
 const threadsDb = require("../db/threads");
 const auditLogDb = require("../db/auditLog");
+const twoFactorDb = require("../db/twoFactor");
+const { otpauthUri } = require("./totp");
+const { confirmStepUp } = require("./stepUp");
 const {
     isEmailConfigured,
+    sendSecurityAlertEmail,
     sendPasswordResetEmail,
     sendPasswordChangedEmail,
     sendAccountDeletedEmail,
@@ -76,6 +82,7 @@ function toPublicUser(user) {
         emailVerified: Boolean(user.email_verified_at),
         termsAcceptedAt: user.terms_accepted_at,
         notifications: usersDb.notificationPrefs(user),
+        twoFactorEnabled: twoFactorDb.isEnabled(user),
     };
 }
 
@@ -176,7 +183,62 @@ router.post("/login", authRateLimit, async (req, res) => {
         return res.status(403).json({ message: "Konto zostało zablokowane." });
     }
 
+    // the password was right, but the session only starts after the app code
+    if (twoFactorDb.isEnabled(user)) {
+        return res.json({ twoFactorRequired: true, challenge: signTwoFactorChallenge(user) });
+    }
+
     issueSession(res, user);
+    res.json({ user: toPublicUser(user) });
+});
+
+router.post("/login/2fa", authRateLimit, (req, res) => {
+    let payload;
+    try {
+        payload = verifyTwoFactorChallenge(req.body?.challenge);
+    } catch {
+        return res.status(401).json({
+            code: "challenge_expired",
+            message: "Logowanie wygasło. Wpisz e-mail i hasło jeszcze raz.",
+        });
+    }
+
+    const user = usersDb.findUserById(payload.sub);
+    if (!user || !user.is_active || !twoFactorDb.isEnabled(user)) {
+        return res.status(401).json({ message: "Konto jest niedostępne." });
+    }
+    if (isLoginLocked(user.email)) {
+        return res.status(429).json({
+            message: "Zbyt wiele nieudanych prób logowania na to konto. Spróbuj za 15 minut.",
+        });
+    }
+
+    const result = twoFactorDb.verifySecondFactor(user, req.body?.code);
+    if (!result.ok) {
+        recordLoginFailure(user.email);
+        return res.status(401).json({ message: "Nieprawidłowy kod. Wpisz aktualny kod z aplikacji." });
+    }
+
+    clearLoginFailures(user.email);
+    issueSession(res, user);
+    if (result.usedRecoveryCode) {
+        auditLogDb.createAuditEntry({
+            adminId: user.id,
+            action: "user.recovery_code_used",
+            targetType: "user",
+            targetId: user.id,
+            details: { codesLeft: result.codesLeft },
+        });
+        void sendSecurityAlertEmail({
+            recipients: [user.email],
+            title: "logowanie kodem zapasowym",
+            lines: [
+                `Ktoś zalogował się na konto ${user.email} jednorazowym kodem zapasowym zamiast kodu z aplikacji.`,
+                `Zostało ${result.codesLeft} nieużytych kodów. Gdy zostanie ich mało, wygeneruj nowe w Ustawieniach konta.`,
+            ],
+            ip: req.ip,
+        }).catch(logEmailError("alert: kod zapasowy"));
+    }
     res.json({ user: toPublicUser(user) });
 });
 
@@ -275,6 +337,11 @@ router.post("/reset-password", passwordResetRateLimit, async (req, res) => {
     if (!user || !user.is_active) {
         passwordResetTokensDb.deleteResetTokensForUser(resetToken.user_id);
         return res.status(400).json({ message: "Konto jest niedostępne." });
+    }
+
+    const adminPasswordError = validatePassword(password, { admin: user.role === "admin" });
+    if (adminPasswordError) {
+        return res.status(400).json({ message: adminPasswordError });
     }
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
@@ -563,7 +630,7 @@ router.post(
                 .json({ message: "Aktualne hasło jest nieprawidłowe." });
         }
 
-        const passwordError = validatePassword(newPassword);
+        const passwordError = validatePassword(newPassword, { admin: user.role === "admin" });
         if (passwordError) {
             return res.status(400).json({ message: passwordError });
         }
@@ -584,5 +651,93 @@ router.post(
         res.json({ message: "Hasło zostało zmienione." });
     },
 );
+
+// ---- Two-step login (admins) ----
+
+function adminOnly(req, res, next) {
+    if (req.user.role !== "admin") {
+        return res.status(403).json({ message: "Logowanie dwuetapowe jest dostępne dla administratorów." });
+    }
+    next();
+}
+
+router.get("/2fa", authenticate, adminOnly, (req, res) => {
+    const user = usersDb.findUserById(req.user.sub);
+    res.json({
+        enabled: twoFactorDb.isEnabled(user),
+        recoveryCodesLeft: twoFactorDb.isEnabled(user) ? twoFactorDb.recoveryCodesLeft(user.id) : 0,
+    });
+});
+
+// step 1: password again, then a new secret to scan (not active until confirmed)
+router.post("/2fa/setup", authenticate, adminOnly, authRateLimit, async (req, res) => {
+    const user = usersDb.findUserById(req.user.sub);
+    if (twoFactorDb.isEnabled(user)) {
+        return res.status(400).json({ message: "Logowanie dwuetapowe jest już włączone." });
+    }
+    if (!(await bcrypt.compare(String(req.body?.password || "").slice(0, 256), user.password_hash))) {
+        recordLoginFailure(user.email);
+        return res.status(400).json({ message: "Hasło jest nieprawidłowe." });
+    }
+
+    const secret = twoFactorDb.startSetup(user.id);
+    res.json({ secret, uri: otpauthUri({ secret, account: user.email }) });
+});
+
+// step 2: the first code from the app proves the scan worked
+router.post("/2fa/enable", authenticate, adminOnly, authRateLimit, (req, res) => {
+    const user = usersDb.findUserById(req.user.sub);
+    if (twoFactorDb.isEnabled(user)) {
+        return res.status(400).json({ message: "Logowanie dwuetapowe jest już włączone." });
+    }
+    if (!user.totp_pending_secret) {
+        return res.status(400).json({ message: "Zacznij konfigurację od początku." });
+    }
+
+    const recoveryCodes = twoFactorDb.enable(user, req.body?.code);
+    if (!recoveryCodes) {
+        return res.status(400).json({
+            message: "Nieprawidłowy kod. Sprawdź, czy zegar w telefonie jest ustawiony automatycznie.",
+        });
+    }
+
+    // sessions started before 2FA was on are dropped; this one is renewed
+    refreshTokensDb.revokeAllUserTokens(user.id);
+    issueSession(res, user);
+    auditLogDb.createAuditEntry({
+        adminId: user.id,
+        action: "user.two_factor_enabled",
+        targetType: "user",
+        targetId: user.id,
+        details: {},
+    });
+    void sendSecurityAlertEmail({
+        recipients: [user.email],
+        title: "włączono logowanie dwuetapowe",
+        lines: [`Na koncie ${user.email} włączono logowanie dwuetapowe. Pozostałe urządzenia zostały wylogowane.`],
+        ip: req.ip,
+    }).catch(logEmailError("alert: 2FA włączone"));
+
+    res.json({ recoveryCodes, user: toPublicUser(usersDb.findUserById(user.id)) });
+});
+
+// new set of backup codes, the old ones stop working
+router.post("/2fa/recovery-codes", authenticate, adminOnly, async (req, res) => {
+    const user = usersDb.findUserById(req.user.sub);
+    if (!twoFactorDb.isEnabled(user)) {
+        return res.status(400).json({ message: "Najpierw włącz logowanie dwuetapowe." });
+    }
+    if (!(await confirmStepUp(req, res))) return;
+
+    const recoveryCodes = twoFactorDb.generateRecoveryCodes(user.id);
+    auditLogDb.createAuditEntry({
+        adminId: user.id,
+        action: "user.recovery_codes_regenerated",
+        targetType: "user",
+        targetId: user.id,
+        details: {},
+    });
+    res.json({ recoveryCodes });
+});
 
 module.exports = router;

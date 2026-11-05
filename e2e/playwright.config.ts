@@ -10,7 +10,8 @@ export default defineConfig({
     fullyParallel: false,
     forbidOnly: Boolean(process.env.CI),
     retries: process.env.CI ? 1 : 0,
-    timeout: 60_000,
+    // admin steps may wait for a fresh 2FA code (each 30 s step is accepted once)
+    timeout: 120_000,
     expect: { timeout: 10_000 },
     reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : [["list"]],
     use: {

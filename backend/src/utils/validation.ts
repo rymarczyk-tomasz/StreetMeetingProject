@@ -1,6 +1,8 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 const PHONE_REGEX = /^\+?[0-9]{9,15}$/;
 const PASSWORD_MIN_LENGTH = 8;
+// admin accounts can change payment details and e-mail everyone
+const ADMIN_PASSWORD_MIN_LENGTH = 12;
 const PASSWORD_MAX_LENGTH = 128; // bcrypt ignores everything after 72 bytes anyway
 
 function normalizeText(value) {
@@ -15,7 +17,10 @@ function normalizeEmail(value) {
     return normalizeText(value).toLowerCase();
 }
 
-function validatePassword(password) {
+function validatePassword(password, { admin = false } = {}) {
+    if (admin && password.length < ADMIN_PASSWORD_MIN_LENGTH) {
+        return `Hasło administratora musi mieć co najmniej ${ADMIN_PASSWORD_MIN_LENGTH} znaków.`;
+    }
     if (password.length < PASSWORD_MIN_LENGTH) {
         return `Hasło musi mieć co najmniej ${PASSWORD_MIN_LENGTH} znaków.`;
     }
@@ -44,6 +49,7 @@ module.exports = {
     EMAIL_REGEX,
     PHONE_REGEX,
     PASSWORD_MIN_LENGTH,
+    ADMIN_PASSWORD_MIN_LENGTH,
     normalizeText,
     normalizePhone,
     normalizeEmail,

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth";
 import api from "../api/client";
+import TwoFactorAccount from "../components/TwoFactorAccount";
 
 export default function AccountSettingsPage() {
     const { user, refreshUser } = useAuth();
@@ -319,8 +320,8 @@ export default function AccountSettingsPage() {
                 <section className="account-card">
                     <h2>Bezpieczeństwo</h2>
                     <p>
-                        Hasło musi mieć co najmniej 8 znaków i różnić się od
-                        aktualnego.
+                        Hasło musi mieć co najmniej {user?.role === "admin" ? 12 : 8} znaków
+                        i różnić się od aktualnego.
                     </p>
                     <form className="auth-form" onSubmit={changePassword}>
                         <label>
@@ -392,6 +393,8 @@ export default function AccountSettingsPage() {
                         Wyloguj ze wszystkich innych urządzeń
                     </button>
                 </section>
+
+                {user?.role === "admin" && <TwoFactorAccount />}
 
                 <section className="account-card">
                     <h2>Twoje dane</h2>

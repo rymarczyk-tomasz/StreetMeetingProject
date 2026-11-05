@@ -4,10 +4,11 @@ import api from "../../api/client";
 import Lightbox from "../../components/Lightbox";
 import AdminDialog from "./AdminDialog";
 import GroupEmailForm from "./GroupEmailForm";
-import SubmissionDetails, { DETAIL_TABS } from "./SubmissionDetails";
-import { TemplatePicker, fillTemplate, useTemplates } from "./templates";
+import SubmissionDetails from "./SubmissionDetails";
+import { TemplatePicker } from "./templates";
+import { fillTemplate, useTemplates } from "./templateData";
 import { printGateList } from "./gateList";
-import { PAYMENT_STATUS_LABELS, STATUS_LABELS, errorMessage, formatDay } from "./shared";
+import { DETAIL_TABS, PAYMENT_STATUS_LABELS, STATUS_LABELS, errorMessage, formatDay } from "./shared";
 
 // fetched again so the backend logs the export
 async function exportToExcel(filters) {

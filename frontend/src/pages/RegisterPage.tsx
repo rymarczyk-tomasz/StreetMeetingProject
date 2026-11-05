@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/client";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth";
 import AuthLayout from "../components/AuthLayout";
 import PasswordInput from "../components/PasswordInput";
 import { plural } from "../utils/plural";

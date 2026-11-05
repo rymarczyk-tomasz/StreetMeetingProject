@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/client";
 import { useContent } from "../api/content";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth";
 import Countdown from "../components/Countdown";
 import HeroPhoto from "../components/HeroPhoto";
 import { heroPhotoVars, shouldRotateOnMobile } from "../utils/hero";

@@ -1,15 +1,10 @@
 import { useState } from "react";
 import Plate from "../../components/Plate";
 import SubmissionThread from "../../components/SubmissionThread";
-import { TemplatePicker, fillTemplate } from "./templates";
-import { PAYMENT_STATUS_LABELS, STATUS_LABELS, formatDate, formatDay } from "./shared";
+import { TemplatePicker } from "./templates";
+import { fillTemplate } from "./templateData";
+import { DETAIL_TABS, PAYMENT_STATUS_LABELS, STATUS_LABELS, formatDate, formatDay } from "./shared";
 
-export const DETAIL_TABS = [
-    ["decyzja", "Decyzja"],
-    ["oplata", "Opłata"],
-    ["wiadomosci", "Wiadomości"],
-    ["notatka", "Notatka"],
-] as const;
 
 function ratingLabel(rating) {
     if (!rating?.count) return "brak ocen";

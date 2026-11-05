@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import api from "../../api/client";
+import { withStepUp } from "../../api/stepUp";
 import { errorMessage } from "./shared";
-import { TemplatePicker, fillTemplate, useTemplates } from "./templates";
+import { TemplatePicker } from "./templates";
+import { fillTemplate, useTemplates } from "./templateData";
 
 const AUDIENCES = [
     { id: "approved", label: "Zaakceptowani", filters: { status: "approved" } },
@@ -72,7 +74,9 @@ export default function GroupEmailForm({ edition, onSent }) {
         setIsSending(true);
         setFeedback({ error: "", success: "" });
         try {
-            const { data } = await api.post("/admin/emails", { subject, message, filters });
+            const { data } = await withStepUp((stepUp) =>
+                api.post("/admin/emails", { subject, message, filters, stepUp }),
+            );
             setFeedback({ error: "", success: data.message });
             setSubject("");
             setMessage("");

@@ -9,7 +9,8 @@ const insertUserStmt = db.prepare(`
 const findByEmailStmt = db.prepare(`SELECT * FROM users WHERE email = ?`);
 const findByIdStmt = db.prepare(`SELECT * FROM users WHERE id = ?`);
 const listUsersQuery = `
-    SELECT id, email, first_name, last_name, role, is_active, gate_staff, created_at
+    SELECT id, email, first_name, last_name, role, is_active, gate_staff, created_at,
+           (totp_enabled_at IS NOT NULL AND totp_secret IS NOT NULL) AS two_factor
     FROM users
 `;
 const updateRoleStmt = db.prepare(`UPDATE users SET role = ? WHERE id = ?`);
@@ -35,6 +36,9 @@ const countAdminsStmt = db.prepare(
     `SELECT COUNT(*) AS count FROM users WHERE role = 'admin'`,
 );
 const deleteUserStmt = db.prepare(`DELETE FROM users WHERE id = ?`);
+const listAdminEmailsStmt = db.prepare(
+    `SELECT email FROM users WHERE role = 'admin' AND is_active = 1`,
+);
 const updateNotificationsStmt = db.prepare(`
     UPDATE users
     SET notify_group_email = @groupEmail,
@@ -196,6 +200,10 @@ function deleteUser(id) {
     deleteUserStmt.run(id);
 }
 
+function listAdminEmails() {
+    return listAdminEmailsStmt.all().map((row) => row.email);
+}
+
 module.exports = {
     createUser,
     findUserByEmail,
@@ -208,6 +216,7 @@ module.exports = {
     updateUserPassword,
     countAdmins,
     deleteUser,
+    listAdminEmails,
     setEmailVerified,
     updateUserEmail,
     updateUserGateStaff,

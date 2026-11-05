@@ -74,7 +74,9 @@ function QrScanner({ onCode, onClose }) {
     const [error, setError] = useState("");
     // parent passes a new arrow every render - keep it in a ref so the camera doesn't restart
     const onCloseRef = useRef(onClose);
-    onCloseRef.current = onClose;
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    });
 
     // iOS needs getUserMedia inside a user gesture (we're opened from a click)
     useEffect(() => {
@@ -265,29 +267,33 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
 
     const cars = applyQueue(serverCars, queue);
 
-    const loadCars = useCallback(async () => {
-        try {
-            const { data } = await api.get("/gate/cars");
-            setServerCars(data.cars);
-            setEdition(data.edition || null);
-            saveCars(data.cars, data.generatedAt);
-            setSavedAt(data.generatedAt);
-            setOffline(false);
-        } catch (err) {
-            if (!isNetworkError(err)) {
-                setError(errorText(err, "Nie udało się pobrać listy aut."));
-                return;
-            }
-            setOffline(true);
-            const saved = loadSavedCars();
-            if (saved) {
-                setServerCars(saved.cars);
-                setSavedAt(saved.savedAt);
-            } else {
-                setError("Brak połączenia, a w telefonie nie ma jeszcze zapisanej listy aut.");
-            }
-        }
-    }, []);
+    const loadCars = useCallback(
+        () =>
+            api.get("/gate/cars").then(
+                ({ data }) => {
+                    setServerCars(data.cars);
+                    setEdition(data.edition || null);
+                    saveCars(data.cars, data.generatedAt);
+                    setSavedAt(data.generatedAt);
+                    setOffline(false);
+                },
+                (err) => {
+                    if (!isNetworkError(err)) {
+                        setError(errorText(err, "Nie udało się pobrać listy aut."));
+                        return;
+                    }
+                    setOffline(true);
+                    const saved = loadSavedCars();
+                    if (saved) {
+                        setServerCars(saved.cars);
+                        setSavedAt(saved.savedAt);
+                    } else {
+                        setError("Brak połączenia, a w telefonie nie ma jeszcze zapisanej listy aut.");
+                    }
+                },
+            ),
+        [],
+    );
 
     // stops on the first network error, rejected entries are dropped
     const syncQueue = useCallback(async () => {
@@ -344,26 +350,31 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
         }
     }, []);
 
+    // messages are cleared once the answer is in, so a scan from the URL (initialCode)
+    // doesn't set state synchronously inside an effect
     const lookup = useCallback(
-        async (value) => {
+        (value) => {
             const trimmed = String(value || "").trim();
-            if (!trimmed) return;
-            setError("");
-            setInvalid("");
-            try {
-                const { data } = await api.get("/gate/check", { params: { code: trimmed } });
-                setOffline(false);
-                const pending = loadQueue().find((item) => item.id === data.car.id);
-                setResult(pending ? applyQueue([data.car], [pending])[0] : data.car);
-            } catch (err) {
-                if (isNetworkError(err)) {
-                    setOffline(true);
-                    await lookupOffline(trimmed);
-                    return;
-                }
-                setResult(null);
-                setInvalid(errorText(err, "Nie znaleziono wejściówki."));
-            }
+            if (!trimmed) return Promise.resolve();
+            return api.get("/gate/check", { params: { code: trimmed } }).then(
+                ({ data }) => {
+                    setError("");
+                    setInvalid("");
+                    setOffline(false);
+                    const pending = loadQueue().find((item) => item.id === data.car.id);
+                    setResult(pending ? applyQueue([data.car], [pending])[0] : data.car);
+                },
+                (err) => {
+                    setError("");
+                    if (isNetworkError(err)) {
+                        setInvalid("");
+                        setOffline(true);
+                        return lookupOffline(trimmed);
+                    }
+                    setResult(null);
+                    setInvalid(errorText(err, "Nie znaleziono wejściówki."));
+                },
+            );
         },
         [lookupOffline],
     );
@@ -390,6 +401,7 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
         };
     }, [loadCars, syncQueue]);
 
+    // a pass link opened with the phone camera: /wjazd?kod=…
     useEffect(() => {
         if (initialCode) lookup(initialCode);
     }, [initialCode, lookup]);

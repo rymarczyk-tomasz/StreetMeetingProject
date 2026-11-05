@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { moveItem, newId } from "./fields";
-import { ContentForm, useContentEditor } from "./useContentEditor";
+import { moveItem, newId } from "./shared";
+import { ContentForm } from "./ContentForm";
+import { useContentEditor } from "./useContentEditor";
 
 // Admin → Ustawienia → Szablony: a list of rows; one row at a time opens for
 // editing in place and is saved on its own. Rows are reordered by dragging the

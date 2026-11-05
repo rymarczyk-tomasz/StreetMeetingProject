@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth";
 import api from "../api/client";
 import ConsentFields from "../components/ConsentFields";
 import EmailVerifyBanner from "../components/EmailVerifyBanner";
@@ -70,29 +70,32 @@ export default function SubmissionPage() {
         }
     }
 
-    async function loadAvailability() {
-        try {
-            const [availabilityResponse, vehiclesResponse] = await Promise.all([
-                api.get("/submissions/availability"),
-                api.get("/vehicles"),
-            ]);
-            setAvailability(availabilityResponse.data.availability);
-            setVehicles(vehiclesResponse.data.vehicles);
-            // Coming from "Zgłoś ten pojazd" in the garage.
-            const preselected = searchParams.get("pojazd");
-            if (preselected) chooseVehicle(preselected, vehiclesResponse.data.vehicles);
-        } catch (err) {
-            setError(
-                err.response?.data?.message ||
-                    "Nie udało się sprawdzić dostępności zgłoszeń.",
-            );
-        } finally {
-            setIsLoading(false);
-        }
+    // resolves to the garage list, or null when loading failed
+    function loadAvailability() {
+        return Promise.all([api.get("/submissions/availability"), api.get("/vehicles")])
+            .then(([availabilityResponse, vehiclesResponse]) => {
+                setAvailability(availabilityResponse.data.availability);
+                setVehicles(vehiclesResponse.data.vehicles);
+                return vehiclesResponse.data.vehicles;
+            })
+            .catch((err) => {
+                setError(err.response?.data?.message || "Nie udało się sprawdzić dostępności zgłoszeń.");
+                return null;
+            })
+            .finally(() => setIsLoading(false));
     }
 
+    // once on open; reads the current ?pojazd= without re-running on later changes
+    const loadOnOpen = useEffectEvent(() => {
+        loadAvailability().then((list) => {
+            // Coming from "Zgłoś ten pojazd" in the garage.
+            const preselected = searchParams.get("pojazd");
+            if (list && preselected) chooseVehicle(preselected, list);
+        });
+    });
+
     useEffect(() => {
-        loadAvailability();
+        loadOnOpen();
     }, []);
 
     function updateField(field) {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import api from "../api/client";
 
 function formatDate(value) {
@@ -13,13 +13,16 @@ export default function SubmissionThread({ basePath, viewer, onRead = () => {} }
     const [error, setError] = useState("");
     const [isSending, setIsSending] = useState(false);
 
+    // only refreshes the parent's counters; must not reload the thread when it changes
+    const markRead = useEffectEvent(() => onRead());
+
     useEffect(() => {
         let cancelled = false;
         api.get(`${basePath}/messages`)
             .then(({ data }) => {
                 if (cancelled) return;
                 setMessages(data.messages);
-                onRead();
+                markRead();
             })
             .catch((err) => {
                 if (!cancelled) setError(err.response?.data?.message || "Nie udało się pobrać wiadomości.");
@@ -27,8 +30,6 @@ export default function SubmissionThread({ basePath, viewer, onRead = () => {} }
         return () => {
             cancelled = true;
         };
-        // Not on onRead: it only refreshes counters, and a new function identity
-        // on every parent render would reload the thread in a loop.
     }, [basePath]);
 
     async function send(event) {

@@ -1,32 +1,4 @@
-import { useEffect, useState } from "react";
-import api from "../../api/client";
-
-// Message templates (Admin → Ustawienia → Szablony wiadomości): "note" for the
-// comment on a submission, "group" for group messages.
-
-export type Template = { id: string; kind: "note" | "group"; title: string; subject: string; body: string };
-
-export function fillTemplate(text: string, values: Record<string, string | number | undefined>) {
-    return String(text || "").replace(/\{(rok|marka|rejestracja)\}/g, (match, key) =>
-        values[key] !== undefined && values[key] !== "" ? String(values[key]) : match,
-    );
-}
-
-export function useTemplates(kind: Template["kind"]) {
-    const [templates, setTemplates] = useState<Template[]>([]);
-    const [currentEdition, setCurrentEdition] = useState<number | null>(null);
-
-    useEffect(() => {
-        api.get("/admin/content/templates")
-            .then(({ data }) => setTemplates((data.content.items || []).filter((item) => item.kind === kind)))
-            .catch(() => setTemplates([]));
-        api.get("/admin/editions")
-            .then(({ data }) => setCurrentEdition(data.currentEdition))
-            .catch(() => setCurrentEdition(null));
-    }, [kind]);
-
-    return { templates, currentEdition };
-}
+// Message templates picker; the data helpers live in templateData.ts.
 
 export function TemplatePicker({ templates, onPick, label = "Wstaw szablon" }) {
     if (!templates.length) return null;

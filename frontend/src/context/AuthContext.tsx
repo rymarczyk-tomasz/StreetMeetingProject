@@ -1,14 +1,8 @@
-import {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useState,
-} from "react";
+import { useCallback, useEffect, useState } from "react";
 import api from "../api/client";
+import { AuthContext } from "./auth";
 import { clearSavedCars } from "../utils/gateOffline";
 
-const AuthContext = createContext(null);
 
 // Gate staff must be able to reopen /wjazd with no signal on the event day, so
 // the last signed-in gate user is remembered and used only when the server
@@ -48,29 +42,42 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const refreshUser = useCallback(async () => {
-        try {
-            const { data } = await api.get("/auth/me");
-            setUser(data.user);
-            rememberGateUser(data.user);
-        } catch (err) {
-            if (err.response) {
-                rememberGateUser(null);
-                setUser(null);
-            } else {
-                setUser(rememberedGateUser());
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+    const refreshUser = useCallback(
+        () =>
+            api
+                .get("/auth/me")
+                .then(({ data }) => {
+                    setUser(data.user);
+                    rememberGateUser(data.user);
+                })
+                .catch((err) => {
+                    if (err.response) {
+                        rememberGateUser(null);
+                        setUser(null);
+                    } else {
+                        // offline gate phone: keep the last known staff user
+                        setUser(rememberedGateUser());
+                    }
+                })
+                .finally(() => setIsLoading(false)),
+        [],
+    );
 
     useEffect(() => {
         refreshUser();
     }, [refreshUser]);
 
+    // resolves to the user, or to { challenge } when an app code is still needed
     async function login(email, password) {
         const { data } = await api.post("/auth/login", { email, password });
+        if (data.twoFactorRequired) return { challenge: data.challenge };
+        setUser(data.user);
+        rememberGateUser(data.user);
+        return { user: data.user };
+    }
+
+    async function loginWithCode(challenge, code) {
+        const { data } = await api.post("/auth/login/2fa", { challenge, code });
         setUser(data.user);
         rememberGateUser(data.user);
         return data.user;
@@ -91,17 +98,9 @@ export function AuthProvider({ children }) {
 
     return (
         <AuthContext.Provider
-            value={{ user, isLoading, login, register, logout, refreshUser }}
+            value={{ user, isLoading, login, loginWithCode, register, logout, refreshUser }}
         >
             {children}
         </AuthContext.Provider>
     );
-}
-
-export function useAuth() {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error("useAuth must be used within an AuthProvider");
-    }
-    return context;
 }

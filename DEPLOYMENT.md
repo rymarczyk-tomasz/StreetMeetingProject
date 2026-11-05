@@ -17,6 +17,13 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 - [ ] Panel admina → System → wysłać testowy e-mail
 - [ ] Przetestować na żywo: rejestracja, reset hasła, akceptacja zgłoszenia — sprawdzić, czy maile dochodzą (i nie do spamu) na Gmail, Onet, WP, Outlook
 
+## 1a. Konta administratorów
+
+- [ ] Każdy admin przy pierwszym wejściu do panelu włącza **logowanie dwuetapowe** (aplikacja Google/Microsoft Authenticator, 1Password, Authy) i zapisuje 10 kodów zapasowych poza telefonem
+- [ ] Hasła adminów: min. 12 znaków, nieużywane nigdzie indziej; skrzynki e-mail adminów też z 2FA
+- [ ] Najlepiej co najmniej dwóch adminów — jeden może zresetować drugiemu 2FA (Użytkownicy → „Resetuj logowanie dwuetapowe”); w ostateczności na serwerze: `cd backend && node dist/scripts/reset-2fa.js <email>`
+- Zmiana danych do przelewu, nadanie roli admina i wiadomości grupowe wymagają ponownie hasła i kodu; zmiany danych do przelewu i nowi admini wysyłają alert e-mail do wszystkich adminów
+
 ## 2. Zmienne środowiskowe (`backend/config/.env`)
 
 - [ ] `NODE_ENV=production` — **wymagane**, bez tego ciasteczka logowania nie mają flagi `Secure`
