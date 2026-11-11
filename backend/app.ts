@@ -126,9 +126,6 @@ app.use("/api/showcase", showcaseRoutes);
 app.get("/api/health", (req, res) => {
     res.json({ status: "OK" });
 });
-app.get("/health", (req, res) => {
-    res.json({ status: "OK" });
-});
 app.use("/api/admin", adminRoutes);
 app.use("/api/submissions", submissionsRoutes);
 app.use("/api/vehicles", vehiclesRoutes);

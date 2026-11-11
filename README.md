@@ -56,7 +56,7 @@ docs/       technical documentation (in Polish)
 
 ## Running locally
 
-Requires Node.js 18+.
+Requires Node.js 22.
 
 ```bash
 # backend – http://localhost:33000

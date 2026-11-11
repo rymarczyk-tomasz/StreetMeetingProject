@@ -56,7 +56,7 @@ backend/                  # Node.js + Express (TypeScript → dist/)
 
 ## Jak uruchomić lokalnie
 
-Wymagany Node.js 18+ (używane 20/24 w trakcie developmentu).
+Wymagany Node.js 22 (ta sama wersja co w CI i na serwerze, patrz `.nvmrc`).
 
 ### Backend
 
@@ -92,7 +92,7 @@ Pozostałe (opcjonalne) zmienne:
 APP_URL=https://www.streetshow.pl      # do linków w e-mailach (reset hasła, panel)
 ADMIN_NOTIFY_EMAIL=org@example.com    # e-mail(e) organizatorów o każdym nowym zgłoszeniu, po przecinku
 TRUST_PROXY=loopback                  # nginx na tym samym serwerze; liczba hopów, jeśli przed nginx jest kolejne proxy
-BACKUP_DIR=/root/streetshow-backups   # domyślnie backend/backups
+BACKUP_DIR=/home/streetshow/backups    # domyślnie backend/backups
 BACKUP_KEEP=14                        # ile dziennych kopii bazy trzymać
 BACKUP_DISABLED=false
 DRIVE_GALLERY_FOLDER_ID=...           # folder główny galerii na Dysku; jego podfoldery = albumy (+ GOOGLE_* konta serwisowego)
@@ -134,7 +134,7 @@ Rejestracja publiczna zawsze tworzy rolę `user`. Admina nadaje się przez skryp
 
 ```bash
 cd backend
-node scripts/create-admin.js <email> <haslo min.8 znakow> [Imię] [Nazwisko]
+node dist/scripts/create-admin.js <email> <haslo min. 12 znakow> [Imię] [Nazwisko]
 ```
 
 Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do `admin` (nie zmienia hasła).
@@ -144,7 +144,7 @@ Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do
 ## Architektura logowania (skrót)
 
 - Backend: `bcryptjs` (hashowanie haseł), `jsonwebtoken` (access token 15 min + refresh token 30 dni, rotowany przy odświeżeniu), tokeny w **httpOnly cookies** (`access_token`, `refresh_token` — ten drugi tylko na ścieżce `/api/auth`). Refresh tokeny trzymane (hash) w tabeli `refresh_tokens` żeby móc je unieważnić (np. przy blokadzie konta).
-- Baza danych: **SQLite** (`better-sqlite3`), plik `backend/data/app.sqlite`. Wybrana celowo — zero zależności od zewnętrznego serwera DB, żeby dało się to łatwo przenieść zarówno na VPS (mikrus), jak i na hosting (hostinger.pl), o ile tam też będzie działał Node.js.
+- Baza danych: **SQLite** (`better-sqlite3`), plik `backend/data/app.sqlite`. Wybrana celowo — zero zależności od zewnętrznego serwera DB, żeby dało się to łatwo przenieść między serwerami (jeden plik + katalog `uploads/`).
 - Role: `user` i `admin` w kolumnie `users.role`. Middleware `requireRole("admin")` chroni `/api/admin/*`.
 - Frontend: `AuthContext` trzyma zalogowanego użytkownika (pobiera `/api/auth/me` przy starcie), `ProtectedRoute` blokuje dostęp do `/panel` (zalogowani) i `/admin` (tylko rola admin).
 
@@ -203,16 +203,12 @@ Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do
 - `helmet` (nagłówki bezpieczeństwa, `nosniff`) na API; rola i blokada konta sprawdzane w bazie przy każdym żądaniu (zablokowanie działa natychmiast).
 - Rate limit liczony po `req.ip` z `trust proxy` — nagłówek `X-Forwarded-For` od klienta nie pozwala go obejść.
 - Linki i obrazy w CMS muszą zaczynać się od `https://`, `http://`, `/` lub `#` (blokada `javascript:`).
-- Codzienna kopia bazy SQLite do `backend/backups/` (`npm run backup` ręcznie). **To nie zastępuje kopii poza serwerem** — do tego służy [`backend/scripts/offsite-backup.sh`](../backend/scripts/offsite-backup.sh) (baza + `uploads/` przez rclone, 14 dni wstecz); konfiguracja i odtwarzanie: [DEPLOYMENT.md, sekcja 5](../DEPLOYMENT.md#5-kopie-zapasowe).
+- Codzienna kopia bazy SQLite do `backend/backups/` (`npm run backup` ręcznie). **To nie zastępuje kopii poza serwerem** — do tego służy [`backend/scripts/offsite-backup.sh`](../backend/scripts/offsite-backup.sh) (baza + zdjęcia zgłoszeń, garażu i CMS przez rclone, przyrostowo, 30 dni wstecz); konfiguracja i odtwarzanie: [DEPLOYMENT.md, sekcja 5](../DEPLOYMENT.md#5-kopie-zapasowe).
 - nginx: `sw.js` serwuj z `Cache-Control: no-cache` (inaczej telefony długo trzymają starą wersję), `/assets/*` może mieć długi cache.
 - nginx: `/api` przekazuj do backendu z `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`, a **nie serwuj katalogu `backend/uploads/submissions` bezpośrednio** (tylko `/uploads/content`, jeśli w ogóle — backend robi to sam).
 
-## Plany pod wdrożenie (mikrus / hostinger.pl)
+## Wdrożenie
 
 Pełna checklista przed uruchomieniem produkcyjnym (SMTP, `.env`, nginx, SSL, backupy, testy): [DEPLOYMENT.md](../DEPLOYMENT.md).
 
-Backend jest zwykłym Node/Express (bez zależności od Azure Functions w nowym kodzie auth/submissions), więc powinien działać identycznie na VPS (mikrus) i na hostingu z obsługą Node.js (hostinger — wymaga planu VPS/Cloud lub hostingu z Node, zwykły shared hosting z samym PHP nie wystarczy). Do zrobienia przed wdrożeniem:
-
-- Osobne sekrety `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` per środowisko.
-- Proces trzymający backend przy życiu (PM2 / systemd) + reverse proxy (nginx) serwujący `frontend/dist` i przekazujący `/api` i `/uploads` do backendu.
-- Backup katalogu `backend/data/` (baza SQLite) i `backend/uploads/`.
+Serwer (VPS z Ubuntu 24.04) stawia skrypt [`deploy/setup.sh`](../deploy/setup.sh): użytkownik `streetshow`, nginx za Cloudflare (`deploy/nginx/`), PM2, firewall. Kolejne wersje wdraża GitHub Actions po pushu do `newProject`.

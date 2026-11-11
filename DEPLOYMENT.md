@@ -11,6 +11,7 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 - [ ] Wpisać do `.env`: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`
   - port 587 → `SMTP_SECURE=false`, port 465 → `SMTP_SECURE=true`
   - przy Gmailu/Google Workspace: hasło aplikacji, nie zwykłe hasło
+  - Brevo: `SMTP_HOST=smtp-relay.brevo.com`, `SMTP_PORT=587`, `SMTP_SECURE=false`, `SMTP_USER` = login SMTP z panelu Brevo (nie e-mail konta), `SMTP_PASSWORD` = klucz SMTP; domenę nadawcy trzeba uwierzytelnić w Brevo (rekordy DKIM i DMARC w Cloudflare), a plan dobrać do dziennego limitu wysyłek — wiadomość do wszystkich uczestników to jeden e-mail na osobę
 - [ ] Opcjonalnie `SMTP_REPLY_TO` — adres, na który trafią odpowiedzi na maile (np. `kontakt@streetshow.pl`, gdy nadawcą jest `no-reply@…`); bez niej odpowiedzi idą na `SMTP_FROM`
 - [ ] DNS domeny: rekord **SPF**, **DKIM** i **DMARC** dla serwera pocztowego — inaczej maile lądują w spamie
 - [ ] `ADMIN_NOTIFY_EMAIL` — adres(y) organizatorów, po przecinku
@@ -39,15 +40,16 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 
 ## 3. Serwer i nginx
 
-- [ ] Wybrać hosting (Mikrus albo Hostinger VPS/Cloud z Node.js — zwykły shared hosting z PHP nie wystarczy)
+- [ ] VPS OVH z Ubuntu 24.04, min. 2 GB RAM i 40 GB dysku (zdjęcia zgłoszeń: do 50 MB na auto)
 - [ ] Domena: rekordy A/AAAA na serwer, przekierowanie `streetshow.pl` → `www.streetshow.pl` (lub odwrotnie, ale spójnie z `APP_URL`)
-- [ ] Certyfikat SSL (Let's Encrypt / certbot) z automatycznym odnawianiem + przekierowanie HTTP → HTTPS
+- [ ] SSL: Cloudflare w trybie Full (strict) + Cloudflare Origin Certificate na serwerze, przekierowanie HTTP → HTTPS
 - [ ] nginx serwuje `frontend/dist`, z fallbackiem SPA (`try_files $uri /index.html`)
 - [ ] nginx: `/api` i `/uploads` → backend, z `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`
 - [ ] nginx: **nie** serwować bezpośrednio `backend/uploads/submissions`, `vehicles` ani `showcase` (prywatne zdjęcia — backend sprawdza uprawnienia)
 - [ ] nginx: `client_max_body_size 55m` (zgłoszenia do 50 MB zdjęć)
 - [ ] nginx: `sw.js` z `Cache-Control: no-cache`, `/assets/*` z długim cache
-- [ ] nginx: nagłówek CSP dla frontendu (pamiętać o cdn.jsdelivr.net — ikony Bootstrap Icons — i fonts.googleapis.com / fonts.gstatic.com)
+- [ ] nginx: nagłówek CSP dla frontendu (`deploy/nginx/streetshow-headers.conf`; ikony i font są w paczce aplikacji, więc bez zewnętrznych domen)
+- [ ] nginx: przekierowania 301 ze starych adresów `/faq.html`, `/galeria.html`, `/regulamin.html` (są w `deploy/nginx/streetshow.conf`)
 - [ ] Backend przez PM2 (`streetshow-api`) z `pm2 startup` + `pm2 save`, żeby wstawał po restarcie serwera
 - [ ] Uruchamiać backend jako osobny użytkownik zamiast `root` (dotyczy też ścieżek w `deploy.yml`)
 - [ ] Firewall: otwarte tylko SSH, 80, 443 — port backendu niedostępny z zewnątrz
@@ -67,71 +69,84 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 5. Przełączenie: w Cloudflare rekordy `www` i `streetshow.pl` → A/AAAA serwera (proxied), zamiast CNAME na Azure.
 6. GitHub → Settings → Secrets: `DEPLOY_HOST`, `DEPLOY_SSH_KEY`; Variables: `DEPLOY_USER=streetshow`, `DEPLOY_PORT=22`, `DEPLOY_PATH=/home/streetshow/streetshow`. Bez nich workflow dalej deployuje na Mikrusa.
 
-Ścieżki `/root/streetshow` w opisie kopii zapasowych niżej zamienić na `/home/streetshow/streetshow`, a cron ustawić jako użytkownik `streetshow`.
-
 ## 4. GitHub Actions (automatyczny deploy)
 
-- [ ] Sekrety repo: `MIKRUS_HOST`, `MIKRUS_SSH_KEY`
-- [ ] Sprawdzić port SSH i ścieżkę `/root/streetshow` w `deploy.yml`
+- [ ] Sekrety repo: `DEPLOY_HOST`, `DEPLOY_SSH_KEY`; zmienne: `DEPLOY_USER=streetshow`, `DEPLOY_PORT=22`, `DEPLOY_PATH=/home/streetshow/streetshow` (bez nich workflow deployuje na stary serwer testowy)
+- [ ] Po przełączeniu usunąć sekrety `MIKRUS_*` i domyślne wartości Mikrusa z `deploy.yml`
 - [ ] Rozważyć deploy z `main` zamiast `newProject` po scaleniu gałęzi
 
 ## 5. Kopie zapasowe
 
 - [ ] Codzienna kopia bazy działa (Panel → System pokazuje ostatnią kopię)
 - [ ] Kopia poza serwerem: `backend/scripts/offsite-backup.sh` z crona (opis niżej)
-- [ ] Raz przetestować odtworzenie systemu z archiwum (opis niżej)
+- [ ] Raz przetestować odtworzenie systemu z kopii (opis niżej)
 
 ### Kopia poza serwerem (rclone)
 
-Skrypt `backend/scripts/offsite-backup.sh` robi świeżą kopię bazy (`npm run backup`), pakuje katalog kopii bazy (`BACKUP_DIR`, domyślnie `backend/backups/`) i `backend/uploads/` do `streetshow-RRRR-MM-DD.tar.gz`, wysyła archiwum przez rclone na `OFFSITE_REMOTE` i usuwa tam archiwa starsze niż 14 dni. Przy każdym błędzie kończy się kodem ≠ 0. Dane dostępowe trzyma rclone w swojej konfiguracji (`~/.config/rclone/rclone.conf`), nie skrypt ani repo.
+Skrypt `backend/scripts/offsite-backup.sh` wysyła przez rclone na `OFFSITE_REMOTE` tylko to, czego nie da się odtworzyć:
 
-1. Konto u innego dostawcy niż hosting serwera (np. Backblaze B2, Wasabi, Hetzner Storage Box) i bucket/katalog, np. `streetshow-backups`. Klucz API z dostępem tylko do tego bucketu.
-   - B2: przy usuwaniu plików B2 domyślnie zostawia ukryte stare wersje — ustaw w buckecie lifecycle „Keep only the last version” albo dopisz do remote'a `hard_delete = true`, inaczej stare archiwa dalej zajmują (i kosztują) miejsce.
+| Na zdalnym dysku | Co to jest | Jak długo |
+| --- | --- | --- |
+| `db/app-RRRR-MM-DD.sqlite.gz` | dzienna kopia bazy (kilka MB) | 30 dni |
+| `uploads/submissions`, `uploads/vehicles`, `uploads/content` | lustro katalogów ze zdjęciami — każdego dnia jadą tylko nowe pliki | dopóki są na serwerze |
+| `deleted/RRRR-MM-DD/…` | pliki usunięte lub podmienione na serwerze od poprzedniej kopii | 30 dni |
+
+Pomijane są `uploads/gallery` (miniatury odtwarza synchronizacja z Dysku Google) i `uploads/showcase` (kopie generują się przy pierwszym wyświetleniu). Zdjęcia nie są pakowane w dzienne archiwa, więc kopia zajmuje tyle, co same zdjęcia, a nie wielokrotność. Przy każdym błędzie skrypt kończy się kodem ≠ 0. Dane dostępowe trzyma rclone w swojej konfiguracji (`~/.config/rclone/rclone.conf`), nie skrypt ani repo.
+
+1. Konto u innego dostawcy niż OVH, z serwerami w UE (w kopii są dane osobowe): np. Hetzner Storage Box albo Backblaze B2 w regionie EU. Osobny bucket/katalog `streetshow-backups` i klucz z dostępem tylko do niego.
+   - B2: przy usuwaniu plików B2 domyślnie zostawia ukryte stare wersje — ustaw w buckecie lifecycle „Keep only the last version” albo dopisz do remote'a `hard_delete = true`.
+   - Zalecane: remote typu `crypt` nałożony na właściwy (`rclone config` → `crypt`), wtedy u dostawcy leżą zaszyfrowane pliki. Hasło crypt trzymać w menedżerze haseł — bez niego kopia jest bezużyteczna.
 2. Instalacja rclone na serwerze:
    ```bash
    curl https://rclone.org/install.sh | sudo bash
    rclone version
    ```
-3. Konfiguracja remote'a (jako ten sam użytkownik, z którego będzie działał cron):
+3. Konfiguracja remote'a jako użytkownik `streetshow` (ten sam, z którego działa cron):
    ```bash
-   rclone config            # n → nazwa np. "b2" → typ "b2" → account (keyID) + key (applicationKey)
+   sudo -iu streetshow
+   rclone config            # n → nazwa np. "b2" → typ → dane dostępowe
    rclone lsd b2:           # powinien pokazać bucket streetshow-backups
    ```
 4. W `backend/config/.env` dopisać `OFFSITE_REMOTE=b2:streetshow-backups` (skrypt czyta ją stamtąd, jeśli nie ma jej w środowisku).
 5. Test ręczny:
    ```bash
-   cd /root/streetshow/backend
-   chmod +x scripts/offsite-backup.sh
+   cd ~/streetshow/backend
    ./scripts/offsite-backup.sh
-   rclone ls b2:streetshow-backups
+   rclone tree b2:streetshow-backups --max-depth 2
    ```
-6. Cron (`crontab -e`), codziennie o 4:00 — po nocnej synchronizacji galerii. Cron ma pusty `PATH`, więc trzeba podać katalog z `node`/`npm` (`dirname $(which npm)`) i `rclone`:
+6. Cron (`crontab -e` jako `streetshow`), codziennie o 4:00 — po nocnej synchronizacji galerii:
    ```cron
    PATH=/usr/local/bin:/usr/bin:/bin
-   0 4 * * * flock -n /tmp/streetshow-offsite.lock /root/streetshow/backend/scripts/offsite-backup.sh >> /var/log/streetshow-offsite.log 2>&1
+   0 4 * * * flock -n /tmp/streetshow-offsite.lock /home/streetshow/streetshow/backend/scripts/offsite-backup.sh >> /home/streetshow/offsite-backup.log 2>&1
    ```
-   Warto dodać monitoring nieudanych kopii (np. sprawdzać log albo dopiąć healthchecks.io po udanym przebiegu).
+   Warto dopiąć monitoring nieudanych kopii (np. healthchecks.io: `&& curl -fsS https://hc-ping.com/<id>` na końcu wiersza).
 
 ### Odtworzenie na nowym serwerze
 
-1. Postawić serwer według sekcji 3 (Node, nginx, PM2), sklonować repo do `/root/streetshow`, odtworzyć `backend/config/.env` (sekrety trzymać osobno, np. w menedżerze haseł — nie ma ich w archiwum).
-2. Zainstalować i skonfigurować rclone jak wyżej, pobrać najnowsze archiwum:
+1. Postawić serwer skryptem `deploy/setup.sh` (sekcja 3), odtworzyć `backend/config/.env` (sekrety trzymać osobno, np. w menedżerze haseł — nie ma ich w kopii).
+2. Skonfigurować rclone jak wyżej i przy zatrzymanym backendzie (`pm2 stop streetshow-api`) pobrać dane:
    ```bash
-   rclone lsl b2:streetshow-backups
-   rclone copy b2:streetshow-backups/streetshow-RRRR-MM-DD.tar.gz /root/restore/
-   cd /root/restore && tar -xzf streetshow-RRRR-MM-DD.tar.gz
-   ```
-   W archiwum są katalogi `uploads/` i `backups/` (albo nazwa katalogu z `BACKUP_DIR`).
-3. Przy zatrzymanym backendzie (`pm2 stop streetshow-api`, jeśli już działa):
-   ```bash
-   cd /root/streetshow/backend
+   cd ~/streetshow/backend
+   rclone copy b2:streetshow-backups/uploads ./uploads
+   rclone lsf b2:streetshow-backups/db | sort | tail -3
+   rclone copy b2:streetshow-backups/db/app-RRRR-MM-DD.sqlite.gz /tmp/
    mkdir -p data
-   cp -a /root/restore/uploads ./uploads
-   cp /root/restore/backups/app-RRRR-MM-DD.sqlite data/app.sqlite   # najnowsza kopia
+   gunzip -c /tmp/app-RRRR-MM-DD.sqlite.gz > data/app.sqlite
    rm -f data/app.sqlite-wal data/app.sqlite-shm
    ```
-4. `npm ci && npm run build` w `backend/` i `frontend/`, `pm2 start` / `pm2 restart streetshow-api`, potem Panel → System: baza, uploady, galeria. Zalogować się i otworzyć kilka zgłoszeń ze zdjęciami oraz wejściówkę.
-5. Jeśli zmienił się adres serwera — zaktualizować DNS i sekrety deployu (`MIKRUS_HOST`); `APP_URL` zostawić bez zmian, bo od niego zależą kody QR na wejściówkach.
+   Plik usunięty przez pomyłkę w ostatnich 30 dniach jest w `deleted/<data usunięcia>/`.
+3. `pm2 restart streetshow-api`, potem Panel → System: baza i uploady. W Panel → Galeria uruchomić synchronizację (miniatury pobiorą się z Dysku od nowa). Zalogować się i otworzyć kilka zgłoszeń ze zdjęciami oraz wejściówkę.
+4. Jeśli zmienił się adres serwera — zaktualizować rekordy w Cloudflare i sekret `DEPLOY_HOST`; `APP_URL` zostawić bez zmian, bo od niego zależą kody QR na wejściówkach.
+
+## 5a. Przejście ze starej strony (Azure + arkusz Google)
+
+Stara strona to Azure Static Web Apps + App Service `streetmeetingbackend`; formularz dopisuje wiersze do arkusza Google i wgrywa zdjęcia do folderu na Dysku. Uczestnicy nie mają tam kont, więc zgłoszenia wysyłają w nowym systemie ponownie.
+
+- [ ] Spisać z App Service zmienne `GOOGLE_*` i `DRIVE_GALLERY_FOLDER_ID` (to samo konto serwisowe obsłuży galerię) oraz zachować dostęp do arkusza i folderu zgłoszeń jako archiwum
+- [ ] Dzień przed przełączeniem obniżyć TTL rekordów `www` i `streetshow.pl` w Cloudflare
+- [ ] Zamknąć stary formularz, przełączyć rekordy na VPS (sekcja 3, krok 5), przejść test z sekcji 10
+- [ ] Wysłać osobom z arkusza e-mail: nowa strona, prośba o założenie konta i ponowne zgłoszenie auta
+- [ ] Po kilku dniach bez problemów: wyłączyć oba zasoby Azure i usunąć z gałęzi `main` ich workflowy; ustawić `newProject` (albo scalone `main`) jako gałąź domyślną repo
 
 ## 6. Konta i dane
 

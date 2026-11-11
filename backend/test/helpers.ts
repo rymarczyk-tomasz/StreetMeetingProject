@@ -20,9 +20,12 @@ process.env.APP_URL = "https://streetshow.test";
 delete process.env.SMTP_REPLY_TO;
 
 const mails = [];
+// set `down` to make every send fail like an unreachable SMTP server
+const smtp = { down: false };
 const nodemailer = require("nodemailer");
 nodemailer.createTransport = () => ({
     sendMail: async (message) => {
+        if (smtp.down) throw new Error("connect ETIMEDOUT");
         mails.push(message);
         return { messageId: String(mails.length) };
     },
@@ -94,7 +97,8 @@ function createUser({
 function totpCode(user) {
     const row = usersDb.findUserById(user.id);
     const step = Math.floor(Date.now() / 30000);
-    const candidate = Math.max(step - 1, (row.totp_last_step ?? -Infinity) + 1);
+    // the current step, not the previous one: that one expires if a 30 s boundary passes before the request
+    const candidate = Math.max(step, (row.totp_last_step ?? -Infinity) + 1);
     if (candidate > step + 1) throw new Error("no unused TOTP step left in this window");
     return totp.codeForStep(row.totp_secret, candidate);
 }
@@ -155,6 +159,7 @@ module.exports = {
     PASSWORD,
     mails,
     mailsTo,
+    smtp,
     totpCode,
     stepUpFor,
     submissionsDb,

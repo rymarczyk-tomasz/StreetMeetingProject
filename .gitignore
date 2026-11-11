@@ -53,6 +53,8 @@ backend/uploads/vehicles/
 backend/uploads/content/
 # Gallery thumbnails generated from Google Drive (backend/src/gallery/sync.ts)
 backend/uploads/gallery/
+# Resized public copies for the "Auta strefy Select" page (backend/src/showcase/routes.ts)
+backend/uploads/showcase/
 
 # SQLite snapshots made by the backend's daily backup (backend/src/maintenance.ts)
 backend/backups/

@@ -37,7 +37,7 @@ npx playwright test --headed --debug     # watch / step through
 
 Backend config lives in `backend/config/.env` (gitignored): JWT secrets, `SMTP_*`, `ADMIN_NOTIFY_EMAIL`, `APP_URL`, Google Drive credentials. Without SMTP, e-mails are skipped and logged, nothing else breaks.
 
-CI: `.github/workflows/checks.yml` (backend build + tests, frontend lint + build + tests, Playwright e2e) is shared by `ci.yml` (every branch except `newProject`, PRs) and `deploy.yml` (push to `newProject`: checks, then deploy over SSH (pm2 `streetshow-api`, healthcheck `/api/health`). **Pushing to `newProject` deploys to production.**
+CI: `.github/workflows/checks.yml` (backend build + tests, frontend lint + build + tests, Playwright e2e) is shared by `ci.yml` (every branch except `newProject`, PRs) and `deploy.yml` (push to `newProject`: checks, then deploy over SSH (pm2 `streetshow-api`, healthcheck `/api/health`). **Pushing to `newProject` deploys to production.** The server is set up once with `deploy/setup.sh` (Ubuntu 24.04, user `streetshow`, nginx config and CSP in `deploy/nginx/`, behind Cloudflare); the deploy target comes from repo secrets/variables `DEPLOY_*`. Icons (bootstrap-icons) and the font are bundled npm packages imported in `frontend/src/main.tsx` — the CSP allows no external hosts, so don't add CDN links.
 
 ## Backend architecture
 
@@ -65,7 +65,7 @@ Admins created by `createUser({ role: "admin" })` get 2FA enabled (pass `twoFact
 - `api(user)`: supertest client with a signed session cookie and a unique `X-Forwarded-For` per client, so per-IP rate limiters don't interfere,
 - `saveSettings(patch)`.
 
-Each test file runs in its own process. Assert e-mails through `mails`/`mailsTo` and reset with `mails.length = 0` in `beforeEach`.
+Each test file runs in its own process. Assert e-mails through `mails`/`mailsTo` and reset with `mails.length = 0` in `beforeEach`. `smtp.down = true` makes every send fail (reset it in `finally`).
 
 ## E2E tests
 

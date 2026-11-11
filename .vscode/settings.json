@@ -1,7 +1,4 @@
 {
     "debug.internalConsoleOptions": "neverOpen",
-    "liveServer.settings.port": 5501,
-    "azureFunctions.deploySubpath": "backend\\config",
-    "azureFunctions.projectLanguage": "JavaScript",
-    "azureFunctions.projectRuntime": "~4"
+    "liveServer.settings.port": 5501
 }

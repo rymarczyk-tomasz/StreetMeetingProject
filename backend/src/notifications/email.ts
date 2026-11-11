@@ -22,6 +22,10 @@ function getTransporter() {
         port: Number.isFinite(port) ? port : 587,
         secure,
         auth: { user, pass: password },
+        // nodemailer's defaults wait minutes for a dead server
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 30000,
     });
 
     return transporter;

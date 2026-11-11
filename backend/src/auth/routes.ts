@@ -421,7 +421,14 @@ router.post("/resend-verification", authenticate, passwordResetRateLimit, async 
         });
     }
 
-    await sendVerification(user);
+    try {
+        await sendVerification(user);
+    } catch (error) {
+        logEmailError("potwierdzenie adresu")(error);
+        return res.status(502).json({
+            message: "Nie udało się wysłać e-maila. Spróbuj ponownie za chwilę.",
+        });
+    }
     res.json({ message: `Wysłaliśmy link potwierdzający na ${user.email}.` });
 });
 
@@ -450,7 +457,14 @@ router.post("/change-email", authenticate, passwordResetRateLimit, async (req, r
     }
 
     const { token, ttlHours } = emailTokensDb.createEmailToken(user.id, "change", newEmail);
-    await sendEmailChangeEmail({ user, newEmail, token, ttlHours });
+    try {
+        await sendEmailChangeEmail({ user, newEmail, token, ttlHours });
+    } catch (error) {
+        logEmailError("zmiana adresu")(error);
+        return res.status(502).json({
+            message: "Nie udało się wysłać e-maila na nowy adres. Spróbuj ponownie za chwilę.",
+        });
+    }
     res.json({
         message: `Wysłaliśmy link na ${newEmail}. Adres zmieni się po kliknięciu w link.`,
     });

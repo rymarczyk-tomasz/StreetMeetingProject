@@ -43,5 +43,8 @@
         "supertest": "^7.3.1",
         "tsx": "^4.23.15",
         "typescript": "^7.0.2"
+    },
+    "overrides": {
+        "qs": "^6.17.1"
     }
 }

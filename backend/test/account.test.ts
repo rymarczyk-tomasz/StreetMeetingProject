@@ -12,6 +12,7 @@ const {
     freshIp,
     mails,
     mailsTo,
+    smtp,
     PASSWORD,
     submissionsDb,
     usersDb,
@@ -115,6 +116,23 @@ describe("potwierdzenie e-maila przed zgłoszeniem", () => {
         const res = await api(user).post("/api/auth/resend-verification");
         assert.equal(res.status, 200);
         assert.equal(mailsTo(user.email).length, 1);
+    });
+
+    test("awaria SMTP daje czytelny błąd zamiast wywrócić serwer", async () => {
+        const user = createUser({ verified: false });
+        smtp.down = true;
+        try {
+            const resend = await api(user).post("/api/auth/resend-verification");
+            assert.equal(resend.status, 502);
+            const change = await api(user)
+                .post("/api/auth/change-email")
+                .send({ newEmail: "nowy-adres@example.com", password: PASSWORD });
+            assert.equal(change.status, 502);
+        } finally {
+            smtp.down = false;
+        }
+        assert.equal((await api(user).get("/api/auth/me")).status, 200);
+        assert.equal(usersDb.findUserById(user.id).email, user.email);
     });
 });
 

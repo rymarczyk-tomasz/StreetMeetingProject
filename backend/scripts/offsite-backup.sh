@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
 # Usage (from cron): OFFSITE_REMOTE="b2:streetshow-backups" backend/scripts/offsite-backup.sh
-# Packs a fresh database snapshot (backups/) and uploads/ into one dated archive,
-# sends it to OFFSITE_REMOTE with rclone and removes remote archives older than 14 days.
+#
+# Sends to OFFSITE_REMOTE with rclone:
+#   db/                  daily database snapshots (app-YYYY-MM-DD.sqlite.gz), kept KEEP_DAYS days
+#   uploads/<dir>/       mirror of uploads/submissions, vehicles and content - only new files travel
+#   deleted/YYYY-MM-DD/  files removed or replaced on the server since the last run, kept KEEP_DAYS days
+#
+# uploads/gallery and uploads/showcase are left out on purpose: the gallery is rebuilt
+# from Google Drive by a sync, showcase copies are re-rendered on the first request.
 # Credentials live in rclone's own config (rclone config), never in this script.
 set -euo pipefail
 
-KEEP_DAYS=14
+KEEP_DAYS=30
+UPLOAD_DIRS="submissions vehicles content"
 BACKEND_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$BACKEND_DIR"
 
@@ -16,6 +23,7 @@ env_value() {
 }
 
 OFFSITE_REMOTE="${OFFSITE_REMOTE:-$(env_value OFFSITE_REMOTE)}"
+OFFSITE_REMOTE="${OFFSITE_REMOTE%/}"
 BACKUP_DIR="${BACKUP_DIR:-$(env_value BACKUP_DIR)}"
 BACKUP_DIR="${BACKUP_DIR:-$BACKEND_DIR/backups}"
 
@@ -30,25 +38,28 @@ echo "[offsite] $(date '+%F %T') start"
 
 npm run --silent backup
 
-BACKUP_DIR="$(cd "$BACKUP_DIR" && pwd)"
+TODAY="$(date +%F)"
+SNAPSHOT="$BACKUP_DIR/app-$TODAY.sqlite"
+[ -s "$SNAPSHOT" ] || { echo "[offsite] Brak dzisiejszej kopii bazy: $SNAPSHOT" >&2; exit 1; }
+
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
+gzip -c "$SNAPSHOT" > "$WORK_DIR/app-$TODAY.sqlite.gz"
+gzip -t "$WORK_DIR/app-$TODAY.sqlite.gz"
+rclone copyto "$WORK_DIR/app-$TODAY.sqlite.gz" "$OFFSITE_REMOTE/db/app-$TODAY.sqlite.gz"
 
-ARCHIVE_NAME="streetshow-$(date +%F).tar.gz"
-ARCHIVE="$WORK_DIR/$ARCHIVE_NAME"
+for dir in $UPLOAD_DIRS; do
+    [ -d "uploads/$dir" ] || continue
+    # sync deletes on the remote what was deleted here; --backup-dir keeps those files for KEEP_DAYS
+    rclone sync "uploads/$dir" "$OFFSITE_REMOTE/uploads/$dir" \
+        --backup-dir "$OFFSITE_REMOTE/deleted/$TODAY/$dir"
+done
 
-# exit code 1 from GNU tar only means a file changed while it was read (live uploads)
-tar_status=0
-tar --warning=no-file-changed -czf "$ARCHIVE" \
-    -C "$(dirname "$BACKUP_DIR")" "$(basename "$BACKUP_DIR")" \
-    -C "$BACKEND_DIR" uploads || tar_status=$?
-if [ "$tar_status" -gt 1 ]; then
-    echo "[offsite] Błąd tworzenia archiwum (tar: $tar_status)." >&2
-    exit "$tar_status"
+rclone delete "$OFFSITE_REMOTE/db" --min-age "${KEEP_DAYS}d" --include "app-*.sqlite.gz"
+# deleted/ does not exist until something has been removed
+if rclone lsf "$OFFSITE_REMOTE/deleted" >/dev/null 2>&1; then
+    rclone delete "$OFFSITE_REMOTE/deleted" --min-age "${KEEP_DAYS}d"
+    rclone rmdirs "$OFFSITE_REMOTE/deleted" --leave-root
 fi
-gzip -t "$ARCHIVE"
 
-rclone copyto "$ARCHIVE" "$OFFSITE_REMOTE/$ARCHIVE_NAME"
-rclone delete "$OFFSITE_REMOTE" --max-depth 1 --min-age "${KEEP_DAYS}d" --include "streetshow-*.tar.gz"
-
-echo "[offsite] $(date '+%F %T') wysłano $ARCHIVE_NAME ($(du -h "$ARCHIVE" | cut -f1)) do $OFFSITE_REMOTE"
+echo "[offsite] $(date '+%F %T') gotowe: baza $(du -h "$WORK_DIR/app-$TODAY.sqlite.gz" | cut -f1), uploads ($UPLOAD_DIRS) do $OFFSITE_REMOTE"

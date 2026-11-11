@@ -108,7 +108,7 @@ async function lastAcceptedStep(email: string) {
 export async function totpCode(secret: string, email: string) {
     for (;;) {
         const step = Math.floor(Date.now() / 30_000);
-        const candidate = Math.max(step - 1, (await lastAcceptedStep(email)) + 1);
+        const candidate = Math.max(step, (await lastAcceptedStep(email)) + 1);
         if (candidate <= step + 1) return codeForStep(secret, candidate);
         await new Promise((resolve) => setTimeout(resolve, 1000));
     }

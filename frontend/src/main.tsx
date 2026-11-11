@@ -1,6 +1,12 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+// bundled, not from a CDN: the gate screen needs its icons offline
+import "bootstrap-icons/font/bootstrap-icons.min.css";
+import "@fontsource/chakra-petch/400.css";
+import "@fontsource/chakra-petch/500.css";
+import "@fontsource/chakra-petch/600.css";
+import "@fontsource/chakra-petch/700.css";
 import "./index.css";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
