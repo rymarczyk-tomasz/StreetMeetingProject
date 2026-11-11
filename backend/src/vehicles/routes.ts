@@ -8,6 +8,8 @@ const { normalizeText } = require("../utils/validation");
 const {
     createImageUpload,
     verifyUploadedImages,
+    processUploadedImages,
+    asyncHandler,
     removeFiles,
     uploadErrorHandler,
 } = require("../utils/imageUpload");
@@ -90,7 +92,7 @@ router.get("/", (req, res) => {
 
 router.get("/photos/:userId/:filename", servePhoto("vehicles"));
 
-router.post("/", ensureRoom, upload.array("photos", MAX_PHOTOS), (req, res) => {
+router.post("/", ensureRoom, upload.array("photos", MAX_PHOTOS), asyncHandler(async (req, res) => {
     const uploaded = req.files || [];
     const { fields, error } = readVehicleFields(req.body);
     if (error) {
@@ -102,6 +104,7 @@ router.post("/", ensureRoom, upload.array("photos", MAX_PHOTOS), (req, res) => {
         return res.status(413).json({ message: "Łączny rozmiar zdjęć nie może przekraczać 50 MB." });
     }
     verifyUploadedImages(uploaded);
+    await processUploadedImages(uploaded);
 
     const vehicle = vehiclesDb.createVehicle({
         userId: req.user.sub,
@@ -109,7 +112,7 @@ router.post("/", ensureRoom, upload.array("photos", MAX_PHOTOS), (req, res) => {
         photos: uploaded.map((file) => storedPathFor("vehicles", req.user.sub, file.filename)),
     });
     res.status(201).json({ vehicle: toPublicVehicle(vehicle) });
-});
+}));
 
 router.post("/from-submission/:id", ensureRoom, (req, res) => {
     const submission = submissionsDb.findSubmissionById(Number(req.params.id));
@@ -144,9 +147,10 @@ router.put("/:id/photos", (req, res, next) => {
     req.vehicle = findOwnVehicle(req);
     if (!req.vehicle) return res.status(404).json({ message: "Nie znaleziono pojazdu." });
     next();
-}, upload.array("photos", MAX_PHOTOS), (req, res) => {
+}, upload.array("photos", MAX_PHOTOS), asyncHandler(async (req, res) => {
     const uploaded = req.files || [];
     verifyUploadedImages(uploaded);
+    await processUploadedImages(uploaded);
 
     const result = applyPhotoChanges({
         currentPhotos: JSON.parse(req.vehicle.photos || "[]"),
@@ -163,7 +167,7 @@ router.put("/:id/photos", (req, res, next) => {
     const updated = vehiclesDb.updateVehiclePhotos(req.vehicle.id, result.photos);
     removeStoredPhotos(result.removed);
     res.json({ vehicle: toPublicVehicle(updated) });
-});
+}));
 
 router.delete("/:id", (req, res) => {
     const vehicle = findOwnVehicle(req);

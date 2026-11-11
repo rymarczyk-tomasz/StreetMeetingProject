@@ -95,11 +95,13 @@ describe("logowanie dwuetapowe", () => {
         assert.equal(res.status, 401);
     });
 
-    test("po 10 złych kodach konto jest blokowane", async () => {
+    test("po 10 złych kodach adres zgadującego jest blokowany, właściciel loguje się dalej", async () => {
         const admin = createUser({ role: "admin" });
         const { challenge } = (await passwordLogin(admin.email)).body;
-        for (let i = 0; i < 10; i++) await codeLogin(challenge, "000000");
-        assert.equal((await codeLogin(challenge, totpCode(admin))).status, 429);
+        const attacker = freshIp();
+        for (let i = 0; i < 10; i++) await codeLogin(challenge, "000000", attacker);
+        assert.equal((await codeLogin(challenge, totpCode(admin), attacker)).status, 429);
+        assert.equal((await codeLogin(challenge, totpCode(admin))).status, 200);
     });
 
     test("zwykły użytkownik loguje się bez kodu", async () => {
@@ -269,10 +271,16 @@ describe("potwierdzenie wrażliwych operacji", () => {
     test("błędne potwierdzenia liczą się do blokady konta", async () => {
         saveSettings({ paymentAccount: account });
         const admin = createUser({ role: "admin" });
+        // one client = one address, like a session someone else got hold of
+        const client = api(admin);
+        const save = (stepUp) =>
+            client
+                .patch("/api/admin/content/settings")
+                .send({ content: { ...siteContentDb.getSettings(), paymentAccount: otherAccount }, stepUp });
         for (let i = 0; i < 10; i++) {
-            await saveSettingsAs(admin, { paymentAccount: otherAccount }, { password: "zle", code: "000000" });
+            await save({ password: "zle", code: "000000" });
         }
-        const res = await saveSettingsAs(admin, { paymentAccount: otherAccount }, stepUpFor(admin));
+        const res = await save(stepUpFor(admin));
         assert.equal(res.status, 429);
         assert.notEqual(siteContentDb.getSettings().paymentAccount, otherAccount);
     });

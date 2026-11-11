@@ -21,6 +21,7 @@ const {
     isLoginLocked,
     recordLoginFailure,
     clearLoginFailures,
+    clearAllLoginFailures,
 } = require("./loginThrottle");
 const { createRateLimiter } = require("../utils/rateLimiter");
 const {
@@ -156,7 +157,7 @@ router.post("/login", authRateLimit, async (req, res) => {
     const email = normalizeEmail(req.body.email);
     const password = String(req.body.password || "").slice(0, 256);
 
-    if (isLoginLocked(email)) {
+    if (isLoginLocked(email, req.ip)) {
         return res.status(429).json({
             message:
                 "Zbyt wiele nieudanych prób logowania na to konto. Spróbuj za 15 minut albo ustaw nowe hasło („Nie pamiętasz hasła?”).",
@@ -170,13 +171,13 @@ router.post("/login", authRateLimit, async (req, res) => {
     );
 
     if (!user || !passwordMatches) {
-        recordLoginFailure(email);
+        recordLoginFailure(email, req.ip);
         return res
             .status(401)
             .json({ message: "Nieprawidłowy e-mail lub hasło." });
     }
 
-    clearLoginFailures(email);
+    clearLoginFailures(email, req.ip);
 
     // Only revealed to someone who already knows the password.
     if (!user.is_active) {
@@ -207,7 +208,7 @@ router.post("/login/2fa", authRateLimit, (req, res) => {
     if (!user || !user.is_active || !twoFactorDb.isEnabled(user)) {
         return res.status(401).json({ message: "Konto jest niedostępne." });
     }
-    if (isLoginLocked(user.email)) {
+    if (isLoginLocked(user.email, req.ip)) {
         return res.status(429).json({
             message: "Zbyt wiele nieudanych prób logowania na to konto. Spróbuj za 15 minut.",
         });
@@ -215,11 +216,11 @@ router.post("/login/2fa", authRateLimit, (req, res) => {
 
     const result = twoFactorDb.verifySecondFactor(user, req.body?.code);
     if (!result.ok) {
-        recordLoginFailure(user.email);
+        recordLoginFailure(user.email, req.ip);
         return res.status(401).json({ message: "Nieprawidłowy kod. Wpisz aktualny kod z aplikacji." });
     }
 
-    clearLoginFailures(user.email);
+    clearLoginFailures(user.email, req.ip);
     issueSession(res, user);
     if (result.usedRecoveryCode) {
         auditLogDb.createAuditEntry({
@@ -350,7 +351,7 @@ router.post("/reset-password", passwordResetRateLimit, async (req, res) => {
     // Log out every other device that may be using the old password.
     refreshTokensDb.revokeAllUserTokens(user.id);
     // The owner proved access to the mailbox, so a lockout no longer applies.
-    clearLoginFailures(user.email);
+    clearAllLoginFailures(user.email);
     clearAuthCookies(res);
     void sendPasswordChangedEmail({ user }).catch(logEmailError("zmiana hasła"));
 
@@ -690,7 +691,7 @@ router.post("/2fa/setup", authenticate, adminOnly, authRateLimit, async (req, re
         return res.status(400).json({ message: "Logowanie dwuetapowe jest już włączone." });
     }
     if (!(await bcrypt.compare(String(req.body?.password || "").slice(0, 256), user.password_hash))) {
-        recordLoginFailure(user.email);
+        recordLoginFailure(user.email, req.ip);
         return res.status(400).json({ message: "Hasło jest nieprawidłowe." });
     }
 

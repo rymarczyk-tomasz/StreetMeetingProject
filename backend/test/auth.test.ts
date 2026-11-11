@@ -85,13 +85,31 @@ describe("logowanie", () => {
         assert.equal(res.status, 403);
     });
 
-    test("po 10 błędnych hasłach konto jest blokowane nawet z innych ip", async () => {
+    test("10 błędnych haseł blokuje adres, z którego przyszły, a nie całe konto", async () => {
         const user = createUser();
+        const attacker = freshIp();
         for (let i = 0; i < 10; i++) {
-            await login(request(app), user.email, "zle-haslo-123");
+            await login(request(app), user.email, "zle-haslo-123", attacker);
         }
-        const res = await login(request(app), user.email);
-        assert.equal(res.status, 429);
+        assert.equal((await login(request(app), user.email, PASSWORD, attacker)).status, 429);
+        // the owner, from their own address, is not locked out
+        assert.equal((await login(request(app), user.email)).status, 200);
+    });
+
+    test("zgadywanie z wielu adresów blokuje konto wszędzie, reset hasła zdejmuje blokadę", async () => {
+        const throttle = require("../src/auth/loginThrottle");
+        const email = "rozproszony@example.com";
+        for (let i = 0; i < throttle.MAX_FAILURES_PER_EMAIL - 1; i++) {
+            throttle.recordLoginFailure(email, freshIp());
+        }
+        assert.equal(throttle.isLoginLocked(email, freshIp()), false);
+        throttle.recordLoginFailure(email, freshIp());
+        assert.equal(throttle.isLoginLocked(email, freshIp()), true);
+
+        throttle.clearLoginFailures(email, freshIp());
+        assert.equal(throttle.isLoginLocked(email, freshIp()), true);
+        throttle.clearAllLoginFailures(email);
+        assert.equal(throttle.isLoginLocked(email, freshIp()), false);
     });
 
     test("limit żądań na ip", async () => {

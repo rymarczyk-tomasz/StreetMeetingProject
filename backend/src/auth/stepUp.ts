@@ -21,7 +21,7 @@ async function confirmStepUp(req, res) {
         res.status(401).json({ message: "Wymagane logowanie." });
         return false;
     }
-    if (isLoginLocked(user.email)) {
+    if (isLoginLocked(user.email, req.ip)) {
         res.status(429).json({ message: "Zbyt wiele nieudanych prób. Spróbuj za 15 minut." });
         return false;
     }
@@ -35,7 +35,7 @@ async function confirmStepUp(req, res) {
     const passwordOk = await bcrypt.compare(String(password).slice(0, 256), user.password_hash);
     const codeOk = !twoFactorDb.isEnabled(user) || twoFactorDb.verifySecondFactor(user, code).ok;
     if (!passwordOk || !codeOk) {
-        recordLoginFailure(user.email);
+        recordLoginFailure(user.email, req.ip);
         required(res, user, "Nieprawidłowe hasło lub kod. Spróbuj ponownie.");
         return false;
     }

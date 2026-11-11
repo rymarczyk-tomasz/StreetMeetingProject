@@ -2,6 +2,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
+const { getSharp } = require("./sharp");
 
 // mimetype/filename from the browser are untrusted - extension comes from this
 // whitelist and the content is checked after upload (no .html/.svg on our origin)
@@ -91,6 +92,50 @@ function verifyUploadedImages(files) {
             file.path = newPath;
         }
     }
+}
+
+// Participants' photos are stored without EXIF (phones save the GPS position of the
+// garage) and no larger than MAX_PHOTO_EDGE px. Quality 92 with full chroma is not
+// visibly different from the upload; PNG stays lossless.
+const MAX_PHOTO_EDGE = 4000;
+const PHOTO_QUALITY = 92;
+
+async function processUploadedImages(files) {
+    for (const file of files) {
+        const sourceExtension = path.extname(file.filename);
+        // AVIF encoding takes many seconds per photo on a small server
+        const extension = sourceExtension === ".avif" ? ".jpg" : sourceExtension;
+        const base = path.basename(file.filename, sourceExtension);
+        const temp = path.join(path.dirname(file.path), `${base}.tmp`);
+        try {
+            // rotate() applies the EXIF orientation before the metadata is dropped
+            let image = getSharp()(file.path)
+                .rotate()
+                .resize({ width: MAX_PHOTO_EDGE, height: MAX_PHOTO_EDGE, fit: "inside", withoutEnlargement: true });
+            if (extension === ".png") image = image.png();
+            else if (extension === ".webp") image = image.webp({ quality: PHOTO_QUALITY });
+            else image = image.jpeg({ quality: PHOTO_QUALITY, chromaSubsampling: "4:4:4" });
+            const info = await image.toFile(temp);
+
+            const filename = `${base}${extension}`;
+            const target = path.join(path.dirname(file.path), filename);
+            if (target !== file.path) await fs.promises.unlink(file.path);
+            await fs.promises.rename(temp, target);
+            file.filename = filename;
+            file.path = target;
+            file.size = info.size;
+        } catch {
+            // has the right first bytes but can't be decoded
+            await fs.promises.unlink(temp).catch(() => {});
+            removeFiles(files);
+            throw new UploadValidationError(INVALID_IMAGE_MESSAGE);
+        }
+    }
+}
+
+// express 4 doesn't catch a rejected async handler
+function asyncHandler(handler) {
+    return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 }
 
 function createImageUpload({ destination, maxFiles, maxFileSize }) {
@@ -232,6 +277,8 @@ function uploadErrorHandler({ maxFiles, totalSizeLabel }) {
 module.exports = {
     createImageUpload,
     verifyUploadedImages,
+    processUploadedImages,
+    asyncHandler,
     createPdfUpload,
     verifyUploadedPdf,
     createProofUpload,

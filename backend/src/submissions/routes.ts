@@ -17,6 +17,8 @@ const {
 const {
     createImageUpload,
     verifyUploadedImages,
+    processUploadedImages,
+    asyncHandler,
     removeFiles,
     createProofUpload,
     verifyUploadedProof,
@@ -401,9 +403,10 @@ router.put("/:id/photos", (req, res, next) => {
     }
     req.submission = submission;
     next();
-}, upload.array("photos", MAX_PHOTOS), (req, res) => {
+}, upload.array("photos", MAX_PHOTOS), asyncHandler(async (req, res) => {
     const uploaded = req.files || [];
     verifyUploadedImages(uploaded);
+    await processUploadedImages(uploaded);
 
     const result = applyPhotoChanges({
         currentPhotos: JSON.parse(req.submission.photos || "[]"),
@@ -420,7 +423,7 @@ router.put("/:id/photos", (req, res, next) => {
     const updated = submissionsDb.updateSubmissionPhotos(req.submission.id, result.photos);
     removeStoredPhotos(result.removed);
     res.json({ submission: toPublicSubmission(updated) });
-});
+}));
 
 router.delete("/:id", (req, res) => {
     const submission = findOwnSubmission(req);
@@ -598,7 +601,7 @@ router.post(
     submissionRateLimit,
     ensureCanSubmit,
     upload.array("photos", MAX_PHOTOS),
-    (req, res) => {
+    asyncHandler(async (req, res) => {
         const savedFiles = req.files || [];
 
         const { fields, error } = readSubmissionFields(req.body);
@@ -626,6 +629,7 @@ router.post(
 
         // Throws UploadValidationError (handled below) if a file isn't a real image.
         verifyUploadedImages(savedFiles);
+        await processUploadedImages(savedFiles);
 
         let photos = savedFiles.map((file) =>
             storedPathFor("submissions", req.user.sub, file.filename),
@@ -654,7 +658,7 @@ router.post(
 
         notifyOrganizers(submission, req.user.email);
         res.status(201).json({ submission: toPublicSubmission(submission) });
-    },
+    }),
 );
 
 router.use(
