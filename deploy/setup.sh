@@ -18,6 +18,8 @@ API_PORT=${API_PORT:-4001}
 APP_HOME=/home/$APP_USER
 APP_DIR=$APP_HOME/streetshow
 ENV_FILE=$APP_DIR/backend/config/.env
+# e-mail addresses in the .env template; a staging subdomain has no apex
+MAIL_DOMAIN=$([ "$APEX" = none ] && echo "$DOMAIN" || echo "$APEX")
 
 [ "$(id -u)" -eq 0 ] || { echo "Run as root (sudo)." >&2; exit 1; }
 
@@ -28,7 +30,7 @@ step "Packages"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -q
 apt-get upgrade -yq
-apt-get install -yq git curl ca-certificates build-essential sqlite3 nginx ufw fail2ban unattended-upgrades
+apt-get install -yq git curl ca-certificates build-essential sqlite3 nginx ufw fail2ban unattended-upgrades cron
 timedatectl set-timezone Europe/Warsaw
 
 if ! command -v node >/dev/null || [ "$(node -v | cut -d. -f1)" != "v22" ]; then
@@ -82,8 +84,8 @@ SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=
 SMTP_PASSWORD=
-SMTP_FROM="Street Show <no-reply@$APEX>"
-SMTP_REPLY_TO=kontakt@$APEX
+SMTP_FROM="Street Show <no-reply@$MAIL_DOMAIN>"
+SMTP_REPLY_TO=kontakt@$MAIL_DOMAIN
 ADMIN_NOTIFY_EMAIL=
 
 GOOGLE_PROJECT_ID=
