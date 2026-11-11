@@ -39,15 +39,11 @@ function getDrive() {
         );
     }
 
-    const auth = new google.auth.GoogleAuth({
-        credentials: {
-            type: "service_account",
-            project_id: process.env.GOOGLE_PROJECT_ID,
-            private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-            private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-            client_email: process.env.GOOGLE_CLIENT_EMAIL,
-            client_id: process.env.GOOGLE_CLIENT_ID,
-        },
+    // a service-account key as a JWT client (GoogleAuth's `credentials` option is deprecated)
+    const auth = new google.auth.JWT({
+        email: process.env.GOOGLE_CLIENT_EMAIL,
+        key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+        keyId: process.env.GOOGLE_PRIVATE_KEY_ID || undefined,
         scopes: ["https://www.googleapis.com/auth/drive.readonly"],
     });
 

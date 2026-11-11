@@ -123,13 +123,17 @@ test("admin ukrywa i przywraca sekcję partnerów", async ({ page, browser }) =>
     await admin.reload();
     await expect(admin.getByLabel("Pokazuj sekcję na stronie głównej")).not.toBeChecked();
     await admin.getByLabel("Pokazuj sekcję na stronie głównej").check();
+    // wait for the answer: closing the context right after the click can cancel the request
+    const saved = admin.waitForResponse(
+        (response) => response.url().includes("/api/admin/content/partners") && response.request().method() === "PATCH",
+    );
     await admin.getByRole("button", { name: "Zapisz partnerów" }).click();
+    expect((await saved).status()).toBe(200);
     await admin.context().close();
 
-    await expect
-        .poll(async () => {
-            await page.reload();
-            return page.locator("#partners").count();
-        })
-        .toBe(1);
+    // the section is drawn only after the content request, so give each reload time to render
+    await expect(async () => {
+        await page.reload();
+        await expect(page.locator("#partners")).toBeVisible({ timeout: 4000 });
+    }).toPass({ timeout: 30_000 });
 });

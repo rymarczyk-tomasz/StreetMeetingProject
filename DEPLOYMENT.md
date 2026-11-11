@@ -34,7 +34,8 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 - [ ] `PORT` — zgodny z nginx i healthcheckiem w `.github/workflows/deploy.yml` (tam: `4001`)
 - [ ] `TRUST_PROXY=loopback` (nginx na tym samym serwerze)
 - [ ] `SELECT_FEE_AMOUNT` albo kwota w panelu (Ustawienia — ma pierwszeństwo)
-- [ ] Galeria: `DRIVE_GALLERY_FOLDER_ID` + dane konta serwisowego `GOOGLE_*` (`GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`, …)
+- [ ] Galeria: `DRIVE_GALLERY_FOLDER_ID` + dane konta serwisowego `GOOGLE_*` (`GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`, …). `GOOGLE_PRIVATE_KEY` to cały klucz z pliku JSON konta serwisowego (pole `private_key`, zaczyna się od `-----BEGIN PRIVATE KEY-----`), w jednej linii, w cudzysłowie, ze znakami `
+` zamiast nowych linii — nie mylić z krótkim `private_key_id`
 - [ ] Backupy: `BACKUP_DIR`, `BACKUP_KEEP`
 - [ ] Panel admina → System: sprawdzić, czy wszystko świeci na zielono
 
@@ -73,7 +74,7 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 
 `setup.sh` ustawia firewall (tylko SSH, 80, 443), logowanie SSH wyłącznie kluczem, fail2ban, automatyczne aktualizacje, katalogi z danymi dostępne tylko dla użytkownika `streetshow` i API słuchające tylko na `127.0.0.1`. Poza skryptem zostaje:
 
-- [ ] Cloudflare → SSL/TLS → Origin Server: włączyć **Authenticated Origin Pulls** albo ograniczyć porty 80/443 w `ufw` do adresów Cloudflare (lista jest w `/etc/nginx/conf.d/cloudflare-realip.conf`) — inaczej ktoś, kto pozna adres IP serwera, ominie ochronę Cloudflare
+- [ ] Ruch tylko przez Cloudflare: Cloudflare → SSL/TLS → Origin Server → włączyć **Authenticated Origin Pulls**, potem na serwerze `sudo ORIGIN_PULLS=1 bash setup.sh`. Od tej chwili nginx odrzuca (400) każde połączenie HTTPS, które nie przyszło z Cloudflare — bez tego ktoś, kto pozna adres IP serwera, omija ochronę Cloudflare. Kolejność jest ważna: najpierw przełącznik w Cloudflare, inaczej strona przestanie działać
 - [ ] Cloudflare: reguła ograniczania liczby żądań (rate limiting) dla `/api/auth/*`
 - [ ] Konto GitHub z dostępem do repo: 2FA, a gałąź `newProject` chroniona (bez force-push) — kto może do niej wypchnąć kod, ten ma dostęp do serwera i bazy
 - [ ] Konto OVH i Cloudflare klienta: 2FA

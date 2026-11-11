@@ -3,6 +3,8 @@
 #
 #   sudo DOMAIN=www.streetshow.pl APEX=streetshow.pl bash setup.sh
 #   sudo DOMAIN=nowa.streetshow.pl APEX=none bash setup.sh      # staging before the switch
+#   sudo ORIGIN_PULLS=1 bash setup.sh    # refuse HTTPS that doesn't come through Cloudflare;
+#                                        # first turn on "Authenticated Origin Pulls" in Cloudflare
 #
 # Before the nginx step can finish, put the Cloudflare Origin Certificate in
 # /etc/ssl/cloudflare/origin.pem and origin.key (see DEPLOYMENT.md).
@@ -14,6 +16,7 @@ APP_USER=${APP_USER:-streetshow}
 REPO=${REPO:-https://github.com/rymarczyk-tomasz/StreetMeetingProject.git}
 BRANCH=${BRANCH:-newProject}
 API_PORT=${API_PORT:-4001}
+ORIGIN_PULLS=${ORIGIN_PULLS:-0}
 
 APP_HOME=/home/$APP_USER
 APP_DIR=$APP_HOME/streetshow
@@ -131,6 +134,19 @@ fi
 step "nginx"
 install -m 644 "$APP_DIR/deploy/nginx/streetshow-proxy.conf" /etc/nginx/snippets/
 install -m 644 "$APP_DIR/deploy/nginx/streetshow-headers.conf" /etc/nginx/snippets/
+install -d -m 700 /etc/ssl/cloudflare
+pulls_snippet=/etc/nginx/snippets/streetshow-origin-pulls.conf
+if [ "$ORIGIN_PULLS" = 1 ]; then
+    # Cloudflare proves itself with a client certificate; anyone else gets 400
+    curl -fsS https://developers.cloudflare.com/ssl/static/authenticated_origin_pull_ca.pem         -o /etc/ssl/cloudflare/origin-pull-ca.pem
+    grep -q "BEGIN CERTIFICATE" /etc/ssl/cloudflare/origin-pull-ca.pem
+    printf 'ssl_client_certificate /etc/ssl/cloudflare/origin-pull-ca.pem;
+ssl_verify_client on;
+' > "$pulls_snippet"
+elif [ ! -f "$pulls_snippet" ]; then
+    # kept as it is on later runs, so a re-run without the variable doesn't open the server again
+    echo "# Authenticated Origin Pulls off - run setup.sh with ORIGIN_PULLS=1" > "$pulls_snippet"
+fi
 site_src=$APP_DIR/deploy/nginx/streetshow.conf
 if [ "$APEX" = none ]; then
     sed -e '/# apex-start/,/# apex-end/d' -e 's| __APEX__||' "$site_src"
