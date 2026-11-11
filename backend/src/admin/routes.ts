@@ -1029,11 +1029,18 @@ router.get("/date-subscribers", (req, res) => {
     });
 });
 
+// Excel runs cells starting with = + - @ as formulas, and the address is typed in by a stranger
+function csvCell(value) {
+    let text = String(value ?? "");
+    if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+    return /[";\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
 router.get("/date-subscribers/export", (req, res) => {
     const rows = dateSubscribersDb.listSubscribers();
     const csv = [
         "email;zapisano;powiadomiono",
-        ...rows.map((row) => [row.email, row.created_at, row.notified_at || ""].join(";")),
+        ...rows.map((row) => [row.email, row.created_at, row.notified_at || ""].map(csvCell).join(";")),
     ].join("\r\n");
     audit(req, "date_subscribers.exported", "date_subscribers", null, { count: rows.length });
     res.set("Content-Type", "text/csv; charset=utf-8");

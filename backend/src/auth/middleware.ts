@@ -7,6 +7,8 @@ function resolveUser(token) {
     const payload = verifyAccessToken(token);
     const user = usersDb.findUserById(payload.sub);
     if (!user || !user.is_active) return null;
+    const issuedAt = Number(payload.ts) || Number(payload.iat) * 1000;
+    if (user.sessions_revoked_at && issuedAt < user.sessions_revoked_at) return null;
     return {
         sub: user.id,
         email: user.email,
@@ -75,6 +77,11 @@ function requireRole(...roles) {
     };
 }
 
+// an admin account without two-step login gets no admin rights anywhere
+function isFullAdmin(user) {
+    return Boolean(user && user.role === "admin" && user.twoFactorEnabled);
+}
+
 function requireCheckInAccess(req, res, next) {
     if (!req.user) {
         return res.status(401).json({ message: "Wymagane logowanie." });
@@ -85,4 +92,4 @@ function requireCheckInAccess(req, res, next) {
     return next();
 }
 
-module.exports = { authenticate, optionalAuthenticate, requireRole, requireCheckInAccess };
+module.exports = { authenticate, optionalAuthenticate, requireRole, requireCheckInAccess, isFullAdmin };

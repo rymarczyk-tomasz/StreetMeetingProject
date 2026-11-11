@@ -4,6 +4,7 @@ const path = require("path");
 
 const { getUserSubmissionsDir, getUserVehiclesDir } = require("./paths");
 const { isAllowedImageFilename } = require("./imageUpload");
+const { isFullAdmin } = require("../auth/middleware");
 
 const KINDS = {
     submissions: getUserSubmissionsDir,
@@ -90,7 +91,7 @@ function servePhoto(kind) {
         const ownerId = Number(req.params.userId);
         const { filename } = req.params;
 
-        if (req.user.role !== "admin" && Number(req.user.sub) !== ownerId) {
+        if (!isFullAdmin(req.user) && Number(req.user.sub) !== ownerId) {
             return res.status(404).end();
         }
         if (!Number.isInteger(ownerId) || !isAllowedImageFilename(filename)) {

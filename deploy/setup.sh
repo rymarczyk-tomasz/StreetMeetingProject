@@ -73,6 +73,7 @@ if [ ! -f "$ENV_FILE" ]; then
     cat > "$ENV_FILE" <<EOF
 NODE_ENV=production
 PORT=$API_PORT
+HOST=127.0.0.1
 TRUST_PROXY=loopback
 APP_URL=https://$DOMAIN
 CORS_ORIGINS=https://$DOMAIN$([ "$APEX" = none ] || echo ",https://$APEX")
@@ -101,6 +102,12 @@ EOF
     chown "$APP_USER:$APP_USER" "$ENV_FILE"
     chmod 600 "$ENV_FILE"
 fi
+
+step "Private data directories"
+# database, uploads and backups hold personal data: readable by the app user only
+for dir in data uploads backups config; do
+    install -d -m 700 -o "$APP_USER" -g "$APP_USER" "$APP_DIR/backend/$dir"
+done
 
 step "Firewall, fail2ban, automatic security updates"
 ufw allow OpenSSH

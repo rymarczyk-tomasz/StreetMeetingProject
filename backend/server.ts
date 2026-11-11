@@ -25,7 +25,10 @@ const { startMaintenance } = require("./src/maintenance");
 
 const PORT = process.env.PORT || 33000;
 
-app.listen(PORT, () => {
+// HOST=127.0.0.1 on a server keeps the API reachable only through nginx
+const HOST = String(process.env.HOST || "").trim() || undefined;
+
+app.listen(PORT, HOST, () => {
     console.log(`Serwer działa na porcie ${PORT}`);
     scheduleDailyGallerySync();
     startMaintenance();

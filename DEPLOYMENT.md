@@ -69,6 +69,17 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 5. Przełączenie: w Cloudflare rekordy `www` i `streetshow.pl` → A/AAAA serwera (proxied), zamiast CNAME na Azure.
 6. GitHub → Settings → Secrets: `DEPLOY_HOST`, `DEPLOY_SSH_KEY`; Variables: `DEPLOY_USER=streetshow`, `DEPLOY_PORT=22`, `DEPLOY_PATH=/home/streetshow/streetshow`. Bez nich workflow dalej deployuje na Mikrusa.
 
+### Bezpieczeństwo serwera — do zrobienia ręcznie
+
+`setup.sh` ustawia firewall (tylko SSH, 80, 443), logowanie SSH wyłącznie kluczem, fail2ban, automatyczne aktualizacje, katalogi z danymi dostępne tylko dla użytkownika `streetshow` i API słuchające tylko na `127.0.0.1`. Poza skryptem zostaje:
+
+- [ ] Cloudflare → SSL/TLS → Origin Server: włączyć **Authenticated Origin Pulls** albo ograniczyć porty 80/443 w `ufw` do adresów Cloudflare (lista jest w `/etc/nginx/conf.d/cloudflare-realip.conf`) — inaczej ktoś, kto pozna adres IP serwera, ominie ochronę Cloudflare
+- [ ] Cloudflare: reguła ograniczania liczby żądań (rate limiting) dla `/api/auth/*`
+- [ ] Konto GitHub z dostępem do repo: 2FA, a gałąź `newProject` chroniona (bez force-push) — kto może do niej wypchnąć kod, ten ma dostęp do serwera i bazy
+- [ ] Konto OVH i Cloudflare klienta: 2FA
+- [ ] Zdalny dysk z kopiami: szyfrowanie `rclone crypt` (sekcja 5) — w kopii jest cała baza i zdjęcia
+- [ ] `backend/config/.env` i klucz SSH do deployu tylko w menedżerze haseł, nigdy w mailu ani na czacie
+
 ## 4. GitHub Actions (automatyczny deploy)
 
 - [ ] Sekrety repo: `DEPLOY_HOST`, `DEPLOY_SSH_KEY`; zmienne: `DEPLOY_USER=streetshow`, `DEPLOY_PORT=22`, `DEPLOY_PATH=/home/streetshow/streetshow` (bez nich workflow deployuje na stary serwer testowy)

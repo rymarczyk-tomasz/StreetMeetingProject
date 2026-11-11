@@ -7,7 +7,7 @@ const submissionsDb = require("../db/submissions");
 const usersDb = require("../db/users");
 const siteContentDb = require("../db/siteContent");
 const vehiclesDb = require("../db/vehicles");
-const { authenticate } = require("../auth/middleware");
+const { authenticate, isFullAdmin } = require("../auth/middleware");
 const { createRateLimiter } = require("../utils/rateLimiter");
 const {
     PHONE_REGEX,
@@ -281,7 +281,7 @@ router.get("/proofs/:userId/:filename", (req, res) => {
     const ownerId = Number(req.params.userId);
     const { filename } = req.params;
 
-    if (req.user.role !== "admin" && Number(req.user.sub) !== ownerId) {
+    if (!isFullAdmin(req.user) && Number(req.user.sub) !== ownerId) {
         return res.status(404).end();
     }
     if (!Number.isInteger(ownerId) || !isAllowedProofFilename(filename)) {

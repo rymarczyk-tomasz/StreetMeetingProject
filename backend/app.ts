@@ -50,6 +50,26 @@ app.use(
         credentials: true,
     }),
 );
+// Cookies are SameSite=Lax, which still lets another site on the same domain
+// (any *.streetshow.pl) send them. A browser always adds Origin to these requests,
+// so anything that isn't this site is refused; clients without Origin (curl) carry no cookies of a victim.
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+app.use("/api", (req, res, next) => {
+    const origin = req.headers.origin;
+    if (SAFE_METHODS.has(req.method) || !origin) return next();
+
+    let originHost = "";
+    try {
+        originHost = new URL(origin).host;
+    } catch {
+        // "null" and other unparsable origins are rejected below
+    }
+    if (allowedOrigins.includes(origin) || (originHost && originHost === req.headers.host)) {
+        return next();
+    }
+    res.status(403).json({ message: "Żądanie z niedozwolonego adresu." });
+});
+
 app.use(express.json({ limit: "200kb" }));
 app.use(cookieParser());
 

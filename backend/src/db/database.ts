@@ -144,6 +144,11 @@ if (!userColumns.has("totp_last_step")) {
     db.exec("ALTER TABLE users ADD COLUMN totp_last_step INTEGER");
 }
 
+// unix milliseconds; access tokens issued before it are refused (logout everywhere, password change)
+if (!userColumns.has("sessions_revoked_at")) {
+    db.exec("ALTER TABLE users ADD COLUMN sessions_revoked_at INTEGER");
+}
+
 // flag instead of a new role - the role CHECK constraint can't be altered in sqlite
 if (!userColumns.has("gate_staff")) {
     db.exec("ALTER TABLE users ADD COLUMN gate_staff INTEGER NOT NULL DEFAULT 0");

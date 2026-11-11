@@ -34,8 +34,14 @@ function revokeRefreshToken(token) {
     deleteTokenStmt.run(hashToken(token));
 }
 
+const markSessionsRevokedStmt = db.prepare(
+    `UPDATE users SET sessions_revoked_at = ? WHERE id = ?`,
+);
+
+// also dates the user's access tokens: the ones issued earlier stop working at once
 function revokeAllUserTokens(userId) {
     deleteAllForUserStmt.run(userId);
+    markSessionsRevokedStmt.run(Date.now(), userId);
 }
 
 function pruneExpiredTokens() {
