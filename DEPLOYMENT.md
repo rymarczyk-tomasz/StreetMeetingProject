@@ -52,6 +52,23 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 - [ ] Uruchamiać backend jako osobny użytkownik zamiast `root` (dotyczy też ścieżek w `deploy.yml`)
 - [ ] Firewall: otwarte tylko SSH, 80, 443 — port backendu niedostępny z zewnątrz
 
+### Postawienie serwera skryptem (VPS OVH, Ubuntu 24.04)
+
+`deploy/setup.sh` robi większość punktów powyżej: użytkownik `streetshow`, ufw, fail2ban, automatyczne aktualizacje, swap, Node 22, PM2 (+ logrotate, start po restarcie), nginx z `deploy/nginx/`, prawdziwe IP z Cloudflare (`deploy/cloudflare-realip.sh`, odświeżane co miesiąc), szablon `.env` z wygenerowanymi sekretami JWT. Aplikacja ląduje w `/home/streetshow/streetshow`. Skrypt można uruchamiać wielokrotnie.
+
+1. Cloudflare → SSL/TLS: tryb **Full (strict)**; Origin Server → Create Certificate (`*.streetshow.pl`, `streetshow.pl`).
+2. Na serwerze (jako `ubuntu` z sudo):
+   ```bash
+   curl -fsSLO https://raw.githubusercontent.com/rymarczyk-tomasz/StreetMeetingProject/newProject/deploy/setup.sh
+   sudo DEPLOY_PUBKEY="ssh-ed25519 AAAA... streetshow-deploy" bash setup.sh
+   ```
+3. Wkleić certyfikat i klucz z Cloudflare do `/etc/ssl/cloudflare/origin.pem` i `origin.key`, uzupełnić `/home/streetshow/streetshow/backend/config/.env` (SMTP, Google, `ADMIN_NOTIFY_EMAIL`) i uruchomić skrypt ponownie — włączy nginx, zbuduje i wystartuje aplikację.
+4. Test przed przełączeniem domeny: `sudo DOMAIN=nowa.streetshow.pl APEX=none bash setup.sh` + rekord `nowa` w Cloudflare (proxied). Po testach uruchomić skrypt bez tych zmiennych i poprawić `APP_URL`/`CORS_ORIGINS` w `.env` na `www.streetshow.pl` (`pm2 restart streetshow-api --update-env`).
+5. Przełączenie: w Cloudflare rekordy `www` i `streetshow.pl` → A/AAAA serwera (proxied), zamiast CNAME na Azure.
+6. GitHub → Settings → Secrets: `DEPLOY_HOST`, `DEPLOY_SSH_KEY`; Variables: `DEPLOY_USER=streetshow`, `DEPLOY_PORT=22`, `DEPLOY_PATH=/home/streetshow/streetshow`. Bez nich workflow dalej deployuje na Mikrusa.
+
+Ścieżki `/root/streetshow` w opisie kopii zapasowych niżej zamienić na `/home/streetshow/streetshow`, a cron ustawić jako użytkownik `streetshow`.
+
 ## 4. GitHub Actions (automatyczny deploy)
 
 - [ ] Sekrety repo: `MIKRUS_HOST`, `MIKRUS_SSH_KEY`
