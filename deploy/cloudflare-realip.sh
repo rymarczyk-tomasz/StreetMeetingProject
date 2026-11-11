@@ -24,4 +24,5 @@ fi
 
 install -m 644 "$tmp" "$out"
 rm -f "$tmp"
-nginx -t && systemctl reload nginx
+# starts nginx if it isn't running yet (first setup)
+nginx -t && systemctl reload-or-restart nginx

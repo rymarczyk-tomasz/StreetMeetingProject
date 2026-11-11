@@ -142,6 +142,7 @@ if [ -f /etc/ssl/cloudflare/origin.pem ] && [ -f /etc/ssl/cloudflare/origin.key 
     chmod 600 /etc/ssl/cloudflare/origin.key
     ln -sf /etc/nginx/sites-available/streetshow /etc/nginx/sites-enabled/streetshow
     rm -f /etc/nginx/sites-enabled/default
+    systemctl enable nginx >/dev/null 2>&1
     /usr/local/sbin/cloudflare-realip
 else
     echo "!! No Cloudflare Origin Certificate in /etc/ssl/cloudflare/ - site not enabled yet."
