@@ -5,12 +5,16 @@ require("dotenv").config({ path: path.join(process.cwd(), "config/.env") });
 
 // a missing secret would otherwise only show up at the first login
 if (process.env.NODE_ENV === "production") {
-    const missing = ["JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET", "APP_URL"].filter(
+    const missing = ["JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET"].filter(
         (name) => !String(process.env[name] || "").trim(),
     );
     if (missing.length) {
         console.error(`Brak wymaganych zmiennych w config/.env: ${missing.join(", ")}`);
         process.exit(1);
+    }
+    // not fatal: links fall back to www.streetshow.pl, which is wrong only on a test server
+    if (!String(process.env.APP_URL || "").trim()) {
+        console.warn("Brak APP_URL w config/.env — linki w e-mailach i kody QR użyją https://www.streetshow.pl.");
     }
 }
 
