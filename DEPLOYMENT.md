@@ -174,9 +174,9 @@ Stara strona to Azure Static Web Apps + App Service `streetmeetingbackend`; form
 - [ ] Ustawienia: zapisy do Select (termin, limity, liczba miejsc, kwota i termin opłaty, dane do przelewu)
 - [ ] Wkleić regulamin 2027 i FAQ, uzupełnić kontakt i partnerów
 - [ ] Treści strony → Home: lead pod tytułem; „Co Cię czeka”: sprawdzić kafelki (zapisana wcześniej treść ma stary kafelek BILETY i link drift — domyślnie teraz: Strefa Select → `#select`, Drift taxi → `/faq`, Expo → bilety); „Strefa Select”: 4 kroki
-- [ ] Polityka prywatności (`/polityka-prywatnosci`, Treści strony → Polityka prywatności): domyślna treść opisuje dane zbierane przez stronę — dać do sprawdzenia, dopisać retencję zdjęć
+- [ ] Polityka prywatności (`/polityka-prywatnosci`, Treści strony → Polityka prywatności): domyślna treść opisuje dane zbierane przez stronę i retencję zdjęć (przyjęte: 12 miesięcy po wydarzeniu, pozostałe: 30 dni; usuwane automatycznie) — dać klientowi do sprawdzenia. Jeśli sekcja była już zapisana w panelu, nowy tekst o retencji trzeba dopisać ręcznie (zapisana treść ma pierwszeństwo przed domyślną)
 - [ ] Po ogłoszeniu daty: Ustawienia → lista „Powiadom o dacie” → wysłać e-mail do zapisanych (najpierw sprawdzić na prawdziwym SMTP, w tym link „Wypisz”)
-- [ ] Przejrzeć politykę prywatności / RODO, ustalić retencję zdjęć po wydarzeniu
+- [x] Retencja zdjęć po wydarzeniu ustalona z klientem i zautomatyzowana (`backend/src/retention.ts`). Warunek: w Ustawienia → Edycja wydarzenia musi być wpisana data — bez niej zdjęcia bieżącej edycji nie są usuwane, a minionej edycji liczą się od 31 grudnia
 - [ ] Galeria: udostępnić folder na Dysku kontu serwisowemu („Przeglądający”) i zrobić pierwszą synchronizację
 
 ## 8. SEO i wygląd linków

@@ -42,7 +42,13 @@ function RatingStars({ rating, disabled, onRate }) {
 
 function PhotoMosaic({ submission, onOpen }) {
     const photos = submission.photos;
-    if (!photos.length) return <div className="detail-photos is-empty">Brak zdjęć</div>;
+    if (!photos.length) {
+        return (
+            <div className="detail-photos is-empty">
+                {submission.filesPurgedAt ? "Zdjęcia usunięte po wydarzeniu" : "Brak zdjęć"}
+            </div>
+        );
+    }
     const shown = photos.slice(0, 3);
     return (
         <div className={`detail-photos count-${shown.length}`}>

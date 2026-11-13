@@ -7,6 +7,7 @@ const passwordResetTokensDb = require("./db/passwordResetTokens");
 const emailTokensDb = require("./db/emailTokens");
 const dateSubscribersDb = require("./db/dateSubscribers");
 const { sendDuePaymentReminders } = require("./submissions/paymentReminders");
+const { purgeDueSubmissionFiles } = require("./retention");
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -62,9 +63,24 @@ function runPaymentReminders() {
         .catch((error) => console.error("[email] Przypomnienia o opłacie:", error.message));
 }
 
+function runRetention() {
+    try {
+        const purged = purgeDueSubmissionFiles();
+        if (purged.length) {
+            console.log(`[retention] Usunięto zdjęcia i potwierdzenia ${purged.length} zgłoszeń po wydarzeniu.`);
+        }
+    } catch (error) {
+        console.error("[retention] Czyszczenie zdjęć:", error.message);
+    }
+}
+
 function startMaintenance() {
     pruneExpiredTokens();
     setInterval(pruneExpiredTokens, SIX_HOURS_MS).unref();
+
+    // photos past their retention period, once a day
+    setTimeout(runRetention, 5 * 60 * 1000).unref();
+    setInterval(runRetention, ONE_DAY_MS).unref();
 
     // Checked hourly; the reminder module itself waits for daytime in Poland.
     setTimeout(runPaymentReminders, 2 * 60 * 1000).unref();

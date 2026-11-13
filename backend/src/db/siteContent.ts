@@ -19,6 +19,12 @@ db.exec(`
     );
 
     CREATE INDEX IF NOT EXISTS idx_content_revisions_key ON content_revisions(content_key, id);
+
+    -- the edition section holds only the current year; retention needs past dates too
+    CREATE TABLE IF NOT EXISTS edition_dates (
+        year INTEGER PRIMARY KEY,
+        event_date TEXT NOT NULL
+    );
 `);
 
 const legacyEventTable = db
@@ -64,6 +70,26 @@ const listRevisionsStmt = db.prepare(`
 const getRevisionStmt = db.prepare(
     "SELECT * FROM content_revisions WHERE id = ? AND content_key = ?",
 );
+const upsertEditionDateStmt = db.prepare(`
+    INSERT INTO edition_dates (year, event_date) VALUES (?, ?)
+    ON CONFLICT(year) DO UPDATE SET event_date = excluded.event_date
+`);
+const deleteEditionDateStmt = db.prepare("DELETE FROM edition_dates WHERE year = ?");
+const getEditionDateStmt = db.prepare("SELECT event_date FROM edition_dates WHERE year = ?");
+
+// a cleared date (postponed event) must not leave the old one behind
+function rememberEditionDate(content) {
+    const year = Number(content?.year);
+    if (!Number.isInteger(year)) return;
+    const date = String(content?.date || "");
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) upsertEditionDateStmt.run(year, date);
+    else deleteEditionDateStmt.run(year);
+}
+
+function getEditionDate(year) {
+    const row = getEditionDateStmt.get(Number(year));
+    return row ? row.event_date : null;
+}
 
 function assertKnownKey(key) {
     if (!DEFAULTS[key]) {
@@ -96,6 +122,7 @@ const saveContent = db.transaction((key, content, adminId = null) => {
     upsertStmt.run(key, serialized);
     insertRevisionStmt.run(key, serialized, adminId);
     pruneRevisionsStmt.run(key, key, MAX_REVISIONS_PER_KEY);
+    if (key === "edition") rememberEditionDate(content);
     return content;
 });
 
@@ -129,6 +156,9 @@ function getCurrentEdition() {
     return Number.isInteger(year) ? year : new Date().getFullYear();
 }
 
+// a date saved before this table existed
+rememberEditionDate(getContent("edition"));
+
 function getSubmissionsAvailability(settings = getSettings()) {
     if (!settings.submissionsOpen) {
         return { open: false, reason: "Zgłoszenia do strefy Select są zamknięte." };
@@ -156,5 +186,6 @@ module.exports = {
     getContentVersion,
     getSettings,
     getCurrentEdition,
+    getEditionDate,
     getSubmissionsAvailability,
 };

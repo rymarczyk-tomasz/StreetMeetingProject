@@ -502,6 +502,12 @@ export default function SubmissionCard({
                         <p>
                             <strong>Opis pojazdu:</strong> {s.carDescription}
                         </p>
+                        {s.filesPurgedAt && !s.photos?.length && (
+                            <p className="submission-note">
+                                Zdjęcia i potwierdzenie przelewu zostały usunięte po wydarzeniu, zgodnie z polityką
+                                prywatności.
+                            </p>
+                        )}
                         {s.photos?.length > 0 && (
                             <div className="submission-photos">
                                 {s.photos.map((photo, index) => (

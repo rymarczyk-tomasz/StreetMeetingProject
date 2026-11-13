@@ -198,6 +198,8 @@ const newSubmissionColumns = {
     payment_reminder_sent_at: "TEXT",
 
     showcase_hidden: "INTEGER NOT NULL DEFAULT 0",
+    // photos and payment proof removed by retention (src/retention.ts)
+    files_purged_at: "TEXT",
 };
 for (const [column, type] of Object.entries(newSubmissionColumns)) {
     if (!submissionColumns.has(column)) {

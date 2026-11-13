@@ -18,6 +18,7 @@ const ACTION_LABELS = {
     "submission.showcase_hidden": "ukrył auto na stronie Auta strefy Select",
     "submission.showcase_shown": "przywrócił auto na stronie Auta strefy Select",
     "submission.deleted": "usunął zgłoszenie",
+    "submission.files_purged": "usunął zdjęcia i potwierdzenia po wydarzeniu (retencja)",
     "submission.checked_in": "zarejestrował wjazd",
     "submission.checkin_undone": "cofnął wjazd",
     "submission.payment_unpaid": "cofnął potwierdzenie opłaty",
@@ -84,6 +85,9 @@ function describeDetails(entry) {
             : ` — „${details.subject}”: wysłano ${details.sent}, błędy ${details.failed}`;
     }
     if (details.licensePlate) return ` — ${details.licensePlate}`;
+    if (entry.action === "submission.files_purged") {
+        return ` — ${plural(details.count, "zgłoszenie", "zgłoszenia", "zgłoszeń")}`;
+    }
     if (typeof details.count === "number") {
         return ` — ${plural(details.count, "rekord", "rekordy", "rekordów")}`;
     }

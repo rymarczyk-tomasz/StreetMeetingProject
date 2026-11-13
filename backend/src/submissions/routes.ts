@@ -31,6 +31,7 @@ const {
     toPhotoUrl,
     storedPathFor,
     removeStoredPhotos,
+    removeStoredProof,
     copyStoredPhotos,
     applyPhotoChanges,
     servePhoto,
@@ -99,13 +100,6 @@ function removeSubmissionPhotos(row) {
     if (row.payment_proof) removeStoredProof(row.payment_proof);
 }
 
-function removeStoredProof(storedPath) {
-    const match = /^\/uploads\/submissions\/(\d+)\/([^/]+)$/.exec(storedPath || "");
-    if (match && isAllowedProofFilename(match[2])) {
-        fs.promises.unlink(path.join(getUserSubmissionsDir(match[1]), match[2])).catch(() => {});
-    }
-}
-
 function toPublicSubmission(row) {
     const approved = row.status === "approved";
     return {
@@ -124,6 +118,7 @@ function toPublicSubmission(row) {
         payment: approved ? getPaymentDetails(row) : null,
         paymentOverdue: isPaymentOverdue(row),
         withdrawnAt: row.withdrawn_at,
+        filesPurgedAt: row.files_purged_at,
         messages: threadsDb.threadCounts(row.id, false),
         hasPass: approved && row.payment_status === "paid",
         checkedInAt: row.checked_in_at,

@@ -116,6 +116,15 @@ const listEditionsStmt = db.prepare(`
     SELECT edition, COUNT(*) AS count FROM submissions
     GROUP BY edition ORDER BY edition DESC
 `);
+const listWithFilesStmt = db.prepare(`
+    SELECT * FROM submissions
+    WHERE files_purged_at IS NULL AND (photos != '[]' OR payment_proof IS NOT NULL)
+`);
+const markFilesPurgedStmt = db.prepare(`
+    UPDATE submissions
+    SET photos = '[]', payment_proof = NULL, files_purged_at = datetime('now')
+    WHERE id = ?
+`);
 
 function createSubmission(data) {
     const result = insertStmt.run({
@@ -328,6 +337,16 @@ function listEditions() {
     return listEditionsStmt.all();
 }
 
+// retention: rows that still have photos or a payment proof on disk
+function listSubmissionsWithFiles() {
+    return listWithFilesStmt.all();
+}
+
+function markFilesPurged(id) {
+    markFilesPurgedStmt.run(id);
+    return findByIdStmt.get(id);
+}
+
 function getSubmissionStats(edition) {
     return db
         .prepare(
@@ -444,6 +463,8 @@ module.exports = {
     countActiveForUser,
     hasActiveSubmissionForPlate,
     listEditions,
+    listSubmissionsWithFiles,
+    markFilesPurged,
     getSubmissionStats,
     getEditionSummaries,
     listCheckInTimes,

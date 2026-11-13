@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 const { getUserSubmissionsDir, getUserVehiclesDir } = require("./paths");
-const { isAllowedImageFilename } = require("./imageUpload");
+const { isAllowedImageFilename, isAllowedProofFilename } = require("./imageUpload");
 const { isFullAdmin } = require("../auth/middleware");
 
 const KINDS = {
@@ -41,6 +41,14 @@ function removeStoredPhotos(storedPaths) {
     for (const storedPath of storedPaths || []) {
         const diskPath = diskPathOf(storedPath);
         if (diskPath) fs.promises.unlink(diskPath).catch(() => {});
+    }
+}
+
+// payment proofs live next to the submission photos and may also be pdf
+function removeStoredProof(storedPath) {
+    const match = /^\/uploads\/submissions\/(\d+)\/([^/]+)$/.exec(storedPath || "");
+    if (match && isAllowedProofFilename(match[2])) {
+        fs.promises.unlink(path.join(getUserSubmissionsDir(match[1]), match[2])).catch(() => {});
     }
 }
 
@@ -112,6 +120,7 @@ module.exports = {
     diskPathOf,
     storedPathFor,
     removeStoredPhotos,
+    removeStoredProof,
     copyStoredPhotos,
     applyPhotoChanges,
     servePhoto,
