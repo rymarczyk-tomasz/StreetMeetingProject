@@ -2123,37 +2123,11 @@ body {
     margin-bottom: 28px;
 }
 
-/* ---- Gallery: one album ---- */
-.album-view {
-    padding-top: 40px;
-}
-
-.album-view-head {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: flex-end;
-    gap: 8px 24px;
-    margin: 8px 0 32px;
-}
-
-.album-view-head h1 {
-    margin: 0;
-    font-size: 56px;
-    font-weight: 700;
-    line-height: 1;
-    text-transform: uppercase;
-}
-
-.album-view-head p {
-    margin: 0;
+/* ---- Gallery: the photo grid ---- */
+.gallery-count {
+    margin: 0 0 20px;
     color: var(--street-muted);
     font-size: 16px;
-}
-
-.album-view-lead {
-    max-width: 720px;
-    margin: -16px 0 32px;
 }
 
 .photo-grid {
@@ -2182,6 +2156,11 @@ body {
 
 .photo-grid-item:hover img {
     opacity: 0.85;
+}
+
+.photo-grid-item.skeleton {
+    aspect-ratio: 1;
+    cursor: default;
 }
 
 /* ---- Lightbox ---- */
@@ -2827,10 +2806,6 @@ body {
         font-size: 20px;
     }
 
-    .album-view-head h1 {
-        font-size: 34px;
-    }
-
     .photo-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
@@ -3423,7 +3398,6 @@ body {
     padding: 24px 28px;
 }
 
-.submission-card.is-compact .submission-card-body,
 .submission-card.is-archived .submission-card-body {
     gap: 14px;
     padding: 20px 28px;
@@ -3451,7 +3425,6 @@ body {
     text-transform: uppercase;
 }
 
-.submission-card.is-compact .submission-card-title h3,
 .submission-card.is-archived .submission-card-title h3 {
     font-size: 20px;
 }
@@ -4605,7 +4578,6 @@ textarea.field-input,
     }
 
     .submission-card-body,
-    .submission-card.is-compact .submission-card-body,
     .submission-card.is-archived .submission-card-body {
         padding: 20px;
     }

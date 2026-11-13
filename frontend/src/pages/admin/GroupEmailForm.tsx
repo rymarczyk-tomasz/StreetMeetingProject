@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import api from "../../api/client";
+import { askConfirm } from "../../api/confirm";
 import { withStepUp } from "../../api/stepUp";
+import { plural } from "../../utils/plural";
 import { errorMessage } from "./shared";
 import { TemplatePicker } from "./templates";
 import { fillTemplate, useTemplates } from "./templateData";
@@ -36,11 +38,15 @@ export default function GroupEmailForm({ edition, onSent }) {
     const [isSending, setIsSending] = useState(false);
     const { templates, currentEdition } = useTemplates("group");
 
-    function applyTemplate(template) {
+    async function applyTemplate(template) {
         const values = { rok: edition || currentEdition || undefined };
         if (
             (subject || message) &&
-            !window.confirm("Zastąpić wpisany temat i treść szablonem?")
+            !(await askConfirm({
+                title: "Zastąpić treść szablonem?",
+                message: "Wpisany temat i treść wiadomości zostaną zastąpione wybranym szablonem.",
+                confirmLabel: "Zastąp",
+            }))
         ) {
             return;
         }
@@ -63,13 +69,13 @@ export default function GroupEmailForm({ edition, onSent }) {
 
     async function send(event) {
         event.preventDefault();
-        if (
-            !window.confirm(
-                `Wysłać wiadomość „${subject}” do ${recipients?.count ?? 0} osób?`,
-            )
-        ) {
-            return;
-        }
+        const count = recipients?.count ?? 0;
+        const confirmed = await askConfirm({
+            title: "Wysłać wiadomość?",
+            message: `Wiadomość „${subject}” zostanie wysłana do ${plural(count, "osoby", "osób", "osób")} (${audience.label.toLowerCase()}). Tego nie da się cofnąć.`,
+            confirmLabel: "Wyślij",
+        });
+        if (!confirmed) return;
 
         setIsSending(true);
         setFeedback({ error: "", success: "" });
@@ -135,6 +141,10 @@ export default function GroupEmailForm({ edition, onSent }) {
                         required
                     />
                 </label>
+                <p className="admin-hint">
+                    Każda osoba dostaje wiadomość zaczynającą się od „Cześć Imię,” i z podpisem na końcu — nie wpisuj
+                    powitania ani podpisu w treści.
+                </p>
                 {feedback.error && <p className="form-error">{feedback.error}</p>}
                 {feedback.success && <p className="form-success">{feedback.success}</p>}
                 <div className="submission-actions">

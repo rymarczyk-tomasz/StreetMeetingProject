@@ -22,6 +22,17 @@ const countForUserStmt = db.prepare(
     `SELECT COUNT(*) AS count FROM vehicles WHERE user_id = ?`,
 );
 
+const findByPlateStmt = db.prepare(`
+    SELECT * FROM vehicles
+    WHERE user_id = ? AND replace(upper(license_plate), ' ', '') = replace(upper(?), ' ', '')
+    LIMIT 1
+`);
+
+// one garage entry per plate
+function findVehicleByPlate(userId, licensePlate) {
+    return findByPlateStmt.get(userId, String(licensePlate || ""));
+}
+
 function listVehicles(userId) {
     return listByUserStmt.all(userId);
 }
@@ -62,6 +73,7 @@ function countVehicles(userId) {
 module.exports = {
     listVehicles,
     findVehicle,
+    findVehicleByPlate,
     createVehicle,
     updateVehicle,
     updateVehiclePhotos,

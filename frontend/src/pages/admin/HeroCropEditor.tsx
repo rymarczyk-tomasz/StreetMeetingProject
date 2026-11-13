@@ -1,57 +1,88 @@
-import { useState } from "react";
-import { HeroPreview } from "../../components/HeroPhoto";
-import { heroCrop, shouldRotateOnMobile } from "../../utils/hero";
+import { useRef, useState } from "react";
+import { HeroMock, HeroPreview } from "../../components/HeroPhoto";
+import { dragHeroCrop, heroCrop, shouldRotateOnMobile } from "../../utils/hero";
 
-const DESKTOP_FRAMES = [
-    { label: "Szeroki monitor", width: 360, height: 150 },
-    { label: "Laptop", width: 300, height: 170 },
-];
-const PHONE_FRAME = { label: "Telefon (pionowo)", width: 150, height: 285 };
+// The big frame you drag the photo in, and the smaller "how it looks elsewhere" ones.
+const STAGES = {
+    desktop: { label: "Laptop", width: 16, height: 9, maxWidth: 720 },
+    mobile: { label: "Telefon (pionowo)", width: 9, height: 17, maxWidth: 280 },
+};
+const OTHER_FRAMES = {
+    desktop: [{ label: "Szeroki monitor", width: 360, height: 150 }],
+    mobile: [],
+};
 
 const DEVICES = [
     ["desktop", "Komputer", "heroCropDesktop"],
     ["mobile", "Telefon", "heroCropMobile"],
 ] as const;
 
-function clampPercent(value) {
-    return Math.round(Math.min(100, Math.max(0, value)) * 10) / 10;
-}
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 3;
 
-// crop x/y refer to the original photo; rotated 90° cw: u = 100 - y, v = x
-function toScreen({ x, y }, rotated) {
-    return rotated ? { u: 100 - y, v: x } : { u: x, v: y };
-}
-
-function fromScreen({ u, v }, rotated) {
-    return rotated ? { x: v, y: 100 - u } : { x: u, y: v };
+function clampZoom(value) {
+    return Math.round(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value)) * 100) / 100;
 }
 
 export default function HeroCropEditor({ home, update }) {
     const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
     const [imageSize, setImageSize] = useState(null);
+    const [isDragging, setIsDragging] = useState(false);
+    // crop while a drag is in progress: pointer events can outrun re-renders
+    const drag = useRef(null);
     const field = DEVICES.find(([id]) => id === device)[2];
     const crop = heroCrop(home[field]);
-    const rotated = shouldRotateOnMobile(home);
+    const rotated = device === "mobile" && shouldRotateOnMobile(home);
     const image =
         device === "mobile" && home.heroImageMobile ? home.heroImageMobile : home.heroImage;
-    const pickerRotated = device === "mobile" && rotated && Boolean(imageSize);
-    const marker = toScreen(crop, pickerRotated);
+    const stage = STAGES[device];
 
-    function setCrop(patch) {
-        update({ [field]: { ...crop, ...patch } });
+    function setCrop(next) {
+        update({ [field]: next });
     }
 
-    function setScreenPoint(u, v) {
-        const point = fromScreen({ u: clampPercent(u), v: clampPercent(v) }, pickerRotated);
-        setCrop({ x: clampPercent(point.x), y: clampPercent(point.y) });
+    function moveBy(from, dx, dy, element) {
+        if (!imageSize) return from;
+        const box = element.getBoundingClientRect();
+        return dragHeroCrop(from, { dx, dy }, { width: box.width, height: box.height }, imageSize, rotated);
     }
 
-    function pickPoint(event) {
-        const box = event.currentTarget.getBoundingClientRect();
-        setScreenPoint(
-            ((event.clientX - box.left) / box.width) * 100,
-            ((event.clientY - box.top) / box.height) * 100,
-        );
+    function startDrag(event) {
+        event.currentTarget.setPointerCapture(event.pointerId);
+        drag.current = { crop, x: event.clientX, y: event.clientY };
+        setIsDragging(true);
+    }
+
+    function continueDrag(event) {
+        const state = drag.current;
+        if (!state || !event.currentTarget.hasPointerCapture(event.pointerId)) return;
+        const next = moveBy(state.crop, event.clientX - state.x, event.clientY - state.y, event.currentTarget);
+        drag.current = { crop: next, x: event.clientX, y: event.clientY };
+        setCrop(next);
+    }
+
+    function endDrag() {
+        drag.current = null;
+        setIsDragging(false);
+    }
+
+    function onKeyDown(event) {
+        const step = event.shiftKey ? 40 : 10;
+        const moves = {
+            ArrowLeft: [-step, 0],
+            ArrowRight: [step, 0],
+            ArrowUp: [0, -step],
+            ArrowDown: [0, step],
+        };
+        const move = moves[event.key];
+        if (move) {
+            event.preventDefault();
+            setCrop(moveBy(crop, move[0], move[1], event.currentTarget));
+        } else if (event.key === "+" || event.key === "=") {
+            setCrop({ ...crop, zoom: clampZoom(crop.zoom + 0.1) });
+        } else if (event.key === "-") {
+            setCrop({ ...crop, zoom: clampZoom(crop.zoom - 0.1) });
+        }
     }
 
     if (!image) return null;
@@ -73,114 +104,115 @@ export default function HeroCropEditor({ home, update }) {
                 ))}
             </nav>
             <p className="admin-hint">
-                Kliknij lub przeciągnij po zdjęciu, aby wskazać miejsce, które ma być
-                zawsze widoczne{device === "desktop" ? " na komputerze" : " na telefonie"}.
-                Suwakiem przybliżysz kadr. Podgląd obok pokazuje efekt.
-                {device === "mobile" &&
-                    rotated &&
-                    " Zdjęcie jest pokazane obrócone o 90°, tak jak na telefonie."}
+                Ramka pokazuje zdjęcie tak, jak będzie widoczne na stronie głównej
+                {device === "desktop" ? " na komputerze" : " na telefonie"} — razem z przyciemnieniem, tytułem i
+                przyciskami, które na nim leżą. <strong>Złap zdjęcie i przesuń je</strong>,
+                żeby ustawić kadr, a przyciskami + i − przybliż lub oddal.
             </p>
 
             <div className="hero-crop-layout">
                 <div className="hero-crop-picker-wrap">
                     <div
-                        className={`hero-crop-picker${pickerRotated ? " is-rotated" : ""}`}
-                        style={
-                            pickerRotated
-                                ? { aspectRatio: `${imageSize.height} / ${imageSize.width}` }
-                                : undefined
-                        }
-                        role="slider"
-                        aria-label="Punkt kadru"
-                        aria-valuetext={`${Math.round(marker.u)}% od lewej, ${Math.round(marker.v)}% od góry`}
+                        className={`hero-crop-stage${isDragging ? " is-dragging" : ""}`}
+                        style={{ aspectRatio: `${stage.width} / ${stage.height}`, maxWidth: stage.maxWidth }}
+                        role="application"
+                        aria-label="Kadr zdjęcia — przesuwaj strzałkami, przybliżaj klawiszami plus i minus"
                         tabIndex={0}
-                        onPointerDown={(event) => {
-                            event.currentTarget.setPointerCapture(event.pointerId);
-                            pickPoint(event);
-                        }}
-                        onPointerMove={(event) => {
-                            if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-                                pickPoint(event);
-                            }
-                        }}
-                        onKeyDown={(event) => {
-                            const step = event.shiftKey ? 10 : 2;
-                            const moves = {
-                                ArrowLeft: [-step, 0],
-                                ArrowRight: [step, 0],
-                                ArrowUp: [0, -step],
-                                ArrowDown: [0, step],
-                            };
-                            const move = moves[event.key];
-                            if (!move) return;
-                            event.preventDefault();
-                            setScreenPoint(marker.u + move[0], marker.v + move[1]);
-                        }}
+                        onPointerDown={startDrag}
+                        onPointerMove={continueDrag}
+                        onPointerUp={endDrag}
+                        onPointerCancel={endDrag}
+                        onKeyDown={onKeyDown}
                     >
+                        <div className={`hero-photo${rotated ? " is-rotated" : ""}`}>
+                            <div
+                                className="hero-photo-inner"
+                                style={{
+                                    backgroundImage: `url("${image}")`,
+                                    backgroundPosition: `${crop.x}% ${crop.y}%`,
+                                    transform: `scale(${crop.zoom})`,
+                                    transformOrigin: `${crop.x}% ${crop.y}%`,
+                                }}
+                            />
+                        </div>
+                        <HeroMock title={home.heroTitle} phone={device === "mobile"} />
+                        <span className="hero-crop-grab" aria-hidden="true">
+                            <i className="bi bi-arrows-move" /> Przeciągnij zdjęcie
+                        </span>
+                        {/* only measures the photo; the frame draws it as a background */}
                         <img
                             src={image}
                             alt=""
-                            draggable={false}
+                            hidden
                             onLoad={(event) =>
                                 setImageSize({
                                     width: event.currentTarget.naturalWidth,
                                     height: event.currentTarget.naturalHeight,
                                 })
                             }
-                            style={
-                                pickerRotated
-                                    ? {
-                                          // Turned 90° clockwise inside a box with swapped
-                                          // proportions; width = box height.
-                                          position: "absolute",
-                                          top: "50%",
-                                          left: "50%",
-                                          width: `${(imageSize.width / imageSize.height) * 100}%`,
-                                          maxWidth: "none",
-                                          transform: "translate(-50%, -50%) rotate(90deg)",
-                                      }
-                                    : undefined
-                            }
-                        />
-                        <span
-                            className="hero-crop-marker"
-                            style={{ left: `${marker.u}%`, top: `${marker.v}%` }}
                         />
                     </div>
-                    <label>
-                        <span className="field-label">Przybliżenie: {Math.round(crop.zoom * 100)}%</span>
-                        <input
-                            type="range"
-                            min={1}
-                            max={3}
-                            step={0.05}
-                            value={crop.zoom}
-                            onChange={(event) => setCrop({ zoom: Number(event.target.value) })}
-                        />
-                    </label>
+
+                    <div className="hero-crop-zoom">
+                        <button
+                            type="button"
+                            className="button-secondary"
+                            aria-label="Oddal"
+                            disabled={crop.zoom <= MIN_ZOOM}
+                            onClick={() => setCrop({ ...crop, zoom: clampZoom(crop.zoom - 0.1) })}
+                        >
+                            <i className="bi bi-zoom-out" aria-hidden="true" />
+                        </button>
+                        <label>
+                            <span className="field-label">Przybliżenie: {Math.round(crop.zoom * 100)}%</span>
+                            <input
+                                type="range"
+                                min={MIN_ZOOM}
+                                max={MAX_ZOOM}
+                                step={0.05}
+                                value={crop.zoom}
+                                onChange={(event) => setCrop({ ...crop, zoom: Number(event.target.value) })}
+                            />
+                        </label>
+                        <button
+                            type="button"
+                            className="button-secondary"
+                            aria-label="Przybliż"
+                            disabled={crop.zoom >= MAX_ZOOM}
+                            onClick={() => setCrop({ ...crop, zoom: clampZoom(crop.zoom + 0.1) })}
+                        >
+                            <i className="bi bi-zoom-in" aria-hidden="true" />
+                        </button>
+                    </div>
+                    {crop.zoom === 1 && (
+                        <p className="admin-hint">
+                            Bez przybliżenia zdjęcie przesuwa się tylko w tym kierunku, w którym wystaje poza ramkę.
+                            Przybliż je, żeby przesuwać w obie strony.
+                        </p>
+                    )}
                     <button
                         type="button"
                         className="button-secondary"
                         onClick={() => setCrop({ x: 50, y: 50, zoom: 1 })}
                     >
-                        Wyśrodkuj i wyzeruj przybliżenie
+                        Przywróć ustawienie domyślne
                     </button>
                 </div>
 
-                <div className="hero-crop-previews">
-                    {device === "desktop" ? (
-                        DESKTOP_FRAMES.map((frame) => (
-                            <HeroPreview key={frame.label} image={image} crop={crop} {...frame} />
-                        ))
-                    ) : (
-                        <HeroPreview
-                            image={image}
-                            crop={crop}
-                            rotated={rotated}
-                            {...PHONE_FRAME}
-                        />
-                    )}
-                </div>
+                {OTHER_FRAMES[device].length > 0 && (
+                    <div className="hero-crop-previews">
+                        <p className="admin-hint">Tak wyjdzie na innych ekranach:</p>
+                        {OTHER_FRAMES[device].map((frame) => (
+                            <HeroPreview
+                                key={frame.label}
+                                image={image}
+                                crop={crop}
+                                title={home.heroTitle}
+                                {...frame}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
         </fieldset>
     );

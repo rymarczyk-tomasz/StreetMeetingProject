@@ -134,7 +134,13 @@ export async function confirmStepUp(
     const dialog = page.getByRole("dialog", { name: "Potwierdź operację" });
     await expect(dialog).toBeVisible();
     await dialog.getByLabel("Twoje hasło").fill(password);
-    await dialog.getByLabel("Kod z aplikacji").fill(await totpCode(totpSecret, email));
+    // typed key by key: the focus must stay in the code field (it once jumped back to the password)
+    const code = await totpCode(totpSecret, email);
+    const codeField = dialog.getByLabel("Kod z aplikacji");
+    await codeField.click();
+    await codeField.pressSequentially(code, { delay: 30 });
+    await expect(codeField).toHaveValue(code);
+    await expect(codeField).toBeFocused();
     await dialog.getByRole("button", { name: "Potwierdź" }).click();
     await expect(dialog).toHaveCount(0);
 }

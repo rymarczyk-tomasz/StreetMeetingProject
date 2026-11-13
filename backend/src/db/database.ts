@@ -200,6 +200,10 @@ const newSubmissionColumns = {
     showcase_hidden: "INTEGER NOT NULL DEFAULT 0",
     // photos and payment proof removed by retention (src/retention.ts)
     files_purged_at: "TEXT",
+
+    // "Poproś o poprawki": set by the admin, then answered by the participant
+    changes_requested_at: "TEXT",
+    changes_submitted_at: "TEXT",
 };
 for (const [column, type] of Object.entries(newSubmissionColumns)) {
     if (!submissionColumns.has(column)) {

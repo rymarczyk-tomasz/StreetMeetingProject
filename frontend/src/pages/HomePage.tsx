@@ -54,7 +54,7 @@ const FALLBACK = {
     },
     event: { intro: "", cards: [] },
     select: DEFAULT_SELECT,
-    gallery: { intro: "", linkLabel: "Wszystkie albumy", photos: [] },
+    gallery: { intro: "", linkLabel: "Zobacz galerię", photos: [] },
     contact: null,
     partners: { enabled: true, title: "Partnerzy", items: [] },
     edition: null,
@@ -222,6 +222,11 @@ function SelectShowcase() {
     );
 }
 
+// "Wszystkie albumy" was the label back when the gallery had one album per edition
+function galleryLinkLabel(label) {
+    return !label || label === "Wszystkie albumy" ? "Zobacz galerię" : label;
+}
+
 function GalleryPreview({ gallery }) {
     const photos = gallery.photos.slice(0, 3);
 
@@ -231,7 +236,7 @@ function GalleryPreview({ gallery }) {
                 <div className="section-head">
                     <h2 className="section-title">Galeria</h2>
                     <Link to="/galeria" className="link-action">
-                        {(gallery.linkLabel || "Wszystkie albumy").replace(/\s*→\s*$/, "")} →
+                        {galleryLinkLabel(gallery.linkLabel).replace(/\s*→\s*$/, "")} →
                     </Link>
                 </div>
                 {gallery.intro && <p className="section-lead">{gallery.intro}</p>}

@@ -733,6 +733,11 @@
     color: var(--street-text-2);
 }
 
+.status-changes {
+    background: var(--street-yellow-tint);
+    color: var(--street-ink);
+}
+
 .status-approved,
 .payment-status-paid {
     background: var(--street-success-bg);
@@ -1122,7 +1127,7 @@
     transform: none;
 }
 
-/* ---- Admin: gallery albums ---- */
+/* ---- Admin: gallery ---- */
 .gallery-howto {
     margin-bottom: 16px;
     padding: 12px 16px;
@@ -1140,36 +1145,6 @@
     padding: 12px 16px;
     border-left: 3px solid var(--street-yellow);
     background: var(--street-yellow-tint);
-}
-
-.album-admin-list {
-    margin: 16px 0 0;
-    padding: 0;
-    list-style: none;
-}
-
-.album-admin-row {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-}
-
-.album-admin-cover {
-    flex: 0 0 96px;
-    width: 96px;
-    height: 72px;
-    border-radius: 4px;
-    background: var(--street-surface);
-    object-fit: cover;
-}
-
-.album-admin-info h3 {
-    margin: 0;
-    font-size: 18px;
-}
-
-.album-edit-form {
-    margin-top: 12px;
 }
 
 .admin-photo-grid {
@@ -1198,10 +1173,6 @@
     opacity: 0.3;
 }
 
-.admin-photo.is-cover {
-    border-color: var(--street-success-dot);
-}
-
 .admin-photo figcaption {
     display: flex;
     flex-wrap: wrap;
@@ -1222,12 +1193,6 @@
     padding: 6px 10px;
     font-size: 13px;
     min-height: 36px;
-}
-
-@media (max-width: 700px) {
-    .album-admin-row {
-        align-items: flex-start;
-    }
 }
 
 /* ---- Admin: hero crop tool ---- */
@@ -1267,46 +1232,71 @@
     align-items: flex-start;
 }
 
-.hero-crop-picker {
+/* The frame shows the hero as the site renders it; the photo is dragged inside. */
+.hero-crop-stage {
     position: relative;
     width: 100%;
-    cursor: crosshair;
+    overflow: hidden;
+    border: 2px solid var(--street-ink);
+    border-radius: 6px;
+    background: #111;
+    cursor: grab;
     touch-action: none;
     user-select: none;
+    isolation: isolate;
+    container-type: size;
 }
 
-.hero-crop-picker:focus-visible {
+.hero-crop-stage.is-dragging {
+    cursor: grabbing;
+}
+
+.hero-crop-stage:focus-visible {
     outline: 3px solid var(--street-yellow);
     outline-offset: 2px;
 }
 
-.hero-crop-picker img {
-    display: block;
-    width: 100%;
-    border-radius: 4px;
+/* Phone framing with rotation: the photo layer gets the frame's swapped
+   dimensions and is turned 90°, like .hero-rotate-mobile on the site. */
+.hero-crop-stage .hero-photo.is-rotated {
+    inset: auto;
+    top: 50%;
+    left: 50%;
+    width: 100cqh;
+    height: 100cqw;
+    transform: translate(-50%, -50%) rotate(90deg);
 }
 
-/* Phone framing with rotation: an upright box; the photo inside is turned 90°. */
-.hero-crop-picker.is-rotated {
-    width: min(100%, 320px);
-    overflow: hidden;
-    border-radius: 4px;
-}
-
-.hero-crop-marker {
+.hero-crop-grab {
     position: absolute;
-    width: 26px;
-    height: 26px;
-    border: 3px solid #fff;
-    border-radius: 50%;
-    background: rgba(244, 197, 66, 0.55);
-    box-shadow: 0 0 0 2px var(--street-ink);
-    transform: translate(-50%, -50%);
+    top: 10px;
+    left: 50%;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: rgba(23, 23, 23, 0.7);
+    color: #fff;
+    font-size: 13px;
+    white-space: nowrap;
+    transform: translateX(-50%);
     pointer-events: none;
+    transition: opacity 0.15s;
 }
 
-.hero-crop-picker-wrap label {
+.hero-crop-stage.is-dragging .hero-crop-grab {
+    opacity: 0;
+}
+
+.hero-crop-zoom {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
     width: 100%;
+    max-width: 720px;
+}
+
+.hero-crop-zoom label {
+    flex: 1;
+    min-width: 0;
 }
 
 .hero-crop-previews {
@@ -1335,21 +1325,112 @@
     border-radius: 6px;
     background: #111;
     isolation: isolate;
+    container-type: size;
 }
 
-.hero-preview-frame::after {
+/* Stand-in for the home page hero content, scaled to the frame (cqw units).
+   Proportions follow .hero-shadow / .hero-content in custom.css. */
+.hero-mock {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.42);
-    content: "";
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.5cqw;
+    padding: 0 6cqw;
+    background: linear-gradient(
+        90deg,
+        rgba(17, 17, 17, 0.92) 0%,
+        rgba(17, 17, 17, 0.72) 45%,
+        rgba(17, 17, 17, 0.1) 80%
+    );
+    color: #fff;
+    pointer-events: none;
 }
 
-.hero-preview-title {
-    position: relative;
-    z-index: 1;
-    color: #fff;
-    font-size: 14px;
-    letter-spacing: 0.05em;
+.hero-mock-eyebrow {
+    width: 30cqw;
+    height: 1cqw;
+    background: var(--street-yellow);
+}
+
+.hero-mock-title {
+    max-width: 40cqw;
+    font-size: 7cqw;
+    font-weight: 700;
+    line-height: 0.9;
+    text-transform: uppercase;
+}
+
+.hero-mock-lead {
+    width: 34cqw;
+    height: 1cqw;
+    border-radius: 1cqw;
+    background: rgba(220, 221, 224, 0.75);
+}
+
+.hero-mock-lead.is-short {
+    width: 26cqw;
+}
+
+.hero-mock-actions {
+    display: flex;
+    gap: 1cqw;
+    margin-top: 0.5cqw;
+}
+
+.hero-mock-button {
+    width: 11cqw;
+    height: 3.8cqw;
+    border: max(1px, 0.15cqw) solid #fff;
+    border-radius: 0.3cqw;
+}
+
+.hero-mock-button.is-primary {
+    border-color: var(--street-yellow);
+    background: var(--street-yellow);
+}
+
+/* phones: content sits at the bottom, buttons are full width */
+.hero-mock.is-phone {
+    justify-content: flex-end;
+    gap: 3.5cqw;
+    padding: 0 4cqw 7cqw;
+    background: linear-gradient(
+        0deg,
+        rgba(17, 17, 17, 0.95) 0%,
+        rgba(17, 17, 17, 0.75) 45%,
+        rgba(17, 17, 17, 0.15) 100%
+    );
+}
+
+.hero-mock.is-phone .hero-mock-eyebrow {
+    width: 70cqw;
+    height: 2.5cqw;
+}
+
+.hero-mock.is-phone .hero-mock-title {
+    max-width: none;
+    font-size: 15cqw;
+}
+
+.hero-mock.is-phone .hero-mock-lead {
+    width: 88cqw;
+    height: 2.5cqw;
+}
+
+.hero-mock.is-phone .hero-mock-lead.is-short {
+    width: 60cqw;
+}
+
+.hero-mock.is-phone .hero-mock-actions {
+    flex-direction: column;
+    gap: 2.5cqw;
+}
+
+.hero-mock.is-phone .hero-mock-button {
+    width: 100%;
+    height: 13cqw;
 }
 
 @media (max-width: 900px) {
@@ -4262,6 +4343,128 @@ body.is-dialog-open {
     color: var(--street-ink);
 }
 
+.templates-signature {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 28px 0 0;
+    padding: 16px;
+    border: 1px solid var(--street-border);
+    border-radius: 4px;
+    background: #fff;
+}
+
+.templates-signature legend {
+    width: auto;
+    padding: 0 4px;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.templates-signature .field-textarea {
+    height: auto;
+    padding: 12px 16px;
+}
+
 .step-up-form {
-    min-width: min(360px, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* ---- Admin dialogs: confirmations and the password + code step ---- */
+.dialog-message {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.dialog-message p {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.dialog-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--street-yellow-tint);
+    color: var(--street-ink);
+    font-size: 20px;
+}
+
+.dialog-icon.is-danger {
+    background: var(--street-danger-bg);
+    color: var(--street-danger);
+}
+
+.dialog-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.dialog-field-hint {
+    color: var(--street-muted);
+    font-size: 13px;
+}
+
+.step-up-code {
+    letter-spacing: 0.2em;
+    font-variant-numeric: tabular-nums;
+}
+
+.step-up-code::placeholder {
+    letter-spacing: 0.2em;
+}
+
+.dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.step-up-form .dialog-actions {
+    margin-top: 4px;
+}
+
+.btn-street-danger-solid {
+    border-color: var(--street-danger);
+    background: var(--street-danger);
+    color: #fff;
+}
+
+.btn-street-danger-solid:hover:not(:disabled) {
+    filter: brightness(0.92);
+}
+
+.gallery-folder {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    margin: 16px 0;
+}
+
+.gallery-folder label {
+    flex: 1 1 360px;
+}
+
+.gallery-folder-current {
+    margin: 12px 0;
+    padding: 12px 16px;
+    border-radius: 4px;
+    background: var(--street-surface);
+}
+
+.gallery-folder-current strong {
+    display: block;
+    font-size: 18px;
 }

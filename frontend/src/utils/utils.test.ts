@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, test } from "vitest";
 import { plural } from "./plural";
 import { nextStep, submissionSteps } from "./submissionSteps";
+import { dragHeroCrop } from "./hero";
 import {
     applyQueue,
     enqueueCheckin,
@@ -30,6 +31,34 @@ describe("plural", () => {
         [124, "124 zdjęcia"],
     ])("%i", (count, expected) => {
         expect(plural(count, "zdjęcie", "zdjęcia", "zdjęć")).toBe(expected);
+    });
+});
+
+describe("dragHeroCrop", () => {
+    const frame = { width: 400, height: 200 };
+    // covers the frame at 400x400: 200 px spare vertically, none horizontally
+    const square = { width: 1000, height: 1000 };
+    const centre = { x: 50, y: 50, zoom: 1 };
+
+    test("przeciągnięcie w dół odsłania górę zdjęcia, oś bez zapasu stoi", () => {
+        expect(dragHeroCrop(centre, { dx: 30, dy: 50 }, frame, square)).toEqual({ x: 50, y: 25, zoom: 1 });
+    });
+
+    test("zatrzymuje się na krawędzi zdjęcia", () => {
+        expect(dragHeroCrop(centre, { dx: 0, dy: 500 }, frame, square).y).toBe(0);
+        expect(dragHeroCrop(centre, { dx: 0, dy: -500 }, frame, square).y).toBe(100);
+    });
+
+    test("po przybliżeniu przesuwa się też w poziomie", () => {
+        const next = dragHeroCrop({ ...centre, zoom: 2 }, { dx: -100, dy: 0 }, frame, square);
+        expect(next.x).toBe(75);
+        expect(next.y).toBe(50);
+    });
+
+    test("obrócona ramka: ruch w prawo to ruch zdjęcia w górę", () => {
+        // frame 200x400 on screen = 400x200 box for the photo
+        const next = dragHeroCrop(centre, { dx: 50, dy: 0 }, { width: 200, height: 400 }, square, true);
+        expect(next).toEqual({ x: 50, y: 75, zoom: 1 });
     });
 });
 
@@ -65,6 +94,13 @@ describe("submissionSteps", () => {
     test("nextStep: weryfikacja ma pierwszeństwo przed terminem", () => {
         const text = nextStep({ status: "approved", paymentStatus: "verification", paymentOverdue: true, payment: { complete: true } });
         expect(text).toMatch(/sprawdza Twoją płatność/);
+    });
+
+    test("prośba o poprawki: krok i podpowiedź", () => {
+        const asked = { status: "pending", paymentStatus: "unpaid", changesRequestedAt: "2027-01-01 10:00:00" };
+        expect(submissionSteps(asked)[1].label).toBe("Do poprawy");
+        expect(nextStep(asked)).toMatch(/Wyślij poprawki/);
+        expect(nextStep({ status: "pending", changesSubmittedAt: "2027-01-02 10:00:00" })).toMatch(/Poprawki wysłane/);
     });
 
     test("nextStep: po terminie", () => {

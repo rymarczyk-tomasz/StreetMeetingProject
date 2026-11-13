@@ -43,7 +43,7 @@ It started as a simple landing page and grew into a full application used by the
 - **Offline-first gate** – the check-in page works without network: codes are matched against SHA-256 hashes stored locally, and queued entries sync with their original timestamps.
 - **QR scanning on every phone** – native `BarcodeDetector` where available, lazily loaded `jsQR` fallback for iOS Safari.
 - **Editions** – data is scoped per event year, so a new season starts with fresh limits and statistics while older years stay in the archive.
-- **Gallery sync** – albums are folders on Google Drive; a background job downloads only new or changed files and generates WEBP thumbnails.
+- **Gallery sync** – the gallery is the photos of one Google Drive folder, chosen in the admin panel; a background job downloads only new or changed files and generates WEBP thumbnails.
 - **Deployment** – every push to the release branch builds both apps in GitHub Actions and deploys to the server over SSH; the database is backed up daily.
 
 ## Project structure

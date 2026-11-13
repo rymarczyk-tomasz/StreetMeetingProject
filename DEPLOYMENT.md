@@ -34,7 +34,7 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 - [ ] `PORT` — zgodny z nginx i healthcheckiem w `.github/workflows/deploy.yml` (tam: `4001`)
 - [ ] `TRUST_PROXY=loopback` (nginx na tym samym serwerze)
 - [ ] `SELECT_FEE_AMOUNT` albo kwota w panelu (Ustawienia — ma pierwszeństwo)
-- [ ] Galeria: `DRIVE_GALLERY_FOLDER_ID` + dane konta serwisowego `GOOGLE_*` (`GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`, …). `GOOGLE_PRIVATE_KEY` to cały klucz z pliku JSON konta serwisowego (pole `private_key`, zaczyna się od `-----BEGIN PRIVATE KEY-----`), w jednej linii, w cudzysłowie, ze znakami `
+- [ ] Galeria: dane konta serwisowego `GOOGLE_*` w `.env` (`GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`, …). Folder ze zdjęciami wskazuje się w panelu (Admin → Galeria; `DRIVE_GALLERY_FOLDER_ID` nie jest już używane) i udostępnia kontu serwisowemu jako „Przeglądający”. `GOOGLE_PRIVATE_KEY` to cały klucz z pliku JSON konta serwisowego (pole `private_key`, zaczyna się od `-----BEGIN PRIVATE KEY-----`), w jednej linii, w cudzysłowie, ze znakami `
 ` zamiast nowych linii — nie mylić z krótkim `private_key_id`
 - [ ] Backupy: `BACKUP_DIR`, `BACKUP_KEEP`
 - [ ] Panel admina → System: sprawdzić, czy wszystko świeci na zielono
@@ -154,7 +154,7 @@ Pomijane są `uploads/gallery` (miniatury odtwarza synchronizacja z Dysku Google
 
 Stara strona to Azure Static Web Apps + App Service `streetmeetingbackend`; formularz dopisuje wiersze do arkusza Google i wgrywa zdjęcia do folderu na Dysku. Uczestnicy nie mają tam kont, więc zgłoszenia wysyłają w nowym systemie ponownie.
 
-- [ ] Spisać z App Service zmienne `GOOGLE_*` i `DRIVE_GALLERY_FOLDER_ID` (to samo konto serwisowe obsłuży galerię) oraz zachować dostęp do arkusza i folderu zgłoszeń jako archiwum
+- [ ] Spisać z App Service zmienne `GOOGLE_*` (to samo konto serwisowe obsłuży galerię) oraz zachować dostęp do arkusza i folderu zgłoszeń jako archiwum
 - [ ] Dzień przed przełączeniem obniżyć TTL rekordów `www` i `streetshow.pl` w Cloudflare
 - [ ] Zamknąć stary formularz, przełączyć rekordy na VPS (sekcja 3, krok 5), przejść test z sekcji 10
 - [ ] Wysłać osobom z arkusza e-mail: nowa strona, prośba o założenie konta i ponowne zgłoszenie auta

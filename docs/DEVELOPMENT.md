@@ -10,7 +10,7 @@ Strona wydarzenia motoryzacyjnego "Street Show": **React + Vite** (`frontend/`) 
 | Raport | Podsumowanie edycji po wydarzeniu: opłaty, wjazdy, nieobecni, rezygnacje, przychód, przyjazdy wg godziny, porównanie lat (do druku) |
 | Zgłoszenia | Filtr edycji (archiwum lat), akceptacja/odrzucenie/lista rezerwowa pojedynczo i zbiorczo, **oceny 1–5 od każdego admina**, **wątek wiadomości z uczestnikiem**, notatki, **szablony komentarzy**, opłaty, eksport do Excela, **lista na bramę do druku**, **wiadomość e-mail do grupy uczestników** |
 | Użytkownicy | Role, blokada, wylogowanie ze wszystkich urządzeń |
-| Galeria | Albumy z folderów Dysku Google (jeden folder = jeden album), synchronizacja, ukrywanie zdjęć, okładki, kolejność |
+| Galeria | Zdjęcia z jednego folderu Dysku Google, synchronizacja, ukrywanie zdjęć |
 | Treści strony | Home (z leadem pod tytułem), „Co Cię czeka” (1–6 kafelków), **Strefa Select** (4 kroki „Jak to działa”), podgląd galerii, partnerzy (sponsor główny, partner wydarzenia, wystawcy), kontakt, **FAQ**, **regulamin** i **polityka prywatności** (edytor jak w Wordzie + PDF), pasek ogłoszeń. Każda sekcja ma **historię zmian** z przywracaniem |
 | Ustawienia | Podzakładki: **Edycja wydarzenia** (rok, data, godziny, miejsce), **Powiadom o dacie** (eksport CSV, wysyłka e-maila do zapisanych), zapisy do Select (otwarte/zamknięte, termin, limity, kwota i termin opłaty, strona „Auta strefy Select”) oraz **szablony wiadomości** |
 | Dziennik działań | Kto, co i kiedy zmienił |
@@ -43,7 +43,7 @@ backend/                  # Node.js + Express (TypeScript → dist/)
     messages/             # wątki wiadomości organizator ↔ uczestnik
     showcase/             # publiczna strona „Auta strefy Select”
     content/              # domyślne treści sekcji CMS + walidacja
-    gallery/              # albumy z Dysku Google, miniatury WEBP (sharp), synchronizacja
+    gallery/              # zdjęcia z folderu Dysku Google, miniatury WEBP (sharp), synchronizacja
     db/                   # SQLite (better-sqlite3)
     notifications/        # e-maile (nodemailer), lista „Powiadom o dacie”
     utils/                # walidacja, czyszczenie HTML, upload plików, rate limiter
@@ -95,7 +95,7 @@ TRUST_PROXY=loopback                  # nginx na tym samym serwerze; liczba hop�
 BACKUP_DIR=/home/streetshow/backups    # domyślnie backend/backups
 BACKUP_KEEP=14                        # ile dziennych kopii bazy trzymać
 BACKUP_DISABLED=false
-DRIVE_GALLERY_FOLDER_ID=...           # folder główny galerii na Dysku; jego podfoldery = albumy (+ GOOGLE_* konta serwisowego)
+GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, ...  # konto serwisowe Google do galerii (folder wskazuje się w panelu, nie w .env)
 GALLERY_SYNC_DAILY_HOUR=3             # o której w nocy synchronizować galerię
 ```
 
@@ -172,9 +172,9 @@ Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do
 
 ## Galeria (skrót)
 
-- Albumy = foldery na Dysku Google. Podfoldery `DRIVE_GALLERY_FOLDER_ID` są wykrywane automatycznie (rok z nazwy, np. „StreetShow 2025”); zdjęcia leżące luzem w folderze głównym trafiają do albumu „Archiwum”. Inny folder można dodać linkiem w panelu. Folder musi być udostępniony kontu serwisowemu (`GOOGLE_CLIENT_EMAIL`) jako „Przeglądający”.
-- Synchronizacja (`backend/src/gallery/sync.ts`) pobiera oryginał tylko dla nowych/zmienionych plików i zapisuje dwie wersje WEBP (480 px i 1600 px) w `backend/uploads/gallery/<album>/`. Usunięte z Dysku znikają ze strony. Działa w tle (panel pokazuje postęp) i codziennie w nocy. HEIC nie jest obsługiwany.
-- Publicznie: `GET /api/gallery/albums`, `GET /api/gallery/albums/:id`; miniatury z długim cache (`/uploads/gallery/...?v=<wersja>`).
+- Galeria to zdjęcia z jednego folderu Dysku Google, wskazanego linkiem w Admin → Galeria (bez albumów i podfolderów; liczą się tylko zdjęcia leżące bezpośrednio w folderze). Zmiana folderu zastępuje dotychczasowe zdjęcia. Folder musi być udostępniony kontu serwisowemu (`GOOGLE_CLIENT_EMAIL`) jako „Przeglądający”. Folder jest zapisany jako jedyny wiersz `gallery_albums` (tabela zostaje po dawnych albumach; starsze bazy z wieloma albumami zostają sprowadzone do najnowszego przy starcie).
+- Synchronizacja (`backend/src/gallery/sync.ts`) pobiera oryginał tylko dla nowych/zmienionych plików i zapisuje dwie wersje WEBP (480 px i 1600 px) w `backend/uploads/gallery/<id folderu>/`. Usunięte z Dysku znikają ze strony. Działa w tle (panel pokazuje postęp) i codziennie w nocy. HEIC nie jest obsługiwany.
+- Publicznie: `GET /api/gallery` (lista zdjęć); miniatury z długim cache (`/uploads/gallery/...?v=<wersja>`).
 
 ## Auta strefy Select i odliczanie
 

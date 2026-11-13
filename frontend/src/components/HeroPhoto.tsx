@@ -9,6 +9,24 @@ export default function HeroPhoto() {
     );
 }
 
+// Miniature of what sits on top of the photo on the home page (shadow, title,
+// lead, buttons), so a crop can be judged against it. Sized in container units:
+// the parent needs container-type: size.
+export function HeroMock({ title, phone = false }: { title?: string; phone?: boolean }) {
+    return (
+        <div className={`hero-mock${phone ? " is-phone" : ""}`} aria-hidden="true">
+            <span className="hero-mock-eyebrow" />
+            <span className="hero-mock-title">{title || "Street Show"}</span>
+            <span className="hero-mock-lead" />
+            <span className="hero-mock-lead is-short" />
+            <span className="hero-mock-actions">
+                <span className="hero-mock-button is-primary" />
+                <span className="hero-mock-button" />
+            </span>
+        </div>
+    );
+}
+
 type HeroPreviewProps = {
     image: string;
     crop?: Partial<HeroCrop>;
@@ -16,9 +34,11 @@ type HeroPreviewProps = {
     width: number;
     height: number;
     label: string;
+    title?: string;
+    phone?: boolean;
 };
 
-export function HeroPreview({ image, crop, rotated, width, height, label }: HeroPreviewProps) {
+export function HeroPreview({ image, crop, rotated, width, height, label, title, phone }: HeroPreviewProps) {
     const { x, y, zoom } = heroCrop(crop);
 
     return (
@@ -52,7 +72,7 @@ export function HeroPreview({ image, crop, rotated, width, height, label }: Hero
                         }}
                     />
                 </div>
-                <span className="hero-preview-title">STREET SHOW</span>
+                <HeroMock title={title} phone={phone} />
             </div>
             <figcaption>{label}</figcaption>
         </figure>

@@ -17,14 +17,6 @@ function parseFolderId(value) {
     return null;
 }
 
-function getRootFolderId() {
-    return parseFolderId(
-        process.env.DRIVE_GALLERY_FOLDER_ID ||
-            process.env.GALLERY_DRIVE_FOLDER_ID ||
-            process.env.GALLERY_DRIVE_FOLDER_URL,
-    );
-}
-
 function hasDriveCredentials() {
     return Boolean(process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_CLIENT_EMAIL);
 }
@@ -78,10 +70,6 @@ function listImages(folderId) {
     return listChildren(folderId, "mimeType contains 'image/'");
 }
 
-function listSubfolders(folderId) {
-    return listChildren(folderId, `mimeType = '${FOLDER_MIME}'`);
-}
-
 async function getFolder(folderId) {
     try {
         const response = await getDrive().files.get({
@@ -113,10 +101,8 @@ async function downloadFile(fileId) {
 
 module.exports = {
     parseFolderId,
-    getRootFolderId,
     hasDriveCredentials,
     listImages,
-    listSubfolders,
     getFolder,
     downloadFile,
 };

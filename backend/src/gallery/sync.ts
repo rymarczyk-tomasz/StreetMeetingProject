@@ -4,14 +4,12 @@ const path = require("path");
 
 const galleryDb = require("../db/gallery");
 const drive = require("./drive");
-const { getAlbumDir } = require("../utils/paths");
+const { getAlbumDir, GALLERY_UPLOAD_ROOT } = require("../utils/paths");
 const { getSharp } = require("../utils/sharp");
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const THUMB_WIDTH = 480;
 const FULL_WIDTH = 1600;
-const YEAR_IN_NAME = /(20\d{2})/;
-const ROOT_ALBUM_TITLE = "Archiwum";
 
 function readClampedInt(value, fallback, min, max) {
     const parsed = Number(value ?? fallback);
@@ -26,7 +24,7 @@ const GALLERY_SYNC_DAILY_MINUTE = readClampedInt(process.env.GALLERY_SYNC_DAILY_
 const status = {
     inProgress: false,
     reason: "",
-    albumTitle: "",
+    folderName: "",
     processed: 0,
     total: 0,
     startedAt: null,
@@ -83,7 +81,7 @@ async function renderPhoto(albumId, file) {
 }
 
 async function syncAlbum(album) {
-    status.albumTitle = album.title;
+    status.folderName = album.title;
     const files = await drive.listImages(album.drive_folder_id);
     const existing = new Map<string, any>(
         galleryDb.listPhotos(album.id).map((photo) => [photo.drive_file_id, photo]),
@@ -136,11 +134,6 @@ async function syncAlbum(album) {
         await removePhotoFiles(album.id, photo.drive_file_id);
     }
 
-    const refreshed = galleryDb.findAlbum(album.id);
-    const photos = galleryDb.listPhotos(album.id);
-    if (!photos.some((photo) => photo.id === refreshed.cover_photo_id)) {
-        galleryDb.setAlbumCover(album.id, photos.find((photo) => !photo.is_hidden)?.id || null);
-    }
     galleryDb.setAlbumSyncResult(
         album.id,
         failed ? `${failed} zdjęć nie udało się przetworzyć (np. format HEIC).` : null,
@@ -149,58 +142,52 @@ async function syncAlbum(album) {
     return { added, updated, removed: existing.size, failed, total: files.length };
 }
 
-async function discoverAlbums() {
-    const rootId = drive.getRootFolderId();
-    if (!rootId) return { created: 0 };
-
-    // New albums are inserted at the top, so create the archive first and the
-    // yearly folders (sorted A→Z, i.e. oldest year first) after it: newest ends on top.
-    let created = 0;
-    if (!galleryDb.findAlbumByFolder(rootId)) {
-        const rootImages = await drive.listImages(rootId);
-        if (rootImages.length) {
-            galleryDb.createAlbum({ title: ROOT_ALBUM_TITLE, year: null, driveFolderId: rootId });
-            created += 1;
-        }
-    }
-
-    for (const folder of await drive.listSubfolders(rootId)) {
-        if (!galleryDb.findAlbumByFolder(folder.id)) {
-            const year = Number(folder.name.match(YEAR_IN_NAME)?.[1]) || null;
-            galleryDb.createAlbum({ title: folder.name, year, driveFolderId: folder.id });
-            created += 1;
-        }
-    }
-
-    return { created };
+async function deleteAlbumWithFiles(albumId) {
+    galleryDb.deleteAlbum(albumId);
+    await fs.promises.rm(getAlbumDir(albumId), { recursive: true, force: true });
 }
 
-async function createAlbumFromLink(
-    link,
-    { title, year }: { title?: string; year?: number | null } = {},
-) {
+// Local copies of albums that no longer exist (databases from before the single-folder
+// gallery, interrupted deletes).
+async function pruneStrayAlbumDirs() {
+    const keep = String(galleryDb.getGalleryFolder()?.id ?? "");
+    let entries = [];
+    try {
+        entries = await fs.promises.readdir(GALLERY_UPLOAD_ROOT);
+    } catch {
+        return;
+    }
+    for (const name of entries) {
+        if (name !== keep) {
+            await fs.promises.rm(path.join(GALLERY_UPLOAD_ROOT, name), { recursive: true, force: true });
+        }
+    }
+}
+
+// Points the gallery at a Drive folder (link or id). Another folder replaces the
+// current photos; the same one only refreshes its name.
+async function setGalleryFolder(link) {
     const folderId = drive.parseFolderId(link);
     if (!folderId) throw new Error("Nieprawidłowy link do folderu Dysku Google.");
-    if (galleryDb.findAlbumByFolder(folderId)) {
-        throw new Error("Album z tym folderem już istnieje.");
-    }
 
     const folder = await drive.getFolder(folderId);
-    const name = title || folder.name;
-    return galleryDb.createAlbum({
-        title: name,
-        year: year || Number(name.match(YEAR_IN_NAME)?.[1]) || null,
-        driveFolderId: folderId,
-    });
+    const current = galleryDb.getGalleryFolder();
+    if (current && current.drive_folder_id === folderId) {
+        galleryDb.renameGalleryFolder(current.id, folder.name);
+        return galleryDb.getGalleryFolder();
+    }
+
+    for (const album of galleryDb.listAlbums()) await deleteAlbumWithFiles(album.id);
+    return galleryDb.createGalleryFolder({ title: folder.name, driveFolderId: folderId });
 }
 
-async function runGallerySync(reason, { albumId = null } = {}) {
+async function runGallerySync(reason) {
     if (status.inProgress) throw new Error("Synchronizacja galerii już trwa.");
 
     Object.assign(status, {
         inProgress: true,
         reason,
-        albumTitle: "",
+        folderName: "",
         processed: 0,
         total: 0,
         startedAt: new Date().toISOString(),
@@ -210,27 +197,25 @@ async function runGallerySync(reason, { albumId = null } = {}) {
     console.log(`[gallery-sync] Start (${reason})...`);
 
     try {
-        let discovered = 0;
-        if (!albumId) discovered = (await discoverAlbums()).created;
-
-        const albums = albumId
-            ? [galleryDb.findAlbum(albumId)].filter(Boolean)
-            : galleryDb.listAlbums();
-        const totals = { added: 0, updated: 0, removed: 0, failed: 0 };
-
-        for (const album of albums) {
-            try {
-                const result = await syncAlbum(album);
-                for (const key of Object.keys(totals)) totals[key] += result[key];
-            } catch (error) {
-                galleryDb.setAlbumSyncResult(album.id, error.message);
-                totals.failed += 1;
-                console.error(`[gallery-sync] Album „${album.title}”:`, error.message);
-            }
+        const album = galleryDb.getGalleryFolder();
+        if (!album) {
+            status.lastMessage = "Nie wskazano jeszcze folderu galerii";
+            return { added: 0, updated: 0, removed: 0, failed: 0 };
         }
 
+        const totals = { added: 0, updated: 0, removed: 0, failed: 0 };
+        try {
+            const result = await syncAlbum(album);
+            for (const key of Object.keys(totals)) totals[key] += result[key];
+        } catch (error) {
+            galleryDb.setAlbumSyncResult(album.id, error.message);
+            totals.failed += 1;
+            status.lastError = error.message;
+            console.error(`[gallery-sync] Folder „${album.title}”:`, error.message);
+        }
+        await pruneStrayAlbumDirs();
+
         status.lastMessage = [
-            `Albumy: ${albums.length}${discovered ? ` (nowe: ${discovered})` : ""}`,
             `nowe zdjęcia: ${totals.added}`,
             `zaktualizowane: ${totals.updated}`,
             `usunięte: ${totals.removed}`,
@@ -245,20 +230,15 @@ async function runGallerySync(reason, { albumId = null } = {}) {
         throw error;
     } finally {
         status.inProgress = false;
-        status.albumTitle = "";
+        status.folderName = "";
         status.finishedAt = new Date().toISOString();
     }
 }
 
-function startGallerySync(reason, options = {}) {
-    runGallerySync(reason, options).catch((error) =>
+function startGallerySync(reason) {
+    return runGallerySync(reason).catch((error) =>
         console.error(`[gallery-sync] Błąd (${reason}):`, error.message),
     );
-}
-
-async function deleteAlbumWithFiles(albumId) {
-    galleryDb.deleteAlbum(albumId);
-    await fs.promises.rm(getAlbumDir(albumId), { recursive: true, force: true });
 }
 
 function scheduleDailyGallerySync() {
@@ -286,9 +266,8 @@ function scheduleDailyGallerySync() {
 module.exports = {
     getSyncStatus,
     photoUrls,
-    discoverAlbums,
-    createAlbumFromLink,
+    setGalleryFolder,
+    runGallerySync,
     startGallerySync,
-    deleteAlbumWithFiles,
     scheduleDailyGallerySync,
 };

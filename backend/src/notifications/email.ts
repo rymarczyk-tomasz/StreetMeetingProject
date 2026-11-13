@@ -1,6 +1,19 @@
 const nodemailer = require("nodemailer");
 const { getPaymentDetails } = require("../payments");
 const { getAppUrl } = require("../utils/appUrl");
+const siteContentDb = require("../db/siteContent");
+
+const DEFAULT_SIGNATURE = "Street Show Crew";
+
+// Closing line of every e-mail; editable in Admin → Ustawienia → Szablony wiadomości.
+function signatureText() {
+    const saved = String(siteContentDb.getContent("templates")?.signature || "").trim();
+    return saved || DEFAULT_SIGNATURE;
+}
+
+function signatureHtml() {
+    return escapeHtml(signatureText()).replace(/\n/g, "<br>");
+}
 
 let transporter;
 
@@ -145,7 +158,7 @@ async function sendSubmissionStatusEmail({
                 `Szczegóły znajdziesz w swoim panelu: ${panelUrl}`,
                 "",
                 "Pozdrawiamy",
-                "Street Show Crew",
+                signatureText(),
             ].join("\n"),
             html: `
                 <p>Cześć ${escapeHtml(firstName)},</p>
@@ -153,7 +166,7 @@ async function sendSubmissionStatusEmail({
                 <p>${payment.map((line) => escapeHtml(line)).join("<br>")}</p>
                 ${noteHtml}
                 <p>Szczegóły znajdziesz w <a href="${escapeHtml(panelUrl)}">swoim panelu</a>.</p>
-                <p>Pozdrawiamy<br>Street Show Crew</p>
+                <p>Pozdrawiamy<br>${signatureHtml()}</p>
             `,
         });
     }
@@ -174,14 +187,14 @@ async function sendSubmissionStatusEmail({
                 "",
                 `Status zgłoszenia zobaczysz w panelu: ${panelUrl}`,
                 "",
-                "Street Show Crew",
+                signatureText(),
             ].join("\n"),
             html: `
                 <p>Cześć ${escapeHtml(firstName)},</p>
                 ${lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}
                 ${noteHtml}
                 <p>Status zgłoszenia zobaczysz w <a href="${escapeHtml(panelUrl)}">swoim panelu</a>.</p>
-                <p>Street Show Crew</p>
+                <p>${signatureHtml()}</p>
             `,
         });
     }
@@ -195,13 +208,13 @@ async function sendSubmissionStatusEmail({
             "Twoje zgłoszenie pojazdu do strefy Select zostało odrzucone.",
             noteText,
             "",
-            "Street Show",
+            signatureText(),
         ].join("\n"),
         html: `
             <p>Cześć ${escapeHtml(firstName)},</p>
             <p>Twoje zgłoszenie pojazdu do strefy Select zostało <strong>odrzucone</strong>.</p>
             ${noteHtml}
-            <p>Street Show</p>
+            <p>${signatureHtml()}</p>
         `,
     });
 }
@@ -214,7 +227,7 @@ async function sendChangesRequestedEmail({ submission, user, adminNote }) {
     const carBrand = submission.car_brand || "Twój pojazd";
     const panelUrl = `${getAppUrl()}/panel`;
     const intro = `Organizator prosi o uzupełnienie zgłoszenia ${carBrand} (${submission.license_plate}) do strefy Select.`;
-    const after = "Zaloguj się do panelu, popraw dane lub zdjęcia — zgłoszenie czeka na decyzję.";
+    const after = "Zaloguj się do panelu, popraw dane lub zdjęcia i kliknij „Wyślij poprawki” — organizator ponownie rozpatrzy zgłoszenie.";
 
     return sendMail({
         to: user.email,
@@ -229,14 +242,14 @@ async function sendChangesRequestedEmail({ submission, user, adminNote }) {
             "",
             `${after} ${panelUrl}`,
             "",
-            "Street Show Crew",
+            signatureText(),
         ].join("\n"),
         html: `
             <p>Cześć ${escapeHtml(firstName)},</p>
             <p>${escapeHtml(intro)}</p>
             <p><strong>Wiadomość od organizatora:</strong><br>${escapeHtml(adminNote).replace(/\n/g, "<br>")}</p>
             <p>${escapeHtml(after)} <a href="${escapeHtml(panelUrl)}">Przejdź do panelu</a>.</p>
-            <p>Street Show Crew</p>
+            <p>${signatureHtml()}</p>
         `,
     });
 }
@@ -273,7 +286,7 @@ async function sendPaymentReminderEmail({ submission, email, firstName }) {
             closing,
             panelUrl,
             "",
-            "Street Show Crew",
+            signatureText(),
             preferencesFooter().text,
         ].join("\n"),
         html: `
@@ -282,7 +295,7 @@ async function sendPaymentReminderEmail({ submission, email, firstName }) {
             ${details.length ? `<p>${details.map((line) => escapeHtml(line)).join("<br>")}</p>` : ""}
             <p>${escapeHtml(closing)}</p>
             <p><a href="${escapeHtml(panelUrl)}">Przejdź do panelu</a></p>
-            <p>Street Show Crew</p>
+            <p>${signatureHtml()}</p>
             ${preferencesFooter().html}
         `,
     });
@@ -303,12 +316,12 @@ async function sendPaymentConfirmedEmail({ submission, user }) {
     return sendMail({
         to: email,
         subject: "Street Show: opłata potwierdzona — Twoja wejściówka",
-        text: [`Cześć ${name},`, "", ...lines, "", `Wejściówka: ${panelUrl}`, "", "Street Show Crew"].join("\n"),
+        text: [`Cześć ${name},`, "", ...lines, "", `Wejściówka: ${panelUrl}`, "", signatureText()].join("\n"),
         html: `
             <p>Cześć ${escapeHtml(name)},</p>
             ${lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}
             <p><a href="${escapeHtml(panelUrl)}">Otwórz wejściówkę w panelu</a></p>
-            <p>Street Show Crew</p>
+            <p>${signatureHtml()}</p>
         `,
     });
 }
@@ -329,14 +342,14 @@ async function sendPasswordResetEmail({ user, token, ttlMinutes }) {
             "",
             "Jeśli to nie Ty, zignoruj tę wiadomość — hasło pozostanie bez zmian.",
             "",
-            "Street Show",
+            signatureText(),
         ].join("\n"),
         html: `
             <p>Cześć ${escapeHtml(firstName)},</p>
             <p>Otrzymaliśmy prośbę o zresetowanie hasła do Twojego konta.</p>
             <p><a href="${escapeHtml(resetUrl)}">Ustaw nowe hasło</a> (link ważny ${ttlMinutes} minut).</p>
             <p>Jeśli to nie Ty, zignoruj tę wiadomość — hasło pozostanie bez zmian.</p>
-            <p>Street Show</p>
+            <p>${signatureHtml()}</p>
         `,
     });
 }
@@ -357,14 +370,14 @@ async function sendVerificationEmail({ user, token, ttlHours }) {
             "",
             "Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.",
             "",
-            "Street Show",
+            signatureText(),
         ].join("\n"),
         html: `
             <p>Cześć ${escapeHtml(firstName)},</p>
             <p>Twoje konto w serwisie Street Show jest gotowe. Potwierdź jeszcze, że ten adres należy do Ciebie — dzięki temu dostaniesz decyzję w sprawie zgłoszenia i ważne informacje o wydarzeniu.</p>
             <p><a href="${escapeHtml(url)}">Potwierdź adres e-mail</a> (link ważny ${ttlHours} godzin)</p>
             <p>Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.</p>
-            <p>Street Show</p>
+            <p>${signatureHtml()}</p>
         `,
     });
 }
@@ -385,14 +398,14 @@ async function sendEmailChangeEmail({ user, newEmail, token, ttlHours }) {
             "",
             "Jeśli to nie Ty, zignoruj tę wiadomość — adres się nie zmieni.",
             "",
-            "Street Show",
+            signatureText(),
         ].join("\n"),
         html: `
             <p>Cześć ${escapeHtml(firstName)},</p>
             <p>Ktoś (mamy nadzieję, że Ty) chce zmienić adres e-mail konta Street Show na <strong>${escapeHtml(newEmail)}</strong>.</p>
             <p><a href="${escapeHtml(url)}">Potwierdź zmianę adresu</a> (link ważny ${ttlHours} godzin)</p>
             <p>Jeśli to nie Ty, zignoruj tę wiadomość — adres się nie zmieni.</p>
-            <p>Street Show</p>
+            <p>${signatureHtml()}</p>
         `,
     });
 }
@@ -431,13 +444,13 @@ async function sendPasswordChangedEmail({ user }) {
             resetUrl,
             "Odpisz też na tę wiadomość, żebyśmy mogli sprawdzić konto.",
             "",
-            "Street Show",
+            signatureText(),
         ].join("\n"),
         html: `
             <p>Cześć ${escapeHtml(firstName)},</p>
             <p>Hasło do Twojego konta Street Show zostało zmienione (${escapeHtml(when)}).<br>Jeśli to Ty — nic nie musisz robić.</p>
             <p><strong>Jeśli to nie Ty</strong>, od razu <a href="${escapeHtml(resetUrl)}">ustaw nowe hasło</a>. Link do zmiany przyjdzie na ten adres e-mail, a wszystkie urządzenia zostaną wylogowane. Odpisz też na tę wiadomość, żebyśmy mogli sprawdzić konto.</p>
-            <p>Street Show</p>
+            <p>${signatureHtml()}</p>
         `,
     });
 }
@@ -457,14 +470,14 @@ async function sendAccountDeletedEmail({ email, firstName }) {
             "Jeśli to nie Ty usunąłeś konto, odpisz na tę wiadomość.",
             "W każdej chwili możesz założyć nowe konto.",
             "",
-            "Street Show",
+            signatureText(),
         ].join("\n"),
         html: `
             <p>Cześć ${escapeHtml(name)},</p>
             <p>Twoje konto Street Show (${escapeHtml(email)}) zostało usunięte (${escapeHtml(formatPolishDateTime())}).
             Usunęliśmy dane konta, zgłoszenia pojazdów, auta z garażu i wszystkie zdjęcia.</p>
             <p>Jeśli to nie Ty usunąłeś konto, odpisz na tę wiadomość. W każdej chwili możesz założyć nowe konto.</p>
-            <p>Street Show</p>
+            <p>${signatureHtml()}</p>
         `,
     });
 }
@@ -560,9 +573,42 @@ async function sendNewSubmissionAdminEmail({ submission, userEmail }) {
     });
 }
 
-async function sendPaymentProofAdminEmail({ submission, userEmail }) {
+async function sendChangesSubmittedAdminEmail({ submission, userEmail }) {
     const recipients = adminNotifyRecipients();
     if (!recipients) return { sent: false, reason: "not_configured" };
+
+    const adminUrl = `${getAppUrl()}/admin/zgloszenia?id=${encodeURIComponent(submission.id)}`;
+    const name = `${submission.first_name} ${submission.last_name}`;
+    const summary = `${submission.car_brand} — ${submission.license_plate}`;
+
+    return sendMail({
+        to: recipients,
+        subject: `Street Show: poprawki do zgłoszenia (${summary})`,
+        text: [
+            "Uczestnik poprawił zgłoszenie do strefy Select i prosi o ponowne rozpatrzenie:",
+            "",
+            `Pojazd: ${summary}`,
+            `Zgłaszający: ${name} (${userEmail})`,
+            "",
+            `Zobacz zgłoszenie w panelu: ${adminUrl}`,
+        ].join("\n"),
+        html: `
+            <p>Uczestnik poprawił zgłoszenie do strefy Select i prosi o ponowne rozpatrzenie:</p>
+            <p><strong>${escapeHtml(summary)}</strong><br>
+            ${escapeHtml(name)} (${escapeHtml(userEmail)})</p>
+            <p><a href="${escapeHtml(adminUrl)}">Zobacz zgłoszenie w panelu administratora</a></p>
+        `,
+    });
+}
+
+// withProof = false: the participant clicked "Zgłoś opłatę bez potwierdzenia"
+async function sendPaymentProofAdminEmail({ submission, userEmail, withProof = true }) {
+    const recipients = adminNotifyRecipients();
+    if (!recipients) return { sent: false, reason: "not_configured" };
+
+    const intro = withProof
+        ? "Uczestnik dodał potwierdzenie przelewu za strefę Select:"
+        : "Uczestnik zgłosił opłatę za strefę Select (bez potwierdzenia przelewu):";
 
     const adminUrl = `${getAppUrl()}/admin/zgloszenia?id=${encodeURIComponent(submission.id)}&tab=oplata`;
     const name = `${submission.first_name} ${submission.last_name}`;
@@ -570,9 +616,11 @@ async function sendPaymentProofAdminEmail({ submission, userEmail }) {
 
     return sendMail({
         to: recipients,
-        subject: `Street Show: nowe potwierdzenie przelewu (${submission.car_brand}, ${name})`,
+        subject: withProof
+            ? `Street Show: nowe potwierdzenie przelewu (${submission.car_brand}, ${name})`
+            : `Street Show: zgłoszona opłata do sprawdzenia (${submission.car_brand}, ${name})`,
         text: [
-            "Uczestnik dodał potwierdzenie przelewu za strefę Select:",
+            intro,
             "",
             `Pojazd: ${summary}`,
             `Zgłaszający: ${name} (${userEmail})`,
@@ -580,7 +628,7 @@ async function sendPaymentProofAdminEmail({ submission, userEmail }) {
             `Sprawdź opłatę w panelu: ${adminUrl}`,
         ].join("\n"),
         html: `
-            <p>Uczestnik dodał potwierdzenie przelewu za strefę Select:</p>
+            <p>${escapeHtml(intro)}</p>
             <p><strong>${escapeHtml(summary)}</strong><br>
             ${escapeHtml(name)} (${escapeHtml(userEmail)})</p>
             <p><a href="${escapeHtml(adminUrl)}">Sprawdź opłatę w panelu administratora</a></p>
@@ -641,7 +689,7 @@ async function sendThreadReplyEmail({ user, submission, body }) {
             "",
             replyText,
             "",
-            "Street Show Crew",
+            signatureText(),
             preferencesFooter().text,
         ].join("\n"),
         html: `
@@ -649,7 +697,7 @@ async function sendThreadReplyEmail({ user, submission, body }) {
             <p>Organizator napisał w sprawie zgłoszenia <strong>${escapeHtml(summary)}</strong>:</p>
             <blockquote>${escapeHtml(body).replace(/\n/g, "<br>")}</blockquote>
             <p>${replyHtml}</p>
-            <p>Street Show Crew</p>
+            <p>${signatureHtml()}</p>
             ${preferencesFooter().html}
         `,
     });
@@ -699,7 +747,7 @@ async function sendGroupEmail({ recipients, subject, message }) {
 
     for (const recipient of recipients) {
         const greeting = `Cześć ${recipient.first_name || ""}`.trim() + ",";
-        const body = `${greeting}\n\n${message}\n\nStreet Show Crew`;
+        const body = `${greeting}\n\n${message}\n\n${signatureText()}`;
         const footer = preferencesFooter();
         try {
             await sendMail({
@@ -734,14 +782,14 @@ async function sendDateSubscribeConfirmEmail({ email, token, edition }) {
             "",
             "Jeśli to nie Ty, zignoruj tę wiadomość — bez potwierdzenia nie wyślemy nic więcej.",
             "",
-            "Street Show Crew",
+            signatureText(),
         ].join("\n"),
         html: `
             <p>Cześć,</p>
             <p>Kliknij przycisk, żeby potwierdzić, że chcesz dostać e-mail, gdy ogłosimy termin Street Show.</p>
             <p><a href="${escapeHtml(url)}" style="display:inline-block;padding:12px 24px;background:#f4c542;color:#171717;font-weight:700;text-decoration:none;border-radius:4px">Potwierdzam</a></p>
             <p style="color:#777;font-size:12px">Jeśli to nie Ty, zignoruj tę wiadomość — bez potwierdzenia nie wyślemy nic więcej.</p>
-            <p>Street Show Crew</p>
+            <p>${signatureHtml()}</p>
         `,
     });
 }
@@ -753,7 +801,7 @@ async function sendDateSubscribersEmail({ subscribers, subject, message, onSent 
     for (const subscriber of subscribers) {
         const url = `${getAppUrl()}/wypisz?token=${subscriber.unsubscribe_token}`;
         const privacyUrl = `${getAppUrl()}/polityka-prywatnosci`;
-        const body = `Cześć,\n\n${message}\n\nStreet Show Crew`;
+        const body = `Cześć,\n\n${message}\n\n${signatureText()}`;
         const note = "Ten adres zapisano na stronie Street Show na powiadomienie o dacie wydarzenia.";
         try {
             await sendMail({
@@ -791,6 +839,7 @@ module.exports = {
     sendSecurityAlertEmail,
     sendNewSubmissionAdminEmail,
     sendPaymentProofAdminEmail,
+    sendChangesSubmittedAdminEmail,
     sendWithdrawalAdminEmail,
     sendPaymentReminderEmail,
     sendPaymentConfirmedEmail,

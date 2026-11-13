@@ -139,7 +139,8 @@ function QrScanner({ onCode, onClose }) {
     );
 }
 
-function verdict(car) {
+// fresh: this screen registered the entry a moment ago, so it's a confirmation, not a warning
+function verdict(car, fresh = false) {
     if (!car.validForCurrentEdition) {
         return { ok: false, text: "Inna edycja", note: `Wejściówka z edycji ${car.edition}` };
     }
@@ -148,14 +149,18 @@ function verdict(car) {
             ? { ok: false, text: "Nieopłacone", note: PAYMENT_LABELS[car.paymentStatus] }
             : { ok: false, text: "Kod nieważny", note: "Zgłoszenie nie jest zaakceptowane" };
     }
+    if (car.checkedInAt && fresh) {
+        return { ok: true, text: "Wjazd zarejestrowany", note: `Godzina wjazdu: ${formatHour(car.checkedInAt)}` };
+    }
     if (car.checkedInAt) {
         return { ok: false, text: "Już wjechał", note: `Wjazd zarejestrowany o ${formatHour(car.checkedInAt)}` };
     }
     return { ok: true, text: "Może wjechać", note: "" };
 }
 
-function ResultCard({ car, onToggle, onNext }) {
-    const { ok, text, note } = verdict(car);
+function ResultCard({ car, fresh, onToggle, onNext }) {
+    const { ok, text, note } = verdict(car, fresh);
+    const canEnter = ok && !car.checkedInAt;
     return (
         <>
             <div className={`gate-result ${ok ? "is-ok" : "is-bad"}`} role="status">
@@ -168,7 +173,7 @@ function ResultCard({ car, onToggle, onNext }) {
                     <p className="gate-result-car">{car.carBrand}</p>
                     <p className="gate-result-name">{car.name}</p>
                     {note && <p className="gate-result-name">{note}</p>}
-                    {ok && (
+                    {canEnter && (
                         <p className="gate-result-badges">
                             <span className="status-badge payment-status-paid">Opłacone</span>
                             <span className="status-badge status-pending">Pierwszy wjazd</span>
@@ -176,7 +181,7 @@ function ResultCard({ car, onToggle, onNext }) {
                     )}
                 </div>
             </div>
-            {ok ? (
+            {canEnter ? (
                 <>
                     <button type="button" className="gate-button is-primary" onClick={() => onToggle(car, true)}>
                         <i className="bi bi-box-arrow-in-right" aria-hidden="true" />
@@ -238,6 +243,8 @@ function ConnectionBar({ offline, savedAt, carsCount, queue, syncErrors, isSynci
 export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
     const [code, setCode] = useState(initialCode);
     const [result, setResult] = useState(null);
+    // car whose entry was registered on this screen; a later scan clears it
+    const [registeredId, setRegisteredId] = useState(null);
     const [invalid, setInvalid] = useState("");
     const [error, setError] = useState("");
     const [isScanning, setIsScanning] = useState(false);
@@ -338,6 +345,7 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
             applyQueue(loadSavedCars()?.cars || [], loadQueue()).find(
                 (row) => row.passHash === hash || row.shortHash === hash,
             );
+        setRegisteredId(null);
         if (car) {
             setResult(car);
         } else {
@@ -361,6 +369,7 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
                     setError("");
                     setInvalid("");
                     setOffline(false);
+                    setRegisteredId(null);
                     const pending = loadQueue().find((item) => item.id === data.car.id);
                     setResult(pending ? applyQueue([data.car], [pending])[0] : data.car);
                 },
@@ -420,6 +429,7 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
 
     async function toggleCheckin(car, checkedIn) {
         setError("");
+        setRegisteredId(checkedIn ? car.id : null);
         // keep order: if anything is queued, queue this one too
         if (offline || loadQueue().length) {
             saveOffline(car, checkedIn);
@@ -455,6 +465,7 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
 
     function next() {
         setResult(null);
+        setRegisteredId(null);
         setInvalid("");
         setCode("");
         setError("");
@@ -503,7 +514,12 @@ export default function GateCheckin({ initialCode = "", onAction = () => {} }) {
                 )}
 
                 {result ? (
-                    <ResultCard car={result} onToggle={toggleCheckin} onNext={next} />
+                    <ResultCard
+                        car={result}
+                        fresh={registeredId === result.id}
+                        onToggle={toggleCheckin}
+                        onNext={next}
+                    />
                 ) : invalid ? (
                     <>
                         <div className="gate-result is-bad" role="alert">

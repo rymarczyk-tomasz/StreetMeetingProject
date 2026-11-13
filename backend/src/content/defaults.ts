@@ -87,7 +87,7 @@ const DEFAULTS = {
     },
     gallery: {
         intro: "",
-        linkLabel: "Wszystkie albumy",
+        linkLabel: "Zobacz galerię",
         photos: [
             {
                 id: "default-1",
@@ -158,6 +158,8 @@ const DEFAULTS = {
         participantInfo: "",
     },
     templates: {
+        // closing line of every e-mail the site sends
+        signature: "Street Show Crew",
         items: [
             {
                 id: "note-photos",

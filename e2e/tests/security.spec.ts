@@ -108,6 +108,58 @@ test("nowy admin musi włączyć 2FA, zanim zobaczy panel", async ({ page, brows
     await waitForMail(email, /kodem zapasowym/);
 });
 
+test("panel użytkowników: potwierdzenia w oknach, odebranie admina z hasłem i kodem", async ({ page, browser }) => {
+    const email = uniqueEmail("potwierdzenia");
+    await register(page, email);
+
+    const admin = await adminPage(browser);
+    // the old browser alert must be gone: any native dialog fails the test
+    admin.on("dialog", (dialog) => {
+        throw new Error(`natywne okno: ${dialog.message()}`);
+    });
+    await admin.goto("/admin/uzytkownicy");
+    await admin.getByLabel("Szukaj użytkownika").fill(email);
+    const menu = () => admin.getByRole("button", { name: `Akcje dla ${email}` });
+
+    // block: cancel keeps the account active, confirm blocks it
+    await menu().click();
+    await admin.getByRole("menuitem", { name: "Zablokuj" }).click();
+    const block = admin.getByRole("dialog", { name: "Zablokować konto?" });
+    await expect(block).toContainText(email);
+    await block.getByRole("button", { name: "Anuluj" }).click();
+    await expect(block).toHaveCount(0);
+    await expect(admin.getByText("zablokowany")).toHaveCount(0);
+
+    await menu().click();
+    await admin.getByRole("menuitem", { name: "Zablokuj" }).click();
+    await admin.getByRole("dialog", { name: "Zablokować konto?" }).getByRole("button", { name: "Zablokuj" }).click();
+    await expect(admin.getByText("zablokowany")).toBeVisible();
+    await menu().click();
+    await admin.getByRole("menuitem", { name: "Odblokuj" }).click();
+    await expect(admin.getByText("zablokowany")).toHaveCount(0);
+
+    // log out everywhere
+    await menu().click();
+    await admin.getByRole("menuitem", { name: "Wyloguj wszędzie" }).click();
+    await admin.getByRole("dialog", { name: "Wylogować wszędzie?" }).getByRole("button", { name: "Wyloguj" }).click();
+    await expect(admin.getByText(/Wylogowano .* ze wszystkich urządzeń/)).toBeVisible();
+
+    // grant and take back admin: both need password + code
+    await menu().click();
+    await admin.getByRole("menuitem", { name: "Nadaj admina" }).click();
+    await expect(admin.getByRole("dialog", { name: "Potwierdź operację" })).toContainText("Nadajesz uprawnienia administratora");
+    await confirmStepUp(admin);
+    await expect(admin.getByText("bez 2FA")).toBeVisible();
+
+    await menu().click();
+    await admin.getByRole("menuitem", { name: "Odbierz admina" }).click();
+    await expect(admin.getByRole("dialog", { name: "Potwierdź operację" })).toContainText("Odbierasz uprawnienia administratora");
+    await confirmStepUp(admin);
+    await expect(admin.getByText("bez 2FA")).toHaveCount(0);
+    await waitForMail(ADMIN.email, /odebrano uprawnienia/);
+    await admin.context().close();
+});
+
 test("zwykły użytkownik nie widzi ustawień 2FA i loguje się samym hasłem", async ({ page }) => {
     const email = uniqueEmail("zwykly");
     await register(page, email);

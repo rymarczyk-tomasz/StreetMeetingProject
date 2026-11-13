@@ -309,7 +309,7 @@ function MobileMenu({ user, isHome, activeSection, ticketUrl, ticketLabel, event
     return (
         <div className="mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-label="Menu">
             <div className="mobile-menu-top">
-                <Link to="/" onClick={onClose} className="site-nav-logo">
+                <Link to="/#home" onClick={onClose} className="site-nav-logo">
                     <img src={LOGO_SRC} alt="Street Show – strona główna" />
                 </Link>
                 <button type="button" className="site-nav-icon-button" onClick={onClose} aria-label="Zamknij menu">
@@ -515,7 +515,7 @@ export default function Layout() {
                 <AnnouncementBar />
                 <nav className="site-nav" aria-label="Główna">
                     <div className="site-container site-nav-inner">
-                        <Link className="site-nav-logo" to="/">
+                        <Link className="site-nav-logo" to="/#home">
                             <img src={LOGO_SRC} alt="Street Show – strona główna" />
                         </Link>
                         <div className="site-nav-right">

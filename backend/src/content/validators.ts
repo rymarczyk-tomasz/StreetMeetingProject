@@ -391,7 +391,15 @@ function validateTemplates(input) {
             return { error: "Każdy szablon musi mieć nazwę i treść." };
         }
     }
-    return { content: { items } };
+    // up to three short lines; blank falls back to the default in notifications/email.ts
+    const signature = String(input.signature || "")
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .slice(0, 3)
+        .join("\n")
+        .slice(0, 200);
+    return { content: { signature, items } };
 }
 
 const VALIDATORS = {

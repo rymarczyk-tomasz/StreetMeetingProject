@@ -1,8 +1,9 @@
 const db = require("./database");
 
-// Albums mirror Google Drive folders (one folder = one album, e.g. "StreetShow 2025").
-// Photos are downloaded once and stored locally as WEBP thumbnails; the Drive file
-// id + signature tells the sync whether a photo changed.
+// The gallery is the photos of one Google Drive folder (Admin → Galeria). The folder
+// is stored as the single row of gallery_albums (the table predates this: it used to
+// hold one album per folder). Photos are downloaded once and stored locally as WEBP
+// thumbnails; the Drive file id + signature tells the sync whether a photo changed.
 db.exec(`
     CREATE TABLE IF NOT EXISTS gallery_albums (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,34 +47,18 @@ const listAlbumsStmt = db.prepare(`
     SELECT ${ALBUM_COLUMNS} FROM gallery_albums
     ORDER BY sort_order, year DESC, id DESC
 `);
-const findAlbumStmt = db.prepare(
-    `SELECT ${ALBUM_COLUMNS} FROM gallery_albums WHERE id = ?`,
-);
 const findAlbumByFolderStmt = db.prepare(
     `SELECT * FROM gallery_albums WHERE drive_folder_id = ?`,
 );
 const insertAlbumStmt = db.prepare(`
-    INSERT INTO gallery_albums (title, year, drive_folder_id, sort_order)
-    VALUES (@title, @year, @driveFolderId,
-        (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM gallery_albums))
+    INSERT INTO gallery_albums (title, year, drive_folder_id) VALUES (@title, NULL, @driveFolderId)
 `);
-const updateAlbumStmt = db.prepare(`
-    UPDATE gallery_albums
-    SET title = @title, year = @year, description = @description,
-        is_visible = @isVisible, cover_photo_id = @coverPhotoId
-    WHERE id = @id
-`);
-const setAlbumOrderStmt = db.prepare(
-    `UPDATE gallery_albums SET sort_order = ? WHERE id = ?`,
-);
+const renameAlbumStmt = db.prepare(`UPDATE gallery_albums SET title = ? WHERE id = ?`);
 const setAlbumSyncResultStmt = db.prepare(`
     UPDATE gallery_albums
     SET last_synced_at = datetime('now'), last_sync_error = ?
     WHERE id = ?
 `);
-const setAlbumCoverStmt = db.prepare(
-    `UPDATE gallery_albums SET cover_photo_id = ? WHERE id = ?`,
-);
 const deleteAlbumStmt = db.prepare(`DELETE FROM gallery_albums WHERE id = ?`);
 
 const listPhotosStmt = db.prepare(
@@ -97,45 +82,42 @@ const setPhotoHiddenStmt = db.prepare(
 );
 const deletePhotoStmt = db.prepare(`DELETE FROM gallery_photos WHERE id = ?`);
 
-function listAlbums() {
-    return listAlbumsStmt.all();
+// Databases from the time of albums: keep the newest one (the first), drop the rest.
+// Their local files are cleaned up by the next sync (sync.ts, pruneStrayAlbumDirs).
+function keepOnlyNewestAlbum() {
+    const newest = listAlbumsStmt.get();
+    if (!newest) return;
+    db.prepare("DELETE FROM gallery_photos WHERE album_id != ?").run(newest.id);
+    db.prepare("DELETE FROM gallery_albums WHERE id != ?").run(newest.id);
+}
+keepOnlyNewestAlbum();
+
+// the folder the gallery shows, or undefined when none was chosen yet
+function getGalleryFolder() {
+    return listAlbumsStmt.get();
 }
 
-function findAlbum(id) {
-    return findAlbumStmt.get(id);
+function listAlbums() {
+    return listAlbumsStmt.all();
 }
 
 function findAlbumByFolder(driveFolderId) {
     return findAlbumByFolderStmt.get(driveFolderId);
 }
 
-function createAlbum({ title, year, driveFolderId }) {
-    const result = insertAlbumStmt.run({ title, year: year || null, driveFolderId });
-    return findAlbum(result.lastInsertRowid);
+function createGalleryFolder({ title, driveFolderId }) {
+    const result = insertAlbumStmt.run({ title, driveFolderId });
+    return db
+        .prepare(`SELECT ${ALBUM_COLUMNS} FROM gallery_albums WHERE id = ?`)
+        .get(result.lastInsertRowid);
 }
 
-function updateAlbum(id, { title, year, description, isVisible, coverPhotoId }) {
-    updateAlbumStmt.run({
-        id,
-        title,
-        year: year || null,
-        description: description || "",
-        isVisible: isVisible ? 1 : 0,
-        coverPhotoId: coverPhotoId || null,
-    });
-    return findAlbum(id);
+function renameGalleryFolder(id, title) {
+    renameAlbumStmt.run(title, id);
 }
-
-const reorderAlbums = db.transaction((ids) => {
-    ids.forEach((id, index) => setAlbumOrderStmt.run(index, id));
-});
 
 function setAlbumSyncResult(id, error = null) {
     setAlbumSyncResultStmt.run(error, id);
-}
-
-function setAlbumCover(id, photoId) {
-    setAlbumCoverStmt.run(photoId, id);
 }
 
 function deleteAlbum(id) {
@@ -167,14 +149,13 @@ function deletePhoto(photoId) {
 }
 
 module.exports = {
+    keepOnlyNewestAlbum,
+    getGalleryFolder,
     listAlbums,
-    findAlbum,
     findAlbumByFolder,
-    createAlbum,
-    updateAlbum,
-    reorderAlbums,
+    createGalleryFolder,
+    renameGalleryFolder,
     setAlbumSyncResult,
-    setAlbumCover,
     deleteAlbum,
     listPhotos,
     findPhoto,

@@ -17,6 +17,7 @@ const {
 } = require("./helpers");
 const totp = require("../src/auth/totp");
 const siteContentDb = require("../src/db/siteContent");
+const twoFactorDb = require("../src/db/twoFactor");
 
 beforeEach(() => {
     mails.length = 0;
@@ -239,6 +240,39 @@ describe("potwierdzenie wrażliwych operacji", () => {
         // the new admin still can't use the panel until 2FA is set up
         const promoted = usersDb.findUserById(user.id);
         assert.equal((await api(promoted).get("/api/admin/stats")).body.code, "two_factor_setup_required");
+    });
+
+    test("odebranie roli admina też wymaga potwierdzenia i wysyła alert", async () => {
+        const admin = createUser({ role: "admin" });
+        const other = createUser({ role: "admin" });
+        const url = `/api/admin/users/${other.id}/role`;
+        mails.length = 0;
+
+        const bare = await api(admin).patch(url).send({ role: "user" });
+        assert.equal(bare.status, 403);
+        assert.equal(bare.body.code, "step_up_required");
+        assert.equal(usersDb.findUserById(other.id).role, "admin");
+
+        assert.equal((await api(admin).patch(url).send({ role: "user", stepUp: stepUpFor(admin) })).status, 200);
+        assert.equal(usersDb.findUserById(other.id).role, "user");
+        assert.ok(mails.some((mail) => /odebrano uprawnienia/.test(mail.subject)));
+
+        // the log says what was done, not just "role changed"
+        const entry = db
+            .prepare("SELECT details FROM audit_log WHERE action = 'user.role_changed' AND target_id = ? ORDER BY id DESC LIMIT 1")
+            .get(other.id);
+        assert.deepEqual(JSON.parse(entry.details), {
+            email: other.email,
+            role: "user",
+            previousRole: "admin",
+            twoFactorReset: true,
+        });
+
+        // back to a plain account: no leftover two-step login to get locked out of
+        assert.equal(twoFactorDb.isEnabled(usersDb.findUserById(other.id)), false);
+        const login = await passwordLogin(other.email);
+        assert.equal(login.status, 200, login.body.message);
+        assert.equal(login.body.twoFactorRequired, undefined);
     });
 
     test("wiadomość grupowa wymaga potwierdzenia", async () => {

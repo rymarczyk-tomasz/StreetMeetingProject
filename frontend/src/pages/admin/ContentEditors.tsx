@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import api from "../../api/client";
+import { askConfirm } from "../../api/confirm";
 import { plural } from "../../utils/plural";
 import { faqFirstNumbers } from "../../utils/faq";
 import HeroCropEditor from "./HeroCropEditor";
@@ -307,8 +308,8 @@ export function GalleryPreviewEditor({ onAction }) {
                 <>
                     <p className="admin-hint">
                         Te zdjęcia widać w sekcji „Galeria” na stronie głównej
-                        (pierwsze 3). Albumy pełnej galerii zarządzasz w zakładce
-                        Galeria.
+                        (pierwsze 3). Pełna galeria to zdjęcia z folderu na Dysku
+                        Google — wybierasz go w zakładce Galeria.
                     </p>
                     <TextArea
                         label="Opis nad podglądem galerii"
@@ -477,8 +478,14 @@ export function FaqEditor({ onAction }) {
                                                     items: moveItem(category.items, from, to),
                                                 })
                                             }
-                                            onRemove={() => {
-                                                if (window.confirm("Usunąć to pytanie?")) {
+                                            onRemove={async () => {
+                                                const confirmed = await askConfirm({
+                                                    title: "Usunąć pytanie?",
+                                                    message: "Pytanie zniknie z listy po zapisaniu zmian.",
+                                                    confirmLabel: "Usuń",
+                                                    danger: true,
+                                                });
+                                                if (confirmed) {
                                                     updateCategory(categoryIndex, {
                                                         items: category.items.filter(
                                                             (_, i) => i !== itemIndex,
@@ -511,12 +518,14 @@ export function FaqEditor({ onAction }) {
                                 index={categoryIndex}
                                 count={categories.length}
                                 onMove={(from, to) => setCategories(moveItem(categories, from, to))}
-                                onRemove={() => {
-                                    if (
-                                        window.confirm(
-                                            `Usunąć całą kategorię „${category.title}” razem z pytaniami?`,
-                                        )
-                                    ) {
+                                onRemove={async () => {
+                                    const confirmed = await askConfirm({
+                                        title: "Usunąć kategorię?",
+                                        message: `Kategoria „${category.title}” zniknie razem ze wszystkimi pytaniami po zapisaniu zmian.`,
+                                        confirmLabel: "Usuń",
+                                        danger: true,
+                                    });
+                                    if (confirmed) {
                                         setCategories(categories.filter((_, i) => i !== categoryIndex));
                                     }
                                 }}

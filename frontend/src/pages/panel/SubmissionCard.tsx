@@ -30,6 +30,9 @@ const EDITABLE_FIELDS = [
     ["carBrand", "Marka pojazdu", { maxLength: 100 }],
 ] as const;
 
+const CHANGES_SAVED_HINT =
+    "Zmiany zapisane. Gdy skończysz, kliknij „Wyślij poprawki”, żeby organizator dostał powiadomienie.";
+
 function formatDate(value) {
     if (!value) return "Brak danych";
     return new Intl.DateTimeFormat("pl-PL", { dateStyle: "medium", timeStyle: "short" }).format(
@@ -128,6 +131,13 @@ function PaymentBox({ submission, onChanged, notify }) {
                         Dane do przelewu poda organizator – dostaniesz e-mail.
                     </p>
                 ))}
+            {paymentStatus === "verification" && (
+                <p className="form-success" role="status">
+                    <i className="bi bi-check-circle-fill" aria-hidden="true" />{" "}
+                    {submission.paymentProofUrl ? "Potwierdzenie przelewu wysłane." : "Opłata zgłoszona."} Organizator
+                    sprawdzi płatność — damy znać e-mailem.
+                </p>
+            )}
             {submission.paymentProofUrl && (
                 <p className="payment-proof-link">
                     <i className="bi bi-file-earmark-check" aria-hidden="true" />{" "}
@@ -216,8 +226,30 @@ export default function SubmissionCard({
     const [isSaving, setIsSaving] = useState(false);
     const [showPass, setShowPass] = useState(false);
     const [showThread, setShowThread] = useState(false);
+    const [feedback, setFeedback] = useState({ message: "", error: "" });
+    const [isSendingChanges, setIsSendingChanges] = useState(false);
     const unreadMessages = s.messages?.unread || 0;
     const isPending = s.status === "pending";
+    const needsChanges = isPending && !archived && Boolean(s.changesRequestedAt);
+
+    // Shown inside the card, next to what the participant just did.
+    function say({ message = "", error = "" }) {
+        setFeedback({ message, error });
+        notify({});
+    }
+
+    async function sendChanges() {
+        setIsSendingChanges(true);
+        try {
+            const { data } = await api.post(`/submissions/${s.id}/changes-done`);
+            say({ message: data.message });
+            await onChanged();
+        } catch (err) {
+            say({ error: errorText(err, "Nie udało się wysłać poprawek.") });
+        } finally {
+            setIsSendingChanges(false);
+        }
+    }
     const canResign = !archived && ["approved", "waitlist"].includes(s.status) && !s.checkedInAt;
     const canResubmit =
         archived && availability?.open && availability.remaining > 0 && s.edition < availability.edition;
@@ -239,11 +271,11 @@ export default function SubmissionCard({
         setIsSaving(true);
         try {
             await api.patch(`/submissions/${s.id}`, editForm);
-            notify({ message: "Zgłoszenie zostało zaktualizowane." });
+            say({ message: needsChanges ? CHANGES_SAVED_HINT : "Zgłoszenie zostało zaktualizowane." });
             setMode("view");
             await onChanged();
         } catch (err) {
-            notify({ error: errorText(err, "Nie udało się zapisać zmian zgłoszenia.") });
+            say({ error: errorText(err, "Nie udało się zapisać zmian zgłoszenia.") });
         } finally {
             setIsSaving(false);
         }
@@ -254,7 +286,7 @@ export default function SubmissionCard({
         keepUrls.forEach((url) => formData.append("keep", url));
         newFiles.forEach((file) => formData.append("photos", file));
         await api.put(`/submissions/${s.id}/photos`, formData);
-        notify({ message: "Zdjęcia zostały zaktualizowane." });
+        say({ message: needsChanges ? CHANGES_SAVED_HINT : "Zdjęcia zostały zaktualizowane." });
         setMode("view");
         await onChanged();
     }
@@ -291,30 +323,28 @@ export default function SubmissionCard({
         }
         try {
             const { data } = await api.post(`/submissions/${s.id}/withdraw`);
-            notify({ message: data.message });
+            say({ message: data.message });
             await onChanged();
         } catch (err) {
-            notify({ error: errorText(err, "Nie udało się zapisać rezygnacji.") });
+            say({ error: errorText(err, "Nie udało się zapisać rezygnacji.") });
         }
     }
 
     async function saveToGarage() {
         try {
             const { data } = await api.post(`/vehicles/from-submission/${s.id}`);
-            notify({ message: data.message });
+            say({ message: data.message });
+            await onChanged();
         } catch (err) {
-            notify({ error: errorText(err, "Nie udało się zapisać pojazdu w garażu.") });
+            say({ error: errorText(err, "Nie udało się zapisać pojazdu w garażu.") });
         }
     }
 
-    // A submission waiting for the decision is shown as one compact row.
-    const isCompact = isPending && !archived;
-    const coverPhoto = !archived && !isCompact ? s.photos?.[0] : null;
+    const canEdit = isPending && !archived;
+    const coverPhoto = !archived ? s.photos?.[0] : null;
 
     return (
-        <li
-            className={`submission-card${archived ? " is-archived" : ""}${isCompact ? " is-compact" : ""}${coverPhoto ? " has-photo" : ""}`}
-        >
+        <li className={`submission-card${archived ? " is-archived" : ""}${coverPhoto ? " has-photo" : ""}`}>
             {coverPhoto && (
                 <button
                     type="button"
@@ -332,29 +362,10 @@ export default function SubmissionCard({
                 <div className="submission-card-head">
                     <div className="submission-card-title">
                         <h3>{s.carBrand}</h3>
-                        <Plate value={s.licensePlate} size={isCompact || archived ? "sm" : "md"} />
-                        {isCompact && (
-                            <span className={`status-badge status-${s.status}`}>
-                                {STATUS_LABELS[s.status] || s.status}
-                            </span>
-                        )}
+                        <Plate value={s.licensePlate} size={archived ? "sm" : "md"} />
                         {archived && <span className="status-badge status-edition">{s.edition}</span>}
                     </div>
-                    {isCompact ? (
-                        mode === "view" && (
-                            <div className="text-actions">
-                                <button type="button" className="text-action" onClick={startEditing}>
-                                    Edytuj dane
-                                </button>
-                                <button type="button" className="text-action" onClick={() => setMode("photos")}>
-                                    Zmień zdjęcia
-                                </button>
-                                <button type="button" className="text-action is-danger" onClick={withdraw}>
-                                    Wycofaj
-                                </button>
-                            </div>
-                        )
-                    ) : archived ? (
+                    {archived ? (
                         <button
                             type="button"
                             className="text-action"
@@ -363,6 +374,8 @@ export default function SubmissionCard({
                         >
                             {expanded ? "Ukryj szczegóły" : "Zobacz szczegóły"}
                         </button>
+                    ) : needsChanges ? (
+                        <span className="status-badge status-changes">Do poprawy</span>
                     ) : (
                         <span className={`status-badge status-${s.status}`}>
                             {STATUS_LABELS[s.status] || s.status}
@@ -370,7 +383,18 @@ export default function SubmissionCard({
                     )}
                 </div>
 
-                {!archived && !isCompact && (
+                {feedback.error && (
+                    <p className="form-error" role="alert">
+                        {feedback.error}
+                    </p>
+                )}
+                {feedback.message && (
+                    <p className="form-success" role="status">
+                        {feedback.message}
+                    </p>
+                )}
+
+                {!archived && (
                     <>
                         <Timeline submission={s} />
                         <p className="submission-next-step">{nextStep(s)}</p>
@@ -378,7 +402,7 @@ export default function SubmissionCard({
                 )}
 
                 {!archived && s.status === "approved" && (
-                    <PaymentBox submission={s} onChanged={onChanged} notify={notify} />
+                    <PaymentBox submission={s} onChanged={onChanged} notify={say} />
                 )}
 
                 {s.hasPass && !archived && (
@@ -398,6 +422,20 @@ export default function SubmissionCard({
                     <p className="submission-note">
                         <strong>Komentarz organizatora:</strong> {s.adminNote}
                     </p>
+                )}
+
+                {needsChanges && mode === "view" && (
+                    <div className="submission-actions">
+                        <button
+                            type="button"
+                            className="btn-street btn-street-primary"
+                            disabled={isSendingChanges}
+                            onClick={sendChanges}
+                        >
+                            <i className="bi bi-send" aria-hidden="true" />
+                            {isSendingChanges ? "Wysyłanie..." : "Wyślij poprawki"}
+                        </button>
+                    </div>
                 )}
 
                 {(!archived || s.messages?.total > 0) && (
@@ -472,11 +510,11 @@ export default function SubmissionCard({
                             await onChanged();
                         }}
                         onCancel={() => setMode("view")}
-                        notify={notify}
+                        notify={say}
                     />
                 )}
 
-                {mode === "view" && expanded && !isCompact && (
+                {mode === "view" && expanded && (
                     <details className="submission-details" open={archived}>
                         <summary>Szczegóły zgłoszenia</summary>
                         <dl className="submission-meta">
@@ -526,7 +564,7 @@ export default function SubmissionCard({
                     </details>
                 )}
 
-                {mode === "view" && !isCompact && (
+                {mode === "view" && (
                     <div className="text-actions submission-footer-actions">
                         {canResubmit && (
                             <button
@@ -537,12 +575,29 @@ export default function SubmissionCard({
                                 Zgłoś ponownie na edycję {availability.edition}
                             </button>
                         )}
-                        <button type="button" className="text-action" onClick={saveToGarage}>
-                            Zapisz w garażu
-                        </button>
+                        {canEdit && (
+                            <>
+                                <button type="button" className="text-action" onClick={startEditing}>
+                                    Edytuj dane
+                                </button>
+                                <button type="button" className="text-action" onClick={() => setMode("photos")}>
+                                    Zmień zdjęcia
+                                </button>
+                            </>
+                        )}
+                        {!s.inGarage && (
+                            <button type="button" className="text-action" onClick={saveToGarage}>
+                                Zapisz w garażu
+                            </button>
+                        )}
                         {canResign && (
                             <button type="button" className="text-action is-danger" onClick={resign}>
                                 Rezygnuję
+                            </button>
+                        )}
+                        {canEdit && (
+                            <button type="button" className="text-action is-danger" onClick={withdraw}>
+                                Wycofaj
                             </button>
                         )}
                     </div>

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import api from "../api/client";
+import { askConfirm } from "../api/confirm";
 import { withStepUp } from "../api/stepUp";
+import ConfirmDialog from "./ConfirmDialog";
 import StepUpDialog from "./StepUpDialog";
 import TwoFactorSetup, { RecoveryCodes } from "./TwoFactorSetup";
 import { useAuth } from "../context/auth";
@@ -21,7 +23,12 @@ export default function TwoFactorAccount() {
     useEffect(load, []);
 
     async function regenerate() {
-        if (!window.confirm("Wygenerować nowe kody zapasowe? Dotychczasowe przestaną działać.")) return;
+        const confirmed = await askConfirm({
+            title: "Wygenerować nowe kody zapasowe?",
+            message: "Dotychczasowe kody zapasowe przestaną działać. Nowe pokażemy tylko raz, więc zapisz je w bezpiecznym miejscu.",
+            confirmLabel: "Wygeneruj",
+        });
+        if (!confirmed) return;
         setError("");
         try {
             const { data } = await withStepUp((stepUp) => api.post("/auth/2fa/recovery-codes", { stepUp }));
@@ -35,6 +42,7 @@ export default function TwoFactorAccount() {
         <section className="account-card">
             <h2>Logowanie dwuetapowe</h2>
             <StepUpDialog />
+            <ConfirmDialog />
             {status && !status.enabled && (
                 <TwoFactorSetup
                     onDone={() => {

@@ -48,6 +48,7 @@ const {
     sendNewSubmissionAdminEmail,
     sendPaymentProofAdminEmail,
     sendWithdrawalAdminEmail,
+    sendChangesSubmittedAdminEmail,
 } = require("../notifications/email");
 
 const router = express.Router();
@@ -124,7 +125,10 @@ function toPublicSubmission(row) {
         checkedInAt: row.checked_in_at,
         consentAt: row.consent_at,
         photoPublishConsent: Boolean(row.photo_publish_consent),
+        inGarage: Boolean(vehiclesDb.findVehicleByPlate(row.user_id, row.license_plate)),
         adminNote: row.admin_note,
+        changesRequestedAt: row.changes_requested_at,
+        changesSubmittedAt: row.changes_submitted_at,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
         userEmail: row.user_email,
@@ -314,6 +318,16 @@ router.patch("/:id/payment-status", (req, res) => {
         submission.id,
         "verification",
     );
+    // once: a second click while it's already being verified doesn't mail again
+    if (submission.payment_status !== "verification") {
+        void sendPaymentProofAdminEmail({
+            submission: updated,
+            userEmail: req.user.email,
+            withProof: false,
+        }).catch((emailError) =>
+            console.error("[email] Powiadomienie o zgłoszonej opłacie:", emailError.message),
+        );
+    }
     res.json({ submission: toPublicSubmission(updated) });
 });
 
@@ -419,6 +433,26 @@ router.put("/:id/photos", (req, res, next) => {
     removeStoredPhotos(result.removed);
     res.json({ submission: toPublicSubmission(updated) });
 }));
+
+// the participant's answer to "Poproś o poprawki": tells the organizer to look again
+router.post("/:id/changes-done", submissionRateLimit, (req, res) => {
+    const submission = findOwnSubmission(req);
+    if (!submission) return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+    if (submission.status !== "pending" || !submission.changes_requested_at) {
+        return res.status(400).json({
+            message: "To zgłoszenie nie czeka na poprawki.",
+        });
+    }
+
+    const updated = submissionsDb.markChangesSubmitted(submission.id);
+    void sendChangesSubmittedAdminEmail({ submission: updated, userEmail: req.user.email }).catch(
+        (emailError) => console.error("[email] Powiadomienie o poprawkach:", emailError.message),
+    );
+    res.json({
+        submission: toPublicSubmission(updated),
+        message: "Poprawki wysłane. Organizator dostał powiadomienie i ponownie rozpatrzy zgłoszenie.",
+    });
+});
 
 router.delete("/:id", (req, res) => {
     const submission = findOwnSubmission(req);

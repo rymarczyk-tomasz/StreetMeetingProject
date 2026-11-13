@@ -27,7 +27,7 @@ const { getUserVehiclesDir } = require("../utils/paths");
 
 const router = express.Router();
 
-const MAX_VEHICLES = 20;
+const MAX_VEHICLES = 10;
 
 const upload = createImageUpload({
     destination: (req) => getUserVehiclesDir(req.user.sub),
@@ -72,6 +72,10 @@ function ensureRoom(req, res, next) {
     next();
 }
 
+function duplicatePlateMessage(licensePlate) {
+    return `Pojazd ${licensePlate} jest już w Twoim garażu.`;
+}
+
 router.use(authenticate);
 
 router.get("/", (req, res) => {
@@ -79,6 +83,7 @@ router.get("/", (req, res) => {
     const edition = siteContentDb.getCurrentEdition();
     res.json({
         edition,
+        maxVehicles: MAX_VEHICLES,
         vehicles: vehiclesDb.listVehicles(userId).map((row) => ({
             ...toPublicVehicle(row),
             submittedThisEdition: submissionsDb.hasActiveSubmissionForPlate(
@@ -98,6 +103,10 @@ router.post("/", ensureRoom, upload.array("photos", MAX_PHOTOS), asyncHandler(as
     if (error) {
         removeFiles(uploaded);
         return res.status(400).json({ message: error });
+    }
+    if (vehiclesDb.findVehicleByPlate(req.user.sub, fields.licensePlate)) {
+        removeFiles(uploaded);
+        return res.status(409).json({ message: duplicatePlateMessage(fields.licensePlate) });
     }
     if (uploaded.reduce((sum, file) => sum + file.size, 0) > MAX_TOTAL_PHOTOS_SIZE) {
         removeFiles(uploaded);
@@ -119,6 +128,9 @@ router.post("/from-submission/:id", ensureRoom, (req, res) => {
     if (!submission || Number(submission.user_id) !== Number(req.user.sub)) {
         return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
     }
+    if (vehiclesDb.findVehicleByPlate(req.user.sub, submission.license_plate)) {
+        return res.status(409).json({ message: duplicatePlateMessage(submission.license_plate) });
+    }
 
     const vehicle = vehiclesDb.createVehicle({
         userId: req.user.sub,
@@ -139,6 +151,11 @@ router.patch("/:id", (req, res) => {
 
     const { fields, error } = readVehicleFields(req.body);
     if (error) return res.status(400).json({ message: error });
+
+    const samePlate = vehiclesDb.findVehicleByPlate(req.user.sub, fields.licensePlate);
+    if (samePlate && samePlate.id !== vehicle.id) {
+        return res.status(409).json({ message: duplicatePlateMessage(fields.licensePlate) });
+    }
 
     res.json({ vehicle: toPublicVehicle(vehiclesDb.updateVehicle(vehicle.id, fields)) });
 });

@@ -7,7 +7,8 @@ import PhotoSetEditor from "../components/PhotoSetEditor";
 import Plate from "../components/Plate";
 
 const EMPTY_FORM = { carBrand: "", licensePlate: "", carDescription: "" };
-const ACCEPTED = "image/jpeg,image/png,image/webp,image/avif";
+const MAX_PHOTOS = 5;
+const ACCEPTED ="image/jpeg,image/png,image/webp,image/avif";
 
 function VehicleFields({ form, setForm }) {
     return (
@@ -213,6 +214,8 @@ export default function GaragePage() {
     const [form, setForm] = useState(EMPTY_FORM);
     const [files, setFiles] = useState<File[]>([]);
     const [isSaving, setIsSaving] = useState(false);
+    const [photosError, setPhotosError] = useState("");
+    const [maxVehicles, setMaxVehicles] = useState(0);
     const [feedback, setFeedback] = useState({ message: "", error: "" });
     const [lightbox, setLightbox] = useState({ photos: [], index: null, title: "" });
 
@@ -222,6 +225,7 @@ export default function GaragePage() {
                 ({ data }) => {
                     setVehicles(data.vehicles);
                     setEdition(data.edition);
+                    setMaxVehicles(data.maxVehicles || 0);
                 },
                 (err) =>
                     setFeedback({ message: "", error: err.response?.data?.message || "Nie udało się pobrać garażu." }),
@@ -244,6 +248,21 @@ export default function GaragePage() {
         );
     }
 
+    // Too many photos are refused outright instead of silently dropping the extra ones.
+    function pickFiles(event) {
+        const picked = Array.from(event.target.files || []) as File[];
+        if (picked.length > MAX_PHOTOS) {
+            event.target.value = "";
+            setFiles([]);
+            setPhotosError(`Wybrano ${picked.length} zdjęć — możesz dodać maksymalnie ${MAX_PHOTOS}. Wybierz je ponownie.`);
+            return;
+        }
+        setPhotosError("");
+        setFiles(picked);
+    }
+
+    const isFull = maxVehicles > 0 && vehicles?.length >= maxVehicles;
+
     async function add(event) {
         event.preventDefault();
         setIsSaving(true);
@@ -254,6 +273,7 @@ export default function GaragePage() {
             await api.post("/vehicles", formData);
             setForm(EMPTY_FORM);
             setFiles([]);
+            setPhotosError("");
             setIsAdding(false);
             notify({ message: "Pojazd dodany do garażu." });
             await load();
@@ -277,13 +297,19 @@ export default function GaragePage() {
                         jednym kliknięciem, także w kolejnych latach.
                     </p>
                 </div>
-                {!isAdding && vehicles?.length > 0 && (
+                {!isAdding && vehicles?.length > 0 && !isFull && (
                     <button type="button" className="btn-street btn-street-dark" onClick={startAdding}>
                         <i className="bi bi-plus-lg" aria-hidden="true" />
                         Dodaj pojazd
                     </button>
                 )}
             </div>
+            {maxVehicles > 0 && vehicles?.length > 0 && (
+                <p className="section-lead">
+                    Pojazdy w garażu: {vehicles.length} z {maxVehicles}.
+                    {isFull && " Garaż jest pełny — usuń któryś pojazd, żeby dodać kolejny."}
+                </p>
+            )}
             {feedback.error && <p className="form-error">{feedback.error}</p>}
             {feedback.message && <p className="form-success">{feedback.message}</p>}
 
@@ -292,14 +318,14 @@ export default function GaragePage() {
                     <h2>Nowy pojazd</h2>
                     <VehicleFields form={form} setForm={setForm} />
                     <label>
-                        Zdjęcia (maksymalnie 5, łącznie do 50 MB)
-                        <input
-                            type="file"
-                            accept={ACCEPTED}
-                            multiple
-                            onChange={(event) => setFiles((Array.from(event.target.files || []) as File[]).slice(0, 5))}
-                        />
+                        Zdjęcia (maksymalnie {MAX_PHOTOS}, łącznie do 50 MB)
+                        <input type="file" accept={ACCEPTED} multiple onChange={pickFiles} />
                     </label>
+                    {photosError && (
+                        <p className="form-error" role="alert">
+                            {photosError}
+                        </p>
+                    )}
                     <div className="submission-actions">
                         <button type="submit" disabled={isSaving}>
                             {isSaving ? "Zapisywanie..." : "Dodaj do garażu"}
@@ -349,12 +375,12 @@ export default function GaragePage() {
                             }
                         />
                     ))}
-                    {!isAdding && (
+                    {!isAdding && !isFull && (
                         <li>
                             <button type="button" className="vehicle-add-tile" onClick={startAdding}>
                                 <i className="bi bi-plus-circle" aria-hidden="true" />
                                 <span className="vehicle-add-title">Dodaj pojazd</span>
-                                <span>do 5 zdjęć, łącznie 50 MB</span>
+                                <span>do {MAX_PHOTOS} zdjęć, łącznie 50 MB</span>
                             </button>
                         </li>
                     )}

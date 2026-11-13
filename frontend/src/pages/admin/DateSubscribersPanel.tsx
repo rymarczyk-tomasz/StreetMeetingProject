@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import api from "../../api/client";
+import { askConfirm } from "../../api/confirm";
 import { withStepUp } from "../../api/stepUp";
+import { plural } from "../../utils/plural";
 import { errorMessage } from "./shared";
 
 export default function DateSubscribersPanel({ onAction }) {
@@ -38,7 +40,12 @@ export default function DateSubscribersPanel({ onAction }) {
     async function send(event) {
         event.preventDefault();
         const count = resendAll ? stats?.total : stats?.pending;
-        if (!window.confirm(`Wysłać „${subject}” do ${count ?? 0} osób?`)) return;
+        const confirmed = await askConfirm({
+            title: "Wysłać wiadomość?",
+            message: `Wiadomość „${subject}” zostanie wysłana do ${plural(count ?? 0, "osoby", "osób", "osób")} zapisanych na powiadomienie o dacie. Tego nie da się cofnąć.`,
+            confirmLabel: "Wyślij",
+        });
+        if (!confirmed) return;
 
         setIsBusy(true);
         setFeedback({ error: "", success: "" });

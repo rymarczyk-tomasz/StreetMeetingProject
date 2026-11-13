@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../api/client";
+import { askConfirm } from "../../api/confirm";
 import { formatDate } from "./shared";
 
 function RevisionHistory({ editor }) {
@@ -42,14 +43,13 @@ function RevisionHistory({ editor }) {
                                 <button
                                     type="button"
                                     className="button-secondary"
-                                    onClick={() => {
-                                        if (
-                                            window.confirm(
-                                                "Przywrócić tę wersję? Obecna treść zostanie zastąpiona (i też trafi do historii).",
-                                            )
-                                        ) {
-                                            editor.restore(revision.id);
-                                        }
+                                    onClick={async () => {
+                                        const confirmed = await askConfirm({
+                                            title: "Przywrócić tę wersję?",
+                                            message: `Obecna treść zostanie zastąpiona wersją z ${formatDate(revision.createdAt)} (i też trafi do historii).`,
+                                            confirmLabel: "Przywróć",
+                                        });
+                                        if (confirmed) editor.restore(revision.id);
                                     }}
                                 >
                                     Przywróć

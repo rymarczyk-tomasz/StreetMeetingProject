@@ -27,7 +27,9 @@ export function submissionSteps(submission) {
                       ? "Odrzucone"
                       : status === "waitlist"
                         ? "Lista rezerwowa"
-                        : "Rozpatrzone",
+                        : status === "pending" && submission.changesRequestedAt
+                          ? "Do poprawy"
+                          : "Rozpatrzone",
             state: (rejected ? "failed" : approved ? "done" : "current") as StepState,
         },
         {
@@ -44,6 +46,12 @@ export function submissionSteps(submission) {
 export function nextStep(submission) {
     const { status, paymentStatus, payment, paymentOverdue } = submission;
 
+    if (status === "pending" && submission.changesRequestedAt) {
+        return "Organizator prosi o poprawki — szczegóły w komentarzu poniżej. Popraw dane lub zdjęcia, a potem kliknij „Wyślij poprawki”, żeby zgłoszenie wróciło do rozpatrzenia.";
+    }
+    if (status === "pending" && submission.changesSubmittedAt) {
+        return "Poprawki wysłane — organizator dostał powiadomienie i ponownie rozpatrzy zgłoszenie.";
+    }
     if (status === "pending") {
         return "Czekamy na decyzję organizatora. Do tego czasu możesz poprawić dane i zdjęcia albo wycofać zgłoszenie.";
     }

@@ -66,8 +66,21 @@ const updateStatusStmt = db.prepare(`
         withdrawn_at = CASE WHEN @status = 'withdrawn' AND status != 'withdrawn'
             THEN datetime('now') ELSE withdrawn_at END,
         status = @status,
+        changes_requested_at = NULL,
+        changes_submitted_at = NULL,
         updated_at = datetime('now')
     WHERE id = @id
+`);
+const markChangesRequestedStmt = db.prepare(`
+    UPDATE submissions
+    SET changes_requested_at = datetime('now'), changes_submitted_at = NULL
+    WHERE id = ?
+`);
+const markChangesSubmittedStmt = db.prepare(`
+    UPDATE submissions
+    SET changes_requested_at = NULL, changes_submitted_at = datetime('now'),
+        updated_at = datetime('now')
+    WHERE id = ?
 `);
 const countByStatusStmt = db.prepare(
     `SELECT COUNT(*) AS count FROM submissions WHERE edition = ? AND status = ?`,
@@ -274,6 +287,16 @@ function updateSubmissionStatus(id, status, adminNote) {
     return findByIdStmt.get(id);
 }
 
+function markChangesRequested(id) {
+    markChangesRequestedStmt.run(id);
+    return findByIdStmt.get(id);
+}
+
+function markChangesSubmitted(id) {
+    markChangesSubmittedStmt.run(id);
+    return findByIdStmt.get(id);
+}
+
 function countApproved(edition) {
     return countByStatusStmt.get(edition, "approved").count;
 }
@@ -450,6 +473,8 @@ module.exports = {
     listAllSubmissions,
     listRecipients,
     updateSubmissionStatus,
+    markChangesRequested,
+    markChangesSubmitted,
     countApproved,
     listAwaitingPayment,
     markPaymentReminderSent,

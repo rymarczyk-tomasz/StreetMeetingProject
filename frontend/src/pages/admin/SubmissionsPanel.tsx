@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import api from "../../api/client";
+import { askConfirm } from "../../api/confirm";
 import Lightbox from "../../components/Lightbox";
 import AdminDialog from "./AdminDialog";
 import GroupEmailForm from "./GroupEmailForm";
@@ -225,7 +226,11 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
             if (
                 err.response?.status === 409 &&
                 data?.code === "capacity_full" &&
-                window.confirm(`${data.message}\n\nZaakceptować mimo to?`)
+                (await askConfirm({
+                    title: "Limit miejsc osiągnięty",
+                    message: `${data.message} Zaakceptować mimo to?`,
+                    confirmLabel: "Zaakceptuj mimo to",
+                }))
             ) {
                 return send(true);
             }
@@ -283,13 +288,13 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                 "Nie udało się zmienić widoczności auta na stronie.",
             ),
         deleteSubmission: async (submission) => {
-            if (
-                !window.confirm(
-                    `Trwale usunąć zgłoszenie ${submission.carBrand} (${submission.licensePlate}) razem ze zdjęciami?`,
-                )
-            ) {
-                return;
-            }
+            const confirmed = await askConfirm({
+                title: "Usunąć zgłoszenie?",
+                message: `Zgłoszenie ${submission.carBrand} (${submission.licensePlate}) zostanie trwale usunięte razem ze zdjęciami. Tego nie da się cofnąć.`,
+                confirmLabel: "Usuń",
+                danger: true,
+            });
+            if (!confirmed) return;
             const response = await runAction(
                 () => api.delete(`/admin/submissions/${submission.id}`),
                 "Nie udało się usunąć zgłoszenia.",

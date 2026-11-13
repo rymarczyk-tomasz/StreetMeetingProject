@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import api from "../../api/client";
+import { askConfirm } from "../../api/confirm";
 import { withStepUp } from "../../api/stepUp";
 import { plural } from "../../utils/plural";
 import AdminHeading from "./AdminHeading";
@@ -108,20 +109,29 @@ export default function UsersPanel({ onAction }) {
         const nextRole = targetUser.role === "admin" ? "user" : "admin";
         return runAction(
             () =>
-                withStepUp((stepUp) =>
-                    api.patch(`/admin/users/${targetUser.id}/role`, {
-                        role: nextRole,
-                        stepUp,
-                    }),
+                withStepUp(
+                    (stepUp) =>
+                        api.patch(`/admin/users/${targetUser.id}/role`, {
+                            role: nextRole,
+                            stepUp,
+                        }),
+                    nextRole === "admin"
+                        ? `Nadajesz uprawnienia administratora: ${targetUser.email}.`
+                        : `Odbierasz uprawnienia administratora: ${targetUser.email}.`,
                 ),
             "Nie udało się zmienić roli.",
         );
     }
 
-    function toggleActive(targetUser) {
+    async function toggleActive(targetUser) {
         if (
             targetUser.is_active &&
-            !window.confirm(`Zablokować konto ${targetUser.email}? Nie będzie mogło się zalogować.`)
+            !(await askConfirm({
+                title: "Zablokować konto?",
+                message: `Konto ${targetUser.email} zostanie zablokowane, a ta osoba zostanie wylogowana i nie będzie mogła się zalogować, dopóki go nie odblokujesz.`,
+                confirmLabel: "Zablokuj",
+                danger: true,
+            }))
         ) {
             return;
         }
@@ -146,21 +156,34 @@ export default function UsersPanel({ onAction }) {
 
     async function resetTwoFactor(targetUser) {
         if (
-            !window.confirm(
-                `Wyłączyć logowanie dwuetapowe dla ${targetUser.email}? Użyj tylko, gdy ta osoba zgubiła telefon i kody zapasowe — przy następnym wejściu do panelu ustawi je od nowa.`,
-            )
+            !(await askConfirm({
+                title: "Wyłączyć logowanie dwuetapowe?",
+                message: `Logowanie dwuetapowe konta ${targetUser.email} zostanie wyłączone, a konto wylogowane ze wszystkich urządzeń. Użyj tego tylko, gdy ta osoba zgubiła telefon i kody zapasowe — przy następnym wejściu do panelu ustawi je od nowa.`,
+                confirmLabel: "Wyłącz 2FA",
+                danger: true,
+            }))
         ) {
             return;
         }
         const data = await runAction(
-            () => withStepUp((stepUp) => api.post(`/admin/users/${targetUser.id}/2fa-reset`, { stepUp })),
+            () =>
+                withStepUp(
+                    (stepUp) => api.post(`/admin/users/${targetUser.id}/2fa-reset`, { stepUp }),
+                    `Wyłączasz logowanie dwuetapowe: ${targetUser.email}.`,
+                ),
             "Nie udało się zresetować logowania dwuetapowego.",
         );
         if (data) setMessage(`Logowanie dwuetapowe ${targetUser.email} zostało zresetowane.`);
     }
 
     async function revokeSessions(targetUser) {
-        if (!window.confirm(`Wylogować ${targetUser.email} na wszystkich urządzeniach?`)) return;
+        const confirmed = await askConfirm({
+            title: "Wylogować wszędzie?",
+            message: `Wszystkie sesje konta ${targetUser.email} na każdym urządzeniu zostaną unieważnione. Ta osoba będzie musiała zalogować się ponownie.`,
+            confirmLabel: "Wyloguj",
+            danger: true,
+        });
+        if (!confirmed) return;
         const data = await runAction(
             () => api.post(`/admin/users/${targetUser.id}/logout`),
             "Nie udało się wylogować użytkownika.",

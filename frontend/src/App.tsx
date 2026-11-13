@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Navigate, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import HomePage from "./pages/HomePage";
@@ -29,7 +29,8 @@ function App() {
             <Route element={<Layout />}>
                 <Route index element={<HomePage />} />
                 <Route path="galeria" element={<GalleryPage />} />
-                <Route path="galeria/:albumId" element={<GalleryPage />} />
+                {/* links to the old per-edition albums */}
+                <Route path="galeria/:albumId" element={<Navigate to="/galeria" replace />} />
                 <Route path="auta-select" element={<ShowcasePage />} />
                 <Route path="faq" element={<FaqPage />} />
                 <Route path="regulamin" element={<RegulaminPage />} />

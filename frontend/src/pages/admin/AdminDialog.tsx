@@ -13,6 +13,12 @@ export default function AdminDialog({
     wide?: boolean;
 }) {
     const panelRef = useRef<HTMLDivElement>(null);
+    // Callers often pass a fresh inline function on every render (e.g. while typing).
+    // Setting up the dialog again for that would pull the focus back to the first field.
+    const onCloseRef = useRef(onClose);
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    });
 
     useEffect(() => {
         const opener = document.activeElement as HTMLElement | null;
@@ -22,7 +28,7 @@ export default function AdminDialog({
         (firstField || panelRef.current)?.focus();
 
         function onKey(event: KeyboardEvent) {
-            if (event.key === "Escape") onClose();
+            if (event.key === "Escape") onCloseRef.current();
         }
         document.addEventListener("keydown", onKey);
         document.body.classList.add("is-dialog-open");
@@ -31,7 +37,7 @@ export default function AdminDialog({
             document.body.classList.remove("is-dialog-open");
             opener?.focus?.();
         };
-    }, [onClose]);
+    }, []);
 
     return (
         <div className="admin-dialog-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>

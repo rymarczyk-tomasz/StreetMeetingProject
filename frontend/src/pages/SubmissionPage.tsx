@@ -75,8 +75,10 @@ export default function SubmissionPage() {
         return Promise.all([api.get("/submissions/availability"), api.get("/vehicles")])
             .then(([availabilityResponse, vehiclesResponse]) => {
                 setAvailability(availabilityResponse.data.availability);
-                setVehicles(vehiclesResponse.data.vehicles);
-                return vehiclesResponse.data.vehicles;
+                // cars already submitted to this edition can't be submitted again
+                const free = vehiclesResponse.data.vehicles.filter((item) => !item.submittedThisEdition);
+                setVehicles(free);
+                return free;
             })
             .catch((err) => {
                 setError(err.response?.data?.message || "Nie udało się sprawdzić dostępności zgłoszeń.");

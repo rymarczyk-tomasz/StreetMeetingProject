@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const db = require("../db/database");
+const galleryDb = require("../db/gallery");
 const { BACKUP_DIR } = require("../maintenance");
 const { isEmailConfigured } = require("../notifications/email");
 const drive = require("../gallery/drive");
@@ -63,14 +64,15 @@ async function diskSpace() {
 }
 
 function galleryState() {
-    const row = db
-        .prepare(
-            `SELECT COUNT(*) AS albums, MAX(last_synced_at) AS lastSyncedAt,
-                    SUM(CASE WHEN last_sync_error IS NOT NULL AND last_sync_error != '' THEN 1 ELSE 0 END) AS failing
-             FROM gallery_albums`,
-        )
-        .get();
-    return { ...row, configured: drive.hasDriveCredentials(), sync: getSyncStatus() };
+    const folder = galleryDb.getGalleryFolder();
+    return {
+        folder: folder?.title || "",
+        photos: folder?.photo_count || 0,
+        lastSyncedAt: folder?.last_synced_at || null,
+        failing: Boolean(folder?.last_sync_error),
+        configured: drive.hasDriveCredentials(),
+        sync: getSyncStatus(),
+    };
 }
 
 function check(id, label, level, detail) {
@@ -121,9 +123,8 @@ async function getSystemStatus() {
                   "Galeria (Dysk Google)",
                   gallery.failing || gallery.sync.lastError ? "error" : "ok",
                   [
-                      `${gallery.albums} albumów`,
+                      gallery.folder ? `folder „${gallery.folder}”, zdjęć: ${gallery.photos}` : "nie wskazano folderu",
                       gallery.lastSyncedAt ? `ostatnia synchronizacja ${gallery.lastSyncedAt} UTC` : "jeszcze nie synchronizowano",
-                      gallery.failing ? `błędy w ${gallery.failing} albumach` : "",
                       gallery.sync.lastError || "",
                   ]
                       .filter(Boolean)

@@ -39,12 +39,12 @@ const { isPaymentOverdue, getFeeAmount, hasPaymentDetails } = require("../paymen
 const threadsDb = require("../db/threads");
 const ratingsDb = require("../db/ratings");
 const { getThread, postToThread, readMessageBody } = require("../submissions/thread");
-const { adminRouter: albumsRouter } = require("../gallery/routes");
+const { adminRouter: galleryRouter } = require("../gallery/routes");
 
 const router = express.Router();
 
 router.use(authenticate, requireRole("admin"));
-router.use("/albums", albumsRouter);
+router.use("/gallery", galleryRouter);
 
 const SUBMISSION_STATUSES = ["pending", "approved", "rejected", "waitlist", "withdrawn"];
 // "overdue" is a filter only: approved, unpaid and past the payment deadline.
@@ -316,10 +316,19 @@ router.patch("/users/:id/role", async (req, res) => {
     }
 
     const granting = role === "admin" && target.role !== "admin";
-    if (granting && !(await confirmStepUp(req, res))) return;
+    const revoking = role === "user" && target.role === "admin";
+    if ((granting || revoking) && !(await confirmStepUp(req, res))) return;
 
     const updated = usersDb.updateUserRole(id, role);
-    audit(req, "user.role_changed", "user", id, { email: updated.email, role });
+    // a plain user has no way to manage two-step login, so it goes with the admin role
+    const twoFactorWasOn = revoking && twoFactorDb.isEnabled(target);
+    if (revoking) twoFactorDb.reset(id);
+    audit(req, "user.role_changed", "user", id, {
+        email: updated.email,
+        role,
+        previousRole: target.role,
+        ...(twoFactorWasOn ? { twoFactorReset: true } : {}),
+    });
     if (role !== target.role) {
         alertAdmins(
             req,
@@ -327,7 +336,7 @@ router.patch("/users/:id/role", async (req, res) => {
             [
                 granting
                     ? `Konto ${updated.email} dostało uprawnienia administratora. Przy pierwszym wejściu do panelu musi włączyć logowanie dwuetapowe.`
-                    : `Konto ${updated.email} nie jest już administratorem.`,
+                    : `Konto ${updated.email} nie jest już administratorem, a jego logowanie dwuetapowe zostało wyłączone.`,
             ],
         );
     }
@@ -762,10 +771,11 @@ router.patch("/submissions/:id/status", (req, res) => {
     const problem = capacityProblem([existing], status, force);
     if (problem) return res.status(409).json(problem);
 
-    const updated = changeSubmissionStatus(req, existing, status, adminNote);
+    let updated = changeSubmissionStatus(req, existing, status, adminNote);
 
     // "Poproś o poprawki" - not for a plain "Przywróć do oczekujących" or bulk changes
     if (status === "pending" && adminNote && req.body.requestChanges === true) {
+        updated = submissionsDb.markChangesRequested(existing.id);
         void sendChangesRequestedEmail({
             submission: updated,
             user: usersDb.findUserById(existing.user_id),

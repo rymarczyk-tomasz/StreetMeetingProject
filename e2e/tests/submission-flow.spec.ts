@@ -73,6 +73,12 @@ test("admin prosi o lepsze zdjęcia, a uczestnik może poprawić zgłoszenie", a
     await page.getByLabel("Marka pojazdu").fill("Skoda Octavia RS");
     await page.getByRole("button", { name: "Zapisz zmiany" }).click();
     await expect(page.getByText("Skoda Octavia RS").first()).toBeVisible();
+
+    await page.getByRole("button", { name: "Wyślij poprawki" }).click();
+    await expect(page.getByText(/Poprawki wysłane/).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Wyślij poprawki" })).toHaveCount(0);
+    const notice = await waitForMail("org@streetshow.test", /poprawki do zgłoszenia/);
+    expect(notice.text).toContain("Skoda Octavia RS");
 });
 
 test("akceptacja: uczestnik dostaje maila i widzi dane do przelewu", async ({ page, browser }) => {
@@ -142,10 +148,13 @@ test("bramka: kod z wejściówki wpuszcza auto tylko raz", async ({ browser }) =
     await expect(admin.getByText(plate.replace(" ", "")).or(admin.getByText(plate)).first()).toBeVisible();
     await admin.getByRole("button", { name: "Zarejestruj wjazd" }).click();
     await expect(admin.getByRole("button", { name: "Cofnij wjazd (pomyłka)" }).first()).toBeVisible();
+    await expect(admin.getByText("Wjazd zarejestrowany", { exact: true })).toBeVisible();
+    await expect(admin.getByText("Już wjechał")).toHaveCount(0);
 
     await admin.getByRole("button", { name: "Skanuj kolejny" }).click();
     await admin.getByLabel("Kod z wejściówki").fill(passCode);
     await admin.getByRole("button", { name: "Sprawdź" }).click();
+    await expect(admin.getByText("Już wjechał")).toBeVisible();
     await expect(admin.getByRole("button", { name: "Zarejestruj wjazd" })).toHaveCount(0);
     await admin.context().close();
 });

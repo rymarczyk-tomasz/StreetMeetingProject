@@ -22,11 +22,12 @@ import {
     SubmissionSettingsEditor,
     TemplatesEditor,
 } from "./ContentEditors";
-import GalleryAlbumsPanel from "./GalleryAlbumsPanel";
+import GalleryPanel from "./GalleryPanel";
 import MessagesPanel from "./MessagesPanel";
 import SubmissionsPanel from "./SubmissionsPanel";
 import UsersPanel from "./UsersPanel";
 import DateSubscribersPanel from "./DateSubscribersPanel";
+import ConfirmDialog from "../../components/ConfirmDialog";
 import StepUpDialog from "../../components/StepUpDialog";
 import TwoFactorSetup from "../../components/TwoFactorSetup";
 import { useAuth } from "../../context/auth";
@@ -332,9 +333,9 @@ function AdminPanel() {
                         <div className="admin-section">
                             <AdminHeading
                                 title="Galeria"
-                                description="Albumy ze zdjęciami z Dysku Google, widoczne na stronie /galeria."
+                                description="Zdjęcia z jednego folderu na Dysku Google, widoczne na stronie /galeria."
                             />
-                            <GalleryAlbumsPanel onAction={onAction} />
+                            <GalleryPanel onAction={onAction} />
                         </div>
                     )}
 
@@ -429,6 +430,7 @@ export default function AdminPage() {
         <>
             <AdminPanel />
             <StepUpDialog />
+            <ConfirmDialog />
         </>
     );
 }

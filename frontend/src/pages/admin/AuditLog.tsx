@@ -39,6 +39,7 @@ const ACTION_LABELS = {
     "home.content_updated": "zaktualizował treść Home",
     "gallery.content_updated": "zaktualizował podgląd galerii",
     "gallery.synced": "uruchomił synchronizację galerii z Dyskiem Google",
+    "gallery.folder_set": "wskazał folder galerii na Dysku Google",
     "gallery.album_created": "dodał album galerii",
     "gallery.album_updated": "zmienił album galerii",
     "gallery.album_deleted": "usunął album galerii",
@@ -65,6 +66,11 @@ const ACTION_LABELS = {
 };
 
 function describeAction(entry) {
+    if (entry.action === "user.role_changed") {
+        const role = entry.details?.role;
+        if (role === "admin") return "nadał uprawnienia administratora użytkownikowi";
+        if (role === "user") return "odebrał uprawnienia administratora użytkownikowi";
+    }
     if (ACTION_LABELS[entry.action]) return ACTION_LABELS[entry.action];
     if (entry.action.endsWith(".content_restored")) {
         return "przywrócił poprzednią wersję treści";
@@ -74,6 +80,9 @@ function describeAction(entry) {
 
 function describeDetails(entry) {
     const details = entry.details || {};
+    if (entry.action === "user.role_changed" && details.twoFactorReset) {
+        return " — wyłączono też logowanie dwuetapowe tego konta";
+    }
     if (details.adminNote) return ` — „${details.adminNote}”`;
     if (details.title) return ` — „${details.title}”`;
     if (entry.action === "edition.content_updated" && details.year) {

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { askConfirm } from "../../api/confirm";
 import Plate from "../../components/Plate";
 import SubmissionThread from "../../components/SubmissionThread";
 import { TemplatePicker } from "./templates";
@@ -76,14 +77,14 @@ function MoreMenu({ submission, isBusy, actions }) {
     if (["approved", "waitlist"].includes(submission.status)) {
         items.push([
             "Oznacz rezygnację",
-            () => {
-                if (
-                    window.confirm(
-                        `Oznaczyć rezygnację ${submission.carBrand} (${submission.licensePlate})? Użyj, gdy uczestnik zrezygnował np. telefonicznie.`,
-                    )
-                ) {
-                    actions.setStatus(submission, "withdrawn");
-                }
+            async () => {
+                const confirmed = await askConfirm({
+                    title: "Oznaczyć rezygnację?",
+                    message: `Zgłoszenie ${submission.carBrand} (${submission.licensePlate}) zostanie oznaczone jako rezygnacja. Użyj tego, gdy uczestnik zrezygnował np. telefonicznie.`,
+                    confirmLabel: "Oznacz rezygnację",
+                    danger: true,
+                });
+                if (confirmed) actions.setStatus(submission, "withdrawn");
             },
         ]);
     }
@@ -121,10 +122,22 @@ function MoreMenu({ submission, isBusy, actions }) {
 }
 
 function DecisionTab({ submission, isBusy, actions, noteTemplates, queue }) {
-    const [note, setNote] = useState(submission.adminNote || "");
+    // Starts empty after every decision, so an old comment can't ride along with the next one.
+    const [note, setNote] = useState("");
 
     return (
         <div className="detail-tab">
+            {submission.status === "pending" && submission.changesSubmittedAt && (
+                <p className="detail-note">
+                    <i className="bi bi-check2-circle" aria-hidden="true" /> Uczestnik wysłał poprawki{" "}
+                    {formatDate(submission.changesSubmittedAt)} — zgłoszenie czeka na ponowne rozpatrzenie.
+                </p>
+            )}
+            {submission.status === "pending" && submission.changesRequestedAt && (
+                <p className="detail-muted">
+                    Poproszono o poprawki {formatDate(submission.changesRequestedAt)} — czekamy na uczestnika.
+                </p>
+            )}
             <div className="detail-field-head">
                 <label htmlFor={`note-${submission.id}`} className="field-label">
                     Komentarz dla uczestnika
@@ -152,6 +165,14 @@ function DecisionTab({ submission, isBusy, actions, noteTemplates, queue }) {
                 onChange={(event) => setNote(event.target.value)}
                 placeholder="Widoczny w panelu i w e-mailu z decyzją…"
             />
+            {submission.adminNote && (
+                <p className="detail-muted">
+                    Poprzedni komentarz (nowa decyzja go zastąpi): „{submission.adminNote}”{" "}
+                    <button type="button" className="text-action" onClick={() => setNote(submission.adminNote)}>
+                        Użyj ponownie
+                    </button>
+                </p>
+            )}
             <div className="detail-decision">
                 <button
                     type="button"
@@ -424,7 +445,7 @@ export default function SubmissionDetails({
             </div>
             {tab === "decyzja" && (
                 <DecisionTab
-                    key={`d-${s.id}-${s.adminNote}`}
+                    key={`d-${s.id}-${s.status}-${s.updatedAt}`}
                     submission={s}
                     isBusy={isBusy}
                     actions={actions}

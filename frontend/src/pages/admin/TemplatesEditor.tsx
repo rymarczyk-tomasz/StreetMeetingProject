@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
+import { askConfirm } from "../../api/confirm";
 import { moveItem, newId } from "./shared";
 import { ContentForm } from "./ContentForm";
 import { useContentEditor } from "./useContentEditor";
@@ -20,6 +21,10 @@ const FILTERS = [
 const VARIABLES = {
     note: ["{rok}", "{marka}", "{rejestracja}"],
     group: ["{rok}"],
+};
+const VARIABLE_HINTS = {
+    note: "Zmienne zostaną podmienione od razu, gdy wstawisz szablon w zgłoszeniu.",
+    group: "{rok} zostanie podmienione po wybraniu szablonu. Wiadomość zaczyna się sama od „Cześć Imię,” — nie wpisuj powitania w treści.",
 };
 
 function firstLine(text) {
@@ -106,7 +111,7 @@ function TemplateForm({ draft, setDraft, isNew, isSaving, onSave, onCancel, onRe
                 />
             </label>
             <div className="templates-variables">
-                <span>Wstaw dane zgłoszenia:</span>
+                <span>{draft.kind === "group" ? "Wstaw:" : "Wstaw dane zgłoszenia:"}</span>
                 {VARIABLES[draft.kind].map((variable) => (
                     <button
                         key={variable}
@@ -118,6 +123,7 @@ function TemplateForm({ draft, setDraft, isNew, isSaving, onSave, onCancel, onRe
                     </button>
                 ))}
             </div>
+            <p className="admin-hint">{VARIABLE_HINTS[draft.kind]}</p>
             <div className="templates-form-footer">
                 <button
                     type="button"
@@ -168,7 +174,13 @@ export default function TemplatesEditor({ onAction }) {
     }
 
     async function remove(item) {
-        if (!window.confirm(`Usunąć szablon „${item.title}”?`)) return;
+        const confirmed = await askConfirm({
+            title: "Usunąć szablon?",
+            message: `Szablon „${item.title}” zostanie usunięty.`,
+            confirmLabel: "Usuń",
+            danger: true,
+        });
+        if (!confirmed) return;
         if (await saveItems(items.filter((other) => other.id !== item.id))) setEditing(null);
     }
 
@@ -288,6 +300,33 @@ export default function TemplatesEditor({ onAction }) {
                 })}
                 {newRow && <li className="templates-row is-open">{renderForm()}</li>}
             </ul>
+
+            <fieldset className="templates-signature">
+                <legend>Podpis w e-mailach</legend>
+                <p className="admin-hint">
+                    Kończy każdą wiadomość wysyłaną ze strony: decyzje, przypomnienia, wiadomości do grupy i do
+                    osób z „Daj mi znać”. Do trzech krótkich linijek; puste pole przywraca „Street Show Crew”.
+                </p>
+                <textarea
+                    className="field-input field-textarea"
+                    aria-label="Podpis w e-mailach"
+                    rows={2}
+                    maxLength={200}
+                    value={editor.content?.signature ?? ""}
+                    placeholder="Street Show Crew"
+                    onChange={(event) => editor.update({ signature: event.target.value })}
+                />
+                <div className="templates-form-footer">
+                    <button
+                        type="button"
+                        className="btn-street btn-street-primary"
+                        disabled={editor.isSaving}
+                        onClick={() => editor.save(null)}
+                    >
+                        {editor.isSaving ? "Zapisywanie..." : "Zapisz podpis"}
+                    </button>
+                </div>
+            </fieldset>
         </ContentForm>
     );
 }
