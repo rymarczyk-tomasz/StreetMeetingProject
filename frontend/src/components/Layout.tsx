@@ -6,13 +6,16 @@ import { formatEditionDate } from "../utils/edition";
 import { useScrollLock } from "../utils/useScrollLock";
 import AnnouncementBar from "./AnnouncementBar";
 import ConfirmDialog from "./ConfirmDialog";
+import MaintenanceScreen from "./MaintenanceScreen";
 
-const LAYOUT_CONTENT_KEYS = ["contact", "home", "edition"];
+const LAYOUT_CONTENT_KEYS = ["contact", "home", "edition", "maintenance"];
+// pages that stay open during maintenance so organizers can still log in
+const MAINTENANCE_OPEN_PATHS = ["/logowanie", "/nie-pamietam-hasla", "/reset-hasla"];
 const LOGO_SRC = "/img/logo-street-show-white.png";
 // site author credit, kept out of the CMS on purpose
 const AUTHOR = { name: "Tomasz Rymarczyk", url: "https://tomaszrymarczyk.pl" };
 
-function useNavbarOffset() {
+function useNavbarOffset(chromeVisible: boolean) {
     const location = useLocation();
 
     useEffect(() => {
@@ -42,7 +45,7 @@ function useNavbarOffset() {
         const observer = new ResizeObserver(applyOffset);
         if (navbar) observer.observe(navbar);
         return () => observer.disconnect();
-    }, [location.pathname]);
+    }, [location.pathname, chromeVisible]);
 }
 
 // "/#select" from another page: the section only exists once the page has
@@ -488,16 +491,28 @@ function PageFooter({ contact }) {
 }
 
 export default function Layout() {
-    const { user, logout } = useAuth();
+    const { user, logout, isLoading: authLoading } = useAuth();
     const location = useLocation();
     const isHome = location.pathname === "/";
     const [menuOpen, setMenuOpen] = useState(false);
     const closeMenu = useCallback(() => setMenuOpen(false), []);
+    const { content, error: contentError } = useContent(LAYOUT_CONTENT_KEYS);
 
-    useNavbarOffset();
+    // Maintenance mode: admins see the real site (with a reminder bar), gate staff keep
+    // /wjazd, everyone else gets the notice screen except on the login pages.
+    const maintenance = content?.maintenance;
+    const maintenanceOn = Boolean(maintenance?.enabled);
+    const bypassesMaintenance =
+        user?.role === "admin" ||
+        (user?.canCheckIn && location.pathname.startsWith("/wjazd")) ||
+        MAINTENANCE_OPEN_PATHS.includes(location.pathname);
+    const closed = maintenanceOn && !authLoading && !bypassesMaintenance;
+    // until we know whether the site is closed the page itself is held back
+    const pending = !contentError && (!content || authLoading);
+
+    useNavbarOffset(!closed);
     useScrollToHash();
     const activeHomeSection = useActiveHomeSection(isHome);
-    const { content } = useContent(LAYOUT_CONTENT_KEYS);
     const contact = content?.contact;
     const ticketUrl = content?.home?.ticketUrl;
     const ticketLabel = content?.home?.ticketLabel || "Kup bilety";
@@ -510,9 +525,19 @@ export default function Layout() {
         setMenuOpen(false);
     }
 
+    if (closed) return <MaintenanceScreen maintenance={maintenance} contact={contact} />;
+
     return (
         <>
             <div className="fixed-top" id="navbar">
+                {maintenanceOn && user?.role === "admin" && (
+                    <div className="announcement-bar is-warning" role="status">
+                        <span>
+                            Tryb serwisowy jest włączony — odwiedzający widzą planszę „{maintenance.title}”.
+                        </span>
+                        <Link to="/admin/ustawienia?zakladka=serwis">Zmień</Link>
+                    </div>
+                )}
                 <AnnouncementBar />
                 <nav className="site-nav" aria-label="Główna">
                     <div className="site-container site-nav-inner">
@@ -579,11 +604,15 @@ export default function Layout() {
             )}
 
             <div className="app-page-content">
-                <Suspense
-                    fallback={<p className="page-status">Ładowanie...</p>}
-                >
-                    <Outlet />
-                </Suspense>
+                {pending ? (
+                    <p className="page-status">Ładowanie...</p>
+                ) : (
+                    <Suspense
+                        fallback={<p className="page-status">Ładowanie...</p>}
+                    >
+                        <Outlet />
+                    </Suspense>
+                )}
             </div>
 
             {isHome ? <HomeFooter contact={contact} /> : <PageFooter contact={contact} />}

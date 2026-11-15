@@ -106,14 +106,27 @@ function getContent(key) {
 
     const defaults = JSON.parse(JSON.stringify(DEFAULTS[key]));
     const row = getRowStmt.get(key);
-    if (!row) return defaults;
+    if (!row) return withEnvOverrides(key, defaults);
 
     // Merge over defaults so fields added after a section was first saved don't come back undefined.
     try {
-        return { ...defaults, ...JSON.parse(row.content) };
+        return withEnvOverrides(key, { ...defaults, ...JSON.parse(row.content) });
     } catch {
-        return defaults;
+        return withEnvOverrides(key, defaults);
     }
+}
+
+// MAINTENANCE_MODE=on in config/.env keeps the site closed from the very first start
+// (before an admin can log in); the panel can't switch it off, the variable has to go.
+function withEnvOverrides(key, content) {
+    if (key === "maintenance" && /^(1|true|on)$/i.test(String(process.env.MAINTENANCE_MODE || "").trim())) {
+        return { ...content, enabled: true, forcedByEnv: true };
+    }
+    return content;
+}
+
+function isMaintenanceOn() {
+    return Boolean(getContent("maintenance").enabled);
 }
 
 const saveContent = db.transaction((key, content, adminId = null) => {
@@ -185,6 +198,7 @@ module.exports = {
     getRevisionContent,
     getContentVersion,
     getSettings,
+    isMaintenanceOn,
     getCurrentEdition,
     getEditionDate,
     getSubmissionsAvailability,

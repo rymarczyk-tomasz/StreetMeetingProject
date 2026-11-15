@@ -91,6 +91,8 @@ SMTP_PASSWORD=
 SMTP_FROM="Street Show <no-reply@$MAIL_DOMAIN>"
 SMTP_REPLY_TO=kontakt@$MAIL_DOMAIN
 ADMIN_NOTIFY_EMAIL=
+# on = visitors see only the maintenance screen; remove this line and restart the API to open the site
+MAINTENANCE_MODE=on
 
 GOOGLE_PROJECT_ID=
 GOOGLE_PRIVATE_KEY_ID=

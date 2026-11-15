@@ -52,6 +52,7 @@ const ACTION_LABELS = {
     "select.content_updated": "zaktualizował sekcję Strefa Select",
     "announcement.content_updated": "zmienił ogłoszenie na stronie",
     "partners.content_updated": "zaktualizował partnerów",
+    "maintenance.content_updated": "zmienił tryb serwisowy",
     "edition.content_updated": "zmienił edycję wydarzenia",
     "settings.updated": "zmienił ustawienia zgłoszeń",
     "templates.content_updated": "zmienił szablony wiadomości",
@@ -158,6 +159,7 @@ const CATEGORY_OPTIONS = [
     ["regulamin.", "Regulamin"],
     ["announcement.", "Ogłoszenie"],
     ["partners.", "Partnerzy"],
+    ["maintenance.", "Tryb serwisowy"],
 ];
 
 export default function AuditLog({ refreshKey }) {

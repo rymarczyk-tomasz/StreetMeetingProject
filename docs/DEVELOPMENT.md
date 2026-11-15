@@ -95,6 +95,7 @@ TRUST_PROXY=loopback                  # nginx na tym samym serwerze; liczba hop�
 BACKUP_DIR=/home/streetshow/backups    # domyślnie backend/backups
 BACKUP_KEEP=14                        # ile dziennych kopii bazy trzymać
 BACKUP_DISABLED=false
+MAINTENANCE_MODE=on                   # wymusza tryb serwisowy (plansza „strona w przebudowie” dla odwiedzających); bez tego przełącza go panel: Ustawienia → Tryb serwisowy
 GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, ...  # konto serwisowe Google do galerii (folder wskazuje się w panelu, nie w .env)
 GALLERY_SYNC_DAILY_HOUR=3             # o której w nocy synchronizować galerię
 ```

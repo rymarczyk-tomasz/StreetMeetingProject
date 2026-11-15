@@ -707,6 +707,59 @@ export function AnnouncementEditor({ onAction }) {
     );
 }
 
+// ---- Maintenance mode ----------------------------------------------------------------
+
+export function MaintenanceEditor({ onAction }) {
+    const editor = useContentEditor("maintenance", onAction);
+    const maintenance = editor.content;
+
+    return (
+        <ContentForm editor={editor} saveLabel="Zapisz">
+            {maintenance && (
+                <>
+                    <p className="admin-hint">
+                        Gdy tryb serwisowy jest włączony, odwiedzający i zwykłe konta widzą tylko planszę z
+                        komunikatem poniżej, a API odpowiada im błędem 503 (nie da się też założyć konta).
+                        Ty, jako administrator, widzisz stronę normalnie i możesz ją spokojnie poprawiać —
+                        u góry pojawia się wtedy żółty pasek z przypomnieniem. Logowanie jest zawsze dostępne
+                        pod adresem /logowanie.
+                    </p>
+                    {maintenance.forcedByEnv && (
+                        <p className="payment-alert" role="status">
+                            Tryb serwisowy jest wymuszony zmienną MAINTENANCE_MODE w pliku config/.env na
+                            serwerze. Aby go wyłączyć, usuń tę zmienną i zrestartuj API (pm2 restart
+                            streetshow-api).
+                        </p>
+                    )}
+                    <label className="admin-checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={Boolean(maintenance.enabled)}
+                            disabled={Boolean(maintenance.forcedByEnv)}
+                            onChange={(event) => editor.update({ enabled: event.target.checked })}
+                        />
+                        Włącz tryb serwisowy (strona w przebudowie)
+                    </label>
+                    <TextInput
+                        label="Tytuł planszy"
+                        value={maintenance.title}
+                        maxLength={120}
+                        onChange={(title) => editor.update({ title })}
+                    />
+                    <TextArea
+                        label="Komunikat dla odwiedzających"
+                        hint="Zwykły tekst, kolejne linie zostaną zachowane. Np. kiedy wracamy albo gdzie można się odezwać."
+                        value={maintenance.message}
+                        rows={4}
+                        maxLength={600}
+                        onChange={(message) => editor.update({ message })}
+                    />
+                </>
+            )}
+        </ContentForm>
+    );
+}
+
 // ---- Partners ------------------------------------------------------------------------
 
 const PARTNER_TIERS = [

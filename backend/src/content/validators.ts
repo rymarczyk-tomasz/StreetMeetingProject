@@ -289,6 +289,17 @@ function validateAnnouncement(input) {
     return { content };
 }
 
+function validateMaintenance(input) {
+    const content = {
+        enabled: Boolean(input.enabled),
+        title: text(input.title, 120),
+        // plain text, line breaks are kept
+        message: String(input.message || "").trim().slice(0, 600),
+    };
+    if (!content.title) return { error: "Podaj tytuł planszy, np. „Strona w przebudowie”." };
+    return { content };
+}
+
 const PARTNER_TIERS = ["main", "partner", "exhibitor"];
 
 function validatePartners(input) {
@@ -414,6 +425,7 @@ const VALIDATORS = {
     privacy: documentValidator("polityki prywatności"),
     announcement: validateAnnouncement,
     partners: validatePartners,
+    maintenance: validateMaintenance,
     settings: validateSettings,
     templates: validateTemplates,
 };

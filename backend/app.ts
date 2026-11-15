@@ -11,6 +11,7 @@ const gateRoutes = require("./src/gate/routes");
 const { router: showcaseRoutes } = require("./src/showcase/routes");
 const dateSubscribersRoutes = require("./src/notifications/dateSubscribersRoutes");
 const siteContentDb = require("./src/db/siteContent");
+const { maintenanceGuard } = require("./src/maintenanceGuard");
 const { PUBLIC_CONTENT_KEYS } = require("./src/content/defaults");
 const {
     CONTENT_UPLOAD_ROOT,
@@ -101,6 +102,8 @@ app.use(
     }),
 );
 
+// no new accounts while the site is closed; the rest of auth stays open so admins can log in
+app.use("/api/auth/register", maintenanceGuard);
 app.use("/api/auth", authRoutes);
 
 // Public page content: GET /api/content?keys=home,event,contact returns several
@@ -140,12 +143,14 @@ app.get("/api/select-status", (req, res) => {
         edition: siteContentDb.getCurrentEdition(),
     });
 });
-app.use("/api/notify", dateSubscribersRoutes);
-app.use("/api/gallery", galleryPublicRoutes);
-app.use("/api/showcase", showcaseRoutes);
 app.get("/api/health", (req, res) => {
     res.json({ status: "OK" });
 });
+// everything below answers 503 to non-admins while maintenance mode is on
+app.use("/api", maintenanceGuard);
+app.use("/api/notify", dateSubscribersRoutes);
+app.use("/api/gallery", galleryPublicRoutes);
+app.use("/api/showcase", showcaseRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/submissions", submissionsRoutes);
 app.use("/api/vehicles", vehiclesRoutes);

@@ -16,6 +16,7 @@ import {
     FaqEditor,
     GalleryPreviewEditor,
     HomeEditor,
+    MaintenanceEditor,
     PartnersEditor,
     SelectEditor,
     RegulaminEditor,
@@ -82,6 +83,7 @@ const SETTINGS_TABS = [
     ["oplaty", "Opłaty"],
     ["szablony", "Szablony wiadomości"],
     ["powiadomienia", "Lista „Daj mi znać”"],
+    ["serwis", "Tryb serwisowy"],
 ] as const;
 
 function Tabs({ tabs, active, onChange, label }) {
@@ -388,6 +390,7 @@ function AdminPanel() {
                                 </div>
                             )}
                             {settingsTab === "powiadomienia" && <DateSubscribersPanel onAction={onAction} />}
+                            {settingsTab === "serwis" && <MaintenanceEditor onAction={onAction} />}
                         </div>
                     )}
 

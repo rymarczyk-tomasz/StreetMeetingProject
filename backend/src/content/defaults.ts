@@ -142,6 +142,12 @@ const DEFAULTS = {
         title: "Partnerzy",
         items: [],
     },
+    // while enabled, visitors see only a "work in progress" screen; admins keep full access
+    maintenance: {
+        enabled: false,
+        title: "Strona w przebudowie",
+        message: "Pracujemy nad stroną. Wkrótce wróci do działania — zajrzyj do nas niebawem.",
+    },
     settings: {
         submissionsOpen: true,
         submissionsDeadline: "",
@@ -226,6 +232,7 @@ const PUBLIC_CONTENT_KEYS = [
     "privacy",
     "announcement",
     "partners",
+    "maintenance",
 ];
 
 module.exports = { DEFAULTS, PUBLIC_CONTENT_KEYS };

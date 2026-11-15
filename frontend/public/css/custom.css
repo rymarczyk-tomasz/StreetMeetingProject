@@ -566,6 +566,71 @@ body {
     transform: translateY(-50%);
 }
 
+/* ---- Maintenance screen (whole site closed, see Layout) ---- */
+.maintenance-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    padding: 32px 20px;
+    background: var(--street-ink);
+    color: #fff;
+    text-align: center;
+}
+
+.maintenance-card {
+    width: min(560px, 100%);
+    padding: 40px 28px;
+    border-top: 4px solid var(--street-yellow);
+    border-radius: 6px;
+    background: #1f1f1f;
+}
+
+.maintenance-logo {
+    display: block;
+    width: 220px;
+    max-width: 70%;
+    height: auto;
+    margin: 0 auto 28px;
+}
+
+.maintenance-card h1 {
+    margin: 0 0 14px;
+    color: var(--street-yellow);
+    font-size: clamp(26px, 6vw, 38px);
+    line-height: 1.15;
+    text-transform: uppercase;
+}
+
+.maintenance-message {
+    margin: 0;
+    color: #e6e6e8;
+    font-size: 18px;
+    line-height: 1.6;
+    white-space: pre-line;
+}
+
+.maintenance-contact {
+    margin: 22px 0 0;
+    color: var(--street-on-dark);
+    font-size: 15px;
+}
+
+.maintenance-contact a {
+    color: var(--street-yellow);
+}
+
+.maintenance-login {
+    padding: 10px;
+    color: var(--street-on-dark);
+    font-size: 13px;
+    opacity: 0.65;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
 /* ---- Navigation ---- */
 .site-nav {
     background: var(--street-ink);

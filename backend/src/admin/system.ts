@@ -3,6 +3,7 @@ const path = require("path");
 
 const db = require("../db/database");
 const galleryDb = require("../db/gallery");
+const siteContentDb = require("../db/siteContent");
 const { BACKUP_DIR } = require("../maintenance");
 const { isEmailConfigured } = require("../notifications/email");
 const drive = require("../gallery/drive");
@@ -130,6 +131,14 @@ async function getSystemStatus() {
                       .filter(Boolean)
                       .join(" · "),
               ),
+        siteContentDb.isMaintenanceOn()
+            ? check(
+                  "maintenance",
+                  "Tryb serwisowy",
+                  "warn",
+                  "Włączony — odwiedzający widzą planszę „strona w przebudowie”. Wyłączysz go w Ustawienia → Tryb serwisowy.",
+              )
+            : check("maintenance", "Tryb serwisowy", "ok", "Wyłączony — strona działa normalnie."),
         disk
             ? check(
                   "disk",
