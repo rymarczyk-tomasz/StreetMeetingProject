@@ -1,3 +1,4 @@
+import Select from "../../components/Select";
 import { useCallback, useEffect, useRef, useState } from "react";
 import api from "../../api/client";
 import { askConfirm } from "../../api/confirm";
@@ -234,7 +235,7 @@ export default function UsersPanel({ onAction }) {
                     }
                     placeholder="Szukaj: e-mail, imię lub nazwisko…"
                 />
-                <select
+                <Select
                     aria-label="Rola"
                     value={userFilters.role}
                     onChange={(event) =>
@@ -247,8 +248,8 @@ export default function UsersPanel({ onAction }) {
                     <option value="">Rola: wszystkie</option>
                     <option value="user">Rola: użytkownicy</option>
                     <option value="admin">Rola: administratorzy</option>
-                </select>
-                <select
+                </Select>
+                <Select
                     aria-label="Status konta"
                     value={userFilters.active}
                     onChange={(event) =>
@@ -261,7 +262,7 @@ export default function UsersPanel({ onAction }) {
                     <option value="">Status: wszystkie</option>
                     <option value="1">Status: aktywne</option>
                     <option value="0">Status: zablokowane</option>
-                </select>
+                </Select>
             </div>
             {isLoading ? (
                 <p className="page-status">Ładowanie...</p>

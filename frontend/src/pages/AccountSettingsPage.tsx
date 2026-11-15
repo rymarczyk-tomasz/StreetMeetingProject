@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/auth";
 import api from "../api/client";
+import { askConfirm } from "../api/confirm";
 import TwoFactorAccount from "../components/TwoFactorAccount";
 
 export default function AccountSettingsPage() {
@@ -139,9 +140,12 @@ export default function AccountSettingsPage() {
     async function deleteAccount(event) {
         event.preventDefault();
         clearFeedback();
-        const confirmed = window.confirm(
-            "Czy na pewno chcesz trwale usunąć konto wraz ze wszystkimi zgłoszeniami?",
-        );
+        const confirmed = await askConfirm({
+            title: "Usunąć konto?",
+            message: "Konto zostanie trwale usunięte wraz ze wszystkimi zgłoszeniami. Tego nie da się cofnąć.",
+            confirmLabel: "Usuń konto",
+            danger: true,
+        });
         if (!confirmed) return;
 
         setIsDeleting(true);

@@ -129,9 +129,9 @@ test("admin potwierdza opłatę, uczestnik dostaje wejściówkę z kodem QR", as
 test("z opłaconym miejscem nie da się usunąć konta", async ({ page }) => {
     await login(page, email);
     await page.goto("/ustawienia-konta");
-    page.once("dialog", (dialog) => dialog.accept());
     await page.getByLabel("Potwierdź hasłem").fill("Haslo-e2e-123");
     await page.getByRole("button", { name: "Usuń konto" }).click();
+    await page.getByRole("dialog", { name: "Usunąć konto?" }).getByRole("button", { name: "Usuń konto" }).click();
     await expect(page.getByText(/Masz opłacone miejsce/)).toBeVisible();
 
     await page.goto("/panel");

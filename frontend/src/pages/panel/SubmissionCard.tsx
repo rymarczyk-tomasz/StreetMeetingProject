@@ -1,5 +1,6 @@
 import { useState } from "react";
 import api from "../../api/client";
+import { askConfirm } from "../../api/confirm";
 import ConsentFields from "../../components/ConsentFields";
 import CopyField from "../../components/CopyField";
 import EntryPass from "../../components/EntryPass";
@@ -292,13 +293,13 @@ export default function SubmissionCard({
     }
 
     async function withdraw() {
-        if (
-            !window.confirm(
-                `Czy na pewno wycofać zgłoszenie ${s.carBrand} (${s.licensePlate})? Zdjęcia zostaną usunięte.`,
-            )
-        ) {
-            return;
-        }
+        const confirmed = await askConfirm({
+            title: "Wycofać zgłoszenie?",
+            message: `Zgłoszenie ${s.carBrand} (${s.licensePlate}) zostanie wycofane, a zdjęcia usunięte.`,
+            confirmLabel: "Wycofaj",
+            danger: true,
+        });
+        if (!confirmed) return;
         try {
             const { data } = await api.delete(`/submissions/${s.id}`);
             notify({ message: data.message });
@@ -314,13 +315,13 @@ export default function SubmissionCard({
                 ? " Opłata jest już potwierdzona — o zwrocie zdecyduje organizator zgodnie z regulaminem."
                 : "";
         const place = s.status === "waitlist" ? "miejsce na liście rezerwowej" : "miejsce w strefie Select";
-        if (
-            !window.confirm(
-                `Zrezygnować z udziału auta ${s.carBrand} (${s.licensePlate})? Twoje ${place} przejdzie na kolejną osobę i nie da się tego cofnąć samodzielnie.${warning}`,
-            )
-        ) {
-            return;
-        }
+        const confirmed = await askConfirm({
+            title: "Zrezygnować z udziału?",
+            message: `Auto ${s.carBrand} (${s.licensePlate}): Twoje ${place} przejdzie na kolejną osobę i nie da się tego cofnąć samodzielnie.${warning}`,
+            confirmLabel: "Rezygnuję",
+            danger: true,
+        });
+        if (!confirmed) return;
         try {
             const { data } = await api.post(`/submissions/${s.id}/withdraw`);
             say({ message: data.message });

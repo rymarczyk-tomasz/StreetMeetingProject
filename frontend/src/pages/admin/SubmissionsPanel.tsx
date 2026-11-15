@@ -1,3 +1,4 @@
+import Select from "../../components/Select";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import api from "../../api/client";
@@ -471,7 +472,7 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                     </label>
                     <label>
                         <span className="visually-hidden">Opłata</span>
-                        <select
+                        <Select
                             value={params.paymentStatus}
                             onChange={(event) => setParams({ paymentStatus: event.target.value, id: null })}
                         >
@@ -480,16 +481,16 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                             <option value="verification">Do weryfikacji</option>
                             <option value="paid">Opłacone</option>
                             <option value="overdue">Po terminie płatności</option>
-                        </select>
+                        </Select>
                     </label>
                     <label>
                         <span className="visually-hidden">Sortowanie</span>
-                        <select value={params.sort} onChange={(event) => setParams({ sort: event.target.value === "newest" ? "" : event.target.value })}>
+                        <Select value={params.sort} onChange={(event) => setParams({ sort: event.target.value === "newest" ? "" : event.target.value })}>
                             <option value="newest">Najnowsze</option>
                             <option value="oldest">Najstarsze</option>
                             <option value="rating">Najwyżej oceniane</option>
                             <option value="unrated">Do oceny</option>
-                        </select>
+                        </Select>
                     </label>
                 </div>
 

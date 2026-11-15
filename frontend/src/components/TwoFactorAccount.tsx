@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import api from "../api/client";
 import { askConfirm } from "../api/confirm";
 import { withStepUp } from "../api/stepUp";
-import ConfirmDialog from "./ConfirmDialog";
 import StepUpDialog from "./StepUpDialog";
 import TwoFactorSetup, { RecoveryCodes } from "./TwoFactorSetup";
 import { useAuth } from "../context/auth";
@@ -42,7 +41,6 @@ export default function TwoFactorAccount() {
         <section className="account-card">
             <h2>Logowanie dwuetapowe</h2>
             <StepUpDialog />
-            <ConfirmDialog />
             {status && !status.enabled && (
                 <TwoFactorSetup
                     onDone={() => {

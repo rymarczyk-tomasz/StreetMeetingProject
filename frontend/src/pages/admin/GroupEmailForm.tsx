@@ -1,3 +1,4 @@
+import Select from "../../components/Select";
 import { useEffect, useState } from "react";
 import api from "../../api/client";
 import { askConfirm } from "../../api/confirm";
@@ -109,13 +110,13 @@ export default function GroupEmailForm({ edition, onSent }) {
             <form className="event-editor" onSubmit={send}>
                 <label>
                     <span className="field-label">Do kogo</span>
-                    <select value={audienceId} onChange={(event) => setAudienceId(event.target.value)}>
+                    <Select value={audienceId} onChange={(event) => setAudienceId(event.target.value)}>
                         {AUDIENCES.map((item) => (
                             <option key={item.id} value={item.id}>
                                 {item.label}
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </label>
                 <p className="admin-hint">
                     Odbiorców: <strong>{recipients?.count ?? "…"}</strong> (każdy

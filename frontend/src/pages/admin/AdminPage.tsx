@@ -1,3 +1,4 @@
+import Select from "../../components/Select";
 import { useCallback, useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import api from "../../api/client";
@@ -27,7 +28,6 @@ import MessagesPanel from "./MessagesPanel";
 import SubmissionsPanel from "./SubmissionsPanel";
 import UsersPanel from "./UsersPanel";
 import DateSubscribersPanel from "./DateSubscribersPanel";
-import ConfirmDialog from "../../components/ConfirmDialog";
 import StepUpDialog from "../../components/StepUpDialog";
 import TwoFactorSetup from "../../components/TwoFactorSetup";
 import { useAuth } from "../../context/auth";
@@ -119,7 +119,7 @@ function EditionSelect({ editions, value, onChange, className = "" }) {
     return (
         <label className={`admin-edition-select ${className}`}>
             <span className="visually-hidden">Edycja</span>
-            <select value={value} onChange={(event) => onChange(event.target.value)}>
+            <Select value={value} onChange={(event) => onChange(event.target.value)}>
                 <option value="">
                     Edycja {editions?.currentEdition ?? ""}
                 </option>
@@ -131,7 +131,7 @@ function EditionSelect({ editions, value, onChange, className = "" }) {
                         </option>
                     ))}
                 <option value="all">Wszystkie lata</option>
-            </select>
+            </Select>
         </label>
     );
 }
@@ -144,7 +144,7 @@ function Sidebar({ active, rail, counts, editions, edition, onEdition, onOpen })
                 <EditionSelect editions={editions} value={edition} onChange={onEdition} />
                 <label className="admin-section-select">
                     <span className="visually-hidden">Sekcja</span>
-                    <select value={active} onChange={(event) => onOpen(event.target.value)}>
+                    <Select value={active} onChange={(event) => onOpen(event.target.value)}>
                         {NAV_GROUPS.map(([group, items]) => (
                             <optgroup label={group} key={group}>
                                 {items.map(([id, label]) => (
@@ -156,7 +156,7 @@ function Sidebar({ active, rail, counts, editions, edition, onEdition, onOpen })
                                 ))}
                             </optgroup>
                         ))}
-                    </select>
+                    </Select>
                 </label>
             </div>
             <nav className="admin-sidenav" aria-label="Sekcje panelu administratora">
@@ -430,7 +430,6 @@ export default function AdminPage() {
         <>
             <AdminPanel />
             <StepUpDialog />
-            <ConfirmDialog />
         </>
     );
 }

@@ -5,6 +5,7 @@ import { useContent } from "../api/content";
 import { formatEditionDate } from "../utils/edition";
 import { useScrollLock } from "../utils/useScrollLock";
 import AnnouncementBar from "./AnnouncementBar";
+import ConfirmDialog from "./ConfirmDialog";
 
 const LAYOUT_CONTENT_KEYS = ["contact", "home", "edition"];
 const LOGO_SRC = "/img/logo-street-show-white.png";
@@ -586,6 +587,7 @@ export default function Layout() {
             </div>
 
             {isHome ? <HomeFooter contact={contact} /> : <PageFooter contact={contact} />}
+            <ConfirmDialog />
         </>
     );
 }

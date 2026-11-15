@@ -1,5 +1,6 @@
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { askText } from "../api/confirm";
 import { transformWordHtml } from "../utils/wordPaste";
 
 type RichTextEditorProps = {
@@ -89,12 +90,16 @@ export default function RichTextEditor({
         }
     }
 
-    function editLink() {
+    async function editLink() {
         const previous = editor.getAttributes("link").href || "";
-        const url = window.prompt(
-            "Adres linku (np. https://… albo /regulamin). Zostaw puste, aby usunąć link.",
-            previous,
-        );
+        const url = await askText({
+            title: "Link",
+            message: "Wpisz adres linku. Zostaw puste, aby usunąć link.",
+            label: "Adres",
+            placeholder: "https://… albo /regulamin",
+            value: previous,
+            confirmLabel: "Zapisz",
+        });
         if (url === null) return;
         if (!url.trim()) {
             editor.chain().focus().extendMarkRange("link").unsetLink().run();

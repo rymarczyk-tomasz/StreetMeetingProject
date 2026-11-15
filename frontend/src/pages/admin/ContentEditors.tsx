@@ -1,3 +1,4 @@
+import Select from "../../components/Select";
 import { lazy, Suspense, useEffect, useState } from "react";
 import api from "../../api/client";
 import { askConfirm } from "../../api/confirm";
@@ -684,13 +685,13 @@ export function AnnouncementEditor({ onAction }) {
                     />
                     <label>
                         <span className="field-label">Kolor</span>
-                        <select
+                        <Select
                             value={announcement.variant}
                             onChange={(event) => editor.update({ variant: event.target.value })}
                         >
                             <option value="info">Czarny (informacja)</option>
                             <option value="warning">Żółty (ważne)</option>
-                        </select>
+                        </Select>
                     </label>
                     <label>
                         <span className="field-label">Ukryj automatycznie po dniu (opcjonalnie)</span>
@@ -767,7 +768,7 @@ export function PartnersEditor({ onAction }) {
                                 )}
                                 <label>
                                     <span className="field-label">Rodzaj</span>
-                                    <select
+                                    <Select
                                         value={item.tier || "exhibitor"}
                                         onChange={(event) => updateItem(index, { tier: event.target.value })}
                                     >
@@ -776,7 +777,7 @@ export function PartnersEditor({ onAction }) {
                                                 {label}
                                             </option>
                                         ))}
-                                    </select>
+                                    </Select>
                                 </label>
                                 <TextInput
                                     label="Nazwa"

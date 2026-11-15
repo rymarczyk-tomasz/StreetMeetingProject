@@ -1,3 +1,4 @@
+import Select from "../../components/Select";
 import { useLayoutEffect, useRef, useState } from "react";
 import { askConfirm } from "../../api/confirm";
 import { moveItem, newId } from "./shared";
@@ -73,13 +74,13 @@ function TemplateForm({ draft, setDraft, isNew, isSaving, onSave, onCancel, onRe
             <div className="templates-form-row">
                 <label>
                     <span className="field-label">Rodzaj</span>
-                    <select value={draft.kind} onChange={(event) => setDraft({ ...draft, kind: event.target.value })}>
+                    <Select value={draft.kind} onChange={(event) => setDraft({ ...draft, kind: event.target.value })}>
                         {KIND_OPTIONS.map(([kind, label]) => (
                             <option key={kind} value={kind}>
                                 {label}
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </label>
                 <label>
                     <span className="field-label">Nazwa (widoczna tylko w panelu)</span>

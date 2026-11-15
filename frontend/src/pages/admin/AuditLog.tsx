@@ -1,3 +1,4 @@
+import Select from "../../components/Select";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../api/client";
@@ -196,7 +197,7 @@ export default function AuditLog({ refreshKey }) {
             <div className="admin-filters audit-filters">
                 <label>
                     <span className="field-label">Rodzaj działań</span>
-                    <select value={actionFilter} onChange={(event) => setActionFilter(event.target.value)}>
+                    <Select value={actionFilter} onChange={(event) => setActionFilter(event.target.value)}>
                         <option value="">Zmiany</option>
                         <option value="*">Wszystko, łącznie z przeglądaniem</option>
                         {CATEGORY_OPTIONS.map(([value, label]) => (
@@ -204,17 +205,17 @@ export default function AuditLog({ refreshKey }) {
                                 {label}
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </label>
                 <label>
                     <span className="field-label">Wpisów</span>
-                    <select value={limit} onChange={(event) => setLimit(Number(event.target.value))}>
+                    <Select value={limit} onChange={(event) => setLimit(Number(event.target.value))}>
                         {LIMIT_OPTIONS.map((option) => (
                             <option key={option} value={option}>
                                 {option}
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </label>
             </div>
             {error && <p className="form-error">{error}</p>}

@@ -75,9 +75,9 @@ test("usunięcie konta bez opłaconego miejsca: wylogowanie i mail z potwierdzen
     const email = uniqueEmail("usun");
     await register(page, email);
     await page.goto("/ustawienia-konta");
-    page.once("dialog", (dialog) => dialog.accept());
     await page.getByLabel("Potwierdź hasłem").fill(PASSWORD);
     await page.getByRole("button", { name: "Usuń konto" }).click();
+    await page.getByRole("dialog", { name: "Usunąć konto?" }).getByRole("button", { name: "Usuń konto" }).click();
     await expect(page).toHaveURL("/");
 
     const mail = await waitForMail(email, /konto zostało usunięte/);
@@ -95,9 +95,11 @@ test("anulowanie okna potwierdzenia nie usuwa konta", async ({ page }) => {
     const email = uniqueEmail("anuluj");
     await register(page, email);
     await page.goto("/ustawienia-konta");
-    page.once("dialog", (dialog) => dialog.dismiss());
     await page.getByLabel("Potwierdź hasłem").fill(PASSWORD);
     await page.getByRole("button", { name: "Usuń konto" }).click();
+    const dialog = page.getByRole("dialog", { name: "Usunąć konto?" });
+    await dialog.getByRole("button", { name: "Anuluj" }).click();
+    await expect(dialog).toHaveCount(0);
     await page.goto("/panel");
     await expect(page).toHaveURL(/panel/);
     expect((await mailsTo(email)).some((mail) => /usunięte/.test(mail.subject))).toBe(false);

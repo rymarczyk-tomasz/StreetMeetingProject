@@ -1,3 +1,4 @@
+import Select from "../components/Select";
 import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -259,7 +260,7 @@ export default function SubmissionPage() {
                     {vehicles.length > 0 ? (
                         <label className="form-field">
                             <span className="field-label">Pojazd z garażu</span>
-                            <select
+                            <Select
                                 className="field-input field-select"
                                 value={vehicleId}
                                 onChange={(event) => chooseVehicle(event.target.value)}
@@ -270,7 +271,7 @@ export default function SubmissionPage() {
                                         {item.carBrand} ({item.licensePlate})
                                     </option>
                                 ))}
-                            </select>
+                            </Select>
                         </label>
                     ) : (
                         <p className="form-card-hint">

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/client";
+import { askConfirm } from "../api/confirm";
 import EmptyState from "../components/EmptyState";
 import Lightbox from "../components/Lightbox";
 import PhotoSetEditor from "../components/PhotoSetEditor";
@@ -107,7 +108,13 @@ function VehicleCard({ vehicle, edition, onChanged, notify, onOpenPhotos }) {
     }
 
     async function remove() {
-        if (!window.confirm(`Usunąć ${vehicle.carBrand} (${vehicle.licensePlate}) z garażu?`)) return;
+        const confirmed = await askConfirm({
+            title: "Usunąć z garażu?",
+            message: `${vehicle.carBrand} (${vehicle.licensePlate}) zostanie usunięte z Twojego garażu.`,
+            confirmLabel: "Usuń",
+            danger: true,
+        });
+        if (!confirmed) return;
         try {
             const { data } = await api.delete(`/vehicles/${vehicle.id}`);
             notify({ message: data.message });

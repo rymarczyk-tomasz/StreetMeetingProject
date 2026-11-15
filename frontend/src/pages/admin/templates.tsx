@@ -1,9 +1,11 @@
 // Message templates picker; the data helpers live in templateData.ts.
 
+import Select from "../../components/Select";
+
 export function TemplatePicker({ templates, onPick, label = "Wstaw szablon" }) {
     if (!templates.length) return null;
     return (
-        <select
+        <Select
             className="template-picker"
             aria-label={label}
             value=""
@@ -18,6 +20,6 @@ export function TemplatePicker({ templates, onPick, label = "Wstaw szablon" }) {
                     {template.title}
                 </option>
             ))}
-        </select>
+        </Select>
     );
 }
