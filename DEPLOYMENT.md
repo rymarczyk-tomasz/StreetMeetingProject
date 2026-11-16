@@ -43,7 +43,7 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 
 ## 3. Serwer i nginx
 
-- [ ] VPS OVH z Ubuntu 24.04, min. 2 GB RAM i 40 GB dysku (zdjęcia zgłoszeń: do 50 MB na auto)
+- [ ] VPS OVH z Ubuntu 24.04 lub 26.04 (skrypt sprawdzony na obu), min. 2 GB RAM i 40 GB dysku (zdjęcia zgłoszeń: do 50 MB na auto)
 - [ ] Domena: rekordy A/AAAA na serwer, przekierowanie `streetshow.pl` → `www.streetshow.pl` (lub odwrotnie, ale spójnie z `APP_URL`)
 - [ ] SSL: Cloudflare w trybie Full (strict) + Cloudflare Origin Certificate na serwerze, przekierowanie HTTP → HTTPS
 - [ ] nginx serwuje `frontend/dist`, z fallbackiem SPA (`try_files $uri /index.html`)
@@ -57,7 +57,7 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 - [ ] Uruchamiać backend jako osobny użytkownik zamiast `root` (dotyczy też ścieżek w `deploy.yml`)
 - [ ] Firewall: otwarte tylko SSH, 80, 443 — port backendu niedostępny z zewnątrz
 
-### Postawienie serwera skryptem (VPS OVH, Ubuntu 24.04)
+### Postawienie serwera skryptem (VPS OVH, Ubuntu 24.04 lub 26.04)
 
 `deploy/setup.sh` robi większość punktów powyżej: użytkownik `streetshow`, ufw, fail2ban, automatyczne aktualizacje, swap, Node 22, PM2 (+ logrotate, start po restarcie), nginx z `deploy/nginx/`, prawdziwe IP z Cloudflare (`deploy/cloudflare-realip.sh`, odświeżane co miesiąc), szablon `.env` z wygenerowanymi sekretami JWT. Aplikacja ląduje w `/home/streetshow/streetshow`. Skrypt można uruchamiać wielokrotnie.
 

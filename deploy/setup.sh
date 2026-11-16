@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-time setup of a fresh Ubuntu 24.04 VPS for Street Show. Safe to re-run.
+# One-time setup of a fresh Ubuntu 24.04 or 26.04 VPS for Street Show. Safe to re-run.
 #
 #   sudo DOMAIN=www.streetshow.pl APEX=streetshow.pl bash setup.sh
 #   sudo DOMAIN=nowa.streetshow.pl APEX=none bash setup.sh      # staging before the switch
@@ -119,6 +119,8 @@ ufw allow "Nginx Full"
 ufw --force enable
 systemctl enable --now fail2ban
 dpkg-reconfigure -f noninteractive unattended-upgrades
+# on by default on a stock image; made explicit because backups and updates depend on them
+systemctl enable --now cron apt-daily.timer apt-daily-upgrade.timer
 
 if [ -s "$keys" ]; then
     step "SSH: keys only, no root login"

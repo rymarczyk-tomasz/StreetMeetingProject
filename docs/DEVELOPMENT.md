@@ -214,4 +214,4 @@ Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do
 
 Pełna checklista przed uruchomieniem produkcyjnym (SMTP, `.env`, nginx, SSL, backupy, testy): [DEPLOYMENT.md](../DEPLOYMENT.md).
 
-Serwer (VPS z Ubuntu 24.04) stawia skrypt [`deploy/setup.sh`](../deploy/setup.sh): użytkownik `streetshow`, nginx za Cloudflare (`deploy/nginx/`), PM2, firewall. Kolejne wersje wdraża GitHub Actions po pushu do `newProject`.
+Serwer (VPS z Ubuntu 24.04 lub 26.04) stawia skrypt [`deploy/setup.sh`](../deploy/setup.sh): użytkownik `streetshow`, nginx za Cloudflare (`deploy/nginx/`), PM2, firewall. Kolejne wersje wdraża GitHub Actions po pushu do `newProject`.
