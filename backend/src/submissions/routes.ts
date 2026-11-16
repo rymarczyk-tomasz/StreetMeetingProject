@@ -8,6 +8,7 @@ const usersDb = require("../db/users");
 const siteContentDb = require("../db/siteContent");
 const vehiclesDb = require("../db/vehicles");
 const { authenticate, isFullAdmin } = require("../auth/middleware");
+const { isTestMode } = require("../testMode");
 const { createRateLimiter } = require("../utils/rateLimiter");
 const {
     PHONE_REGEX,
@@ -146,7 +147,7 @@ const EMAIL_UNVERIFIED_REASON =
 function getAvailability(userId) {
     let availability = siteContentDb.getSubmissionsAvailability();
     // a closed zone keeps its own reason; without SMTP nobody could confirm, so no block then
-    if (availability.open && isEmailConfigured() && !usersDb.findUserById(userId)?.email_verified_at) {
+    if (availability.open && isEmailConfigured() && !isTestMode() && !usersDb.findUserById(userId)?.email_verified_at) {
         availability = { open: false, reason: EMAIL_UNVERIFIED_REASON, emailUnverified: true };
     }
     const maxVehicles = getMaxVehicles();

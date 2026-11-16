@@ -6,6 +6,7 @@ const galleryDb = require("../db/gallery");
 const siteContentDb = require("../db/siteContent");
 const { BACKUP_DIR } = require("../maintenance");
 const { isEmailConfigured } = require("../notifications/email");
+const { isTestMode } = require("../testMode");
 const drive = require("../gallery/drive");
 const { getSyncStatus } = require("../gallery/sync");
 
@@ -131,6 +132,9 @@ async function getSystemStatus() {
                       .filter(Boolean)
                       .join(" · "),
               ),
+        ...(isTestMode()
+            ? [check("test-mode", "Tryb testowy (TEST_MODE)", "error", "Włączony — zgłoszenia bez potwierdzenia e-maila, panel admina bez logowania dwuetapowego. Usuń TEST_MODE z config/.env przed startem produkcji.")]
+            : []),
         siteContentDb.isMaintenanceOn()
             ? check(
                   "maintenance",

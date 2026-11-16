@@ -18,6 +18,10 @@ if (process.env.NODE_ENV === "production") {
     }
 }
 
+if (require("./src/testMode").isTestMode()) {
+    console.warn("TEST_MODE włączony: bez potwierdzania e-maila i bez 2FA dla adminów. Nie używać na produkcji.");
+}
+
 // one broken promise in a route must not take the whole API down
 process.on("unhandledRejection", (reason) => {
     console.error("[error] unhandledRejection:", reason);

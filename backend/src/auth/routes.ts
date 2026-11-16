@@ -42,6 +42,7 @@ const auditLogDb = require("../db/auditLog");
 const twoFactorDb = require("../db/twoFactor");
 const { otpauthUri } = require("./totp");
 const { confirmStepUp } = require("./stepUp");
+const { isTestMode } = require("../testMode");
 const {
     isEmailConfigured,
     sendSecurityAlertEmail,
@@ -80,10 +81,11 @@ function toPublicUser(user) {
         phone: user.phone,
         role: user.role,
         canCheckIn: usersDb.canCheckIn(user),
-        emailVerified: Boolean(user.email_verified_at),
+        emailVerified: Boolean(user.email_verified_at) || isTestMode(),
         termsAcceptedAt: user.terms_accepted_at,
         notifications: usersDb.notificationPrefs(user),
         twoFactorEnabled: twoFactorDb.isEnabled(user),
+        twoFactorOptional: isTestMode(),
     };
 }
 

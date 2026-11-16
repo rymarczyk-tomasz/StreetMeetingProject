@@ -415,7 +415,8 @@ function AdminPanel() {
 export default function AdminPage() {
     const { user, refreshUser } = useAuth();
 
-    if (!user?.twoFactorEnabled) {
+    // twoFactorOptional: TEST_MODE on a test server
+    if (!user?.twoFactorEnabled && !user?.twoFactorOptional) {
         return (
             <section className="page admin-page">
                 <div className="admin-card two-factor-gate">
