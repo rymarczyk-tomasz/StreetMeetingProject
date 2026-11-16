@@ -27,12 +27,14 @@ jobs:
               env:
                   APP_DIR: ${{ vars.DEPLOY_PATH || '/root/streetshow' }}
                   API_PORT: ${{ vars.API_PORT || '4001' }}
+                  # the old Mikrus box (no DEPLOY_HOST) is the client's test server: no working e-mail there
+                  IS_MIKRUS: ${{ secrets.DEPLOY_HOST == '' }}
               with:
                   host: ${{ secrets.DEPLOY_HOST || secrets.MIKRUS_HOST }}
                   username: ${{ vars.DEPLOY_USER || 'root' }}
                   key: ${{ secrets.DEPLOY_SSH_KEY || secrets.MIKRUS_SSH_KEY }}
                   port: ${{ vars.DEPLOY_PORT || '10192' }}
-                  envs: APP_DIR,API_PORT
+                  envs: APP_DIR,API_PORT,IS_MIKRUS
                   script: |
                       set -eu
 
@@ -43,6 +45,12 @@ jobs:
                       cd "$APP_DIR/backend"
                       npm ci
                       npm run build
+
+                      # test server only: no e-mail confirmation, no admin 2FA (see backend/src/testMode.ts)
+                      if [ "$IS_MIKRUS" = "true" ] && ! grep -q '^TEST_MODE=' config/.env 2>/dev/null; then
+                        printf '\nTEST_MODE=on\n' >> config/.env
+                        echo "TEST_MODE=on dopisany do config/.env (Mikrus)"
+                      fi
 
                       # built next to the live copy and swapped in, so the site never serves a half-empty dist
                       cd "$APP_DIR/frontend"

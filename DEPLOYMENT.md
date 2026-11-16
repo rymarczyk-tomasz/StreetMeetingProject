@@ -33,7 +33,7 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 - [ ] `APP_URL=https://www.streetshow.pl` — linki w mailach i kody QR na wejściówkach; zmiana po wydaniu wejściówek psuje stare kody
 - [ ] `PORT` — zgodny z nginx i healthcheckiem w `.github/workflows/deploy.yml` (tam: `4001`)
 - [ ] `TRUST_PROXY=loopback` (nginx na tym samym serwerze)
-- [ ] **Brak `TEST_MODE`** w `config/.env` (to przełącznik tylko dla serwera testowego: wyłącza potwierdzanie e-maila i 2FA adminów; panel pokazuje go w Stanie systemu jako błąd)
+- [ ] **Brak `TEST_MODE`** w `config/.env` (to przełącznik tylko dla serwera testowego: wyłącza potwierdzanie e-maila i 2FA adminów; panel pokazuje go w Stanie systemu jako błąd). `deploy.yml` dopisuje go sam, gdy deployuje na Mikrusa (brak sekretu `DEPLOY_HOST`)
 - [ ] `MAINTENANCE_MODE=on` — **na czas poprawek przed startem**: od pierwszego uruchomienia odwiedzający widzą tylko planszę „Strona w przebudowie”, a admin (po zalogowaniu na `/logowanie`) widzi stronę normalnie. Wyłączenie: usunąć zmienną i `pm2 restart streetshow-api`. Bez zmiennej to samo przełącza panel (Ustawienia → Tryb serwisowy)
 - [ ] `SELECT_FEE_AMOUNT` albo kwota w panelu (Ustawienia — ma pierwszeństwo)
 - [ ] Galeria: dane konta serwisowego `GOOGLE_*` w `.env` (`GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`, …). Folder ze zdjęciami wskazuje się w panelu (Admin → Galeria; `DRIVE_GALLERY_FOLDER_ID` nie jest już używane) i udostępnia kontu serwisowemu jako „Przeglądający”. `GOOGLE_PRIVATE_KEY` to cały klucz z pliku JSON konta serwisowego (pole `private_key`, zaczyna się od `-----BEGIN PRIVATE KEY-----`), w jednej linii, w cudzysłowie, ze znakami `
