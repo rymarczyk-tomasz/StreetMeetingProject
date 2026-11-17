@@ -139,7 +139,7 @@ module.exports = {
                 {
                     "id": "select-7",
                     "question": "Jakie zasady obowiązują przy poruszaniu się autem po terenie?",
-                    "answerHtml": "<p>Na terenie wydarzenia obowiązuje prędkość maksymalna <strong>5 km/h</strong>. Auta stoją w miejscu wskazanym przez organizatora (otok murawy, tunel lub korona), a poruszać się można tylko wyznaczonymi ciągami komunikacyjnymi i wyłącznie w asyście służb organizatora. Wjazd lub wejście na samą murawę jest całkowicie zakazany pod karą umowną 10 000 zł. Za wycieki płynów i inne szkody odpowiada właściciel auta.</p>"
+                    "answerHtml": "<p>Na terenie wydarzenia obowiązuje prędkość maksymalna <strong>5 km/h</strong>. Auta stoją w miejscu wskazanym przez organizatora (otok murawy, tunel lub korona), a poruszać się można tylko wyznaczonymi ciągami komunikacyjnymi i wyłącznie w asyście służb organizatora. Wjazd lub wejście na samą murawę jest całkowicie zakazany pod karą umowną 15 000 zł. Za wycieki płynów i inne szkody odpowiada właściciel auta.</p>"
                 },
                 {
                     "id": "select-8",
