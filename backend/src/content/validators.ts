@@ -114,7 +114,6 @@ function validateEvent(input) {
     }));
     const intro = text(input.intro, 2000);
 
-    if (!intro) return { error: "Uzupełnij opis sekcji Event." };
     if (cards.length < 1 || cards.length > 6) {
         return { error: "Sekcja Event musi mieć od 1 do 6 kafelków." };
     }
@@ -193,6 +192,7 @@ function validateContact(input) {
         addressLine2: text(input.addressLine2, 200),
         mapUrl: text(input.mapUrl, 500),
         email: text(input.email, 254),
+        footerText: text(input.footerText, 300),
     };
 
     if (

@@ -416,10 +416,7 @@ function HomeFooter({ contact }) {
                 <div className="site-footer-grid">
                     <div className="site-footer-about">
                         <img src={LOGO_SRC} alt="Street Show" className="site-footer-logo" />
-                        <p>
-                            Organizator Street Show – największego motoryzacyjnego show na
-                            Polsat Plus Arena Gdańsk.
-                        </p>
+                        {contact?.footerText && <p>{contact.footerText}</p>}
                     </div>
                     {contact && (
                         <div className="site-footer-col">

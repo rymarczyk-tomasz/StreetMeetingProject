@@ -396,6 +396,7 @@ export function ContactEditor({ onAction }) {
                     ["addressLine2", "Adres — linia 2"],
                     ["mapUrl", "Link do mapy"],
                     ["email", "E-mail kontaktowy"],
+                    ["footerText", "Opis w stopce (pod logo)"],
                 ].map(([field, label]) => (
                     <TextInput
                         key={field}

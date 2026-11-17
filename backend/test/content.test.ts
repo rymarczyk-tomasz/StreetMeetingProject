@@ -38,6 +38,20 @@ describe("partnerzy: ukrywanie sekcji", () => {
         assert.equal(pub.items[0].name, "Firma");
     });
 
+    test("sekcja Event bez opisu, kontakt z opisem w stopce", async () => {
+        const card = { title: "Select", description: "Opis", image: "/img/a.jpg", alt: "Auto" };
+        assert.equal(validateContent("event", { intro: "", cards: [card] }).content.intro, "");
+
+        const admin = api(createUser({ role: "admin" }));
+        const contact = (await api().get("/api/content/contact")).body.content;
+        assert.match(contact.footerText, /Organizator Street Show/);
+        const res = await admin
+            .patch("/api/admin/content/contact")
+            .send({ content: { ...contact, footerText: "Nowy opis" } });
+        assert.equal(res.status, 200, res.body.message);
+        assert.equal((await api().get("/api/content/contact")).body.content.footerText, "Nowy opis");
+    });
+
     test("zwykły użytkownik nie może zmienić sekcji", async () => {
         const res = await api(createUser())
             .patch("/api/admin/content/partners")

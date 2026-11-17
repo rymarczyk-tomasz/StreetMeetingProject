@@ -30,7 +30,7 @@ const DEFAULTS = {
             "Najbardziej unikalne wydarzenie motoryzacyjne w Polsce – auta na murawie stadionu, drift taxi i strefa expo.",
     },
     event: {
-        intro: "Niezapomniane emocje, wyjątkowe samochody i atmosfera, jakiej nie znajdziesz nigdzie indziej.",
+        intro: "",
         cards: [
             {
                 id: "select",
@@ -115,6 +115,8 @@ const DEFAULTS = {
         addressLine2: "80-560 Gdańsk",
         mapUrl: "http://maps.app.goo.gl/PePJY3TXBjM7t4v37",
         email: "streetmeetingpolska@gmail.com",
+        footerText:
+            "Organizator Street Show – wyjątkowej wystawy pojazdów na murawie Polsat Plus Areny w Gdańsku.",
     },
     faq: defaultFaq,
     regulamin: {
