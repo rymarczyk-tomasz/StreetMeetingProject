@@ -107,6 +107,7 @@ function validateEvent(input) {
         title: text(card.title, 120),
         description: text(card.description, 2000),
         image: text(card.image, 500),
+        crop: readCrop(card.crop),
         alt: text(card.alt, 200),
         actionLabel: text(card.actionLabel, 60),
         actionHref: text(card.actionHref, 500),
@@ -169,6 +170,7 @@ function validateGalleryPreview(input) {
             .map((photo, index) => ({
                 id: makeId(photo.id, `photo-${index + 1}`),
                 url: text(photo.url, 500),
+                crop: readCrop(photo.crop),
                 alt: text(photo.alt, 200),
             })),
     };

@@ -42,6 +42,16 @@ describe("partnerzy: ukrywanie sekcji", () => {
         const card = { title: "Select", description: "Opis", image: "/img/a.jpg", alt: "Auto" };
         assert.equal(validateContent("event", { intro: "", cards: [card] }).content.intro, "");
 
+        // crop of a card and of a gallery preview photo: kept, out-of-range values clamped
+        const cropped = validateContent("event", { cards: [{ ...card, crop: { x: 20, y: 140, zoom: 9 } }] });
+        assert.deepEqual(cropped.content.cards[0].crop, { x: 20, y: 100, zoom: 3 });
+        assert.deepEqual(validateContent("event", { cards: [card] }).content.cards[0].crop, { x: 50, y: 50, zoom: 1 });
+        const gallery = validateContent("gallery", {
+            linkLabel: "Galeria",
+            photos: [{ url: "/img/b.jpg", crop: { x: 30, y: 70, zoom: 1.5 } }],
+        });
+        assert.deepEqual(gallery.content.photos[0].crop, { x: 30, y: 70, zoom: 1.5 });
+
         const admin = api(createUser({ role: "admin" }));
         const contact = (await api().get("/api/content/contact")).body.content;
         assert.match(contact.footerText, /Organizator Street Show/);

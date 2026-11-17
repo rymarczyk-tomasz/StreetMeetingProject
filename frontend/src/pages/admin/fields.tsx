@@ -3,7 +3,7 @@ import api from "../../api/client";
 import GalleryPicker from "./GalleryPicker";
 import { IMAGE_ACCEPT, errorMessage, uploadContentImage } from "./shared";
 
-export function ImageField({ label, value, onChange, previewAlt = "Podgląd" }) {
+export function ImageField({ label, value, onChange, previewAlt = "Podgląd", preview = true }) {
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState("");
     const [pickerOpen, setPickerOpen] = useState(false);
@@ -50,7 +50,7 @@ export function ImageField({ label, value, onChange, previewAlt = "Podgląd" }) 
             {pickerOpen && <GalleryPicker onPick={onChange} onClose={() => setPickerOpen(false)} />}
             {isUploading && <p className="page-status">Przesyłanie...</p>}
             {error && <p className="form-error">{error}</p>}
-            {value && (
+            {preview && value && (
                 <img className="event-editor-preview" src={value} alt={previewAlt} />
             )}
         </div>

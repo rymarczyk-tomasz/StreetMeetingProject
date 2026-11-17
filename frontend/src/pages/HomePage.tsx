@@ -7,6 +7,7 @@ import Countdown from "../components/Countdown";
 import HeroPhoto from "../components/HeroPhoto";
 import { heroPhotoVars, shouldRotateOnMobile } from "../utils/hero";
 import { cardImageProps } from "../utils/photos";
+import CroppedImage from "../components/CroppedImage";
 import { plural } from "../utils/plural";
 import {
     buildEventJsonLd,
@@ -101,10 +102,11 @@ function EventCards({ cards, ticketUrl }) {
         <div className={`feature-grid feature-grid-${cards.length}`}>
             {cards.map((card) => (
                 <article className="feature-card" key={card.id}>
-                    <img
+                    <CroppedImage
+                        className="feature-card-img"
+                        crop={card.crop}
                         loading="lazy"
                         {...cardImageProps(card.image)}
-                        className="feature-card-img"
                         alt={card.alt}
                     />
                     <div className="feature-card-body">
@@ -243,8 +245,10 @@ function GalleryPreview({ gallery }) {
                 {photos.length > 0 && (
                     <div className={`gallery-mosaic is-count-${photos.length}`}>
                         {photos.map((photo) => (
-                            <img
+                            <CroppedImage
                                 key={photo.id}
+                                className="gallery-mosaic-item"
+                                crop={photo.crop}
                                 loading="lazy"
                                 {...cardImageProps(photo.url)}
                                 alt={photo.alt || "Zdjęcie z galerii Street Show"}

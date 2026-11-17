@@ -28,6 +28,17 @@ export function heroPhotoVars(home): CSSProperties {
     return vars as CSSProperties;
 }
 
+// Same crop on an <img> with object-fit: cover; the parent clips the zoom (overflow: hidden).
+export function cropImageStyle(crop?: Partial<HeroCrop>): CSSProperties {
+    const { x, y, zoom } = heroCrop(crop);
+    const style: CSSProperties = { objectPosition: `${x}% ${y}%` };
+    if (zoom > 1) {
+        style.transform = `scale(${zoom})`;
+        style.transformOrigin = `${x}% ${y}%`;
+    }
+    return style;
+}
+
 function clampPercent(value: number) {
     return Math.round(Math.min(100, Math.max(0, value)) * 10) / 10;
 }

@@ -5,6 +5,7 @@ import { askConfirm } from "../../api/confirm";
 import { plural } from "../../utils/plural";
 import { faqFirstNumbers } from "../../utils/faq";
 import HeroCropEditor from "./HeroCropEditor";
+import ImageCropField from "./ImageCropField";
 import { ContentForm } from "./ContentForm";
 import { useContentEditor } from "./useContentEditor";
 import { ImageField, ListItemControls, PdfField } from "./fields";
@@ -61,6 +62,15 @@ function ItemLegend({ name, number }) {
 // ---- Event cards ---------------------------------------------------------
 
 const MAX_EVENT_CARDS = 6;
+// shapes of the photo on the home page (custom.css: .feature-card-img, .gallery-mosaic)
+const EVENT_CARD_FRAMES = [
+    { label: "Komputer", ratio: "4 / 3" },
+    { label: "Telefon, pierwszy kafelek", ratio: "16 / 10" },
+];
+const GALLERY_PREVIEW_FRAMES = [
+    { label: "Komputer", ratio: "3 / 2" },
+    { label: "Telefon", ratio: "16 / 9" },
+];
 
 export function EventEditor({ onAction }) {
     const editor = useContentEditor("event", onAction);
@@ -104,8 +114,15 @@ export function EventEditor({ onAction }) {
                                 <ImageField
                                     label="Zdjęcie"
                                     value={card.image}
-                                    onChange={(image) => updateCard(index, { image })}
+                                    onChange={(image) => updateCard(index, { image, crop: undefined })}
                                     previewAlt="Podgląd kafelka"
+                                    preview={false}
+                                />
+                                <ImageCropField
+                                    image={card.image}
+                                    crop={card.crop}
+                                    onChange={(crop) => updateCard(index, { crop })}
+                                    frames={EVENT_CARD_FRAMES}
                                 />
                                 <TextInput
                                     label="Tekst alternatywny zdjęcia"
@@ -333,11 +350,20 @@ export function GalleryPreviewEditor({ onAction }) {
                                     onChange={(url) =>
                                         setPhotos(
                                             photos.map((p, i) =>
-                                                i === index ? { ...p, url } : p,
+                                                i === index ? { ...p, url, crop: undefined } : p,
                                             ),
                                         )
                                     }
                                     previewAlt={photo.alt || "Podgląd zdjęcia"}
+                                    preview={false}
+                                />
+                                <ImageCropField
+                                    image={photo.url}
+                                    crop={photo.crop}
+                                    onChange={(crop) =>
+                                        setPhotos(photos.map((p, i) => (i === index ? { ...p, crop } : p)))
+                                    }
+                                    frames={GALLERY_PREVIEW_FRAMES}
                                 />
                                 <TextInput
                                     label="Tekst alternatywny"
