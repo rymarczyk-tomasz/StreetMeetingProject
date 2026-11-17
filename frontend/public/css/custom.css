@@ -1158,22 +1158,31 @@ body {
     flex: none;
 }
 
+/* flex instead of grid so an incomplete last row is centred */
 .feature-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 24px;
+    --cols: 3;
+    --gap: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--gap);
 }
 
-/* 2 or 4 cards: no orphan in the second row (4 in a row on wide screens, otherwise 2x2) */
+.feature-grid > .feature-card {
+    flex: 0 0 calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols));
+    min-width: 0;
+}
+
+/* 2 or 4 cards: full rows (4 in a row on wide screens, otherwise 2x2) */
 .feature-grid-2,
 .feature-grid-4 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    --cols: 2;
 }
 
 @media (min-width: 1200px) {
     .feature-grid-4 {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 20px;
+        --cols: 4;
+        --gap: 20px;
     }
 }
 
@@ -1521,7 +1530,10 @@ body {
 }
 
 @media (min-width: 768px) and (max-width: 991px) {
-    .feature-grid,
+    .feature-grid {
+        --cols: 2;
+    }
+
     .showcase-preview-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -1561,8 +1573,8 @@ body {
     }
 
     .feature-grid {
-        grid-template-columns: 1fr;
-        gap: 28px;
+        --cols: 1;
+        --gap: 28px;
     }
 
     .feature-card {
