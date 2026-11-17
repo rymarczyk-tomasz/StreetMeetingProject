@@ -1,6 +1,6 @@
-// where an approved car stands at the event
+// where an approved car stands at the event (key "murawa" = the ring around the pitch)
 export const ZONES: [string, string][] = [
-    ["murawa", "Murawa"],
+    ["murawa", "Otok murawy"],
     ["tunel", "Tunel"],
     ["korona", "Korona"],
 ];

@@ -8,7 +8,7 @@ import ConsentFields from "../components/ConsentFields";
 import EmailVerifyBanner from "../components/EmailVerifyBanner";
 import { photosLabel, plural } from "../utils/plural";
 
-// Must match the backend limits in backend/src/submissions/routes.ts.
+// Must match backend/src/utils/userPhotos.ts: a submission needs exactly this many photos.
 const MAX_PHOTOS = 5;
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
 const ACCEPTED_TYPES = "image/jpeg,image/png,image/webp,image/avif";
@@ -145,8 +145,14 @@ export default function SubmissionPage() {
         event.preventDefault();
         setError("");
 
-        if (photos.length === 0 && !usesGaragePhotos) {
-            setError("Proszę dodać przynajmniej jedno zdjęcie.");
+        if (usesGaragePhotos && vehicle.photos.length !== MAX_PHOTOS) {
+            setError(
+                `Ten pojazd ma w garażu ${vehicle.photos.length} z ${MAX_PHOTOS} wymaganych zdjęć. Dodaj tutaj ${MAX_PHOTOS} nowych zdjęć albo uzupełnij je w garażu.`,
+            );
+            return;
+        }
+        if (!usesGaragePhotos && photos.length !== MAX_PHOTOS) {
+            setError(`Dodaj dokładnie ${MAX_PHOTOS} zdjęć pojazdu – teraz jest ${photos.length}.`);
             return;
         }
 
@@ -365,11 +371,16 @@ export default function SubmissionPage() {
                     <legend className="form-card-title">
                         <span className="form-card-number">3</span>Zdjęcia
                     </legend>
+                    <p className="form-card-hint">
+                        Dodaj dokładnie {MAX_PHOTOS} zdjęć pojazdu – ani mniej, ani więcej.
+                    </p>
                     {vehicle?.photos.length > 0 && (
                         <p className="form-card-aside">
-                            {usesGaragePhotos
-                                ? `${photosLabel(vehicle.photos.length)} z garażu · możesz je zastąpić nowymi`
-                                : "Nowe zdjęcia zastąpią zdjęcia z garażu"}
+                            {!usesGaragePhotos
+                                ? "Nowe zdjęcia zastąpią zdjęcia z garażu"
+                                : vehicle.photos.length === MAX_PHOTOS
+                                  ? `${photosLabel(vehicle.photos.length)} z garażu · możesz je zastąpić nowymi`
+                                  : `W garażu ${vehicle.photos.length === 1 ? "jest" : "są"} tylko ${photosLabel(vehicle.photos.length)} · dodaj tutaj ${MAX_PHOTOS} nowych`}
                         </p>
                     )}
                     <div className="photo-slots">

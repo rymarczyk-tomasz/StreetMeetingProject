@@ -25,7 +25,7 @@ const DEFAULTS = {
         heroCropDesktop: { x: 50, y: 50, zoom: 1 },
         heroCropMobile: { x: 50, y: 50, zoom: 1 },
         ticketLabel: "Kup bilety",
-        ticketUrl: "https://bkb.pl/197944-209dd",
+        ticketUrl: "https://bkb.pl/225497-e27af",
         heroLead:
             "Najbardziej unikalne wydarzenie motoryzacyjne w Polsce – auta na murawie stadionu, drift taxi i strefa expo.",
     },
@@ -200,6 +200,13 @@ const DEFAULTS = {
                 title: "Lista rezerwowa",
                 subject: "",
                 body: "Auto {marka} jest na liście rezerwowej. Jeśli zwolni się miejsce, odezwiemy się z akceptacją i danymi do opłaty.",
+            },
+            {
+                id: "zone-change",
+                kind: "zone",
+                title: "Zmiana miejsca",
+                subject: "",
+                body: "Ze względów organizacyjnych Twoje auto {marka} ({rejestracja}) stanie w nowym miejscu: {miejsce}.\n\n[Dodatkowe informacje: np. brama i godzina wjazdu, kontakt w dniu wydarzenia]\n\nPrzepraszamy za zmianę i do zobaczenia na Street Show {rok}!",
             },
             {
                 id: "group-payment",

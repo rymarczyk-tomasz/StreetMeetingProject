@@ -3,6 +3,7 @@ const {
     api,
     createUser,
     createSubmission,
+    attachPhotos,
     usersDb,
 } = require("./helpers");
 const { test, describe } = require("node:test");
@@ -138,16 +139,20 @@ describe("zdjęcia zgłoszeń", () => {
         assert.equal((await sharp(upload).metadata()).orientation, 6);
         assert.ok((await sharp(upload).metadata()).exif);
 
-        const res = await api(user)
-            .post("/api/submissions")
-            .field("firstName", "Jan")
-            .field("lastName", "Kowalski")
-            .field("phone", "600700800")
-            .field("licensePlate", "GD 12345")
-            .field("carBrand", "BMW E36")
-            .field("carDescription", "Opis")
-            .field("acceptTerms", "true")
-            .attach("photos", upload, "IMG_0001.jpg");
+        const res = await attachPhotos(
+            api(user)
+                .post("/api/submissions")
+                .field("firstName", "Jan")
+                .field("lastName", "Kowalski")
+                .field("phone", "600700800")
+                .field("licensePlate", "GD 12345")
+                .field("carBrand", "BMW E36")
+                .field("carDescription", "Opis")
+                .field("acceptTerms", "true"),
+            upload,
+            5,
+            "IMG_0001.jpg",
+        );
         assert.equal(res.status, 201, JSON.stringify(res.body));
 
         const stored = JSON.parse(submissionsDb.findSubmissionById(res.body.submission.id).photos);
@@ -157,23 +162,29 @@ describe("zdjęcia zgłoszeń", () => {
         assert.equal(meta.format, "jpeg");
         // orientation 6 = rotate 90°, so the long edge is now vertical
         assert.deepEqual([meta.width, meta.height], [2400, 4000]);
-        assert.deepEqual(fs.readdirSync(getUserSubmissionsDir(user.id)).length, 1);
+        assert.deepEqual(fs.readdirSync(getUserSubmissionsDir(user.id)).length, 5);
     });
 
     test("plik, którego nie da się zdekodować, jest odrzucany i nie zostaje na dysku", async () => {
         const user = createUser();
         const fake = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.from("<script>alert(1)</script>")]);
-        const res = await api(user)
-            .post("/api/submissions")
-            .field("firstName", "Jan")
-            .field("lastName", "Kowalski")
-            .field("phone", "600700800")
-            .field("licensePlate", "GD 54321")
-            .field("carBrand", "Audi")
-            .field("carDescription", "Opis")
-            .field("acceptTerms", "true")
-            .attach("photos", fake, "auto.jpg");
+        // 5 files, so it's the decoding that fails and not the photo count
+        const res = await attachPhotos(
+            api(user)
+                .post("/api/submissions")
+                .field("firstName", "Jan")
+                .field("lastName", "Kowalski")
+                .field("phone", "600700800")
+                .field("licensePlate", "GD 54321")
+                .field("carBrand", "Audi")
+                .field("carDescription", "Opis")
+                .field("acceptTerms", "true"),
+            fake,
+            5,
+            "auto.jpg",
+        );
         assert.equal(res.status, 400);
+        assert.doesNotMatch(res.body.message, /dokładnie 5/);
         const dir = getUserSubmissionsDir(user.id);
         await wait(50);
         assert.equal(fs.existsSync(dir) ? fs.readdirSync(dir).length : 0, 0);

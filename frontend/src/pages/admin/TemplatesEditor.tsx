@@ -9,23 +9,27 @@ import { useContentEditor } from "./useContentEditor";
 // editing in place and is saved on its own. Rows are reordered by dragging the
 // grip (or with ↑/↓ on it).
 
-const KIND_LABELS = { note: "Komentarz", group: "Do grupy" };
+const KIND_LABELS = { note: "Komentarz", group: "Do grupy", zone: "Zmiana miejsca" };
 const KIND_OPTIONS = [
     ["note", "Komentarz"],
     ["group", "Do grupy"],
+    ["zone", "Zmiana miejsca"],
 ];
 const FILTERS = [
     ["", "Wszystkie"],
     ["note", "Komentarze"],
     ["group", "Do grupy"],
+    ["zone", "Zmiana miejsca"],
 ];
 const VARIABLES = {
     note: ["{rok}", "{marka}", "{rejestracja}"],
     group: ["{rok}"],
+    zone: ["{miejsce}", "{marka}", "{rejestracja}", "{rok}"],
 };
 const VARIABLE_HINTS = {
     note: "Zmienne zostaną podmienione od razu, gdy wstawisz szablon w zgłoszeniu.",
     group: "{rok} zostanie podmienione po wybraniu szablonu. Wiadomość zaczyna się sama od „Cześć Imię,” — nie wpisuj powitania w treści.",
+    zone: "Używany przy zmianie miejsca auta w zgłoszeniu. {miejsce} to nowe miejsce. E-mail sam zaczyna się od powitania i podaje stare oraz nowe miejsce — w treści wpisz powód i dodatkowe informacje.",
 };
 
 function firstLine(text) {

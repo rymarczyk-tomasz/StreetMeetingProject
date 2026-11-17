@@ -384,7 +384,8 @@ function validateSettings(input) {
     return { content };
 }
 
-const TEMPLATE_KINDS = ["note", "group"];
+// note = comment on a decision, group = group e-mail, zone = message with a change of place
+const TEMPLATE_KINDS = ["note", "group", "zone"];
 
 function validateTemplates(input) {
     const items = asArray(input.items)

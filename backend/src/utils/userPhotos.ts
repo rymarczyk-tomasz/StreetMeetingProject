@@ -11,7 +11,9 @@ const KINDS = {
     vehicles: getUserVehiclesDir,
 };
 
+// Every submission and garage car needs exactly this many photos (organizer's requirement).
 const MAX_PHOTOS = 5;
+const REQUIRED_PHOTOS = MAX_PHOTOS;
 const MAX_TOTAL_PHOTOS_SIZE = 50 * 1024 * 1024;
 const STORED_PATTERN = /^\/uploads\/(submissions|vehicles)\/(\d+)\/([^/]+)$/;
 
@@ -77,16 +79,28 @@ function copyStoredPhotos(storedPaths, kind, userId) {
     return copies;
 }
 
+function photoCountLabel(count) {
+    const lastTwo = count % 100;
+    const last = count % 10;
+    if (count === 1) return "1 zdjęcie";
+    if (last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14)) return `${count} zdjęcia`;
+    return `${count} zdjęć`;
+}
+
+// null when the count is right, otherwise the message for the participant
+function photoCountError(count) {
+    if (count === REQUIRED_PHOTOS) return null;
+    return `Wymagane jest dokładnie ${REQUIRED_PHOTOS} zdjęć pojazdu – teraz jest ${photoCountLabel(count)}.`;
+}
+
 function applyPhotoChanges({ currentPhotos, keepUrls, uploadedFiles, kind, userId }) {
     const keep = new Set((Array.isArray(keepUrls) ? keepUrls : [keepUrls]).filter(Boolean));
     const kept = currentPhotos.filter((stored) => keep.has(toPhotoUrl(stored)));
     const added = uploadedFiles.map((file) => storedPathFor(kind, userId, file.filename));
     const photos = [...kept, ...added];
 
-    if (!photos.length) return { error: "Zostaw lub dodaj przynajmniej jedno zdjęcie." };
-    if (photos.length > MAX_PHOTOS) {
-        return { error: `Można mieć maksymalnie ${MAX_PHOTOS} zdjęć.` };
-    }
+    const countError = photoCountError(photos.length);
+    if (countError) return { error: countError };
     if (totalSizeOf(photos) > MAX_TOTAL_PHOTOS_SIZE) {
         return { error: "Łączny rozmiar zdjęć nie może przekraczać 50 MB." };
     }
@@ -115,7 +129,9 @@ function servePhoto(kind) {
 
 module.exports = {
     MAX_PHOTOS,
+    REQUIRED_PHOTOS,
     MAX_TOTAL_PHOTOS_SIZE,
+    photoCountError,
     toPhotoUrl,
     diskPathOf,
     storedPathFor,

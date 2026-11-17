@@ -338,6 +338,100 @@ describe("miejsce zaakceptowanego auta", () => {
         assert.ok(entry);
     });
 
+    test("zmiana miejsca wysyła e-mail ze starym i nowym miejscem oraz wiadomością", async () => {
+        const client = api(createUser({ role: "admin" }));
+        const user = createUser();
+        const row = createSubmission(user, { status: "approved" });
+        submissionsDb.setSubmissionZone(row.id, "tunel");
+        mails.length = 0;
+
+        const res = await client
+            .patch(`/api/admin/submissions/${row.id}/zone`)
+            .send({ zone: "korona", adminNote: "Wjazd bramą B o 8:00 <b>" });
+        assert.equal(res.status, 200, res.body.message);
+        const [mail] = mailsTo(user.email);
+        assert.match(mail.subject, /zmiana miejsca/);
+        assert.match(mail.text, /Poprzednie miejsce: Tunel\./);
+        assert.match(mail.text, /Nowe miejsce: Korona\./);
+        assert.match(mail.text, /Wjazd bramą B o 8:00/);
+        assert.match(mail.html, /&lt;b&gt;/);
+
+        // the same place again: nothing to tell
+        mails.length = 0;
+        const same = await client.patch(`/api/admin/submissions/${row.id}/zone`).send({ zone: "korona" });
+        assert.equal(same.status, 200);
+        assert.equal(mailsTo(user.email).length, 0);
+    });
+
+    test("pierwsze przydzielenie miejsca (po akceptacji zbiorczej) też wysyła e-mail", async () => {
+        const admin = createUser({ role: "admin" });
+        const user = createUser();
+        const row = createSubmission(user);
+        mails.length = 0;
+
+        await api(admin).post("/api/admin/submissions/bulk-status").send({ ids: [row.id], status: "approved" });
+        assert.match(mailsTo(user.email)[0].text, /Miejsce na wydarzeniu przydzielimy wkrótce/);
+
+        mails.length = 0;
+        await api(admin).patch(`/api/admin/submissions/${row.id}/zone`).send({ zone: "tunel" });
+        const [mail] = mailsTo(user.email);
+        assert.match(mail.subject, /miejsce na wydarzeniu/);
+        assert.match(mail.text, /Przydzieliliśmy miejsce/);
+        assert.doesNotMatch(mail.text, /Poprzednie miejsce/);
+    });
+
+    test("miejsce „murawa” to otok murawy w e-mailu", async () => {
+        const admin = createUser({ role: "admin" });
+        const user = createUser();
+        const row = createSubmission(user);
+        mails.length = 0;
+        await api(admin).patch(`/api/admin/submissions/${row.id}/status`).send({ status: "approved", zone: "murawa" });
+        assert.match(mailsTo(user.email)[0].text, /Miejsce na wydarzeniu: Otok murawy\./);
+    });
+
+    test("lista zgłoszeń: liczniki i filtr po miejscu", async () => {
+        const client = api(createUser({ role: "admin" }));
+        // own edition, so other tests' submissions don't count
+        const edition = 1999;
+        const make = (status, zone = null) => {
+            const row = createSubmission(createUser(), { edition, status });
+            if (zone) submissionsDb.setSubmissionZone(row.id, zone);
+            return row.id;
+        };
+        const murawa = [make("approved", "murawa"), make("approved", "murawa")];
+        const tunel = make("approved", "tunel");
+        const noPlace = make("approved");
+        make("pending");
+
+        const all = (await client.get("/api/admin/submissions").query({ edition })).body;
+        assert.deepEqual(all.counts.zones, { murawa: 2, tunel: 1, korona: 0, none: 1 });
+        assert.equal(all.counts.all, 5);
+
+        const ids = async (zone) =>
+            (await client.get("/api/admin/submissions").query({ edition, zone })).body.submissions
+                .map((s) => s.id)
+                .sort((a, b) => a - b);
+        assert.deepEqual(await ids("murawa"), [...murawa].sort((a, b) => a - b));
+        assert.deepEqual(await ids("tunel"), [tunel]);
+        assert.deepEqual(await ids("korona"), []);
+        assert.deepEqual(await ids("none"), [noPlace]);
+
+        const bad = await client.get("/api/admin/submissions").query({ edition, zone: "parking" });
+        assert.equal(bad.status, 400);
+    });
+
+    test("filtr opłaty pokazuje tylko zaakceptowane, chyba że wybrano inny status", async () => {
+        const client = api(createUser({ role: "admin" }));
+        const edition = 1998;
+        const approved = createSubmission(createUser(), { edition, status: "approved" }).id;
+        const pending = createSubmission(createUser(), { edition }).id; // also "unpaid"
+
+        const list = async (query) =>
+            (await client.get("/api/admin/submissions").query({ edition, ...query })).body.submissions.map((s) => s.id);
+        assert.deepEqual(await list({ paymentStatus: "unpaid" }), [approved]);
+        assert.deepEqual(await list({ paymentStatus: "unpaid", status: "pending" }), [pending]);
+    });
+
     test("ponowna akceptacja bez miejsca zostawia wybrane wcześniej", () => {
         const row = createSubmission(createUser(), { status: "approved" });
         submissionsDb.setSubmissionZone(row.id, "korona");

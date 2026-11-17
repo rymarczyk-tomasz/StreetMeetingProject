@@ -8,7 +8,9 @@ import PhotoSetEditor from "../components/PhotoSetEditor";
 import Plate from "../components/Plate";
 
 const EMPTY_FORM = { carBrand: "", licensePlate: "", carDescription: "" };
+// Must match backend/src/utils/userPhotos.ts: a garage car needs exactly this many photos.
 const MAX_PHOTOS = 5;
+const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
 const ACCEPTED ="image/jpeg,image/png,image/webp,image/avif";
 
 function VehicleFields({ form, setForm }) {
@@ -153,9 +155,10 @@ function VehicleCard({ vehicle, edition, onChanged, notify, onOpenPhotos }) {
                 ) : (
                     <>
                         {vehicle.carDescription && <p className="vehicle-card-text">{vehicle.carDescription}</p>}
-                        {vehicle.photos.length === 0 && (
+                        {vehicle.photos.length !== MAX_PHOTOS && (
                             <p className="vehicle-card-text">
-                                Dodaj zdjęcia, aby zgłaszać auto jednym kliknięciem.
+                                Zdjęcia: {vehicle.photos.length} z {MAX_PHOTOS}. Uzupełnij je do{" "}
+                                {MAX_PHOTOS}, aby zgłaszać auto jednym kliknięciem.
                             </p>
                         )}
                         <div className="vehicle-card-actions">
@@ -255,23 +258,31 @@ export default function GaragePage() {
         );
     }
 
-    // Too many photos are refused outright instead of silently dropping the extra ones.
+    // Picked photos are added to the ones already chosen, up to exactly MAX_PHOTOS.
     function pickFiles(event) {
         const picked = Array.from(event.target.files || []) as File[];
-        if (picked.length > MAX_PHOTOS) {
-            event.target.value = "";
-            setFiles([]);
-            setPhotosError(`Wybrano ${picked.length} zdjęć — możesz dodać maksymalnie ${MAX_PHOTOS}. Wybierz je ponownie.`);
+        event.target.value = "";
+        const next = [...files, ...picked];
+        if (next.length > MAX_PHOTOS) {
+            setPhotosError(`Możesz dodać dokładnie ${MAX_PHOTOS} zdjęć – masz już ${files.length}, wybrano ${picked.length}.`);
+            return;
+        }
+        if (next.reduce((sum, file) => sum + file.size, 0) > MAX_TOTAL_SIZE) {
+            setPhotosError("Łączny rozmiar zdjęć nie może przekraczać 50 MB.");
             return;
         }
         setPhotosError("");
-        setFiles(picked);
+        setFiles(next);
     }
 
     const isFull = maxVehicles > 0 && vehicles?.length >= maxVehicles;
 
     async function add(event) {
         event.preventDefault();
+        if (files.length !== MAX_PHOTOS) {
+            setPhotosError(`Dodaj dokładnie ${MAX_PHOTOS} zdjęć pojazdu – teraz jest ${files.length}.`);
+            return;
+        }
         setIsSaving(true);
         try {
             const formData = new FormData();
@@ -325,9 +336,31 @@ export default function GaragePage() {
                     <h2>Nowy pojazd</h2>
                     <VehicleFields form={form} setForm={setForm} />
                     <label>
-                        Zdjęcia (maksymalnie {MAX_PHOTOS}, łącznie do 50 MB)
-                        <input type="file" accept={ACCEPTED} multiple onChange={pickFiles} />
+                        Zdjęcia (dokładnie {MAX_PHOTOS}, łącznie do 50 MB) – wybrano {files.length} z{" "}
+                        {MAX_PHOTOS}
+                        {files.length < MAX_PHOTOS && (
+                            <input type="file" accept={ACCEPTED} multiple onChange={pickFiles} />
+                        )}
                     </label>
+                    {files.length > 0 && (
+                        <div className="submission-photos">
+                            {files.map((file, index) => (
+                                <span key={`${file.name}-${file.size}-${index}`} className="photo-new">
+                                    {file.name}
+                                </span>
+                            ))}
+                            <button
+                                type="button"
+                                className="button-secondary"
+                                onClick={() => {
+                                    setFiles([]);
+                                    setPhotosError("");
+                                }}
+                            >
+                                Wyczyść zdjęcia
+                            </button>
+                        </div>
+                    )}
                     {photosError && (
                         <p className="form-error" role="alert">
                             {photosError}
@@ -387,7 +420,7 @@ export default function GaragePage() {
                             <button type="button" className="vehicle-add-tile" onClick={startAdding}>
                                 <i className="bi bi-plus-circle" aria-hidden="true" />
                                 <span className="vehicle-add-title">Dodaj pojazd</span>
-                                <span>do {MAX_PHOTOS} zdjęć, łącznie 50 MB</span>
+                                <span>{MAX_PHOTOS} zdjęć, łącznie do 50 MB</span>
                             </button>
                         </li>
                     )}

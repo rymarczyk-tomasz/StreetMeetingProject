@@ -3,7 +3,7 @@ import Plate from "../../components/Plate";
 import SubmissionThread from "../../components/SubmissionThread";
 import { TemplatePicker } from "./templates";
 import { fillTemplate } from "./templateData";
-import { ZONES } from "../../utils/zones";
+import { ZONES, ZONE_LABELS } from "../../utils/zones";
 import { DETAIL_TABS, PAYMENT_STATUS_LABELS, STATUS_LABELS, formatDate, formatDay } from "./shared";
 
 
@@ -107,12 +107,25 @@ function MoreMenu({ submission, isBusy, actions }) {
     );
 }
 
-function DecisionTab({ submission, isBusy, actions, noteTemplates, queue }) {
+function DecisionTab({ submission, isBusy, actions, noteTemplates, zoneTemplates, queue }) {
     // Starts empty after every decision, so an old comment can't ride along with the next one.
     const [note, setNote] = useState("");
     // where the car will stand; needed to approve, changeable afterwards
     const [zone, setZone] = useState(submission.zone || "");
+    // message sent with a change of place; {miejsce} is filled on saving, so it follows the final choice
+    const [zoneNote, setZoneNote] = useState("");
     const approved = submission.status === "approved";
+    const zoneChanged = approved && zone && zone !== submission.zone;
+    const submissionValues = {
+        rok: submission.edition,
+        marka: submission.carBrand,
+        rejestracja: submission.licensePlate,
+    };
+
+    async function saveZone() {
+        const message = fillTemplate(zoneNote, { ...submissionValues, miejsce: ZONE_LABELS[zone] }).trim();
+        if (await actions.setZone(submission, zone, message)) setZoneNote("");
+    }
 
     return (
         <div className="detail-tab">
@@ -178,15 +191,57 @@ function DecisionTab({ submission, isBusy, actions, noteTemplates, queue }) {
                         </button>
                     ))}
                 </div>
-                {approved && zone && zone !== submission.zone && (
-                    <button
-                        type="button"
-                        className="btn-street btn-street-dark"
-                        disabled={isBusy}
-                        onClick={() => actions.setZone(submission, zone)}
-                    >
-                        Zapisz miejsce
-                    </button>
+                {zoneChanged && (
+                    <div className="zone-change">
+                        <div className="detail-field-head">
+                            <label htmlFor={`zone-note-${submission.id}`} className="field-label">
+                                Wiadomość o {submission.zone ? "zmianie miejsca" : "miejscu"} (opcjonalna)
+                            </label>
+                            <TemplatePicker
+                                templates={zoneTemplates}
+                                label="Szablon"
+                                onPick={(template) => setZoneNote(fillTemplate(template.body, submissionValues))}
+                            />
+                        </div>
+                        <textarea
+                            id={`zone-note-${submission.id}`}
+                            className="field-input field-textarea"
+                            rows={4}
+                            maxLength={2000}
+                            value={zoneNote}
+                            onChange={(event) => setZoneNote(event.target.value)}
+                            placeholder="Np. powód zmiany, brama i godzina wjazdu…"
+                        />
+                        <p className="detail-muted">
+                            Uczestnik dostanie e-mail
+                            {submission.zone
+                                ? ` z poprzednim (${ZONE_LABELS[submission.zone]}) i nowym miejscem (${ZONE_LABELS[zone]})`
+                                : ` z miejscem: ${ZONE_LABELS[zone]}`}
+                            {zoneNote.trim() ? " i tą wiadomością" : ""}. {"{miejsce}"} zostanie zastąpione nowym
+                            miejscem.
+                        </p>
+                        <div className="zone-change-actions">
+                            <button
+                                type="button"
+                                className="btn-street btn-street-dark"
+                                disabled={isBusy}
+                                onClick={saveZone}
+                            >
+                                Zapisz miejsce i wyślij e-mail
+                            </button>
+                            <button
+                                type="button"
+                                className="text-action"
+                                disabled={isBusy}
+                                onClick={() => {
+                                    setZone(submission.zone || "");
+                                    setZoneNote("");
+                                }}
+                            >
+                                Anuluj
+                            </button>
+                        </div>
+                    </div>
                 )}
                 {approved && !submission.zone && !zone && (
                     <p className="detail-muted">To zgłoszenie nie ma jeszcze przypisanego miejsca.</p>
@@ -382,6 +437,7 @@ export default function SubmissionDetails({
     isBusy,
     actions,
     noteTemplates,
+    zoneTemplates,
     queue,
 }) {
     return (
@@ -470,6 +526,7 @@ export default function SubmissionDetails({
                     isBusy={isBusy}
                     actions={actions}
                     noteTemplates={noteTemplates}
+                    zoneTemplates={zoneTemplates}
                     queue={queue}
                 />
             )}

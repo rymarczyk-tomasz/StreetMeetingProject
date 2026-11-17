@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-// Must match backend/src/utils/userPhotos.ts.
+// Must match backend/src/utils/userPhotos.ts: exactly this many photos.
 const MAX_PHOTOS = 5;
 const MAX_NEW_SIZE = 50 * 1024 * 1024;
 const ACCEPTED = "image/jpeg,image/png,image/webp,image/avif";
@@ -45,8 +45,8 @@ export default function PhotoSetEditor({ photos, onSave, onCancel }: PhotoSetEdi
     }
 
     async function save() {
-        if (!total) {
-            setError("Zostaw lub dodaj przynajmniej jedno zdjęcie.");
+        if (total !== MAX_PHOTOS) {
+            setError(`Wymagane jest dokładnie ${MAX_PHOTOS} zdjęć – teraz jest ${total}.`);
             return;
         }
         setIsSaving(true);
@@ -62,8 +62,8 @@ export default function PhotoSetEditor({ photos, onSave, onCancel }: PhotoSetEdi
     return (
         <div className="photo-set-editor">
             <p className="admin-hint">
-                Kliknij zdjęcie, aby je usunąć (lub przywrócić). Zdjęć: {total} z{" "}
-                {MAX_PHOTOS}.
+                Kliknij zdjęcie, aby je usunąć (lub przywrócić). Wymagane jest dokładnie{" "}
+                {MAX_PHOTOS} zdjęć – teraz: {total} z {MAX_PHOTOS}.
             </p>
             <div className="submission-photos">
                 {photos.map((photo, index) => (
@@ -79,8 +79,8 @@ export default function PhotoSetEditor({ photos, onSave, onCancel }: PhotoSetEdi
                         {removed.includes(photo) && <span>Usunięte</span>}
                     </button>
                 ))}
-                {newFiles.map((file) => (
-                    <span key={`${file.name}-${file.size}`} className="photo-new">
+                {newFiles.map((file, index) => (
+                    <span key={`${file.name}-${file.size}-${index}`} className="photo-new">
                         + {file.name}
                     </span>
                 ))}

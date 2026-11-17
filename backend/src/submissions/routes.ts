@@ -29,6 +29,8 @@ const {
 const {
     MAX_PHOTOS,
     MAX_TOTAL_PHOTOS_SIZE,
+    REQUIRED_PHOTOS,
+    photoCountError,
     toPhotoUrl,
     storedPathFor,
     removeStoredPhotos,
@@ -518,8 +520,21 @@ router.post("/:id/resubmit", submissionRateLimit, (req, res) => {
         return res.status(409).json({ message: duplicatePlateMessage(source.license_plate, edition) });
     }
 
-    const photos = copyStoredPhotos(JSON.parse(source.photos || "[]"), "submissions", req.user.sub);
-    if (!photos.length) {
+    const sourcePhotos = JSON.parse(source.photos || "[]");
+    if (!sourcePhotos.length) {
+        return res.status(400).json({
+            message: "Zdjęcia tego zgłoszenia nie są już dostępne — wyślij nowe zgłoszenie z formularza.",
+        });
+    }
+    if (sourcePhotos.length !== REQUIRED_PHOTOS) {
+        return res.status(400).json({
+            message: `Zgłoszenie wymaga teraz dokładnie ${REQUIRED_PHOTOS} zdjęć, a to ma ${sourcePhotos.length} — wyślij nowe zgłoszenie z formularza.`,
+        });
+    }
+
+    const photos = copyStoredPhotos(sourcePhotos, "submissions", req.user.sub);
+    if (photos.length !== REQUIRED_PHOTOS) {
+        removeStoredPhotos(photos);
         return res.status(400).json({
             message: "Zdjęcia tego zgłoszenia nie są już dostępne — wyślij nowe zgłoszenie z formularza.",
         });
@@ -603,23 +618,39 @@ router.post(
 
         // Throws UploadValidationError (handled below) if a file isn't a real image.
         verifyUploadedImages(savedFiles);
+
+        // No new photos: the car's photos from the garage are used, also exactly 5.
+        let garagePhotos = null;
+        if (!savedFiles.length && req.body.vehicleId) {
+            const vehicle = vehiclesDb.findVehicle(Number(req.body.vehicleId));
+            if (vehicle && Number(vehicle.user_id) === Number(req.user.sub)) {
+                garagePhotos = JSON.parse(vehicle.photos || "[]");
+            }
+        }
+        if (garagePhotos && garagePhotos.length !== REQUIRED_PHOTOS) {
+            return res.status(400).json({
+                message: `Ten pojazd ma w garażu ${garagePhotos.length} z ${REQUIRED_PHOTOS} wymaganych zdjęć. Uzupełnij je w garażu albo dodaj tutaj ${REQUIRED_PHOTOS} nowych zdjęć.`,
+            });
+        }
+        const countError = garagePhotos ? null : photoCountError(savedFiles.length);
+        if (countError) {
+            removeFiles(savedFiles);
+            return res.status(400).json({ message: countError });
+        }
+
         await processUploadedImages(savedFiles);
 
         let photos = savedFiles.map((file) =>
             storedPathFor("submissions", req.user.sub, file.filename),
         );
-
-        if (!photos.length && req.body.vehicleId) {
-            const vehicle = vehiclesDb.findVehicle(Number(req.body.vehicleId));
-            if (vehicle && Number(vehicle.user_id) === Number(req.user.sub)) {
-                photos = copyStoredPhotos(JSON.parse(vehicle.photos || "[]"), "submissions", req.user.sub);
+        if (garagePhotos) {
+            photos = copyStoredPhotos(garagePhotos, "submissions", req.user.sub);
+            if (photos.length !== REQUIRED_PHOTOS) {
+                removeStoredPhotos(photos);
+                return res.status(400).json({
+                    message: "Nie udało się odczytać zdjęć z garażu. Dodaj zdjęcia ponownie.",
+                });
             }
-        }
-
-        if (!photos.length) {
-            return res
-                .status(400)
-                .json({ message: "Proszę dodać przynajmniej jedno zdjęcie." });
         }
 
         const submission = submissionsDb.createSubmission({

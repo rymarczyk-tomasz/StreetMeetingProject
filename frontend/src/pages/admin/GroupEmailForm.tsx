@@ -138,7 +138,7 @@ export default function GroupEmailForm({ edition, onSent }) {
                         rows={8}
                         value={message}
                         onChange={(event) => setMessage(event.target.value)}
-                        placeholder="np. godziny wjazdu na murawę, co zabrać, kontakt w dniu wydarzenia…"
+                        placeholder="np. godziny wjazdu na otok murawy, co zabrać, kontakt w dniu wydarzenia…"
                         required
                     />
                 </label>

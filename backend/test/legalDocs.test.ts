@@ -1,7 +1,7 @@
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 const sharp = require("sharp");
-const { api, createUser } = require("./helpers");
+const { api, createUser, attachPhotos } = require("./helpers");
 const db = require("../src/db/database");
 const siteContentDb = require("../src/db/siteContent");
 const { DEFAULTS } = require("../src/content/defaults");
@@ -17,8 +17,10 @@ describe("dokumenty prawne 2027", () => {
         assert.match(regulaminSelect.title, /Select i Expo/);
         assert.match(regulaminSelect.html, /Odstąpienie od uczestnictwa/i);
         assert.match(regulamin.html, /29 maja 2027/);
-        assert.match(regulamin.html, /ebilet\.pl/);
+        assert.match(regulamin.html, /kupbilecik\.pl/);
+        assert.match(regulaminSelect.html, /Strefie Select nie podlega zwrotowi/);
         assert.match(privacy.html, /Marketing bezpośredni/);
+        assert.match(privacy.html, /Konto uczestnika i garaż/);
     });
 
     test("admin edytuje regulamin Select i Expo, zmiana trafia do historii", async () => {
@@ -33,16 +35,18 @@ describe("dokumenty prawne 2027", () => {
 
     test("zgłoszenie zapisuje wersje obu regulaminów", async () => {
         const user = createUser();
-        const res = await api(user)
-            .post("/api/submissions")
-            .field("firstName", "Jan")
-            .field("lastName", "Kowalski")
-            .field("phone", "500600700")
-            .field("licensePlate", "GD 88888")
-            .field("carBrand", "Skoda")
-            .field("carDescription", "Opis")
-            .field("acceptTerms", "true")
-            .attach("photos", await pngBuffer(), "auto.png");
+        const res = await attachPhotos(
+            api(user)
+                .post("/api/submissions")
+                .field("firstName", "Jan")
+                .field("lastName", "Kowalski")
+                .field("phone", "500600700")
+                .field("licensePlate", "GD 88888")
+                .field("carBrand", "Skoda")
+                .field("carDescription", "Opis")
+                .field("acceptTerms", "true"),
+            await pngBuffer(),
+        );
         assert.equal(res.status, 201, res.body.message);
         const row = db.prepare("SELECT consent_version FROM submissions WHERE license_plate = 'GD 88888'").get();
         assert.match(row.consent_version, /^(default|rev-[0-9]+)[+](default|rev-[0-9]+)$/);

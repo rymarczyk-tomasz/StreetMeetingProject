@@ -144,6 +144,13 @@ function createSubmission(user, overrides: any = {}) {
     return row;
 }
 
+// submissions and garage cars need exactly 5 photos (src/utils/userPhotos.ts)
+function attachPhotos(req, buffer, count = 5, name = "auto.png") {
+    let chained = req;
+    for (let i = 1; i <= count; i += 1) chained = chained.attach("photos", buffer, `${i}-${name}`);
+    return chained;
+}
+
 function saveSettings(patch) {
     siteContentDb.saveContent("settings", { ...siteContentDb.getSettings(), ...patch });
 }
@@ -154,6 +161,7 @@ module.exports = {
     api,
     createUser,
     createSubmission,
+    attachPhotos,
     saveSettings,
     freshIp,
     PASSWORD,

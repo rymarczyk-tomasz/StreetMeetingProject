@@ -15,6 +15,7 @@ const {
     isEmailConfigured,
     sendSubmissionStatusEmail,
     sendChangesRequestedEmail,
+    sendZoneChangedEmail,
     sendPaymentConfirmedEmail,
     sendGroupEmail,
     sendDateSubscribersEmail,
@@ -38,7 +39,7 @@ const { validateContent } = require("../content/validators");
 const { isPaymentOverdue, getFeeAmount, hasPaymentDetails } = require("../payments");
 const threadsDb = require("../db/threads");
 const ratingsDb = require("../db/ratings");
-const { isZone } = require("../zones");
+const { ZONES, isZone } = require("../zones");
 const { getThread, postToThread, readMessageBody } = require("../submissions/thread");
 const { adminRouter: galleryRouter } = require("../gallery/routes");
 
@@ -562,12 +563,20 @@ function readSubmissionFilters(source) {
     if (paymentStatus && !PAYMENT_FILTERS.includes(paymentStatus)) {
         return { error: "Nieprawidłowy status płatności." };
     }
+    // a place only exists on approved cars; "none" = approved without a place yet
+    const zone = normalizeText(source.zone);
+    if (zone && zone !== "none" && !isZone(zone)) {
+        return { error: "Nieprawidłowe miejsce na wydarzeniu." };
+    }
 
     const overdue = paymentStatus === "overdue";
+    // Payment only concerns approved cars: every submission starts "unpaid", so without
+    // this "Do opłacenia" would also list pending ones. An explicit status still wins.
     return {
         filters: {
             edition: readEditionFilter(source.edition),
-            status: overdue ? "approved" : status,
+            status: overdue || zone ? "approved" : status || (paymentStatus ? "approved" : ""),
+            ...(zone ? { zone } : {}),
             paymentStatus: overdue ? "unpaid" : paymentStatus,
             search: normalizeText(source.search),
             ...(overdue ? { overdue: true } : {}),
@@ -576,9 +585,12 @@ function readSubmissionFilters(source) {
     };
 }
 
-// listAllSubmissions + the filter SQL can't express (overdue payments).
+// listAllSubmissions + the filters SQL doesn't express (overdue payments, unread, place).
 function findSubmissions(filters) {
     let rows = submissionsDb.listAllSubmissions(filters);
+    if (filters.zone) {
+        rows = rows.filter((row) => (filters.zone === "none" ? !isZone(row.zone) : row.zone === filters.zone));
+    }
     if (filters.overdue) {
         const settings = siteContentDb.getSettings();
         rows = rows.filter((row) => isPaymentOverdue(row, settings));
@@ -591,7 +603,7 @@ function findSubmissions(filters) {
 }
 
 function findRecipients(filters) {
-    if (!filters.overdue && !filters.unread) return submissionsDb.listRecipients(filters);
+    if (!filters.overdue && !filters.unread && !filters.zone) return submissionsDb.listRecipients(filters);
     const byUser = new Map();
     for (const row of findSubmissions(filters)) {
         if (!byUser.has(row.user_id)) {
@@ -644,10 +656,24 @@ function countSubmissionsByFilter(filters) {
     const rows = submissionsDb.listAllSubmissions({ edition: filters.edition, search: filters.search });
     const settings = siteContentDb.getSettings();
     const unread = threadsDb.unreadCountsForAdmin();
-    const counts = { all: rows.length, pending: 0, approved: 0, waitlist: 0, rejected: 0, withdrawn: 0, overdue: 0, unread: 0 };
+    const counts = {
+        all: rows.length,
+        pending: 0,
+        approved: 0,
+        waitlist: 0,
+        rejected: 0,
+        withdrawn: 0,
+        overdue: 0,
+        unread: 0,
+        // approved cars per place at the event
+        zones: { ...Object.fromEntries(Object.keys(ZONES).map((key) => [key, 0])), none: 0 },
+    };
     for (const row of rows) {
         if (counts[row.status] !== undefined) counts[row.status] += 1;
-        if (row.status === "approved" && isPaymentOverdue(row, settings)) counts.overdue += 1;
+        if (row.status === "approved") {
+            counts.zones[isZone(row.zone) ? row.zone : "none"] += 1;
+            if (isPaymentOverdue(row, settings)) counts.overdue += 1;
+        }
         if (unread.has(row.id)) counts.unread += 1;
     }
     return counts;
@@ -737,7 +763,7 @@ function readStatusChange(body) {
     // optional: only an approval carries a place; a car already placed keeps it
     const zone = body.zone ? String(body.zone) : null;
     if (zone && !isZone(zone)) {
-        return { error: "Nieprawidłowe miejsce — wybierz murawę, tunel albo koronę." };
+        return { error: "Nieprawidłowe miejsce — wybierz otok murawy, tunel albo koronę." };
     }
     return { status, adminNote, zone, force: body.force === true };
 }
@@ -838,11 +864,16 @@ router.post("/submissions/bulk-status", (req, res) => {
     });
 });
 
-// changing the place of an already approved car, no e-mail (the panel shows it)
+// setting or changing the place of an already approved car; the participant gets an
+// e-mail with the old and new place and the admin's note (often from a "zone" template)
 router.patch("/submissions/:id/zone", (req, res) => {
     const zone = String(req.body.zone || "");
     if (!isZone(zone)) {
-        return res.status(400).json({ message: "Wybierz murawę, tunel albo koronę." });
+        return res.status(400).json({ message: "Wybierz otok murawy, tunel albo koronę." });
+    }
+    const adminNote = normalizeText(req.body.adminNote);
+    if (adminNote.length > 2000) {
+        return res.status(400).json({ message: "Wiadomość może mieć maksymalnie 2000 znaków." });
     }
     const existing = submissionsDb.findSubmissionById(Number(req.params.id));
     if (!existing) {
@@ -852,12 +883,28 @@ router.patch("/submissions/:id/zone", (req, res) => {
         return res.status(400).json({ message: "Miejsce można ustawić tylko przy zaakceptowanym zgłoszeniu." });
     }
 
+    if (existing.zone === zone) {
+        return res.json({ submission: toAdminSubmission(existing), message: "Miejsce się nie zmieniło." });
+    }
+
     const updated = submissionsDb.setSubmissionZone(existing.id, zone);
     audit(req, "submission.zone_changed", "submission", existing.id, {
         previousZone: existing.zone || null,
         zone,
+        ...(adminNote ? { adminNote } : {}),
     });
-    res.json({ submission: toAdminSubmission(updated) });
+    void sendZoneChangedEmail({
+        submission: updated,
+        user: usersDb.findUserById(existing.user_id),
+        previousZone: existing.zone,
+        adminNote,
+    }).catch((error) => {
+        console.error(`[email] Nie udało się wysłać zmiany miejsca dla zgłoszenia ${existing.id}:`, error.message);
+    });
+    res.json({
+        submission: toAdminSubmission(updated),
+        message: "Miejsce zapisane. Uczestnik dostał e-mail.",
+    });
 });
 
 router.patch("/submissions/:id/internal-note", (req, res) => {

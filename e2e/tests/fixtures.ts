@@ -179,7 +179,11 @@ export async function submitCar(page: Page, { brand, plate }: { brand: string; p
     await page.getByLabel("Imię").fill("Jan");
     await page.getByLabel("Nazwisko").fill("Testowy");
     await page.getByLabel("Telefon").fill("500600700");
-    await page.locator('input[type="file"]').setInputFiles(PNG);
+    // a submission needs exactly 5 photos
+    await page
+        .locator('input[type="file"]')
+        .setInputFiles([1, 2, 3, 4, 5].map((n) => ({ ...PNG, name: `auto-${n}.png` })));
+    await expect(page.getByText("5 z 5 zdjęć")).toBeVisible();
     await page.getByRole("checkbox").first().check();
     await page.getByRole("button", { name: "Wyślij zgłoszenie" }).click();
     await expect(page.getByRole("heading", { name: "Zgłoszenie wysłane" })).toBeVisible();

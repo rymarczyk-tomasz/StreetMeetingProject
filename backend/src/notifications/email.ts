@@ -142,18 +142,22 @@ async function sendSubmissionStatusEmail({
     if (status === "approved") {
         const payment = paymentLines(submission);
         const zone = zoneLabel(submission.zone);
+        // bulk approval may leave the place for later; the participant gets a separate e-mail then
+        const zoneText = zone
+            ? `Miejsce na wydarzeniu: ${zone}.`
+            : "Miejsce na wydarzeniu przydzielimy wkrótce – dostaniesz o nim osobny e-mail.";
         const intro =
             previousStatus === "waitlist"
                 ? `Zwolniło się miejsce w strefie Select — Twój samochód ${carBrand} przechodzi z listy rezerwowej i został zaakceptowany.`
                 : `Chcielibyśmy Cię poinformować, że Twój samochód ${carBrand} został zaakceptowany do strefy Select.`;
         return sendMail({
             to: user.email,
-            subject: "Street Show: zgłoszenie zaakceptowane",
+            subject: "Street Show: Akceptacja na Strefę Select",
             text: [
                 `Cześć ${firstName},`,
                 "",
                 intro,
-                ...(zone ? [`Miejsce na wydarzeniu: ${zone}.`] : []),
+                zoneText,
                 "",
                 ...payment,
                 noteText,
@@ -166,7 +170,7 @@ async function sendSubmissionStatusEmail({
             html: `
                 <p>Cześć ${escapeHtml(firstName)},</p>
                 <p>${escapeHtml(intro)}</p>
-                ${zone ? `<p>Miejsce na wydarzeniu: <strong>${escapeHtml(zone)}</strong></p>` : ""}
+                ${zone ? `<p>Miejsce na wydarzeniu: <strong>${escapeHtml(zone)}</strong></p>` : `<p>${escapeHtml(zoneText)}</p>`}
                 <p>${payment.map((line) => escapeHtml(line)).join("<br>")}</p>
                 ${noteHtml}
                 <p>Szczegóły znajdziesz w <a href="${escapeHtml(panelUrl)}">swoim panelu</a>.</p>
@@ -219,6 +223,49 @@ async function sendSubmissionStatusEmail({
             <p>Twoje zgłoszenie pojazdu do strefy Select zostało <strong>odrzucone</strong>.</p>
             ${noteHtml}
             <p>${signatureHtml()}</p>
+        `,
+    });
+}
+
+// The admin set or changed the place of an approved car; the note usually comes from a "zone" template.
+async function sendZoneChangedEmail({ submission, user, previousZone, adminNote = "" }) {
+    const zone = zoneLabel(submission.zone);
+    if (!user?.email || !zone) return { sent: false, reason: "not_applicable" };
+
+    const firstName = user.first_name || submission.first_name || "Użytkowniku";
+    const car = `${submission.car_brand || "Twój pojazd"} (${submission.license_plate})`;
+    const previous = zoneLabel(previousZone);
+    const panelUrl = `${getAppUrl()}/panel`;
+    const note = String(adminNote || "").trim();
+    const intro = previous
+        ? `Zmieniliśmy miejsce Twojego auta ${car} na wydarzeniu.`
+        : `Przydzieliliśmy miejsce Twojemu autu ${car} na wydarzeniu.`;
+
+    return sendMail({
+        to: user.email,
+        subject: previous
+            ? "Street Show: zmiana miejsca na wydarzeniu"
+            : "Street Show: miejsce na wydarzeniu",
+        text: [
+            `Cześć ${firstName},`,
+            "",
+            intro,
+            ...(previous ? [`Poprzednie miejsce: ${previous}.`] : []),
+            `${previous ? "Nowe miejsce" : "Miejsce"}: ${zone}.`,
+            ...(note ? ["", "Wiadomość od organizatora:", note] : []),
+            "",
+            `Szczegóły znajdziesz w swoim panelu: ${panelUrl}`,
+            "",
+            "Pozdrawiamy",
+            signatureText(),
+        ].join("\n"),
+        html: `
+            <p>Cześć ${escapeHtml(firstName)},</p>
+            <p>${escapeHtml(intro)}</p>
+            <p>${previous ? `Poprzednie miejsce: ${escapeHtml(previous)}<br>` : ""}${previous ? "Nowe miejsce" : "Miejsce"}: <strong>${escapeHtml(zone)}</strong></p>
+            ${note ? `<p><strong>Wiadomość od organizatora:</strong><br>${escapeHtml(note).replace(/\n/g, "<br>")}</p>` : ""}
+            <p>Szczegóły znajdziesz w <a href="${escapeHtml(panelUrl)}">swoim panelu</a>.</p>
+            <p>Pozdrawiamy<br>${signatureHtml()}</p>
         `,
     });
 }
@@ -808,6 +855,7 @@ module.exports = {
     sendEmailChangeEmail,
     sendSubmissionStatusEmail,
     sendChangesRequestedEmail,
+    sendZoneChangedEmail,
     sendPasswordResetEmail,
     sendPasswordChangedEmail,
     sendAccountDeletedEmail,

@@ -16,6 +16,7 @@ const {
 const {
     MAX_PHOTOS,
     MAX_TOTAL_PHOTOS_SIZE,
+    photoCountError,
     toPhotoUrl,
     storedPathFor,
     removeStoredPhotos,
@@ -113,6 +114,11 @@ router.post("/", ensureRoom, upload.array("photos", MAX_PHOTOS), asyncHandler(as
         return res.status(413).json({ message: "Łączny rozmiar zdjęć nie może przekraczać 50 MB." });
     }
     verifyUploadedImages(uploaded);
+    const countError = photoCountError(uploaded.length);
+    if (countError) {
+        removeFiles(uploaded);
+        return res.status(400).json({ message: countError });
+    }
     await processUploadedImages(uploaded);
 
     const vehicle = vehiclesDb.createVehicle({

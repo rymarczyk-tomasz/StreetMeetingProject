@@ -8,6 +8,7 @@ const {
     db,
     createUser,
     createSubmission,
+    attachPhotos,
     saveSettings,
     freshIp,
     mails,
@@ -44,7 +45,7 @@ async function postSubmission(user, overrides = {}) {
         ...overrides,
     };
     for (const [key, value] of Object.entries(fields)) req.field(key, value);
-    return req.attach("photos", await pngBuffer(), "auto.png");
+    return attachPhotos(req, await pngBuffer());
 }
 
 function deleteAccount(user, password = PASSWORD) {

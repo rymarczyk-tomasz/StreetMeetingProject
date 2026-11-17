@@ -2606,6 +2606,17 @@
     margin-left: auto;
 }
 
+.subs-chips-label {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    color: var(--street-muted);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
 @media (max-width: 767px) {
     .subs-chips,
     .subs-chip-group {
@@ -3164,6 +3175,26 @@
     border-color: var(--street-yellow);
     background: var(--street-yellow);
     color: #111;
+}
+
+/* message + save when the place of an approved car changes */
+.zone-change {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    border: 1px dashed var(--street-input-border);
+    border-radius: 8px;
+}
+
+.zone-change .detail-muted {
+    margin: 0;
+}
+
+.zone-change-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
 }
 
 .detail-note {
@@ -4241,6 +4272,11 @@ body.is-dialog-open {
 
 .templates-kind.is-group {
     background: var(--street-yellow-tint);
+}
+
+.templates-kind.is-zone {
+    background: var(--street-neutral-bg);
+    color: var(--street-text-2);
 }
 
 .templates-empty {

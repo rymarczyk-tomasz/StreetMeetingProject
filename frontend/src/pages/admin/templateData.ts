@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import api from "../../api/client";
 
 // Message templates (Admin → Ustawienia → Szablony wiadomości): "note" for the
-// comment on a submission, "group" for group messages.
+// comment on a submission, "group" for group messages, "zone" for a change of place.
 
-export type Template = { id: string; kind: "note" | "group"; title: string; subject: string; body: string };
+export type Template = { id: string; kind: "note" | "group" | "zone"; title: string; subject: string; body: string };
 
 export function fillTemplate(text: string, values: Record<string, string | number | undefined>) {
-    return String(text || "").replace(/\{(rok|marka|rejestracja)\}/g, (match, key) =>
+    return String(text || "").replace(/\{(rok|marka|rejestracja|miejsce)\}/g, (match, key) =>
         values[key] !== undefined && values[key] !== "" ? String(values[key]) : match,
     );
 }

@@ -10,7 +10,7 @@ import SubmissionDetails from "./SubmissionDetails";
 import { TemplatePicker } from "./templates";
 import { fillTemplate, useTemplates } from "./templateData";
 import { printGateList } from "./gateList";
-import { ZONE_LABELS } from "../../utils/zones";
+import { ZONES, ZONE_LABELS } from "../../utils/zones";
 import { DETAIL_TABS, PAYMENT_STATUS_LABELS, STATUS_LABELS, errorMessage, formatDay } from "./shared";
 
 // fetched again so the backend logs the export
@@ -33,6 +33,7 @@ async function exportToExcel(filters) {
         Opis: submission.carDescription,
         Status: STATUS_LABELS[submission.status] || submission.status,
         "Status opłaty": PAYMENT_STATUS_LABELS[submission.paymentStatus || "unpaid"],
+        Miejsce: submission.status === "approved" ? ZONE_LABELS[submission.zone] || "bez miejsca" : "",
         "Termin opłaty": submission.status === "approved" ? submission.payment?.deadline || "" : "",
         "Komentarz administratora": submission.adminNote || "",
         "Notatka wewnętrzna": submission.internalNote || "",
@@ -42,7 +43,7 @@ async function exportToExcel(filters) {
         Edycja: submission.edition,
     }));
     const worksheet = XLSX.utils.json_to_sheet(rows);
-    worksheet["!cols"] = [14, 22, 18, 18, 30, 18, 18, 16, 45, 18, 18, 14, 40, 40, 12, 12, 12, 10].map((wch) => ({ wch }));
+    worksheet["!cols"] = [14, 22, 18, 18, 30, 18, 18, 16, 45, 18, 18, 14, 14, 40, 40, 12, 12, 12, 10].map((wch) => ({ wch }));
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Zgłoszenia");
     XLSX.writeFile(workbook, `zgloszenia-${new Date().toISOString().slice(0, 10)}.xlsx`);
@@ -63,6 +64,9 @@ const STATUS_CHIPS = [
     ["rejected", "Odrzucone", "rejected"],
     ["withdrawn", "Rezygnacje", "withdrawn"],
 ];
+
+// place at the event of approved cars; "none" = approved, place not chosen yet
+const ZONE_CHIPS: [string, string][] = [...ZONES, ["none", "Bez miejsca"]];
 
 const BULK_LABELS = {
     approved: "Zaakceptuj",
@@ -99,6 +103,7 @@ function useListParams() {
         () => ({
             status: searchParams.get("status") || "",
             paymentStatus: searchParams.get("platnosc") || "",
+            zone: searchParams.get("miejsce") || "",
             search: searchParams.get("q") || "",
             unread: searchParams.get("nieprzeczytane") || "",
             sort: searchParams.get("sort") || "newest",
@@ -113,7 +118,7 @@ function useListParams() {
             setSearchParams(
                 (current) => {
                     const next = new URLSearchParams(current);
-                    const names = { paymentStatus: "platnosc", search: "q", unread: "nieprzeczytane" };
+                    const names = { paymentStatus: "platnosc", zone: "miejsce", search: "q", unread: "nieprzeczytane" };
                     for (const [key, value] of Object.entries(patch)) {
                         const name = names[key] || key;
                         if (value === null || value === "" || value === undefined) next.delete(name);
@@ -144,16 +149,18 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
     const [bulkNote, setBulkNote] = useState("");
     const [queue, setQueue] = useState(null);
     const { templates: noteTemplates } = useTemplates("note");
+    const { templates: zoneTemplates } = useTemplates("zone");
 
     const filters = useMemo(
         () => ({
             edition,
             status: params.status,
             paymentStatus: params.paymentStatus,
+            zone: params.zone,
             search: params.search,
             unread: params.unread,
         }),
-        [edition, params.status, params.paymentStatus, params.search, params.unread],
+        [edition, params.status, params.paymentStatus, params.zone, params.search, params.unread],
     );
 
     const loadQueue = useCallback(() => {
@@ -254,11 +261,14 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                     ),
                 "Nie udało się zmienić statusu zgłoszenia.",
             ),
-        setZone: (submission, zone) =>
-            runAction(
-                () => api.patch(`/admin/submissions/${submission.id}/zone`, { zone }),
+        setZone: async (submission, zone, adminNote = "") => {
+            const response = await runAction(
+                () => api.patch(`/admin/submissions/${submission.id}/zone`, { zone, adminNote }),
                 "Nie udało się zapisać miejsca.",
-            ),
+            );
+            if (response) setMessage(response.data.message);
+            return response;
+        },
         requestChanges: (submission, note) =>
             runAction(
                 () =>
@@ -429,7 +439,12 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                                 onClick={() =>
                                     setParams({
                                         status,
-                                        paymentStatus: params.paymentStatus === "overdue" ? "" : params.paymentStatus,
+                                        // payment filters only make sense for approved cars
+                                        paymentStatus:
+                                            status === "approved" && params.paymentStatus !== "overdue"
+                                                ? params.paymentStatus
+                                                : "",
+                                        zone: "",
                                         id: null,
                                     })
                                 }
@@ -466,6 +481,33 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                     </div>
                 </div>
 
+                {(counts?.approved > 0 || params.zone) && (
+                    <div className="subs-chips subs-zone-chips">
+                        <div className="subs-chip-group" role="group" aria-label="Miejsce na wydarzeniu">
+                            <span className="subs-chips-label">Miejsce:</span>
+                            {ZONE_CHIPS.filter(
+                                ([zone]) => zone !== "none" || counts?.zones?.none > 0 || params.zone === "none",
+                            ).map(([zone, label]) => (
+                                <button
+                                    key={zone}
+                                    type="button"
+                                    className={`subs-chip${params.zone === zone ? " is-active" : ""}`}
+                                    aria-pressed={params.zone === zone}
+                                    onClick={() =>
+                                        setParams(
+                                            params.zone === zone
+                                                ? { zone: "", status: "", id: null }
+                                                : { zone, status: "approved", id: null },
+                                        )
+                                    }
+                                >
+                                    {label} <span>{counts?.zones?.[zone] ?? ""}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 <div className="subs-filters">
                     <label className="subs-search">
                         <i className="bi bi-search" aria-hidden="true" />
@@ -481,7 +523,16 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                         <span className="visually-hidden">Opłata</span>
                         <Select
                             value={params.paymentStatus}
-                            onChange={(event) => setParams({ paymentStatus: event.target.value, id: null })}
+                            onChange={(event) =>
+                                setParams({
+                                    paymentStatus: event.target.value,
+                                    // a payment state means an approved car (the backend does the same)
+                                    ...(event.target.value && event.target.value !== "overdue"
+                                        ? { status: "approved" }
+                                        : {}),
+                                    id: null,
+                                })
+                            }
                         >
                             <option value="">Opłata: wszystkie</option>
                             <option value="unpaid">Do opłacenia</option>
@@ -654,6 +705,7 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                         isBusy={isBusy}
                         actions={actions}
                         noteTemplates={noteTemplates}
+                        zoneTemplates={zoneTemplates}
                         queue={queue}
                     />
                 ) : (

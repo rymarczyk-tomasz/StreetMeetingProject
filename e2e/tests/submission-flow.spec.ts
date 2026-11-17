@@ -90,7 +90,7 @@ test("akceptacja: uczestnik dostaje maila i widzi dane do przelewu", async ({ pa
     await expect(admin.getByText(/Zaakceptowane/i).first()).toBeVisible();
     await admin.context().close();
 
-    const mail = await waitForMail(email, /zaakceptowane/);
+    const mail = await waitForMail(email, /Akceptacja na Strefę Select/);
     expect(mail.text).toContain("150 zł");
     expect(mail.text).toContain("Miejsce na wydarzeniu: Tunel");
 

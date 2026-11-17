@@ -19,19 +19,48 @@ function useActiveHeading(ids: string[]) {
 
     useEffect(() => {
         if (!ids.length) return;
-        const elements = ids
-            .map((id) => document.getElementById(id))
-            .filter((element): element is HTMLElement => Boolean(element));
+        let frame = 0;
 
-        const observer = new IntersectionObserver(
-            (entries) => {
-                const visible = entries.filter((entry) => entry.isIntersecting);
-                if (visible[0]) setActiveId(visible[0].target.id);
-            },
-            { rootMargin: "-120px 0px -70% 0px" },
-        );
-        elements.forEach((element) => observer.observe(element));
-        return () => observer.disconnect();
+        // The active section is the last one whose heading has passed the top of the
+        // screen (below the sticky navbar). Computed from positions on every scroll,
+        // so fast scrolling and jumps from the table of contents can't skip a heading.
+        const update = () => {
+            frame = 0;
+            const elements = ids
+                .map((id) => document.getElementById(id))
+                .filter((element): element is HTMLElement => Boolean(element));
+            if (!elements.length) return;
+
+            const navbar = parseFloat(
+                getComputedStyle(document.documentElement).getPropertyValue("--navbar-height"),
+            );
+            const threshold = (Number.isFinite(navbar) ? navbar : 72) + 40;
+            const atBottom =
+                window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+
+            let current = elements[0];
+            if (atBottom) {
+                current = elements[elements.length - 1];
+            } else {
+                for (const element of elements) {
+                    if (element.getBoundingClientRect().top <= threshold) current = element;
+                    else break;
+                }
+            }
+            setActiveId(current.id);
+        };
+        const schedule = () => {
+            if (!frame) frame = requestAnimationFrame(update);
+        };
+
+        schedule();
+        window.addEventListener("scroll", schedule, { passive: true, capture: true });
+        window.addEventListener("resize", schedule);
+        return () => {
+            if (frame) cancelAnimationFrame(frame);
+            window.removeEventListener("scroll", schedule, { capture: true });
+            window.removeEventListener("resize", schedule);
+        };
     }, [ids]);
 
     return activeId || ids[0] || "";

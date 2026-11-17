@@ -15,7 +15,7 @@ It started as a simple landing page and grew into a full application used by the
 ### For participants
 
 - Account with e-mail confirmation, password reset and GDPR data export / account deletion
-- "Select zone" vehicle applications with up to 5 photos, a personal garage of saved cars and status tracking
+- "Select zone" vehicle applications with exactly 5 photos, a personal garage of saved cars and status tracking
 - Message thread with the organisers on every application
 - Entry pass with a QR code (also downloadable / shareable on the phone)
 - "Notify me about the date" sign-up with double opt-in and one-click unsubscribe

@@ -2,7 +2,7 @@
 const { test, describe, beforeEach } = require("node:test");
 const assert = require("node:assert/strict");
 const sharp = require("sharp");
-const { api, createUser, createSubmission, saveSettings, mails, mailsTo } = require("./helpers");
+const { api, createUser, createSubmission, attachPhotos, saveSettings, mails, mailsTo } = require("./helpers");
 
 const ADMIN_INBOX = "org@streetshow.test";
 
@@ -16,16 +16,18 @@ beforeEach(() => {
 describe("powiadomienia e-mail", () => {
     test("nowe zgłoszenie trafia do organizatora", async () => {
         const user = createUser();
-        const res = await api(user)
-            .post("/api/submissions")
-            .field("firstName", "Jan")
-            .field("lastName", "Kowalski")
-            .field("phone", "500600700")
-            .field("licensePlate", "GD 77777")
-            .field("carBrand", "Skoda")
-            .field("carDescription", "Opis")
-            .field("acceptTerms", "true")
-            .attach("photos", await pngBuffer(), "auto.png");
+        const res = await attachPhotos(
+            api(user)
+                .post("/api/submissions")
+                .field("firstName", "Jan")
+                .field("lastName", "Kowalski")
+                .field("phone", "500600700")
+                .field("licensePlate", "GD 77777")
+                .field("carBrand", "Skoda")
+                .field("carDescription", "Opis")
+                .field("acceptTerms", "true"),
+            await pngBuffer(),
+        );
         assert.equal(res.status, 201, res.body.message);
 
         const [mail] = mailsTo(ADMIN_INBOX);
@@ -40,7 +42,7 @@ describe("powiadomienia e-mail", () => {
         const client = api(admin);
 
         for (const [status, subject] of [
-            ["approved", /zaakceptowane/],
+            ["approved", /Akceptacja na Strefę Select/],
             ["waitlist", /liście rezerwowej/],
             ["rejected", /odrzucone/],
         ]) {
