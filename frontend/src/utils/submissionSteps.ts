@@ -34,11 +34,11 @@ export function submissionSteps(submission) {
         },
         {
             label: "Opłacone",
-            state: (rejected ? "todo" : paid ? "done" : approved && paymentReady ? "current" : "todo") as StepState,
+            state: (!approved ? "todo" : paid ? "done" : paymentReady ? "current" : "todo") as StepState,
         },
         {
-            label: checkedInAt ? "Na miejscu" : "Gotowe do wjazdu",
-            state: (paid ? "done" : "todo") as StepState,
+            label: approved && checkedInAt ? "Na miejscu" : "Gotowe do wjazdu",
+            state: (approved && paid ? "done" : "todo") as StepState,
         },
     ];
 }

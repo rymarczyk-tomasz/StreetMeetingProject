@@ -91,6 +91,15 @@ describe("submissionSteps", () => {
         expect(submissionSteps({ status: "withdrawn" })[1].label).toBe("Rezygnacja");
     });
 
+    test("opłata i wjazd liczą się tylko przy zaakceptowanym", () => {
+        const paidCheckedIn = { paymentStatus: "paid", checkedInAt: "2027-05-29 10:00:00" };
+        for (const status of ["rejected", "waitlist", "pending"]) {
+            const steps = submissionSteps({ ...paidCheckedIn, status });
+            expect(steps.slice(2).map((step) => step.state)).toEqual(["todo", "todo"]);
+            expect(steps[3].label).toBe("Gotowe do wjazdu");
+        }
+    });
+
     test("nextStep: weryfikacja ma pierwszeństwo przed terminem", () => {
         const text = nextStep({ status: "approved", paymentStatus: "verification", paymentOverdue: true, payment: { complete: true } });
         expect(text).toMatch(/sprawdza Twoją płatność/);

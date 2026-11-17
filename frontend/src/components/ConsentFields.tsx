@@ -29,12 +29,11 @@ export default function ConsentFields({
                     <Link to="/regulamin-select" target="_blank">
                         regulamin Strefy Select i Expo
                     </Link>{" "}
-                    i wyrażam zgodę na przetwarzanie moich danych w celu rozpatrzenia
-                    zgłoszenia i organizacji strefy Select (
+                    oraz zapoznałem się z{" "}
                     <Link to="/polityka-prywatnosci" target="_blank">
-                        polityka prywatności
+                        polityką prywatności
                     </Link>
-                    ). <em>(wymagane)</em>
+                    . <em>(wymagane)</em>
                 </span>
             </label>
             <label className="consent-label check-label">

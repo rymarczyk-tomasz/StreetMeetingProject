@@ -139,7 +139,7 @@ module.exports = {
                 {
                     "id": "select-7",
                     "question": "Jakie zasady obowiązują przy poruszaniu się autem po terenie?",
-                    "answerHtml": "<p>Na terenie wydarzenia obowiązuje prędkość maksymalna <strong>5 km/h</strong>. Auta stoją na otoku murawy, a poruszać się można tylko wyznaczonymi ciągami komunikacyjnymi i wyłącznie w asyście służb organizatora. Wjazd lub wejście na samą murawę jest całkowicie zakazany pod karą umowną 10 000 zł. Za wycieki płynów i inne szkody odpowiada właściciel auta.</p>"
+                    "answerHtml": "<p>Na terenie wydarzenia obowiązuje prędkość maksymalna <strong>5 km/h</strong>. Auta stoją w miejscu wskazanym przez organizatora (otok murawy, tunel lub korona), a poruszać się można tylko wyznaczonymi ciągami komunikacyjnymi i wyłącznie w asyście służb organizatora. Wjazd lub wejście na samą murawę jest całkowicie zakazany pod karą umowną 10 000 zł. Za wycieki płynów i inne szkody odpowiada właściciel auta.</p>"
                 },
                 {
                     "id": "select-8",
@@ -175,7 +175,7 @@ module.exports = {
                 {
                     "id": "wystawcy-4",
                     "question": "Czy będę nagrywany lub fotografowany?",
-                    "answerHtml": "<p>Tak. Podczas wydarzenia powstają zdjęcia i nagrania, także z drona organizatora. Biorąc udział w wydarzeniu, zgadzasz się na wykorzystanie utrwalonego wizerunku w celach dokumentacyjnych i promocyjnych. Szczegóły znajdziesz w <a href=\"/regulamin\">regulaminie wydarzenia</a> i <a href=\"/polityka-prywatnosci\">polityce prywatności</a>.</p>"
+                    "answerHtml": "<p>Tak. Organizator utrwala przebieg wydarzenia na zdjęciach i nagraniach, które wykorzystuje w celach dokumentacyjnych i promocyjnych. Jako część tłumu możesz się na nich pojawić. Jeśli materiał ma pokazywać wyraźnie Ciebie jako główny element, organizator poprosi o osobne zezwolenie. Szczegóły znajdziesz w <a href=\"/regulamin\">regulaminie wydarzenia</a> i <a href=\"/polityka-prywatnosci\">polityce prywatności</a>.</p>"
                 }
             ]
         },

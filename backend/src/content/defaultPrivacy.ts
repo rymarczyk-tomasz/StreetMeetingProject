@@ -60,7 +60,7 @@ module.exports = {
 
         "<h2>10. Zdjęcia, nagrania i dane przesyłane z pojazdem</h2>",
         "<p>Zdjęcia lub nagrania przesłane w formularzu są wykorzystywane do oceny zgłoszenia, kontaktu oraz organizacji udziału pojazdu. Nie oznacza to automatycznej zgody na ich publiczne wykorzystanie poza celami związanymi ze zgłoszeniem. Jeżeli Administrator zamierza wykorzystać materiał promocyjnie, zrobi to wyłącznie na właściwej podstawie prawnej, a gdy w danej sytuacji wymagana jest zgoda – po jej odrębnym uzyskaniu.</p>",
-        "<p>Zasady utrwalania wizerunku i nagrań podczas samego wydarzenia, w tym zdjęć, nagrań wideo oraz ujęć z drona, wynikają również z regulaminu wydarzenia i informacji przekazywanych uczestnikom na miejscu.</p>",
+        "<p>Zasady utrwalania wizerunku i nagrań podczas samego wydarzenia, w tym zdjęć i nagrań wideo, wynikają również z regulaminu wydarzenia i informacji przekazywanych uczestnikom na miejscu.</p>",
 
         "<h2>11. Pliki cookies i podobne technologie</h2>",
         "<p>Strona wykorzystuje pliki cookies i podobne technologie niezbędne do jej prawidłowego działania, bezpieczeństwa oraz obsługi formularza. Nie są one wykorzystywane do profilowania użytkowników w celach reklamowych bez ich uprzedniej zgody.</p>",
