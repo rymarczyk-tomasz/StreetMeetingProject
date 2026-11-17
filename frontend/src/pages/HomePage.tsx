@@ -98,7 +98,7 @@ function CardAction({ card, ticketUrl }) {
 
 function EventCards({ cards, ticketUrl }) {
     return (
-        <div className="feature-grid">
+        <div className={`feature-grid feature-grid-${cards.length}`}>
             {cards.map((card) => (
                 <article className="feature-card" key={card.id}>
                     <img

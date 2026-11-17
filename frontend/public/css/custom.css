@@ -1164,6 +1164,19 @@ body {
     gap: 24px;
 }
 
+/* 2 or 4 cards: no orphan in the second row (4 in a row on wide screens, otherwise 2x2) */
+.feature-grid-2,
+.feature-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 1200px) {
+    .feature-grid-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 20px;
+    }
+}
+
 .feature-card {
     display: flex;
     flex-direction: column;
