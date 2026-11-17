@@ -275,7 +275,7 @@ export function SelectEditor({ onAction }) {
                     <p className="admin-hint">
                         Przycisk w sekcji zmienia się sam: „Załóż konto” dla gości, „Zgłoś
                         pojazd” po zalogowaniu, a przy zamkniętych zapisach pokazuje powód z
-                        Ustawień. Limit pojazdów pod krokami też pochodzi z Ustawień.
+                        Ustawień.
                     </p>
                     <TextInput
                         label="Nadtytuł"
@@ -303,6 +303,24 @@ export function SelectEditor({ onAction }) {
                             />
                         </fieldset>
                     ))}
+                    <TextInput
+                        label="Notka pod krokami"
+                        hint="{limit} zamienia się na limit pojazdów z Ustawień, np. „5 pojazdów”. Puste = bez notki"
+                        value={select.note}
+                        onChange={(note) => editor.update({ note })}
+                    />
+                    <TextInput
+                        label="Tekst linku w notce"
+                        hint="Puste = bez linku"
+                        value={select.noteLinkLabel}
+                        onChange={(noteLinkLabel) => editor.update({ noteLinkLabel })}
+                    />
+                    <TextInput
+                        label="Adres linku w notce"
+                        hint="Np. /faq albo https://…"
+                        value={select.noteLinkHref}
+                        onChange={(noteLinkHref) => editor.update({ noteLinkHref })}
+                    />
                 </>
             )}
         </ContentForm>

@@ -30,7 +30,7 @@ const DEFAULT_SELECT = {
         },
         {
             title: "Zgłoszenie",
-            text: "Dane pojazdu i do 5 zdjęć. Do decyzji możesz je poprawić albo wycofać.",
+            text: "Dane pojazdu i dokładnie 5 zdjęć. Do decyzji możesz je poprawić albo wycofać.",
         },
         {
             title: "Akceptacja i opłata",
@@ -41,6 +41,9 @@ const DEFAULT_SELECT = {
             text: "Pokazujesz kod przy wjeździe – na telefonie albo wydrukowany.",
         },
     ],
+    note: "Do {limit} na konto · 5 zdjęć JPG, PNG, WEBP lub AVIF, łącznie do 50 MB",
+    noteLinkLabel: "Pytania o strefę Select",
+    noteLinkHref: "/faq",
 };
 
 // used until the api answers (or if it fails)
@@ -144,6 +147,10 @@ function SelectSteps({ select, user }) {
     const content = { ...DEFAULT_SELECT, ...select };
     const steps = content.steps?.length ? content.steps : DEFAULT_SELECT.steps;
     const maxVehicles = status?.maxVehicles || 5;
+    const note = (content.note || "").replace(
+        "{limit}",
+        plural(maxVehicles, "pojazdu", "pojazdów", "pojazdów"),
+    );
     const closed = status && !status.open;
     const cta = closed ? (
         <p className="select-closed">{status.reason}</p>
@@ -177,11 +184,18 @@ function SelectSteps({ select, user }) {
                     ))}
                 </ol>
                 <div className="select-cta-mobile">{cta}</div>
-                <p className="select-note">
-                    Do {plural(maxVehicles, "pojazdu", "pojazdów", "pojazdów")} na konto · zdjęcia
-                    JPG, PNG, WEBP lub AVIF, łącznie do 50 MB ·{" "}
-                    <Link to="/faq">Pytania o strefę Select</Link>
-                </p>
+                {(note || content.noteLinkLabel) && (
+                    <p className="select-note">
+                        {note}
+                        {note && content.noteLinkLabel && " · "}
+                        {content.noteLinkLabel &&
+                            (/^\/(?!\/)/.test(content.noteLinkHref) ? (
+                                <Link to={content.noteLinkHref}>{content.noteLinkLabel}</Link>
+                            ) : (
+                                <a href={content.noteLinkHref || "/faq"}>{content.noteLinkLabel}</a>
+                            ))}
+                    </p>
+                )}
             </div>
         </section>
     );

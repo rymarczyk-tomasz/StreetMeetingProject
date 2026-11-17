@@ -74,7 +74,7 @@ const DEFAULTS = {
             },
             {
                 title: "Zgłoszenie",
-                text: "Dane pojazdu i do 5 zdjęć. Do decyzji możesz je poprawić albo wycofać.",
+                text: "Dane pojazdu i dokładnie 5 zdjęć. Do decyzji możesz je poprawić albo wycofać.",
             },
             {
                 title: "Akceptacja i opłata",
@@ -85,6 +85,10 @@ const DEFAULTS = {
                 text: "Pokazujesz kod przy wjeździe – na telefonie albo wydrukowany.",
             },
         ],
+        // {limit} = vehicles per account from Settings, e.g. "5 pojazdów"
+        note: "Do {limit} na konto · 5 zdjęć JPG, PNG, WEBP lub AVIF, łącznie do 50 MB",
+        noteLinkLabel: "Pytania o strefę Select",
+        noteLinkHref: "/faq",
     },
     gallery: {
         intro: "",

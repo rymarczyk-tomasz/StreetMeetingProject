@@ -152,9 +152,14 @@ function validateSelect(input) {
         eyebrow: text(input.eyebrow, 60),
         title: text(input.title, 120),
         steps,
+        note: text(input.note, 300),
+        noteLinkLabel: text(input.noteLinkLabel, 60),
+        noteLinkHref: text(input.noteLinkHref, 500),
     };
 
     if (!content.title) return { error: "Podaj tytuł sekcji Strefa Select." };
+    if (!isSafeUrl(content.noteLinkHref, { allowEmpty: true })) return { error: urlError("Link pod krokami") };
+    if (content.noteLinkHref && !content.noteLinkLabel) return { error: "Podaj tekst linku pod krokami." };
     if (steps.length !== SELECT_STEP_COUNT || steps.some((step) => !step.title || !step.text)) {
         return { error: "Uzupełnij tytuł i opis wszystkich 4 kroków." };
     }

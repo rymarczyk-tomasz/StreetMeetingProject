@@ -52,6 +52,13 @@ describe("partnerzy: ukrywanie sekcji", () => {
         });
         assert.deepEqual(gallery.content.photos[0].crop, { x: 30, y: 70, zoom: 1.5 });
 
+        // the note under the Select steps is editable and its link checked
+        const steps = Array.from({ length: 4 }, (_, i) => ({ title: `Krok ${i}`, text: "Opis" }));
+        const select = validateContent("select", { title: "Select", steps, note: "Do {limit}", noteLinkLabel: "FAQ", noteLinkHref: "/faq" });
+        assert.equal(select.content.note, "Do {limit}");
+        assert.ok(validateContent("select", { title: "Select", steps, noteLinkLabel: "x", noteLinkHref: "javascript:alert(1)" }).error);
+        assert.equal((await api().get("/api/content/select")).body.content.noteLinkHref, "/faq");
+
         const admin = api(createUser({ role: "admin" }));
         const contact = (await api().get("/api/content/contact")).body.content;
         assert.match(contact.footerText, /Organizator Street Show/);
