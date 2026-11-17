@@ -118,6 +118,37 @@ describe("galeria z jednego folderu", () => {
         assert.ok(requested.every((id) => [FOLDER_A, FOLDER_B].includes(id)));
     });
 
+    test("zdjęcie z galerii kopiuje się do treści strony i zostaje po zmianie folderu", async () => {
+        const client = api(createUser({ role: "admin" }));
+        await client.put("/api/admin/gallery/folder").send({ driveUrl: folderLink(FOLDER_A) });
+        await waitForSync(client);
+        const [photo] = (await client.get("/api/admin/gallery")).body.photos;
+
+        const res = await client.post(`/api/admin/gallery/photos/${photo.id}/copy`);
+        assert.equal(res.status, 200, res.body.message);
+        assert.match(res.body.url, /^\/uploads\/content\/gallery-[0-9a-f]+\.webp$/);
+        const file = path.join(process.cwd(), res.body.url);
+        assert.equal((await sharp(file).metadata()).format, "webp");
+
+        // Drive unavailable: the 1600 px gallery copy is used instead
+        const download = drive.downloadFile;
+        drive.downloadFile = async () => {
+            throw new Error("offline");
+        };
+        try {
+            const fallback = await client.post(`/api/admin/gallery/photos/${photo.id}/copy`);
+            assert.equal(fallback.status, 200, fallback.body.message);
+        } finally {
+            drive.downloadFile = download;
+        }
+
+        await client.put("/api/admin/gallery/folder").send({ driveUrl: folderLink(FOLDER_B) });
+        await waitForSync(client);
+        assert.ok(fs.existsSync(file));
+        assert.equal((await client.post("/api/admin/gallery/photos/999999/copy")).status, 404);
+        assert.equal((await api(createUser()).post(`/api/admin/gallery/photos/${photo.id}/copy`)).status, 403);
+    });
+
     test("stare albumy: zostaje najnowszy, reszta znika razem ze zdjęciami", () => {
         db.prepare("DELETE FROM gallery_albums").run();
         const insert = db.prepare("INSERT INTO gallery_albums (title, drive_folder_id, sort_order) VALUES (?, ?, ?)");

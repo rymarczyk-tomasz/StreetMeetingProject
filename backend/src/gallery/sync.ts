@@ -49,6 +49,10 @@ function photoUrls(photo) {
     };
 }
 
+function fullPhotoPath(photo) {
+    return `${photoFileBase(photo.album_id, photo.drive_file_id)}-${FULL_WIDTH}.webp`;
+}
+
 function signatureOf(file) {
     return `${file.modifiedTime || ""}|${file.md5Checksum || ""}|${file.size || ""}`;
 }
@@ -266,6 +270,7 @@ function scheduleDailyGallerySync() {
 module.exports = {
     getSyncStatus,
     photoUrls,
+    fullPhotoPath,
     setGalleryFolder,
     runGallerySync,
     startGallerySync,

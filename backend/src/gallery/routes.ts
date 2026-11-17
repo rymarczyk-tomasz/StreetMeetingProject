@@ -1,9 +1,18 @@
+const crypto = require("crypto");
+const fs = require("fs");
+const path = require("path");
 const express = require("express");
 
 const galleryDb = require("../db/gallery");
 const auditLogDb = require("../db/auditLog");
 const drive = require("./drive");
 const gallerySync = require("./sync");
+const { CONTENT_UPLOAD_ROOT } = require("../utils/paths");
+const { getSharp } = require("../utils/sharp");
+const { asyncHandler } = require("../utils/imageUpload");
+
+// a gallery photo used on the page (hero, event card) is copied, so it survives a folder change
+const CONTENT_COPY_WIDTH = 2560;
 
 // The gallery is the photos of one Google Drive folder, chosen in Admin → Galeria.
 
@@ -137,5 +146,43 @@ adminRouter.patch("/photos/:photoId", (req, res) => {
     galleryDb.setPhotoHidden(photo.id, Boolean(req.body?.isHidden));
     res.json({ ok: true });
 });
+
+adminRouter.post(
+    "/photos/:photoId/copy",
+    asyncHandler(async (req, res) => {
+        const folder = galleryDb.getGalleryFolder();
+        const photo = folder && galleryDb.findPhoto(folder.id, Number(req.params.photoId));
+        if (!photo) return res.status(404).json({ message: "Nie znaleziono zdjęcia." });
+
+        await fs.promises.mkdir(CONTENT_UPLOAD_ROOT, { recursive: true });
+        const filename = `gallery-${crypto.randomBytes(8).toString("hex")}.webp`;
+        const target = path.join(CONTENT_UPLOAD_ROOT, filename);
+
+        // the original from Drive gives a sharper hero than the 1600 px gallery copy
+        let original = null;
+        try {
+            original = await drive.downloadFile(photo.drive_file_id);
+        } catch (error) {
+            console.error(`[gallery] Oryginał ${photo.name} niedostępny, kopiuję wersję z galerii:`, error.message);
+        }
+        try {
+            if (original) {
+                await getSharp()(original)
+                    .rotate()
+                    .resize({ width: CONTENT_COPY_WIDTH, height: CONTENT_COPY_WIDTH, fit: "inside", withoutEnlargement: true })
+                    .webp({ quality: 85 })
+                    .toFile(target);
+            } else {
+                await fs.promises.copyFile(gallerySync.fullPhotoPath(photo), target);
+            }
+        } catch (error) {
+            console.error(`[gallery] Kopia ${photo.name} się nie udała:`, error.message);
+            return res.status(500).json({ message: "Nie udało się skopiować zdjęcia z galerii." });
+        }
+
+        audit(req, "gallery.photo_copied", { title: photo.name });
+        res.json({ url: `/uploads/content/${filename}` });
+    }),
+);
 
 module.exports = { publicRouter, adminRouter };

@@ -1,10 +1,12 @@
 import { useState } from "react";
 import api from "../../api/client";
+import GalleryPicker from "./GalleryPicker";
 import { IMAGE_ACCEPT, errorMessage, uploadContentImage } from "./shared";
 
 export function ImageField({ label, value, onChange, previewAlt = "Podgląd" }) {
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState("");
+    const [pickerOpen, setPickerOpen] = useState(false);
 
     async function handleFile(file) {
         if (!file) return;
@@ -40,6 +42,12 @@ export function ImageField({ label, value, onChange, previewAlt = "Podgląd" }) 
                     disabled={isUploading}
                 />
             </label>
+            <div>
+                <button type="button" className="button-secondary" onClick={() => setPickerOpen(true)}>
+                    <i className="bi bi-images" aria-hidden="true" /> …albo wybierz z galerii
+                </button>
+            </div>
+            {pickerOpen && <GalleryPicker onPick={onChange} onClose={() => setPickerOpen(false)} />}
             {isUploading && <p className="page-status">Przesyłanie...</p>}
             {error && <p className="form-error">{error}</p>}
             {value && (

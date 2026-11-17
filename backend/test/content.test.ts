@@ -52,6 +52,25 @@ describe("partnerzy: ukrywanie sekcji", () => {
         assert.equal((await api().get("/api/content/contact")).body.content.footerText, "Nowy opis");
     });
 
+    test("duże zdjęcie z aparatu (ponad 10 MB) jest pomniejszane i kompresowane", async () => {
+        const sharp = require("sharp");
+        const path = require("path");
+        const big = await sharp({
+            create: { width: 6000, height: 4000, channels: 3, noise: { type: "gaussian", mean: 128, sigma: 60 } },
+        })
+            .jpeg({ quality: 100 })
+            .toBuffer();
+        assert.ok(big.length > 10 * 1024 * 1024, `plik testowy ma ${big.length} B`);
+
+        const admin = api(createUser({ role: "admin" }));
+        const res = await admin.post("/api/admin/upload-image").attach("image", big, "aparat.jpg");
+        assert.equal(res.status, 200, res.body.message);
+        assert.match(res.body.url, /\.webp$/);
+        const meta = await sharp(path.join(process.cwd(), res.body.url)).metadata();
+        assert.equal(meta.width, 2560);
+        assert.equal(meta.height, 1707);
+    });
+
     test("zwykły użytkownik nie może zmienić sekcji", async () => {
         const res = await api(createUser())
             .patch("/api/admin/content/partners")

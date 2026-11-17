@@ -134,6 +134,34 @@ async function processUploadedImages(files) {
 }
 
 // express 4 doesn't catch a rejected async handler
+// page images (hero, event cards, logos): smaller and lighter than submission photos,
+// so a 20 MB camera file becomes a few hundred KB; PNG stays PNG to keep logo transparency sharp
+const CONTENT_IMAGE_EDGE = 2560;
+
+async function processContentImage(file) {
+    const isPng = path.extname(file.filename) === ".png";
+    const base = path.basename(file.filename, path.extname(file.filename));
+    const filename = `${base}${isPng ? ".png" : ".webp"}`;
+    const temp = path.join(path.dirname(file.path), `${base}.tmp`);
+    try {
+        let image = getSharp()(file.path)
+            .rotate()
+            .resize({ width: CONTENT_IMAGE_EDGE, height: CONTENT_IMAGE_EDGE, fit: "inside", withoutEnlargement: true });
+        image = isPng ? image.png({ compressionLevel: 9 }) : image.webp({ quality: 85 });
+        const info = await image.toFile(temp);
+        const target = path.join(path.dirname(file.path), filename);
+        if (target !== file.path) await fs.promises.unlink(file.path);
+        await fs.promises.rename(temp, target);
+        file.filename = filename;
+        file.path = target;
+        file.size = info.size;
+    } catch {
+        await fs.promises.unlink(temp).catch(() => {});
+        removeFiles([file]);
+        throw new UploadValidationError(INVALID_IMAGE_MESSAGE);
+    }
+}
+
 function asyncHandler(handler) {
     return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 }
@@ -279,6 +307,7 @@ module.exports = {
     verifyUploadedImages,
     processUploadedImages,
     asyncHandler,
+    processContentImage,
     createPdfUpload,
     verifyUploadedPdf,
     createProofUpload,

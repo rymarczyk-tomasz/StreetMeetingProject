@@ -30,6 +30,8 @@ const { normalizeText } = require("../utils/validation");
 const {
     createImageUpload,
     verifyUploadedImages,
+    processContentImage,
+    asyncHandler,
     createPdfUpload,
     verifyUploadedPdf,
     uploadErrorHandler,
@@ -56,10 +58,11 @@ const PAYMENT_STATUSES = ["unpaid", "verification", "paid"];
 const PAYMENT_FILTERS = [...PAYMENT_STATUSES, "overdue"];
 const MAX_BULK_IDS = 200;
 
+// big camera files are fine: they are scaled down to 2560 px and compressed after upload
 const uploadContentImage = createImageUpload({
     destination: () => CONTENT_UPLOAD_ROOT,
     maxFiles: 1,
-    maxFileSize: 10 * 1024 * 1024,
+    maxFileSize: 40 * 1024 * 1024,
 });
 
 const uploadContentPdf = createPdfUpload({
@@ -143,7 +146,7 @@ function readEditionFilter(value) {
 router.post(
     "/upload-image",
     uploadContentImage.single("image"),
-    (req, res) => {
+    asyncHandler(async (req, res) => {
         if (!req.file) {
             return res
                 .status(400)
@@ -151,9 +154,10 @@ router.post(
         }
 
         verifyUploadedImages([req.file]);
+        await processContentImage(req.file);
         res.json({ url: `/uploads/content/${req.file.filename}` });
-    },
-    uploadErrorHandler({ maxFiles: 1, totalSizeLabel: "10 MB" }),
+    }),
+    uploadErrorHandler({ maxFiles: 1, totalSizeLabel: "40 MB" }),
 );
 
 router.post(

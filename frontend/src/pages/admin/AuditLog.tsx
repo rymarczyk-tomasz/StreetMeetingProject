@@ -43,6 +43,7 @@ const ACTION_LABELS = {
     "gallery.content_updated": "zaktualizował podgląd galerii",
     "gallery.synced": "uruchomił synchronizację galerii z Dyskiem Google",
     "gallery.folder_set": "wskazał folder galerii na Dysku Google",
+    "gallery.photo_copied": "użył zdjęcia z galerii na stronie",
     "gallery.album_created": "dodał album galerii",
     "gallery.album_updated": "zmienił album galerii",
     "gallery.album_deleted": "usunął album galerii",
