@@ -190,6 +190,33 @@ function getSubmissionsAvailability(settings = getSettings()) {
     return { open: true, reason: "" };
 }
 
+// The 2027 regulamin, regulamin Select/Expo and privacy policy arrive as built-in defaults,
+// but a section saved earlier in the panel wins over them. Once per LEGAL_DEFAULTS_VERSION
+// the saved ones are replaced by the new defaults; the old text stays in the revision history.
+const LEGAL_DEFAULTS_VERSION = "2027-1";
+const LEGAL_KEYS = ["regulamin", "regulaminSelect", "privacy"];
+
+db.exec("CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
+
+function applyLegalDefaults() {
+    const done = db.prepare("SELECT value FROM app_meta WHERE key = 'legal_defaults_version'").get();
+    if (done && done.value === LEGAL_DEFAULTS_VERSION) return [];
+
+    const replaced = [];
+    for (const key of LEGAL_KEYS) {
+        if (!getRowStmt.get(key)) continue;
+        saveContent(key, JSON.parse(JSON.stringify(DEFAULTS[key])), null);
+        replaced.push(key);
+    }
+    db.prepare(
+        "INSERT INTO app_meta (key, value) VALUES ('legal_defaults_version', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+    ).run(LEGAL_DEFAULTS_VERSION);
+    if (replaced.length) console.log(`Dokumenty prawne 2027: podmieniono zapisane teksty (${replaced.join(", ")}), stare wersje są w historii zmian.`);
+    return replaced;
+}
+
+applyLegalDefaults();
+
 module.exports = {
     isKnownContentKey,
     getContent,
@@ -202,4 +229,5 @@ module.exports = {
     getCurrentEdition,
     getEditionDate,
     getSubmissionsAvailability,
+    applyLegalDefaults,
 };

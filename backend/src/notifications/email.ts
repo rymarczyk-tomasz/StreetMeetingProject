@@ -2,6 +2,7 @@ const nodemailer = require("nodemailer");
 const { getPaymentDetails } = require("../payments");
 const { getAppUrl } = require("../utils/appUrl");
 const siteContentDb = require("../db/siteContent");
+const { zoneLabel } = require("../zones");
 
 const DEFAULT_SIGNATURE = "Street Show Crew";
 
@@ -140,6 +141,7 @@ async function sendSubmissionStatusEmail({
 
     if (status === "approved") {
         const payment = paymentLines(submission);
+        const zone = zoneLabel(submission.zone);
         const intro =
             previousStatus === "waitlist"
                 ? `Zwolniło się miejsce w strefie Select — Twój samochód ${carBrand} przechodzi z listy rezerwowej i został zaakceptowany.`
@@ -151,6 +153,7 @@ async function sendSubmissionStatusEmail({
                 `Cześć ${firstName},`,
                 "",
                 intro,
+                ...(zone ? [`Miejsce na wydarzeniu: ${zone}.`] : []),
                 "",
                 ...payment,
                 noteText,
@@ -163,6 +166,7 @@ async function sendSubmissionStatusEmail({
             html: `
                 <p>Cześć ${escapeHtml(firstName)},</p>
                 <p>${escapeHtml(intro)}</p>
+                ${zone ? `<p>Miejsce na wydarzeniu: <strong>${escapeHtml(zone)}</strong></p>` : ""}
                 <p>${payment.map((line) => escapeHtml(line)).join("<br>")}</p>
                 ${noteHtml}
                 <p>Szczegóły znajdziesz w <a href="${escapeHtml(panelUrl)}">swoim panelu</a>.</p>
@@ -272,7 +276,7 @@ async function sendPaymentReminderEmail({ submission, email, firstName }) {
           ].filter(Boolean)
         : [];
     const closing =
-        "Jeśli opłata jest już wykonana, zgłoś ją w panelu (najlepiej z potwierdzeniem przelewu). Jeśli nie możesz przyjechać, kliknij w panelu „Rezygnuję” — miejsce dostanie ktoś z listy rezerwowej.";
+        "Jeśli opłata jest już wykonana, zgłoś ją w panelu (najlepiej z potwierdzeniem przelewu). Jeśli nie możesz przyjechać, napisz do nas w wiadomościach w panelu — miejsce dostanie ktoś z listy rezerwowej.";
 
     return sendMail({
         to: email,
@@ -636,34 +640,6 @@ async function sendPaymentProofAdminEmail({ submission, userEmail, withProof = t
     });
 }
 
-async function sendWithdrawalAdminEmail({ submission, userEmail, previousStatus, waitlistCount }) {
-    const recipients = adminNotifyRecipients();
-    if (!recipients) return { sent: false, reason: "not_configured" };
-
-    const adminUrl = `${getAppUrl()}/admin`;
-    const summary = `${submission.car_brand} — ${submission.license_plate}`;
-    const lines = [
-        `Uczestnik zrezygnował z udziału w strefie Select: ${summary}`,
-        `${submission.first_name} ${submission.last_name} (${userEmail})`,
-        previousStatus === "approved"
-            ? `Zwolniło się miejsce. Na liście rezerwowej: ${waitlistCount}.`
-            : "Zgłoszenie było na liście rezerwowej.",
-        submission.payment_status === "paid"
-            ? "Opłata była już potwierdzona — sprawdź, czy należy się zwrot."
-            : "",
-    ].filter(Boolean);
-
-    return sendMail({
-        to: recipients,
-        subject: `Street Show: rezygnacja (${summary})`,
-        text: [...lines, "", `Panel administratora: ${adminUrl}`].join("\n"),
-        html: `
-            ${lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}
-            <p><a href="${escapeHtml(adminUrl)}">Otwórz panel administratora</a></p>
-        `,
-    });
-}
-
 async function sendThreadReplyEmail({ user, submission, body }) {
     if (!user?.email) return { sent: false, reason: "not_applicable" };
     const panelUrl = `${getAppUrl()}/panel`;
@@ -840,7 +816,6 @@ module.exports = {
     sendNewSubmissionAdminEmail,
     sendPaymentProofAdminEmail,
     sendChangesSubmittedAdminEmail,
-    sendWithdrawalAdminEmail,
     sendPaymentReminderEmail,
     sendPaymentConfirmedEmail,
     sendThreadReplyEmail,

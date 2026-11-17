@@ -37,7 +37,6 @@ describe("dostęp do cudzych zgłoszeń", () => {
             ["patch", `/api/submissions/${bobs.id}`, { carBrand: "Hack" }],
             ["delete", `/api/submissions/${bobs.id}`],
             ["patch", `/api/submissions/${bobs.id}/payment-status`, {}],
-            ["post", `/api/submissions/${bobs.id}/withdraw`, {}],
             ["get", `/api/submissions/${bobs.id}/pass`],
             ["get", `/api/submissions/${bobs.id}/messages`],
         ]) {
@@ -78,16 +77,21 @@ describe("edycja zgłoszenia", () => {
         assert.equal(submissionsDb.findSubmissionById(row.id), undefined);
     });
 
-    test("rezygnacja z zaakceptowanego zostawia historię, ale nie po wjeździe", async () => {
+    test("uczestnik nie ma już rezygnacji, admin nie ustawi statusu withdrawn", async () => {
         const user = createUser();
         const row = createSubmission(user, { status: "approved", paymentStatus: "paid" });
-        const res = await api(user).post(`/api/submissions/${row.id}/withdraw`);
-        assert.equal(res.status, 200);
-        assert.equal(submissionsDb.findSubmissionById(row.id).status, "withdrawn");
+        assert.equal((await api(user).post(`/api/submissions/${row.id}/withdraw`)).status, 404);
 
-        const checkedIn = createSubmission(user, { status: "approved", paymentStatus: "paid" });
-        submissionsDb.setCheckedIn(checkedIn.id, true);
-        assert.equal((await api(user).post(`/api/submissions/${checkedIn.id}/withdraw`)).status, 400);
+        const admin = createUser({ role: "admin" });
+        const res = await api(admin).patch(`/api/admin/submissions/${row.id}/status`).send({ status: "withdrawn" });
+        assert.equal(res.status, 400);
+        assert.equal(submissionsDb.findSubmissionById(row.id).status, "approved");
+
+        // old rows can still be listed
+        const old = createSubmission(user, { status: "withdrawn" });
+        const list = await api(admin).get("/api/admin/submissions?status=withdrawn");
+        assert.equal(list.status, 200, list.body.message);
+        assert.ok(list.body.submissions.some((s) => s.id === old.id));
     });
 });
 
@@ -281,5 +285,62 @@ describe("panel admina", () => {
         } finally {
             saveSettings({ selectCapacity: 0 });
         }
+    });
+});
+
+describe("miejsce zaakceptowanego auta", () => {
+    const { mails, mailsTo } = require("./helpers");
+
+    test("akceptacja z miejscem zapisuje je, widzi je uczestnik i jest w mailu", async () => {
+        const admin = createUser({ role: "admin" });
+        const user = createUser();
+        const row = createSubmission(user);
+        mails.length = 0;
+
+        const res = await api(admin)
+            .patch(`/api/admin/submissions/${row.id}/status`)
+            .send({ status: "approved", zone: "tunel" });
+        assert.equal(res.status, 200, res.body.message);
+        assert.equal(res.body.submission.zone, "tunel");
+        assert.match(mailsTo(user.email)[0].text, /Miejsce na wydarzeniu: Tunel/);
+
+        const own = await api(user).get("/api/submissions");
+        assert.equal(own.body.submissions.find((s) => s.id === row.id).zone, "tunel");
+    });
+
+    test("nieprawidłowe miejsce jest odrzucane, a poza akceptacją miejsce znika", async () => {
+        const admin = createUser({ role: "admin" });
+        const row = createSubmission(createUser());
+        const client = api(admin);
+
+        const bad = await client.patch(`/api/admin/submissions/${row.id}/status`).send({ status: "approved", zone: "parking" });
+        assert.equal(bad.status, 400);
+        assert.equal(submissionsDb.findSubmissionById(row.id).status, "pending");
+
+        await client.patch(`/api/admin/submissions/${row.id}/status`).send({ status: "approved", zone: "korona" });
+        assert.equal(submissionsDb.findSubmissionById(row.id).zone, "korona");
+        await client.patch(`/api/admin/submissions/${row.id}/status`).send({ status: "waitlist" });
+        assert.equal(submissionsDb.findSubmissionById(row.id).zone, null);
+    });
+
+    test("zmiana miejsca działa tylko dla zaakceptowanych i jest w dzienniku", async () => {
+        const admin = createUser({ role: "admin" });
+        const client = api(admin);
+        const pending = createSubmission(createUser());
+        assert.equal((await client.patch(`/api/admin/submissions/${pending.id}/zone`).send({ zone: "murawa" })).status, 400);
+
+        const approved = createSubmission(createUser(), { status: "approved" });
+        assert.equal((await client.patch(`/api/admin/submissions/${approved.id}/zone`).send({ zone: "x" })).status, 400);
+        const res = await client.patch(`/api/admin/submissions/${approved.id}/zone`).send({ zone: "murawa" });
+        assert.equal(res.status, 200, res.body.message);
+        assert.equal(submissionsDb.findSubmissionById(approved.id).zone, "murawa");
+        const entry = db.prepare("SELECT 1 FROM audit_log WHERE action = 'submission.zone_changed' AND target_id = ?").get(approved.id);
+        assert.ok(entry);
+    });
+
+    test("ponowna akceptacja bez miejsca zostawia wybrane wcześniej", () => {
+        const row = createSubmission(createUser(), { status: "approved" });
+        submissionsDb.setSubmissionZone(row.id, "korona");
+        assert.equal(submissionsDb.updateSubmissionStatus(row.id, "approved", "").zone, "korona");
     });
 });

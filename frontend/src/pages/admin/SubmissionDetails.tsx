@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { askConfirm } from "../../api/confirm";
 import Plate from "../../components/Plate";
 import SubmissionThread from "../../components/SubmissionThread";
 import { TemplatePicker } from "./templates";
 import { fillTemplate } from "./templateData";
+import { ZONES } from "../../utils/zones";
 import { DETAIL_TABS, PAYMENT_STATUS_LABELS, STATUS_LABELS, formatDate, formatDay } from "./shared";
 
 
@@ -74,20 +74,6 @@ function MoreMenu({ submission, isBusy, actions }) {
     if (submission.status !== "pending") {
         items.push(["Przywróć do oczekujących", () => actions.setStatus(submission, "pending")]);
     }
-    if (["approved", "waitlist"].includes(submission.status)) {
-        items.push([
-            "Oznacz rezygnację",
-            async () => {
-                const confirmed = await askConfirm({
-                    title: "Oznaczyć rezygnację?",
-                    message: `Zgłoszenie ${submission.carBrand} (${submission.licensePlate}) zostanie oznaczone jako rezygnacja. Użyj tego, gdy uczestnik zrezygnował np. telefonicznie.`,
-                    confirmLabel: "Oznacz rezygnację",
-                    danger: true,
-                });
-                if (confirmed) actions.setStatus(submission, "withdrawn");
-            },
-        ]);
-    }
     if (submission.status === "approved" && submission.photoPublishConsent) {
         items.push([
             submission.showcaseHidden ? "Pokaż na stronie „Auta Select”" : "Ukryj na stronie „Auta Select”",
@@ -124,6 +110,9 @@ function MoreMenu({ submission, isBusy, actions }) {
 function DecisionTab({ submission, isBusy, actions, noteTemplates, queue }) {
     // Starts empty after every decision, so an old comment can't ride along with the next one.
     const [note, setNote] = useState("");
+    // where the car will stand; needed to approve, changeable afterwards
+    const [zone, setZone] = useState(submission.zone || "");
+    const approved = submission.status === "approved";
 
     return (
         <div className="detail-tab">
@@ -173,12 +162,43 @@ function DecisionTab({ submission, isBusy, actions, noteTemplates, queue }) {
                     </button>
                 </p>
             )}
+            <div className="zone-choice" role="group" aria-label="Miejsce na wydarzeniu">
+                <span className="field-label">Miejsce na wydarzeniu</span>
+                <div className="zone-choice-options">
+                    {ZONES.map(([id, label]) => (
+                        <button
+                            key={id}
+                            type="button"
+                            className={zone === id ? "is-on" : ""}
+                            aria-pressed={zone === id}
+                            disabled={isBusy}
+                            onClick={() => setZone(id)}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+                {approved && zone && zone !== submission.zone && (
+                    <button
+                        type="button"
+                        className="btn-street btn-street-dark"
+                        disabled={isBusy}
+                        onClick={() => actions.setZone(submission, zone)}
+                    >
+                        Zapisz miejsce
+                    </button>
+                )}
+                {approved && !submission.zone && !zone && (
+                    <p className="detail-muted">To zgłoszenie nie ma jeszcze przypisanego miejsca.</p>
+                )}
+            </div>
             <div className="detail-decision">
                 <button
                     type="button"
                     className="btn-street btn-street-primary"
-                    disabled={isBusy || submission.status === "approved"}
-                    onClick={() => actions.setStatus(submission, "approved", note)}
+                    disabled={isBusy || approved || !zone}
+                    title={approved || zone ? "" : "Najpierw wybierz miejsce"}
+                    onClick={() => actions.setStatus(submission, "approved", note, zone)}
                 >
                     Zaakceptuj
                 </button>

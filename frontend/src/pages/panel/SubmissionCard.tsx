@@ -1,6 +1,7 @@
 import { useState } from "react";
 import api from "../../api/client";
 import { askConfirm } from "../../api/confirm";
+import { ZONE_LABELS } from "../../utils/zones";
 import ConsentFields from "../../components/ConsentFields";
 import CopyField from "../../components/CopyField";
 import EntryPass from "../../components/EntryPass";
@@ -251,7 +252,6 @@ export default function SubmissionCard({
             setIsSendingChanges(false);
         }
     }
-    const canResign = !archived && ["approved", "waitlist"].includes(s.status) && !s.checkedInAt;
     const canResubmit =
         archived && availability?.open && availability.remaining > 0 && s.edition < availability.edition;
 
@@ -309,28 +309,6 @@ export default function SubmissionCard({
         }
     }
 
-    async function resign() {
-        const warning =
-            s.paymentStatus === "paid"
-                ? " Opłata jest już potwierdzona — o zwrocie zdecyduje organizator zgodnie z regulaminem."
-                : "";
-        const place = s.status === "waitlist" ? "miejsce na liście rezerwowej" : "miejsce w strefie Select";
-        const confirmed = await askConfirm({
-            title: "Zrezygnować z udziału?",
-            message: `Auto ${s.carBrand} (${s.licensePlate}): Twoje ${place} przejdzie na kolejną osobę i nie da się tego cofnąć samodzielnie.${warning}`,
-            confirmLabel: "Rezygnuję",
-            danger: true,
-        });
-        if (!confirmed) return;
-        try {
-            const { data } = await api.post(`/submissions/${s.id}/withdraw`);
-            say({ message: data.message });
-            await onChanged();
-        } catch (err) {
-            say({ error: errorText(err, "Nie udało się zapisać rezygnacji.") });
-        }
-    }
-
     async function saveToGarage() {
         try {
             const { data } = await api.post(`/vehicles/from-submission/${s.id}`);
@@ -365,6 +343,9 @@ export default function SubmissionCard({
                         <h3>{s.carBrand}</h3>
                         <Plate value={s.licensePlate} size={archived ? "sm" : "md"} />
                         {archived && <span className="status-badge status-edition">{s.edition}</span>}
+                        {!archived && s.zone && (
+                            <span className="status-badge status-zone">Miejsce: {ZONE_LABELS[s.zone] || s.zone}</span>
+                        )}
                     </div>
                     {archived ? (
                         <button
@@ -589,11 +570,6 @@ export default function SubmissionCard({
                         {!s.inGarage && (
                             <button type="button" className="text-action" onClick={saveToGarage}>
                                 Zapisz w garażu
-                            </button>
-                        )}
-                        {canResign && (
-                            <button type="button" className="text-action is-danger" onClick={resign}>
-                                Rezygnuję
                             </button>
                         )}
                         {canEdit && (

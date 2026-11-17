@@ -190,13 +190,6 @@ describe("powiadomienia e-mail", () => {
         assert.ok(mailsTo(user.email)[0].text.includes("Street Show Crew"));
     });
 
-    test("rezygnacja uczestnika trafia do organizatora", async () => {
-        const user = createUser();
-        const row = createSubmission(user, { status: "approved" });
-        await api(user).post(`/api/submissions/${row.id}/withdraw`);
-        assert.equal(mailsTo(ADMIN_INBOX).length, 1);
-    });
-
     test("html w danych uczestnika jest escapowany w mailu", async () => {
         const admin = createUser({ role: "admin" });
         const user = createUser();

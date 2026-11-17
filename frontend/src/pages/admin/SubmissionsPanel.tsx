@@ -10,6 +10,7 @@ import SubmissionDetails from "./SubmissionDetails";
 import { TemplatePicker } from "./templates";
 import { fillTemplate, useTemplates } from "./templateData";
 import { printGateList } from "./gateList";
+import { ZONE_LABELS } from "../../utils/zones";
 import { DETAIL_TABS, PAYMENT_STATUS_LABELS, STATUS_LABELS, errorMessage, formatDay } from "./shared";
 
 // fetched again so the backend logs the export
@@ -240,17 +241,23 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
     }
 
     const actions = {
-        setStatus: (submission, status, note = undefined) =>
+        setStatus: (submission, status, note = undefined, zone = undefined) =>
             runAction(
                 () =>
                     withCapacityCheck((force) =>
                         api.patch(`/admin/submissions/${submission.id}/status`, {
                             status,
                             force,
+                            zone,
                             adminNote: note ?? submission.adminNote ?? "",
                         }),
                     ),
                 "Nie udało się zmienić statusu zgłoszenia.",
+            ),
+        setZone: (submission, zone) =>
+            runAction(
+                () => api.patch(`/admin/submissions/${submission.id}/zone`, { zone }),
+                "Nie udało się zapisać miejsca.",
             ),
         requestChanges: (submission, note) =>
             runAction(
@@ -350,8 +357,6 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                 const next = event.key === "ArrowDown" ? Math.min(visible.length - 1, index + 1) : Math.max(0, index - 1);
                 open(visible[next].id);
                 document.getElementById(`subs-row-${visible[next].id}`)?.scrollIntoView({ block: "nearest" });
-            } else if (current && !isBusy && (event.key === "a" || event.key === "A") && current.status !== "approved") {
-                actions.setStatus(current, "approved");
             } else if (current && !isBusy && (event.key === "r" || event.key === "R") && current.status !== "waitlist") {
                 actions.setStatus(current, "waitlist");
             }
@@ -413,7 +418,9 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
 
                 <div className="subs-chips">
                     <div className="subs-chip-group" role="group" aria-label="Status zgłoszeń">
-                        {STATUS_CHIPS.map(([status, label, countKey]) => (
+                        {STATUS_CHIPS.filter(
+                            ([status]) => status !== "withdrawn" || counts?.withdrawn > 0 || params.status === "withdrawn",
+                        ).map(([status, label, countKey]) => (
                             <button
                                 key={label}
                                 type="button"
@@ -607,6 +614,11 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                                     </span>
                                     <span role="cell" className="subs-status">
                                         <span className={`status-badge status-${s.status}`}>{STATUS_LABELS[s.status]}</span>
+                                        {s.status === "approved" && (
+                                            <span className="status-badge status-zone">
+                                                {ZONE_LABELS[s.zone] || "bez miejsca"}
+                                            </span>
+                                        )}
                                         {s.status === "approved" && (
                                             <span
                                                 className={`status-badge ${s.paymentOverdue ? "payment-overdue" : `payment-status-${s.paymentStatus}`}`}

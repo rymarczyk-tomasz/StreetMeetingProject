@@ -3,12 +3,14 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../api/client";
 import { plural } from "../../utils/plural";
+import { ZONE_LABELS } from "../../utils/zones";
 import AdminHeading from "./AdminHeading";
 import { errorMessage } from "./shared";
 
 const ACTION_LABELS = {
     "submission.pending": "ustawił zgłoszenie jako oczekujące",
     "submission.approved": "zaakceptował zgłoszenie",
+    "submission.zone_changed": "zmienił miejsce auta",
     "submission.rejected": "odrzucił zgłoszenie",
     "submission.waitlist": "dodał zgłoszenie do listy rezerwowej",
     "submission.withdrawn": "oznaczył rezygnację uczestnika",
@@ -48,6 +50,7 @@ const ACTION_LABELS = {
     "faq.content_updated": "zaktualizował FAQ",
     "regulamin.content_updated": "zaktualizował regulamin",
     "privacy.content_updated": "zaktualizował politykę prywatności",
+    "regulaminSelect.content_updated": "zaktualizował regulamin Select i Expo",
     "submission.internal_note_updated": "zmienił notatkę wewnętrzną zgłoszenia",
     "select.content_updated": "zaktualizował sekcję Strefa Select",
     "announcement.content_updated": "zmienił ogłoszenie na stronie",
@@ -84,6 +87,9 @@ function describeDetails(entry) {
     const details = entry.details || {};
     if (entry.action === "user.role_changed" && details.twoFactorReset) {
         return " — wyłączono też logowanie dwuetapowe tego konta";
+    }
+    if (entry.action === "submission.zone_changed") {
+        return ` — ${ZONE_LABELS[details.previousZone] || "bez miejsca"} → ${ZONE_LABELS[details.zone] || details.zone}`;
     }
     if (details.adminNote) return ` — „${details.adminNote}”`;
     if (details.title) return ` — „${details.title}”`;
@@ -122,7 +128,7 @@ function isView(action) {
     return /(_viewed|\.viewed|\.listed)$/.test(action);
 }
 
-const DECISIONS = /^submission\.(pending|approved|rejected|waitlist|withdrawn|withdrawn_by_user|payment_\w+)$/;
+const DECISIONS = /^submission\.(pending|approved|rejected|waitlist|withdrawn|withdrawn_by_user|zone_changed|payment_\w+)$/;
 
 function entryIcon(action) {
     if (isView(action)) return "bi-eye";
@@ -157,6 +163,7 @@ const CATEGORY_OPTIONS = [
     ["contact.", "Kontakt"],
     ["faq.", "FAQ"],
     ["regulamin.", "Regulamin"],
+    ["regulaminSelect.", "Regulamin Select i Expo"],
     ["announcement.", "Ogłoszenie"],
     ["partners.", "Partnerzy"],
     ["maintenance.", "Tryb serwisowy"],

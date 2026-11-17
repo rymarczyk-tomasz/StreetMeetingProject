@@ -422,6 +422,7 @@ const VALIDATORS = {
     contact: validateContact,
     faq: validateFaq,
     regulamin: documentValidator("regulaminu"),
+    regulaminSelect: documentValidator("regulaminu Strefy Select i Expo"),
     privacy: documentValidator("polityki prywatności"),
     announcement: validateAnnouncement,
     partners: validatePartners,

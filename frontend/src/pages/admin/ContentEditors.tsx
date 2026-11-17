@@ -607,6 +607,18 @@ export function RegulaminEditor({ onAction }) {
     );
 }
 
+export function RegulaminSelectEditor({ onAction }) {
+    return (
+        <DocumentEditor
+            contentKey="regulaminSelect"
+            name="regulaminu Strefy Select i Expo"
+            saveLabel="Zapisz regulamin Select i Expo"
+            hint="Ten regulamin akceptuje każdy, kto zgłasza pojazd do Strefy Select (strona /regulamin-select)."
+            onAction={onAction}
+        />
+    );
+}
+
 export function PrivacyEditor({ onAction }) {
     return (
         <DocumentEditor

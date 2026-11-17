@@ -65,11 +65,15 @@ const updateStatusStmt = db.prepare(`
             THEN NULL ELSE payment_reminder_sent_at END,
         withdrawn_at = CASE WHEN @status = 'withdrawn' AND status != 'withdrawn'
             THEN datetime('now') ELSE withdrawn_at END,
+        zone = CASE WHEN @status = 'approved' THEN COALESCE(@zone, zone) ELSE NULL END,
         status = @status,
         changes_requested_at = NULL,
         changes_submitted_at = NULL,
         updated_at = datetime('now')
     WHERE id = @id
+`);
+const setZoneStmt = db.prepare(`
+    UPDATE submissions SET zone = ?, updated_at = datetime('now') WHERE id = ?
 `);
 const markChangesRequestedStmt = db.prepare(`
     UPDATE submissions
@@ -282,8 +286,13 @@ function listRecipients(filters: SubmissionFilters = {}) {
         .all(...parameters);
 }
 
-function updateSubmissionStatus(id, status, adminNote) {
-    updateStatusStmt.run({ id, status, adminNote: adminNote || null });
+function updateSubmissionStatus(id, status, adminNote, zone = null) {
+    updateStatusStmt.run({ id, status, adminNote: adminNote || null, zone: zone || null });
+    return findByIdStmt.get(id);
+}
+
+function setSubmissionZone(id, zone) {
+    setZoneStmt.run(zone, id);
     return findByIdStmt.get(id);
 }
 
@@ -473,6 +482,7 @@ module.exports = {
     listAllSubmissions,
     listRecipients,
     updateSubmissionStatus,
+    setSubmissionZone,
     markChangesRequested,
     markChangesSubmitted,
     countApproved,

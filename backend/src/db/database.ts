@@ -204,6 +204,9 @@ const newSubmissionColumns = {
     // "Poproś o poprawki": set by the admin, then answered by the participant
     changes_requested_at: "TEXT",
     changes_submitted_at: "TEXT",
+
+    // placement of an approved car: murawa / tunel / korona (src/zones.ts)
+    zone: "TEXT",
 };
 for (const [column, type] of Object.entries(newSubmissionColumns)) {
     if (!submissionColumns.has(column)) {

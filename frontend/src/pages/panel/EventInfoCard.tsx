@@ -56,6 +56,8 @@ export default function EventInfoCard({ overview, hasApprovedSubmission }) {
                     )}
                     <p className="panel-event-links">
                         <Link to="/regulamin">Regulamin</Link>
+                        {" · "}
+                        <Link to="/regulamin-select">Regulamin Select i Expo</Link>
                         {contactEmail && (
                             <>
                                 {" · "}

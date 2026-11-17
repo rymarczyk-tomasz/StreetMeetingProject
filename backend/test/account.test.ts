@@ -195,7 +195,7 @@ describe("usuwanie konta", () => {
             const res = await deleteAccount(user);
             assert.equal(res.status, 409, paymentStatus);
             assert.equal(res.body.code, "paid_submission");
-            assert.match(res.body.message, /zrezygnuj/);
+            assert.match(res.body.message, /napisz do organizatora/);
             assert.ok(usersDb.findUserById(user.id));
             assert.equal(submissionsDb.listSubmissionsByUser(user.id).length, 1);
         }
@@ -219,14 +219,6 @@ describe("usuwanie konta", () => {
             assert.equal(res.status, 200, `przypadek ${index}: ${res.body.message}`);
             assert.equal(usersDb.findUserById(user.id), undefined);
         }
-    });
-
-    test("rezygnacja w panelu odblokowuje usunięcie konta", async () => {
-        const user = createUser();
-        const row = createSubmission(user, { status: "approved", paymentStatus: "paid" });
-        assert.equal((await deleteAccount(user)).status, 409);
-        assert.equal((await api(user).post(`/api/submissions/${row.id}/withdraw`)).status, 200);
-        assert.equal((await deleteAccount(user)).status, 200);
     });
 
     test("usuwa dane, wysyła potwierdzenie uczestnikowi i informację organizatorowi", async () => {

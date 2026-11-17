@@ -573,7 +573,7 @@ router.delete("/me", authenticate, authRateLimit, async (req, res) => {
     if (paidPlace) {
         return res.status(409).json({
             code: "paid_submission",
-            message: `Masz opłacone miejsce w strefie Select ${currentEdition} (${paidPlace.car_brand}, ${paidPlace.license_plate}). Zanim usuniesz konto, zrezygnuj z udziału w panelu albo napisz do organizatora w sprawie zwrotu opłaty.`,
+            message: `Masz opłacone miejsce w strefie Select ${currentEdition} (${paidPlace.car_brand}, ${paidPlace.license_plate}). Zanim usuniesz konto, napisz do organizatora w sprawie zwrotu opłaty.`,
         });
     }
 

@@ -459,6 +459,7 @@ function HomeFooter({ contact }) {
                     <nav className="site-footer-links" aria-label="Stopka">
                         <Link to="/faq">FAQ</Link>
                         <Link to="/regulamin">Regulamin</Link>
+                        <Link to="/regulamin-select">Regulamin Select i Expo</Link>
                         <Link to="/polityka-prywatnosci">Polityka prywatności</Link>
                     </nav>
                 </div>
@@ -478,6 +479,7 @@ function PageFooter({ contact }) {
                     <nav className="site-footer-links" aria-label="Stopka">
                         <Link to="/faq">FAQ</Link>
                         <Link to="/regulamin">Regulamin</Link>
+                        <Link to="/regulamin-select">Regulamin Select i Expo</Link>
                         <Link to="/polityka-prywatnosci">Polityka prywatności</Link>
                         {contact?.email && <a href={`mailto:${contact.email}`}>{contact.email}</a>}
                     </nav>

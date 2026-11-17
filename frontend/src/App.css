@@ -728,6 +728,7 @@
 
 .status-pending,
 .status-withdrawn,
+.status-zone,
 .payment-status-verification {
     background: var(--street-neutral-bg);
     color: var(--street-text-2);
@@ -3135,6 +3136,34 @@
 
 .detail-decision .detail-decision-wide {
     grid-column: 1 / -1;
+}
+
+.zone-choice {
+    display: grid;
+    gap: 8px;
+}
+
+.zone-choice-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.zone-choice-options button {
+    min-height: 44px;
+    border: 1px solid var(--street-border, rgba(128, 128, 128, 0.4));
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.zone-choice-options button.is-on {
+    border-color: var(--street-yellow);
+    background: var(--street-yellow);
+    color: #111;
 }
 
 .detail-note {

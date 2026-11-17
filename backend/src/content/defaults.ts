@@ -1,6 +1,7 @@
 const defaultFaq = require("./defaultFaq");
 const defaultRegulamin = require("./defaultRegulamin");
 const defaultPrivacy = require("./defaultPrivacy");
+const defaultRegulaminSelect = require("./defaultRegulaminSelect");
 
 // saved content is merged over these, so new fields get defaults too
 const DEFAULTS = {
@@ -121,6 +122,11 @@ const DEFAULTS = {
         html: defaultRegulamin.html,
         pdfUrl: "",
     },
+    regulaminSelect: {
+        title: defaultRegulaminSelect.title,
+        html: defaultRegulaminSelect.html,
+        pdfUrl: "",
+    },
     privacy: {
         title: defaultPrivacy.title,
         html: defaultPrivacy.html,
@@ -200,7 +206,7 @@ const DEFAULTS = {
                 kind: "group",
                 title: "Przypomnienie o opłacie",
                 subject: "Street Show {rok}: przypomnienie o opłacie",
-                body: "Przypominamy o opłacie za miejsce w strefie Select. Dane do przelewu znajdziesz w swoim panelu. Jeśli opłata jest już wykonana, zgłoś ją w panelu, najlepiej z potwierdzeniem przelewu.\n\nJeśli nie możesz przyjechać, kliknij w panelu „Rezygnuję” — miejsce dostanie ktoś z listy rezerwowej.",
+                body: "Przypominamy o opłacie za miejsce w strefie Select. Dane do przelewu znajdziesz w swoim panelu. Jeśli opłata jest już wykonana, zgłoś ją w panelu, najlepiej z potwierdzeniem przelewu.\n\nJeśli nie możesz przyjechać, napisz do nas w wiadomościach w panelu — miejsce dostanie ktoś z listy rezerwowej.",
             },
             {
                 id: "group-info",
@@ -229,6 +235,7 @@ const PUBLIC_CONTENT_KEYS = [
     "contact",
     "faq",
     "regulamin",
+    "regulaminSelect",
     "privacy",
     "announcement",
     "partners",

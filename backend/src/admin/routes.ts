@@ -38,6 +38,7 @@ const { validateContent } = require("../content/validators");
 const { isPaymentOverdue, getFeeAmount, hasPaymentDetails } = require("../payments");
 const threadsDb = require("../db/threads");
 const ratingsDb = require("../db/ratings");
+const { isZone } = require("../zones");
 const { getThread, postToThread, readMessageBody } = require("../submissions/thread");
 const { adminRouter: galleryRouter } = require("../gallery/routes");
 
@@ -46,7 +47,9 @@ const router = express.Router();
 router.use(authenticate, requireRole("admin"));
 router.use("/gallery", galleryRouter);
 
-const SUBMISSION_STATUSES = ["pending", "approved", "rejected", "waitlist", "withdrawn"];
+// "withdrawn" only exists on old rows, nobody can set it any more
+const SUBMISSION_STATUSES = ["pending", "approved", "rejected", "waitlist"];
+const STATUS_FILTERS = [...SUBMISSION_STATUSES, "withdrawn"];
 // "overdue" is a filter only: approved, unpaid and past the payment deadline.
 const PAYMENT_STATUSES = ["unpaid", "verification", "paid"];
 const PAYMENT_FILTERS = [...PAYMENT_STATUSES, "overdue"];
@@ -553,7 +556,7 @@ function readSubmissionFilters(source) {
     const status = normalizeText(source.status);
     const paymentStatus = normalizeText(source.paymentStatus);
 
-    if (status && !SUBMISSION_STATUSES.includes(status)) {
+    if (status && !STATUS_FILTERS.includes(status)) {
         return { error: "Nieprawidłowy filtr statusu." };
     }
     if (paymentStatus && !PAYMENT_FILTERS.includes(paymentStatus)) {
@@ -688,16 +691,18 @@ router.get("/audit-log", (req, res) => {
     });
 });
 
-function changeSubmissionStatus(req, existing, status, adminNote) {
+function changeSubmissionStatus(req, existing, status, adminNote, zone = null) {
     const updated = submissionsDb.updateSubmissionStatus(
         existing.id,
         status,
         adminNote,
+        status === "approved" ? zone : null,
     );
     audit(req, `submission.${status}`, "submission", existing.id, {
         previousStatus: existing.status,
         status,
         adminNote,
+        ...(status === "approved" && updated.zone ? { zone: updated.zone } : {}),
     });
 
     if (existing.status !== status && ["approved", "rejected", "waitlist"].includes(status)) {
@@ -729,7 +734,12 @@ function readStatusChange(body) {
     if (adminNote.length > 2000) {
         return { error: "Komentarz może mieć maksymalnie 2000 znaków." };
     }
-    return { status, adminNote, force: body.force === true };
+    // optional: only an approval carries a place; a car already placed keeps it
+    const zone = body.zone ? String(body.zone) : null;
+    if (zone && !isZone(zone)) {
+        return { error: "Nieprawidłowe miejsce — wybierz murawę, tunel albo koronę." };
+    }
+    return { status, adminNote, zone, force: body.force === true };
 }
 
 // Approving more cars than the Select zone has places needs an explicit
@@ -758,7 +768,7 @@ function capacityProblem(submissions, status, force) {
 }
 
 router.patch("/submissions/:id/status", (req, res) => {
-    const { status, adminNote, force, error } = readStatusChange(req.body);
+    const { status, adminNote, zone, force, error } = readStatusChange(req.body);
     if (error) {
         return res.status(400).json({ message: error });
     }
@@ -771,7 +781,7 @@ router.patch("/submissions/:id/status", (req, res) => {
     const problem = capacityProblem([existing], status, force);
     if (problem) return res.status(409).json(problem);
 
-    let updated = changeSubmissionStatus(req, existing, status, adminNote);
+    let updated = changeSubmissionStatus(req, existing, status, adminNote, zone);
 
     // "Poproś o poprawki" - not for a plain "Przywróć do oczekujących" or bulk changes
     if (status === "pending" && adminNote && req.body.requestChanges === true) {
@@ -789,7 +799,7 @@ router.patch("/submissions/:id/status", (req, res) => {
 });
 
 router.post("/submissions/bulk-status", (req, res) => {
-    const { status, adminNote, force, error } = readStatusChange(req.body);
+    const { status, adminNote, zone, force, error } = readStatusChange(req.body);
     if (error) {
         return res.status(400).json({ message: error });
     }
@@ -817,6 +827,7 @@ router.post("/submissions/bulk-status", (req, res) => {
             existing,
             status,
             adminNote || existing.admin_note || "",
+            zone,
         );
         updatedCount += 1;
     }
@@ -825,6 +836,28 @@ router.post("/submissions/bulk-status", (req, res) => {
         message: `Zmieniono status ${updatedCount} zgłoszeń.`,
         updatedCount,
     });
+});
+
+// changing the place of an already approved car, no e-mail (the panel shows it)
+router.patch("/submissions/:id/zone", (req, res) => {
+    const zone = String(req.body.zone || "");
+    if (!isZone(zone)) {
+        return res.status(400).json({ message: "Wybierz murawę, tunel albo koronę." });
+    }
+    const existing = submissionsDb.findSubmissionById(Number(req.params.id));
+    if (!existing) {
+        return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
+    }
+    if (existing.status !== "approved") {
+        return res.status(400).json({ message: "Miejsce można ustawić tylko przy zaakceptowanym zgłoszeniu." });
+    }
+
+    const updated = submissionsDb.setSubmissionZone(existing.id, zone);
+    audit(req, "submission.zone_changed", "submission", existing.id, {
+        previousZone: existing.zone || null,
+        zone,
+    });
+    res.json({ submission: toAdminSubmission(updated) });
 });
 
 router.patch("/submissions/:id/internal-note", (req, res) => {

@@ -35,6 +35,10 @@ function App() {
                 <Route path="faq" element={<FaqPage />} />
                 <Route path="regulamin" element={<RegulaminPage />} />
                 <Route
+                    path="regulamin-select"
+                    element={<RegulaminPage contentKey="regulaminSelect" fallbackTitle="Regulamin Strefy Select i Expo" />}
+                />
+                <Route
                     path="polityka-prywatnosci"
                     element={<RegulaminPage contentKey="privacy" fallbackTitle="Polityka prywatności" />}
                 />

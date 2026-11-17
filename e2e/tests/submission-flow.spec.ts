@@ -84,15 +84,19 @@ test("admin prosi o lepsze zdjęcia, a uczestnik może poprawić zgłoszenie", a
 test("akceptacja: uczestnik dostaje maila i widzi dane do przelewu", async ({ page, browser }) => {
     const admin = await adminPage(browser);
     await openSubmissionAsAdmin(admin);
+    await expect(admin.getByRole("button", { name: "Zaakceptuj" })).toBeDisabled();
+    await admin.getByRole("button", { name: "Tunel" }).click();
     await admin.getByRole("button", { name: "Zaakceptuj" }).click();
     await expect(admin.getByText(/Zaakceptowane/i).first()).toBeVisible();
     await admin.context().close();
 
     const mail = await waitForMail(email, /zaakceptowane/);
     expect(mail.text).toContain("150 zł");
+    expect(mail.text).toContain("Miejsce na wydarzeniu: Tunel");
 
     await login(page, email);
     await page.goto("/panel");
+    await expect(page.getByText("Miejsce: Tunel")).toBeVisible();
     await expect(page.getByText("150 zł", { exact: true })).toBeVisible();
     await expect(page.getByText("12 3456 7890 1234 5678 9012 3456", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Edytuj dane" })).toHaveCount(0);

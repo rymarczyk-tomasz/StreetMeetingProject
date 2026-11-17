@@ -25,6 +25,10 @@ export default function ConsentFields({
                     <Link to="/regulamin" target="_blank">
                         regulamin wydarzenia
                     </Link>{" "}
+                    oraz{" "}
+                    <Link to="/regulamin-select" target="_blank">
+                        regulamin Strefy Select i Expo
+                    </Link>{" "}
                     i wyrażam zgodę na przetwarzanie moich danych w celu rozpatrzenia
                     zgłoszenia i organizacji strefy Select (
                     <Link to="/polityka-prywatnosci" target="_blank">
