@@ -198,8 +198,8 @@ function readConsents(body) {
         consents: {
             // both documents the form links to: event rules and Select/Expo rules
             consentVersion: `${siteContentDb.getContentVersion("regulamin")}+${siteContentDb.getContentVersion("regulaminSelect")}`,
-            photoPublishConsent:
-                body.photoPublishConsent === true || body.photoPublishConsent === "true",
+            // publishing approved cars is part of the Select terms (pkt 10.6), not a separate consent
+            photoPublishConsent: true,
         },
     };
 }

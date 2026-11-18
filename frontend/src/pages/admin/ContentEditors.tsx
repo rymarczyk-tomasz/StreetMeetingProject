@@ -1223,7 +1223,8 @@ export function SubmissionSettingsEditor({ onAction, part = "zapisy" }) {
                             onChange={(event) => editor.update({ showcaseEnabled: event.target.checked })}
                         />
                         Pokazuj na stronie listę zaakceptowanych aut („Auta strefy Select”, /auta-select) — tylko
-                        marka i zdjęcia aut, których właściciele zgodzili się na publikację zdjęć
+                        marka i zdjęcia (zgłoszenia sprzed regulaminu z pkt 10.6 tylko za zgodą właściciela). Auto,
+                        którego właściciel poprosił o usunięcie zdjęć, ukryj w Zgłoszeniach
                     </label>
                     <TextArea
                         label="Informacje dla zaakceptowanych uczestników (widoczne w ich panelu): godziny i brama wjazdu, co zabrać, kontakt w dniu wydarzenia…"

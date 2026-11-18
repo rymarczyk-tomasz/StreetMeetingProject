@@ -8,7 +8,7 @@ Strona wydarzenia motoryzacyjnego "Street Show": **React + Vite** (`frontend/`) 
 | --- | --- |
 | Dashboard | **Do zrobienia** (oczekujące, po terminie płatności, nieprzeczytane wiadomości, lista rezerwowa, osoby czekające na datę — każdy wiersz otwiera przefiltrowaną listę) i statystyki bieżącej edycji: zgłoszenia, opłaty, wykres z 30 dni, najczęstsze marki, zapełnienie strefy Select |
 | Raport | Podsumowanie edycji po wydarzeniu: opłaty, wjazdy, nieobecni, rezygnacje, przychód, przyjazdy wg godziny, porównanie lat (do druku) |
-| Zgłoszenia | Filtr edycji (archiwum lat), akceptacja/odrzucenie/lista rezerwowa pojedynczo i zbiorczo, **oceny 1–5 od każdego admina**, **wątek wiadomości z uczestnikiem**, notatki, **szablony komentarzy**, opłaty, eksport do Excela, **lista na bramę do druku**, **wiadomość e-mail do grupy uczestników** |
+| Zgłoszenia | Filtr edycji (archiwum lat), akceptacja/odrzucenie/lista rezerwowa pojedynczo i zbiorczo, **wątek wiadomości z uczestnikiem**, notatki, **szablony komentarzy**, opłaty, eksport do Excela, **lista na bramę do druku**, **wiadomość e-mail do grupy uczestników** |
 | Użytkownicy | Role, blokada, wylogowanie ze wszystkich urządzeń |
 | Galeria | Zdjęcia z jednego folderu Dysku Google, synchronizacja, ukrywanie zdjęć |
 | Treści strony | Home (z leadem pod tytułem), „Co Cię czeka” (1–6 kafelków), **Strefa Select** (4 kroki „Jak to działa”), podgląd galerii, partnerzy (sponsor główny, partner wydarzenia, wystawcy), kontakt, **FAQ**, **regulamin**, **regulamin Strefy Select i Expo** i **polityka prywatności** (edytor jak w Wordzie + PDF), pasek ogłoszeń. Każda sekcja ma **historię zmian** z przywracaniem |
@@ -182,7 +182,7 @@ Jeśli użytkownik o tym e-mailu już istnieje, skrypt tylko podnosi mu rolę do
 
 ## Auta strefy Select i odliczanie
 
-- Strona `/auta-select` (i zapowiedź na stronie głównej) pokazuje zaakceptowane auta bieżącej edycji, ale tylko te, których właściciele zaznaczyli w zgłoszeniu zgodę na publikację zdjęć. Domyślnie wyłączona — włącza się w Ustawieniach. Pojedyncze auto można ukryć w Zgłoszeniach.
+- Strona `/auta-select` (i zapowiedź na stronie głównej) pokazuje zaakceptowane auta bieżącej edycji, z `photo_publish_consent = 1`. Od regulaminu Select z pkt 10.6 prezentacja auta jest częścią udziału, więc każde nowe zgłoszenie dostaje 1 (formularz nie ma osobnego checkboxa); starsze zgłoszenia zachowują to, co zaznaczył właściciel. Domyślnie wyłączona — włącza się w Ustawieniach. Auto, którego właściciel poprosił o usunięcie zdjęć, ukrywa się w Zgłoszeniach.
 - Publicznie widać tylko markę i zdjęcia (bez nazwisk, rejestracji i opisów). `GET /api/showcase` zwraca listę, a `GET /api/showcase/photos/:id/:n?w=480|1200` zmniejszone kopie WEBP bez EXIF (`backend/uploads/showcase/`). Każde żądanie ponownie sprawdza zgodę i widoczność, więc nie serwuj tego katalogu statycznie z nginx.
 - Sekcja „Strefa Select” na stronie głównej (4 kroki z CMS) pobiera stan zapisów z `GET /api/select-status` (`open`, `reason`, `deadline`, `maxVehicles`, `edition`) i pokazuje odpowiedni przycisk.
 - Na stronie głównej pod datą jest odliczanie do wydarzenia (`Countdown`), liczone z daty i godziny w sekcji Edycja.

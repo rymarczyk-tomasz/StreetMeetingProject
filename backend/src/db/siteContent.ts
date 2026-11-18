@@ -193,7 +193,7 @@ function getSubmissionsAvailability(settings = getSettings()) {
 // The 2027 regulamin, regulamin Select/Expo and privacy policy arrive as built-in defaults,
 // but a section saved earlier in the panel wins over them. Once per LEGAL_DEFAULTS_VERSION
 // the saved ones are replaced by the new defaults; the old text stays in the revision history.
-const LEGAL_DEFAULTS_VERSION = "2027-4";
+const LEGAL_DEFAULTS_VERSION = "2027-5";
 const LEGAL_KEYS = ["regulamin", "regulaminSelect", "privacy"];
 
 db.exec("CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)");

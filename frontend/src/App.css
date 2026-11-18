@@ -4,6 +4,22 @@
     flex-direction: column;
 }
 
+/* long unbroken words (e-mail addresses) wrap instead of widening the page on phones */
+body {
+    overflow-wrap: break-word;
+}
+
+/* flex items don't shrink below their longest word unless told to */
+.account-head-title {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.account-head-title h1,
+.gallery-howto strong {
+    overflow-wrap: anywhere;
+}
+
 .app-header {
     display: flex;
     align-items: center;
@@ -1814,35 +1830,6 @@
     width: 100%;
 }
 
-.rating-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    margin: 4px 0 8px;
-}
-
-.rating-stars button {
-    min-width: 44px;
-    min-height: 44px;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--street-input-border);
-    font-size: 28px;
-    line-height: 1;
-    cursor: pointer;
-}
-
-.rating-stars button.is-on {
-    color: var(--street-yellow);
-}
-
-.rating-stars button:focus-visible {
-    outline: 2px solid var(--street-yellow);
-    outline-offset: 2px;
-}
-
 .system-checks {
     display: flex;
     flex-direction: column;
@@ -1918,7 +1905,7 @@
 }
 
 /* ---- Admin panel ---- */
-.admin-page button:where(:not(.btn-street, .text-action, .copy-field-button, .submission-card-photo, .field-password-toggle, .lightbox *, .vehicle-icon-button, .photo-slot, .admin-sidenav-item, .admin-todo-item, .photo-thumb-button, .rich-text-toolbar button, .rating-stars button, .subs-chip, .subs-open, .subs-bulk-clear, .detail-photo, .detail-back, .detail-tabs *, .detail-more *, .gate-button, .gate-list-action, .admin-dialog-close, .admin-thread, .admin-tabs *, .templates-grip, .row-menu *)) {
+.admin-page button:where(:not(.btn-street, .text-action, .copy-field-button, .submission-card-photo, .field-password-toggle, .lightbox *, .vehicle-icon-button, .photo-slot, .admin-sidenav-item, .admin-todo-item, .photo-thumb-button, .rich-text-toolbar button, .subs-chip, .subs-open, .subs-bulk-clear, .detail-photo, .detail-back, .detail-tabs *, .detail-more *, .gate-button, .gate-list-action, .admin-dialog-close, .admin-thread, .admin-tabs *, .templates-grip, .row-menu *)) {
     min-height: 44px;
     padding: 10px 16px;
     font-size: 15px;
@@ -2732,8 +2719,9 @@
 }
 
 @media (max-width: 767px) {
+    /* only the submissions filter row scrolls sideways; chip groups elsewhere keep wrapping */
     .subs-chips,
-    .subs-chip-group {
+    .subs-chips .subs-chip-group {
         flex-wrap: nowrap;
     }
 
@@ -2755,7 +2743,7 @@
         border-left: 1px solid var(--street-input-border);
     }
 
-    .subs-chip {
+    .subs-chips .subs-chip {
         flex-shrink: 0;
         white-space: nowrap;
     }
@@ -2807,10 +2795,6 @@
     .subs-hint-keys {
         display: none;
     }
-}
-
-.subs-no-rating {
-    color: #9a9ca1;
 }
 
 .subs-filters {
@@ -2898,7 +2882,7 @@
 .subs-row {
     display: grid;
     min-height: 64px;
-    grid-template-columns: 44px 64px minmax(0, 1.3fr) minmax(0, 1fr) 150px 130px 90px;
+    grid-template-columns: 44px 64px minmax(0, 1.3fr) minmax(0, 1fr) 150px 90px;
     align-items: center;
     gap: 12px;
     padding: 10px 16px;
@@ -2993,16 +2977,6 @@
     gap: 4px;
 }
 
-.subs-stars {
-    color: var(--street-yellow);
-    font-size: 15px;
-    letter-spacing: 2px;
-}
-
-.subs-stars span {
-    color: var(--street-border);
-}
-
 .subs-muted {
     color: var(--street-muted);
     font-size: 13px;
@@ -3027,6 +3001,7 @@
     position: sticky;
     top: var(--navbar-height, 72px);
     height: calc(100vh - var(--navbar-height, 72px));
+    overflow-x: hidden;
     overflow-y: auto;
     border-left: 1px solid var(--street-border);
     background: #fff;
@@ -3141,16 +3116,6 @@
     font-weight: 700;
 }
 
-.detail .rating-row {
-    margin: 0;
-}
-
-.detail .rating-stars button {
-    min-width: 36px;
-    min-height: 36px;
-    font-size: 26px;
-}
-
 .detail-data {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3202,9 +3167,18 @@
     gap: 22px;
     padding: 0 24px;
     border-bottom: 1px solid var(--street-border);
+    /* too narrow for all tabs: the row scrolls sideways instead of widening the page */
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.detail-tabs::-webkit-scrollbar {
+    display: none;
 }
 
 .detail-tabs button {
+    flex-shrink: 0;
+    white-space: nowrap;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -3236,14 +3210,16 @@
 
 .detail-field-head {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px 12px;
 }
 
 .detail-field-head .template-picker {
     width: auto;
-    max-width: 200px;
+    min-width: 0;
+    max-width: min(200px, 100%);
     min-height: 36px;
     font-size: 14px;
 }
@@ -3261,6 +3237,27 @@
 
 .detail-decision .detail-decision-wide {
     grid-column: 1 / -1;
+}
+
+/* place + approve / waitlist / reject, always at the bottom of the details pane */
+.detail-decision-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    display: grid;
+    gap: 8px;
+    padding: 12px 24px;
+    border-top: 1px solid var(--street-border);
+    background: #fff;
+    box-shadow: 0 -6px 16px rgb(0 0 0 / 6%);
+}
+
+.detail-decision-bar .zone-choice-options button {
+    min-height: 38px;
+}
+
+.detail-decision-bar .detail-decision .btn-street {
+    min-height: 42px;
 }
 
 .zone-choice {
@@ -4068,10 +4065,6 @@ body.is-dialog-open {
     .subs-row {
         grid-template-columns: 32px 64px minmax(0, 1.3fr) minmax(0, 1fr) 130px 90px;
     }
-
-    .subs-row > :nth-child(6) {
-        display: none;
-    }
 }
 
 @media (max-width: 991px) {
@@ -4172,8 +4165,7 @@ body.is-dialog-open {
     }
 
     .subs-row > :nth-child(4),
-    .subs-row > :nth-child(6),
-    .subs-row > :nth-child(7) {
+    .subs-row > :nth-child(6) {
         display: none;
     }
 
@@ -4257,6 +4249,21 @@ body.is-dialog-open {
 
     .detail-decision {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* the pinned bar stays one row of three, or it would cover half the phone screen */
+    .detail-decision-bar {
+        padding: 10px 16px;
+    }
+
+    .detail-decision-bar .detail-decision {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .detail-decision-bar .btn-street,
+    .detail-decision-bar .zone-choice-options button {
+        padding: 0 6px;
+        font-size: 13px;
     }
 }
 

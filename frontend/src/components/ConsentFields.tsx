@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 
-export type Consents = { acceptTerms: boolean; photoPublishConsent: boolean };
+export type Consents = { acceptTerms: boolean };
 
-// Required regulamin/RODO acceptance + optional consent to publish photos of the car.
+// Required regulamin/RODO acceptance. Publishing approved cars is part of the Select terms (pkt 10.6).
 export default function ConsentFields({
     value,
     onChange,
@@ -33,22 +33,9 @@ export default function ConsentFields({
                     <Link to="/polityka-prywatnosci" target="_blank">
                         polityką prywatności
                     </Link>
-                    . <em>(wymagane)</em>
-                </span>
-            </label>
-            <label className="consent-label check-label">
-                <input
-                    type="checkbox"
-                    className="check-input"
-                    checked={value.photoPublishConsent}
-                    onChange={(event) =>
-                        onChange({ ...value, photoPublishConsent: event.target.checked })
-                    }
-                />
-                <span>
-                    Zgadzam się na publikację zdjęć mojego auta w galerii i mediach
-                    społecznościowych Street Show. Publicznie pokazujemy tylko markę i zdjęcia —
-                    na zdjęciach może być widoczna tablica rejestracyjna. <em>(opcjonalne)</em>
+                    . Przyjmuję do wiadomości, że zakwalifikowane auto (marka i zdjęcia ze zgłoszenia) może
+                    zostać pokazane w galerii na stronie i w mediach społecznościowych Street Show. O usunięcie
+                    zdjęć mogę poprosić w każdej chwili. <em>(wymagane)</em>
                 </span>
             </label>
         </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Plate from "../../components/Plate";
 import SubmissionThread from "../../components/SubmissionThread";
 import { TemplatePicker } from "./templates";
@@ -6,40 +6,6 @@ import { fillTemplate } from "./templateData";
 import { ZONES, ZONE_LABELS } from "../../utils/zones";
 import { DETAIL_TABS, PAYMENT_STATUS_LABELS, STATUS_LABELS, formatDate, formatDay } from "./shared";
 
-
-function ratingLabel(rating) {
-    if (!rating?.count) return "brak ocen";
-    const word = rating.count === 1 ? "ocena" : rating.count < 5 ? "oceny" : "ocen";
-    return `średnia ${String(rating.average).replace(".", ",")} (${rating.count} ${word})`;
-}
-
-function RatingStars({ rating, disabled, onRate }) {
-    const mine = rating?.mine || 0;
-    const others = (rating?.scores || []).map((item) => `${item.adminEmail}: ${item.score}`).join("\n");
-    return (
-        <div className="rating-row">
-            <span className="rating-stars" role="group" aria-label="Twoja ocena">
-                {[1, 2, 3, 4, 5].map((score) => (
-                    <button
-                        key={score}
-                        type="button"
-                        className={score <= mine ? "is-on" : ""}
-                        disabled={disabled}
-                        aria-pressed={score === mine}
-                        aria-label={`Oceń na ${score}`}
-                        onClick={() => onRate(score === mine ? 0 : score)}
-                    >
-                        ★
-                    </button>
-                ))}
-            </span>
-            <span className="admin-hint" title={others || undefined}>
-                {ratingLabel(rating)}
-                {mine ? "" : " · bez Twojej oceny"}
-            </span>
-        </div>
-    );
-}
 
 function PhotoMosaic({ submission, onOpen }) {
     const photos = submission.photos;
@@ -122,62 +88,156 @@ function DecisionTab({ submission, isBusy, actions, noteTemplates, zoneTemplates
         rejestracja: submission.licensePlate,
     };
 
+    // a new place picked in the pinned bar opens the "change of place" form up in the tab — bring it into view
+    const zoneChangeRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (zoneChanged) zoneChangeRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, [zoneChanged]);
+
     async function saveZone() {
         const message = fillTemplate(zoneNote, { ...submissionValues, miejsce: ZONE_LABELS[zone] }).trim();
         if (await actions.setZone(submission, zone, message)) setZoneNote("");
     }
 
     return (
-        <div className="detail-tab">
-            {submission.status === "pending" && submission.changesSubmittedAt && (
-                <p className="detail-note">
-                    <i className="bi bi-check2-circle" aria-hidden="true" /> Uczestnik wysłał poprawki{" "}
-                    {formatDate(submission.changesSubmittedAt)} — zgłoszenie czeka na ponowne rozpatrzenie.
-                </p>
-            )}
-            {submission.status === "pending" && submission.changesRequestedAt && (
-                <p className="detail-muted">
-                    Poproszono o poprawki {formatDate(submission.changesRequestedAt)} — czekamy na uczestnika.
-                </p>
-            )}
-            <div className="detail-field-head">
-                <label htmlFor={`note-${submission.id}`} className="field-label">
-                    Komentarz dla uczestnika
-                </label>
-                <TemplatePicker
-                    templates={noteTemplates}
-                    label="Szablon"
-                    onPick={(template) =>
-                        setNote(
-                            fillTemplate(template.body, {
-                                rok: submission.edition,
-                                marka: submission.carBrand,
-                                rejestracja: submission.licensePlate,
-                            }),
-                        )
-                    }
+        <>
+            <div className="detail-tab">
+                {submission.status === "pending" && submission.changesSubmittedAt && (
+                    <p className="detail-note">
+                        <i className="bi bi-check2-circle" aria-hidden="true" /> Uczestnik wysłał poprawki{" "}
+                        {formatDate(submission.changesSubmittedAt)} — zgłoszenie czeka na ponowne rozpatrzenie.
+                    </p>
+                )}
+                {submission.status === "pending" && submission.changesRequestedAt && (
+                    <p className="detail-muted">
+                        Poproszono o poprawki {formatDate(submission.changesRequestedAt)} — czekamy na uczestnika.
+                    </p>
+                )}
+                <div className="detail-field-head">
+                    <label htmlFor={`note-${submission.id}`} className="field-label">
+                        Komentarz dla uczestnika
+                    </label>
+                    <TemplatePicker
+                        templates={noteTemplates}
+                        label="Szablon"
+                        onPick={(template) =>
+                            setNote(
+                                fillTemplate(template.body, {
+                                    rok: submission.edition,
+                                    marka: submission.carBrand,
+                                    rejestracja: submission.licensePlate,
+                                }),
+                            )
+                        }
+                    />
+                </div>
+                <textarea
+                    id={`note-${submission.id}`}
+                    className="field-input field-textarea"
+                    rows={3}
+                    maxLength={2000}
+                    value={note}
+                    onChange={(event) => setNote(event.target.value)}
+                    placeholder="Widoczny w panelu i w e-mailu z decyzją…"
                 />
-            </div>
-            <textarea
-                id={`note-${submission.id}`}
-                className="field-input field-textarea"
-                rows={3}
-                maxLength={2000}
-                value={note}
-                onChange={(event) => setNote(event.target.value)}
-                placeholder="Widoczny w panelu i w e-mailu z decyzją…"
-            />
-            {submission.adminNote && (
-                <p className="detail-muted">
-                    Poprzedni komentarz (nowa decyzja go zastąpi): „{submission.adminNote}”{" "}
-                    <button type="button" className="text-action" onClick={() => setNote(submission.adminNote)}>
-                        Użyj ponownie
+                {submission.adminNote && (
+                    <p className="detail-muted">
+                        Poprzedni komentarz (nowa decyzja go zastąpi): „{submission.adminNote}”{" "}
+                        <button type="button" className="text-action" onClick={() => setNote(submission.adminNote)}>
+                            Użyj ponownie
+                        </button>
+                    </p>
+                )}
+                {(zoneChanged || (approved && !submission.zone && !zone)) && (
+                    <div className="zone-choice">
+                        {zoneChanged && (
+                            <div className="zone-change" ref={zoneChangeRef}>
+                                <div className="detail-field-head">
+                                    <label htmlFor={`zone-note-${submission.id}`} className="field-label">
+                                        Wiadomość o {submission.zone ? "zmianie miejsca" : "miejscu"} (opcjonalna)
+                                    </label>
+                                    <TemplatePicker
+                                        templates={zoneTemplates}
+                                        label="Szablon"
+                                        onPick={(template) => setZoneNote(fillTemplate(template.body, submissionValues))}
+                                    />
+                                </div>
+                                <textarea
+                                    id={`zone-note-${submission.id}`}
+                                    className="field-input field-textarea"
+                                    rows={4}
+                                    maxLength={2000}
+                                    value={zoneNote}
+                                    onChange={(event) => setZoneNote(event.target.value)}
+                                    placeholder="Np. powód zmiany, brama i godzina wjazdu…"
+                                />
+                                <p className="detail-muted">
+                                    Uczestnik dostanie e-mail
+                                    {submission.zone
+                                        ? ` z poprzednim (${ZONE_LABELS[submission.zone]}) i nowym miejscem (${ZONE_LABELS[zone]})`
+                                        : ` z miejscem: ${ZONE_LABELS[zone]}`}
+                                    {zoneNote.trim() ? " i tą wiadomością" : ""}. {"{miejsce}"} zostanie zastąpione nowym
+                                    miejscem.
+                                </p>
+                                <div className="zone-change-actions">
+                                    <button
+                                        type="button"
+                                        className="btn-street btn-street-dark"
+                                        disabled={isBusy}
+                                        onClick={saveZone}
+                                    >
+                                        Zapisz miejsce i wyślij e-mail
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="text-action"
+                                        disabled={isBusy}
+                                        onClick={() => {
+                                            setZone(submission.zone || "");
+                                            setZoneNote("");
+                                        }}
+                                    >
+                                        Anuluj
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        {approved && !submission.zone && !zone && (
+                            <p className="detail-muted">To zgłoszenie nie ma jeszcze przypisanego miejsca.</p>
+                        )}
+                    </div>
+                )}
+                <div className="detail-decision">
+                    <button
+                        type="button"
+                        className="btn-street btn-street-outline detail-decision-wide"
+                        disabled={isBusy || !note.trim()}
+                        title={note.trim() ? "" : "Najpierw wpisz, co uczestnik ma poprawić"}
+                        onClick={() => actions.requestChanges(submission, note.trim())}
+                    >
+                        Poproś o poprawki
                     </button>
+                </div>
+                <p className="detail-note">
+                    Uczestnik dostanie e-mail. „Poproś o poprawki” zostawia zgłoszenie jako oczekujące, więc uczestnik może zmienić dane i zdjęcia.
+                    {queue?.capacity ? ` Wolne miejsca: ${queue.freePlaces} z ${queue.capacity}.` : ""}
                 </p>
-            )}
-            <div className="zone-choice" role="group" aria-label="Miejsce na wydarzeniu">
-                <span className="field-label">Miejsce na wydarzeniu</span>
-                <div className="zone-choice-options">
+                <div className="detail-footer">
+                    <MoreMenu submission={submission} isBusy={isBusy} actions={actions} />
+                    <button
+                        type="button"
+                        className="text-action is-danger"
+                        disabled={isBusy}
+                        onClick={() => actions.deleteSubmission(submission)}
+                    >
+                        <i className="bi bi-trash3" aria-hidden="true" />
+                        Usuń
+                    </button>
+                </div>
+            </div>
+            {/* pinned to the bottom of the details pane, so deciding never needs scrolling */}
+            <div className="detail-decision-bar">
+                <div className="zone-choice-options" role="group" aria-label="Miejsce na wydarzeniu">
                     {ZONES.map(([id, label]) => (
                         <button
                             key={id}
@@ -191,115 +251,35 @@ function DecisionTab({ submission, isBusy, actions, noteTemplates, zoneTemplates
                         </button>
                     ))}
                 </div>
-                {zoneChanged && (
-                    <div className="zone-change">
-                        <div className="detail-field-head">
-                            <label htmlFor={`zone-note-${submission.id}`} className="field-label">
-                                Wiadomość o {submission.zone ? "zmianie miejsca" : "miejscu"} (opcjonalna)
-                            </label>
-                            <TemplatePicker
-                                templates={zoneTemplates}
-                                label="Szablon"
-                                onPick={(template) => setZoneNote(fillTemplate(template.body, submissionValues))}
-                            />
-                        </div>
-                        <textarea
-                            id={`zone-note-${submission.id}`}
-                            className="field-input field-textarea"
-                            rows={4}
-                            maxLength={2000}
-                            value={zoneNote}
-                            onChange={(event) => setZoneNote(event.target.value)}
-                            placeholder="Np. powód zmiany, brama i godzina wjazdu…"
-                        />
-                        <p className="detail-muted">
-                            Uczestnik dostanie e-mail
-                            {submission.zone
-                                ? ` z poprzednim (${ZONE_LABELS[submission.zone]}) i nowym miejscem (${ZONE_LABELS[zone]})`
-                                : ` z miejscem: ${ZONE_LABELS[zone]}`}
-                            {zoneNote.trim() ? " i tą wiadomością" : ""}. {"{miejsce}"} zostanie zastąpione nowym
-                            miejscem.
-                        </p>
-                        <div className="zone-change-actions">
-                            <button
-                                type="button"
-                                className="btn-street btn-street-dark"
-                                disabled={isBusy}
-                                onClick={saveZone}
-                            >
-                                Zapisz miejsce i wyślij e-mail
-                            </button>
-                            <button
-                                type="button"
-                                className="text-action"
-                                disabled={isBusy}
-                                onClick={() => {
-                                    setZone(submission.zone || "");
-                                    setZoneNote("");
-                                }}
-                            >
-                                Anuluj
-                            </button>
-                        </div>
-                    </div>
-                )}
-                {approved && !submission.zone && !zone && (
-                    <p className="detail-muted">To zgłoszenie nie ma jeszcze przypisanego miejsca.</p>
-                )}
+                <div className="detail-decision">
+                    <button
+                        type="button"
+                        className="btn-street btn-street-primary"
+                        disabled={isBusy || approved || !zone}
+                        title={approved || zone ? "" : "Najpierw wybierz miejsce"}
+                        onClick={() => actions.setStatus(submission, "approved", note, zone)}
+                    >
+                        Zaakceptuj
+                    </button>
+                    <button
+                        type="button"
+                        className="btn-street btn-street-outline"
+                        disabled={isBusy || submission.status === "waitlist"}
+                        onClick={() => actions.setStatus(submission, "waitlist", note)}
+                    >
+                        Rezerwowa
+                    </button>
+                    <button
+                        type="button"
+                        className="btn-street btn-street-danger"
+                        disabled={isBusy || submission.status === "rejected"}
+                        onClick={() => actions.setStatus(submission, "rejected", note)}
+                    >
+                        Odrzuć
+                    </button>
+                </div>
             </div>
-            <div className="detail-decision">
-                <button
-                    type="button"
-                    className="btn-street btn-street-primary"
-                    disabled={isBusy || approved || !zone}
-                    title={approved || zone ? "" : "Najpierw wybierz miejsce"}
-                    onClick={() => actions.setStatus(submission, "approved", note, zone)}
-                >
-                    Zaakceptuj
-                </button>
-                <button
-                    type="button"
-                    className="btn-street btn-street-outline"
-                    disabled={isBusy || submission.status === "waitlist"}
-                    onClick={() => actions.setStatus(submission, "waitlist", note)}
-                >
-                    Rezerwowa
-                </button>
-                <button
-                    type="button"
-                    className="btn-street btn-street-danger"
-                    disabled={isBusy || submission.status === "rejected"}
-                    onClick={() => actions.setStatus(submission, "rejected", note)}
-                >
-                    Odrzuć
-                </button>
-                <button
-                    type="button"
-                    className="btn-street btn-street-outline detail-decision-wide"
-                    disabled={isBusy || !note.trim()}
-                    title={note.trim() ? "" : "Najpierw wpisz, co uczestnik ma poprawić"}
-                    onClick={() => actions.requestChanges(submission, note.trim())}
-                >
-                    Poproś o poprawki
-                </button>
-            </div>
-            <p className="detail-note">
-                Uczestnik dostanie e-mail. „Poproś o poprawki” zostawia zgłoszenie jako oczekujące, więc uczestnik może zmienić dane i zdjęcia.
-                {queue?.capacity ? ` Wolne miejsca: ${queue.freePlaces} z ${queue.capacity}.` : ""}
-            </p>
-            <div className="detail-footer">
-                <MoreMenu submission={submission} isBusy={isBusy} actions={actions} />
-                <button
-                    type="button"
-                    className="text-action is-danger"
-                    disabled={isBusy}
-                    onClick={() => actions.deleteSubmission(submission)}
-                >
-                    <i className="bi bi-trash3" aria-hidden="true" />
-                    Usuń
-                </button>
-            </div>
-        </div>
+        </>
     );
 }
 
@@ -392,7 +372,7 @@ function NoteTab({ submission, isBusy, actions }) {
                 maxLength={2000}
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
-                placeholder="np. ocena auta, ustalenia telefoniczne… Widzą ją tylko administratorzy."
+                placeholder="np. uwagi o aucie, ustalenia telefoniczne… Widzą ją tylko administratorzy."
             />
             <button
                 type="button"
@@ -436,7 +416,6 @@ export default function SubmissionDetails({
                     </div>
                     <span className={`status-badge status-${s.status}`}>{STATUS_LABELS[s.status] || s.status}</span>
                 </div>
-                <RatingStars rating={s.rating} disabled={isBusy} onRate={(score) => actions.rate(s, score)} />
                 <dl className="detail-data">
                     <div>
                         <dt>Zgłaszający</dt>
@@ -468,7 +447,7 @@ export default function SubmissionDetails({
                     )}
                     {s.photoPublishConsent && (
                         <span>
-                            <i className="bi bi-camera" aria-hidden="true" /> zgoda na publikację
+                            <i className="bi bi-camera" aria-hidden="true" /> publikacja zdjęć
                             {s.showcaseHidden ? " (ukryte na stronie)" : ""}
                         </span>
                     )}
@@ -488,7 +467,11 @@ export default function SubmissionDetails({
                         role="tab"
                         aria-selected={tab === id}
                         className={tab === id ? "is-active" : ""}
-                        onClick={() => onTab(id)}
+                        onClick={(event) => {
+                            // on a narrow pane the tab row scrolls sideways; show the whole picked tab
+                            event.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest" });
+                            onTab(id);
+                        }}
                     >
                         {label}
                         {id === "wiadomosci" && s.messages?.unread > 0 && (

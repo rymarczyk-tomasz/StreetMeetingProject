@@ -41,7 +41,7 @@ export default function SubmissionPage() {
         carDescription: "",
     });
     const [photos, setPhotos] = useState<File[]>([]);
-    const [consents, setConsents] = useState({ acceptTerms: false, photoPublishConsent: false });
+    const [consents, setConsents] = useState({ acceptTerms: false });
     const [vehicles, setVehicles] = useState([]);
     const [vehicleId, setVehicleId] = useState("");
     const [error, setError] = useState("");
@@ -163,7 +163,6 @@ export default function SubmissionPage() {
                 formData.append(key, value),
             );
             formData.append("acceptTerms", String(consents.acceptTerms));
-            formData.append("photoPublishConsent", String(consents.photoPublishConsent));
             if (vehicleId) formData.append("vehicleId", vehicleId);
             photos.forEach((file) => formData.append("photos", file));
 
@@ -191,7 +190,7 @@ export default function SubmissionPage() {
         });
         setPhotos([]);
         setVehicleId("");
-        setConsents({ acceptTerms: false, photoPublishConsent: false });
+        setConsents({ acceptTerms: false });
         setError("");
         setIsSubmitted(false);
     }

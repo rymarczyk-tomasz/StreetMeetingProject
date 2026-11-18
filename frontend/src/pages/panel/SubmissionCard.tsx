@@ -135,7 +135,7 @@ function PaymentBox({ submission }) {
 }
 
 function ResubmitForm({ submission, edition, onDone, onCancel, notify }) {
-    const [consents, setConsents] = useState({ acceptTerms: false, photoPublishConsent: false });
+    const [consents, setConsents] = useState({ acceptTerms: false });
     const [isSending, setIsSending] = useState(false);
 
     async function send(event) {

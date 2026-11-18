@@ -32,8 +32,7 @@ export default function ShowcasePage() {
         body = (
             <>
                 <p className="section-lead showcase-lead">
-                    {plural(data.cars.length, "zakwalifikowane auto", "zakwalifikowane auta", "zakwalifikowanych aut")}{" "}
-                    (pokazujemy tylko auta, których właściciele zgodzili się na publikację zdjęć).
+                    {plural(data.cars.length, "zakwalifikowane auto", "zakwalifikowane auta", "zakwalifikowanych aut")}.
                 </p>
                 <div className="album-grid">
                     {data.cars.map((car) => (

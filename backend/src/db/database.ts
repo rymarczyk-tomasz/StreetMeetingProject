@@ -301,6 +301,9 @@ db.exec(`
         expires_at TEXT NOT NULL,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    -- admins' 1–5 scores of submissions, removed: one person handles the submissions
+    DROP TABLE IF EXISTS submission_ratings;
 `);
 
 module.exports = db;

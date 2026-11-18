@@ -21,6 +21,8 @@ describe("dokumenty prawne 2027", () => {
         assert.match(regulaminSelect.html, /Strefie Select nie podlega zwrotowi/);
         assert.match(privacy.html, /Marketing bezpośredni/);
         assert.match(privacy.html, /Konto uczestnika i garaż/);
+        assert.match(regulaminSelect.html, /10\.6\.<\/strong> Udział w Strefie Select obejmuje prezentację/);
+        assert.match(privacy.html, /Prezentacja aut Strefy Select/);
     });
 
     test("admin edytuje regulamin Select i Expo, zmiana trafia do historii", async () => {
@@ -33,7 +35,7 @@ describe("dokumenty prawne 2027", () => {
         db.prepare("DELETE FROM site_content WHERE content_key = 'regulaminSelect'").run();
     });
 
-    test("zgłoszenie zapisuje wersje obu regulaminów", async () => {
+    test("zgłoszenie zapisuje wersje obu regulaminów i zgodę na prezentację auta", async () => {
         const user = createUser();
         const res = await attachPhotos(
             api(user)
@@ -48,8 +50,10 @@ describe("dokumenty prawne 2027", () => {
             await pngBuffer(),
         );
         assert.equal(res.status, 201, res.body.message);
-        const row = db.prepare("SELECT consent_version FROM submissions WHERE license_plate = 'GD 88888'").get();
+        const row = db.prepare("SELECT consent_version, photo_publish_consent FROM submissions WHERE license_plate = 'GD 88888'").get();
         assert.match(row.consent_version, /^(default|rev-[0-9]+)[+](default|rev-[0-9]+)$/);
+        // presenting an approved car is part of the Select terms, not a separate checkbox
+        assert.equal(row.photo_publish_consent, 1);
     });
 
     test("migracja podmienia zapisane wcześniej teksty raz, a stare zostają w historii", () => {

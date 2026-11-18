@@ -11,6 +11,7 @@ import { TemplatePicker } from "./templates";
 import { fillTemplate, useTemplates } from "./templateData";
 import { printGateList } from "./gateList";
 import { ZONES, ZONE_LABELS } from "../../utils/zones";
+import { decisionQuestion } from "../../utils/decisionQuestion";
 import { DETAIL_TABS, PAYMENT_STATUS_LABELS, STATUS_LABELS, errorMessage, formatDay } from "./shared";
 
 // fetched again so the backend logs the export
@@ -37,13 +38,11 @@ async function exportToExcel(filters) {
         "Termin opłaty": submission.status === "approved" ? submission.payment?.deadline || "" : "",
         "Komentarz administratora": submission.adminNote || "",
         "Notatka wewnętrzna": submission.internalNote || "",
-        "Średnia ocena": submission.rating?.average ?? "",
-        "Liczba ocen": submission.rating?.count ?? 0,
         "Liczba zdjęć": submission.photos.length,
         Edycja: submission.edition,
     }));
     const worksheet = XLSX.utils.json_to_sheet(rows);
-    worksheet["!cols"] = [14, 22, 18, 18, 30, 18, 18, 16, 45, 18, 18, 14, 14, 40, 40, 12, 12, 12, 10].map((wch) => ({ wch }));
+    worksheet["!cols"] = [14, 22, 18, 18, 30, 18, 18, 16, 45, 18, 18, 14, 14, 40, 40, 12, 10].map((wch) => ({ wch }));
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Zgłoszenia");
     XLSX.writeFile(workbook, `zgloszenia-${new Date().toISOString().slice(0, 10)}.xlsx`);
@@ -52,8 +51,6 @@ async function exportToExcel(filters) {
 const SORTS = {
     newest: (a, b) => b.createdAt.localeCompare(a.createdAt),
     oldest: (a, b) => a.createdAt.localeCompare(b.createdAt),
-    rating: (a, b) => (b.rating?.average ?? -1) - (a.rating?.average ?? -1) || b.rating?.count - a.rating?.count,
-    unrated: (a, b) => b.createdAt.localeCompare(a.createdAt),
 };
 
 const STATUS_CHIPS = [
@@ -84,17 +81,6 @@ function relativeDay(value) {
     if (days < 7) return `${days} dni`;
     if (days < 35) return `${Math.floor(days / 7)} tyg.`;
     return formatDay(value.slice(0, 10));
-}
-
-function RatingCell({ rating }) {
-    if (!rating?.count) return <span className="subs-no-rating" aria-label="brak ocen">—</span>;
-    const filled = Math.round(rating.average || 0);
-    return (
-        <span className="subs-stars" aria-label={`średnia ${rating.average}`}>
-            {"★".repeat(filled)}
-            <span>{"★".repeat(5 - filled)}</span>
-        </span>
-    );
 }
 
 function useListParams() {
@@ -194,9 +180,7 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
 
     const visible = useMemo(
         () =>
-            submissions
-                .filter((s) => params.sort !== "unrated" || !s.rating?.mine)
-                .sort(SORTS[params.sort] || SORTS.newest),
+            [...submissions].sort(SORTS[params.sort] || SORTS.newest),
         [submissions, params.sort],
     );
     const current = visible.find((s) => s.id === params.id) || submissions.find((s) => s.id === params.id) || null;
@@ -248,8 +232,10 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
     }
 
     const actions = {
-        setStatus: (submission, status, note = undefined, zone = undefined) =>
-            runAction(
+        setStatus: async (submission, status, note = undefined, zone = undefined) => {
+            const question = decisionQuestion(submission, status, note, zone);
+            if (question && !(await askConfirm(question))) return;
+            return runAction(
                 () =>
                     withCapacityCheck((force) =>
                         api.patch(`/admin/submissions/${submission.id}/status`, {
@@ -260,7 +246,8 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                         }),
                     ),
                 "Nie udało się zmienić statusu zgłoszenia.",
-            ),
+            );
+        },
         setZone: async (submission, zone, adminNote = "") => {
             const response = await runAction(
                 () => api.patch(`/admin/submissions/${submission.id}/zone`, { zone, adminNote }),
@@ -289,17 +276,6 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                 () => api.patch(`/admin/submissions/${submission.id}/internal-note`, { internalNote }),
                 "Nie udało się zapisać notatki.",
             ),
-        // update in place instead of reloading the list
-        rate: async (submission, score) => {
-            try {
-                const { data } = await api.put(`/admin/submissions/${submission.id}/rating`, { score });
-                setSubmissions((list) =>
-                    list.map((item) => (item.id === submission.id ? { ...item, rating: data.rating } : item)),
-                );
-            } catch (err) {
-                setError(errorMessage(err, "Nie udało się zapisać oceny."));
-            }
-        },
         setShowcaseHidden: (submission, hidden) =>
             runAction(
                 () => api.patch(`/admin/submissions/${submission.id}/showcase`, { hidden }),
@@ -545,8 +521,6 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                         <Select value={params.sort} onChange={(event) => setParams({ sort: event.target.value === "newest" ? "" : event.target.value })}>
                             <option value="newest">Najnowsze</option>
                             <option value="oldest">Najstarsze</option>
-                            <option value="rating">Najwyżej oceniane</option>
-                            <option value="unrated">Do oceny</option>
                         </Select>
                     </label>
                 </div>
@@ -612,7 +586,6 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                             <span role="columnheader">Pojazd</span>
                             <span role="columnheader">Zgłaszający</span>
                             <span role="columnheader">Status</span>
-                            <span role="columnheader">Ocena</span>
                             <span role="columnheader" className="is-right">
                                 Dodano
                             </span>
@@ -676,9 +649,6 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                                                 {s.paymentOverdue ? "Po terminie" : PAYMENT_STATUS_LABELS[s.paymentStatus]}
                                             </span>
                                         )}
-                                    </span>
-                                    <span role="cell">
-                                        <RatingCell rating={s.rating} />
                                     </span>
                                     <span role="cell" className="subs-date is-right">
                                         {relativeDay(s.createdAt)}

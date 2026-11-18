@@ -86,6 +86,8 @@ test("akceptacja: uczestnik dostaje maila i widzi dane do przelewu", async ({ pa
     await expect(admin.getByRole("button", { name: "Zaakceptuj" })).toBeDisabled();
     await admin.getByRole("button", { name: "Tunel" }).click();
     await admin.getByRole("button", { name: "Zaakceptuj" }).click();
+    await expect(admin.getByText(/miejsce: Tunel/)).toBeVisible();
+    await admin.getByRole("button", { name: "Zaakceptuj i wyślij e-mail" }).click();
     await expect(admin.getByText(/Zaakceptowane/i).first()).toBeVisible();
     await admin.context().close();
 

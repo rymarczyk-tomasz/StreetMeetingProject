@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, test } from "vitest";
 import { plural } from "./plural";
+import { decisionQuestion } from "./decisionQuestion";
 import { nextStep, submissionSteps } from "./submissionSteps";
 import { dragHeroCrop } from "./hero";
 import {
@@ -214,5 +215,22 @@ describe("wklejanie z Worda", () => {
     test("punktory dają ul, a akapit przerywa listę", () => {
         const html = transformWordHtml(p(1, "•", "A") + "<p>przerwa</p>" + p(1, "•", "B"));
         expect(html).toBe("<ul><li>A</li></ul><p>przerwa</p><ul><li>B</li></ul>");
+    });
+});
+
+describe("decisionQuestion", () => {
+    const car = { carBrand: "BMW", licensePlate: "GD 1", status: "pending" };
+
+    test("asks before every decision that e-mails the participant", () => {
+        expect(decisionQuestion(car, "approved", "", "tunel")?.message).toContain("miejsce: Tunel");
+        expect(decisionQuestion(car, "waitlist")?.title).toBe("Przenieść na listę rezerwową?");
+        expect(decisionQuestion(car, "rejected")?.danger).toBe(true);
+        expect(decisionQuestion(car, "pending")).toBeNull();
+    });
+
+    test("mentions the comment and a lost place", () => {
+        const message = decisionQuestion({ ...car, status: "approved" }, "rejected", "Za mało zdjęć")?.message;
+        expect(message).toContain("komentarzem");
+        expect(message).toContain("straci przyznane miejsce");
     });
 });
