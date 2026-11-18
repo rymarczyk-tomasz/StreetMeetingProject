@@ -228,47 +228,6 @@ function verifyUploadedPdf(file) {
     }
 }
 
-function createProofUpload({ destination, maxFileSize }) {
-    return multer({
-        storage: multer.diskStorage({
-            destination(req, file, cb) {
-                try {
-                    const dir = destination(req);
-                    fs.mkdirSync(dir, { recursive: true });
-                    cb(null, dir);
-                } catch (error) {
-                    cb(error);
-                }
-            },
-            filename(req, file, cb) {
-                const extension =
-                    file.mimetype === "application/pdf" ? ".pdf" : imageExtensionFor(file);
-                cb(null, `proof-${Date.now()}-${crypto.randomBytes(8).toString("hex")}${extension}`);
-            },
-        }),
-        limits: { files: 1, fileSize: maxFileSize, fields: 5 },
-        fileFilter(req, file, cb) {
-            if (file.mimetype === "application/pdf" || imageExtensionFor(file)) {
-                cb(null, true);
-            } else {
-                cb(new UploadValidationError("Dodaj zdjęcie (JPG, PNG, WEBP) albo plik PDF."));
-            }
-        },
-    });
-}
-
-function verifyUploadedProof(file) {
-    if (path.extname(file.filename) === ".pdf") verifyUploadedPdf(file);
-    else verifyUploadedImages([file]);
-}
-
-function isAllowedProofFilename(filename) {
-    return (
-        isAllowedImageFilename(filename) ||
-        (/^[a-zA-Z0-9._-]+$/.test(filename) && path.extname(filename).toLowerCase() === ".pdf")
-    );
-}
-
 function isAllowedImageFilename(filename) {
     return (
         /^[a-zA-Z0-9._-]+$/.test(filename) &&
@@ -310,9 +269,6 @@ module.exports = {
     processContentImage,
     createPdfUpload,
     verifyUploadedPdf,
-    createProofUpload,
-    verifyUploadedProof,
-    isAllowedProofFilename,
     removeFiles,
     isAllowedImageFilename,
     uploadErrorHandler,

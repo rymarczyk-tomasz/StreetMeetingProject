@@ -57,7 +57,7 @@ describe("sprawdzanie kodu", () => {
     });
 
     test("wejściówka bez potwierdzonej opłaty jest nieważna", async () => {
-        const row = withPass(createSubmission(createUser(), { status: "approved", paymentStatus: "verification" }));
+        const row = withPass(createSubmission(createUser(), { status: "approved", paymentStatus: "unpaid" }));
         const res = await api(staff()).get("/api/gate/check").query({ code: row.pass_short_code });
         assert.equal(res.body.car.valid, false);
     });
@@ -66,7 +66,7 @@ describe("sprawdzanie kodu", () => {
 describe("check-in", () => {
     test("wpuszcza tylko zaakceptowane i opłacone", async () => {
         const client = api(staff());
-        const unpaid = createSubmission(createUser(), { status: "approved", paymentStatus: "verification" });
+        const unpaid = createSubmission(createUser(), { status: "approved", paymentStatus: "unpaid" });
         const pending = createSubmission(createUser(), { paymentStatus: "paid" });
         assert.equal((await client.post(`/api/gate/cars/${unpaid.id}/checkin`)).status, 400);
         assert.equal((await client.post(`/api/gate/cars/${pending.id}/checkin`)).status, 404);

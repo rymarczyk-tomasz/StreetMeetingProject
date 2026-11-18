@@ -119,7 +119,7 @@ module.exports = {
                 {
                     "id": "select-4",
                     "question": "Jak opłacić udział i kiedy dostanę wejściówkę?",
-                    "answerHtml": "<p>Po akceptacji w panelu znajdziesz kwotę, dane do przelewu i termin płatności. Po wpłacie dodaj potwierdzenie przelewu lub oznacz płatność jako wykonaną. Gdy organizator potwierdzi wpłatę, w panelu pojawi się <strong>wejściówka z kodem QR</strong> do wjazdu. <strong>Auto bez opłaconego udziału nie zostanie wpuszczone na wydarzenie.</strong></p>"
+                    "answerHtml": "<p>Po akceptacji dostaniesz e-mail z linkiem do płatności online, a kwotę i termin zobaczysz też w panelu. Po wpłacie nic nie musisz klikać – organizator potwierdzi ją po zaksięgowaniu i wyśle e-mail, a w panelu pojawi się <strong>wejściówka z kodem QR</strong> do wjazdu. <strong>Auto bez opłaconego udziału nie zostanie wpuszczone na wydarzenie.</strong></p>"
                 },
                 {
                     "id": "select-10",

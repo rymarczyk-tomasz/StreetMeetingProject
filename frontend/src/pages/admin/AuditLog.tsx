@@ -25,7 +25,6 @@ const ACTION_LABELS = {
     "submission.checked_in": "zarejestrował wjazd",
     "submission.checkin_undone": "cofnął wjazd",
     "submission.payment_unpaid": "cofnął potwierdzenie opłaty",
-    "submission.payment_verification": "zgłosił opłatę do weryfikacji",
     "submission.payment_paid": "potwierdził opłacenie zgłoszenia",
     "submission.exported": "wyeksportował zgłoszenia do Excela",
     "submission.gate_list_printed": "wydrukował listę na bramę",

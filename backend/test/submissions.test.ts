@@ -1,12 +1,8 @@
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
-const sharp = require("sharp");
 const { api, createUser, createSubmission, saveSettings, submissionsDb, usersDb, db } = require("./helpers");
 const { getUserSubmissionsDir } = require("../src/utils/paths");
-
-const pngBuffer = () =>
-    sharp({ create: { width: 8, height: 8, channels: 3, background: "#c00" } }).png().toBuffer();
 
 function auditActions(submissionId) {
     return db
@@ -36,7 +32,6 @@ describe("dostęp do cudzych zgłoszeń", () => {
         for (const [method, url, body] of [
             ["patch", `/api/submissions/${bobs.id}`, { carBrand: "Hack" }],
             ["delete", `/api/submissions/${bobs.id}`],
-            ["patch", `/api/submissions/${bobs.id}/payment-status`, {}],
             ["get", `/api/submissions/${bobs.id}/pass`],
             ["get", `/api/submissions/${bobs.id}/messages`],
         ]) {
@@ -44,13 +39,6 @@ describe("dostęp do cudzych zgłoszeń", () => {
             assert.equal(res.status, 404, `${method} ${url}`);
         }
         assert.equal(submissionsDb.findSubmissionById(bobs.id).status, "approved");
-    });
-
-    test("nie da się pobrać cudzego potwierdzenia przelewu", async () => {
-        const alice = createUser();
-        const bob = createUser();
-        const res = await api(alice).get(`/api/submissions/proofs/${bob.id}/proof-1-abc.png`);
-        assert.equal(res.status, 404);
     });
 
     test("niezalogowany nie ma dostępu", async () => {
@@ -95,100 +83,52 @@ describe("edycja zgłoszenia", () => {
     });
 });
 
-describe("zgłoszenie opłaty przez uczestnika", () => {
-    test("przed akceptacją nie można zgłosić opłaty ani dodać potwierdzenia", async () => {
-        const user = createUser();
-        const client = api(user);
-        for (const status of ["pending", "waitlist", "rejected"]) {
-            const row = createSubmission(user, { status });
-            assert.equal((await client.patch(`/api/submissions/${row.id}/payment-status`)).status, 400);
-            const upload = await client
-                .post(`/api/submissions/${row.id}/payment-proof`)
-                .attach("proof", await pngBuffer(), "przelew.png");
-            assert.equal(upload.status, 400);
-        }
-    });
-
-    test("kliknięcie „zapłacono” daje weryfikację, nie opłacone", async () => {
-        const user = createUser();
-        const row = createSubmission(user, { status: "approved" });
-        const res = await api(user).patch(`/api/submissions/${row.id}/payment-status`).send({ paymentStatus: "paid" });
-        assert.equal(res.status, 200);
-        assert.equal(res.body.submission.paymentStatus, "verification");
-        assert.equal(res.body.submission.hasPass, false);
-    });
-
-    test("potwierdzonej opłaty nie można zgłosić ponownie ani podmienić potwierdzenia", async () => {
-        const user = createUser();
-        const row = createSubmission(user, { status: "approved", paymentStatus: "paid" });
-        const client = api(user);
-        assert.equal((await client.patch(`/api/submissions/${row.id}/payment-status`)).status, 400);
-        const upload = await client
-            .post(`/api/submissions/${row.id}/payment-proof`)
-            .attach("proof", await pngBuffer(), "przelew.png");
-        assert.equal(upload.status, 400);
-        assert.equal(submissionsDb.findSubmissionById(row.id).payment_status, "paid");
-    });
-
-    test("potwierdzenie przelewu ustawia weryfikację, a nowe zastępuje stare", async () => {
+describe("opłatę potwierdza tylko organizator", () => {
+    test("uczestnik nie zgłasza opłaty ani nie wgrywa potwierdzenia", async () => {
         const user = createUser();
         const row = createSubmission(user, { status: "approved" });
         const client = api(user);
-
-        const first = await client
-            .post(`/api/submissions/${row.id}/payment-proof`)
-            .attach("proof", await pngBuffer(), "przelew.png");
-        assert.equal(first.status, 200);
-        assert.equal(first.body.submission.paymentStatus, "verification");
-        const firstFile = submissionsDb.findSubmissionById(row.id).payment_proof;
-
-        const second = await client
-            .post(`/api/submissions/${row.id}/payment-proof`)
-            .attach("proof", await pngBuffer(), "przelew2.png");
-        assert.equal(second.status, 200);
-
-        const files = fs.readdirSync(getUserSubmissionsDir(user.id));
-        assert.equal(files.length, 1);
-        assert.ok(!firstFile.endsWith(files[0]));
-
-        const own = await client.get(second.body.submission.paymentProofUrl.replace(/^.*\/api/, "/api"));
-        assert.equal(own.status, 200);
-    });
-
-    test("odrzuca brak pliku, zły typ i plik udający obrazek", async () => {
-        const user = createUser();
-        const row = createSubmission(user, { status: "approved" });
-        const client = api(user);
-        const url = `/api/submissions/${row.id}/payment-proof`;
-
-        assert.equal((await client.post(url).field("x", "1")).status, 400);
-        assert.equal(
-            (await client.post(url).attach("proof", Buffer.from("hello"), { filename: "a.txt", contentType: "text/plain" })).status,
-            400,
-        );
-        assert.equal(
-            (await client.post(url).attach("proof", Buffer.from("to nie png"), { filename: "a.png", contentType: "image/png" })).status,
-            400,
-        );
+        assert.equal((await client.patch(`/api/submissions/${row.id}/payment-status`)).status, 404);
+        assert.equal((await client.post(`/api/submissions/${row.id}/payment-proof`)).status, 404);
         assert.equal(submissionsDb.findSubmissionById(row.id).payment_status, "unpaid");
+    });
+
+    test("status \"do weryfikacji\" nie istnieje", async () => {
+        const admin = createUser({ role: "admin" });
+        const row = createSubmission(createUser(), { status: "approved" });
+        const res = await api(admin)
+            .patch(`/api/admin/submissions/${row.id}/payment-status`)
+            .send({ paymentStatus: "verification" });
+        assert.equal(res.status, 400);
+        assert.equal(submissionsDb.findSubmissionById(row.id).payment_status, "unpaid");
+    });
+
+    test("admin potwierdza nieopłacone zgłoszenie od razu, uczestnik dostaje wejściówkę", async () => {
+        const admin = createUser({ role: "admin" });
+        const user = createUser();
+        const row = createSubmission(user, { status: "approved" });
+        const res = await api(admin).patch(`/api/admin/submissions/${row.id}/payment-status`).send({ paymentStatus: "paid" });
+        assert.equal(res.status, 200, res.body.message);
+        assert.equal(res.body.submission.paymentStatus, "paid");
+        assert.equal(res.body.submission.hasPass, true);
     });
 });
 
 describe("weryfikacja opłaty przez admina", () => {
     test("zwykły użytkownik nie może sam oznaczyć opłaty jako potwierdzonej", async () => {
         const user = createUser();
-        const row = createSubmission(user, { status: "approved", paymentStatus: "verification" });
+        const row = createSubmission(user, { status: "approved" });
         const res = await api(user)
             .patch(`/api/admin/submissions/${row.id}/payment-status`)
             .send({ paymentStatus: "paid" });
         assert.equal(res.status, 403);
-        assert.equal(submissionsDb.findSubmissionById(row.id).payment_status, "verification");
+        assert.equal(submissionsDb.findSubmissionById(row.id).payment_status, "unpaid");
     });
 
     test("admin potwierdza opłatę, zmiana trafia do dziennika i odblokowuje przepustkę", async () => {
         const admin = createUser({ role: "admin" });
         const user = createUser();
-        const row = createSubmission(user, { status: "approved", paymentStatus: "verification" });
+        const row = createSubmission(user, { status: "approved" });
 
         const before = await api(user).get(`/api/submissions/${row.id}/pass`);
         assert.equal(before.status, 400);
@@ -302,7 +242,7 @@ describe("miejsce zaakceptowanego auta", () => {
             .send({ status: "approved", zone: "tunel" });
         assert.equal(res.status, 200, res.body.message);
         assert.equal(res.body.submission.zone, "tunel");
-        assert.match(mailsTo(user.email)[0].text, /Miejsce na wydarzeniu: Tunel/);
+        assert.match(mailsTo(user.email)[0].text, /Miejsce Państwa auta: Tunel/);
 
         const own = await api(user).get("/api/submissions");
         assert.equal(own.body.submissions.find((s) => s.id === row.id).zone, "tunel");
@@ -386,7 +326,7 @@ describe("miejsce zaakceptowanego auta", () => {
         const row = createSubmission(user);
         mails.length = 0;
         await api(admin).patch(`/api/admin/submissions/${row.id}/status`).send({ status: "approved", zone: "murawa" });
-        assert.match(mailsTo(user.email)[0].text, /Miejsce na wydarzeniu: Otok murawy\./);
+        assert.match(mailsTo(user.email)[0].text, /Miejsce Państwa auta: Otok murawy/);
     });
 
     test("lista zgłoszeń: liczniki i filtr po miejscu", async () => {

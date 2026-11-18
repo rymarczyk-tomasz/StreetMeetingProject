@@ -10,6 +10,7 @@ import { ContentForm } from "./ContentForm";
 import { useContentEditor } from "./useContentEditor";
 import { ImageField, ListItemControls, PdfField } from "./fields";
 import { moveItem, newId } from "./shared";
+import { ZONES } from "../../utils/zones";
 
 // tiptap is big, load it only where needed
 const RichTextEditor = lazy(() => import("../../components/RichTextEditor"));
@@ -1110,6 +1111,40 @@ export function SubmissionSettingsEditor({ onAction, part = "zapisy" }) {
                             maxLength={140}
                             onChange={(paymentTitleTemplate) => editor.update({ paymentTitleTemplate })}
                         />
+                        <fieldset className="admin-subsection">
+                            <legend>Według miejsca na wydarzeniu</legend>
+                            <p className="admin-hint">
+                                Kwota i link do płatności online (np. Przelewy24) dla auta z danym miejscem. Pusta
+                                kwota = kwota wyżej. Link pojawia się w panelu uczestnika jako przycisk „Zapłać online”,
+                                w e-mailu akceptacji ({"{link_platnosci}"}) i w przypomnieniu o opłacie.
+                            </p>
+                            {ZONES.map(([zone, label]) => {
+                                const entry = settings.zonePayments?.[zone] || { amount: "", url: "" };
+                                const setEntry = (patch) =>
+                                    editor.update({
+                                        zonePayments: { ...settings.zonePayments, [zone]: { ...entry, ...patch } },
+                                    });
+                                return (
+                                    <div key={zone} className="admin-form-row admin-zone-payment">
+                                        <TextInput
+                                            label={`Kwota – ${label}`}
+                                            value={entry.amount}
+                                            maxLength={100}
+                                            placeholder={settings.selectFeeAmount || "np. 199 zł"}
+                                            onChange={(amount) => setEntry({ amount })}
+                                        />
+                                        <TextInput
+                                            label={`Link do płatności – ${label}`}
+                                            value={entry.url}
+                                            maxLength={1000}
+                                            placeholder="https://sklep.przelewy24.pl/..."
+                                            inputMode="url"
+                                            onChange={(url) => setEntry({ url: url.trim() })}
+                                        />
+                                    </div>
+                                );
+                            })}
+                        </fieldset>
                         <div className="admin-form-row">
                             <DateField
                                 label="Termin płatności (opcjonalny)"

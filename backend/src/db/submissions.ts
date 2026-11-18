@@ -15,11 +15,6 @@ const insertStmt = db.prepare(`
 const updatePhotosStmt = db.prepare(`
     UPDATE submissions SET photos = ?, updated_at = datetime('now') WHERE id = ?
 `);
-const setPaymentProofStmt = db.prepare(`
-    UPDATE submissions
-    SET payment_proof = ?, payment_status = 'verification', updated_at = datetime('now')
-    WHERE id = ?
-`);
 const setPassTokenStmt = db.prepare(
     `UPDATE submissions SET pass_token = ? WHERE id = ? AND pass_token IS NULL`,
 );
@@ -135,11 +130,11 @@ const listEditionsStmt = db.prepare(`
 `);
 const listWithFilesStmt = db.prepare(`
     SELECT * FROM submissions
-    WHERE files_purged_at IS NULL AND (photos != '[]' OR payment_proof IS NOT NULL)
+    WHERE files_purged_at IS NULL AND photos != '[]'
 `);
 const markFilesPurgedStmt = db.prepare(`
     UPDATE submissions
-    SET photos = '[]', payment_proof = NULL, files_purged_at = datetime('now')
+    SET photos = '[]', files_purged_at = datetime('now')
     WHERE id = ?
 `);
 
@@ -155,11 +150,6 @@ function createSubmission(data) {
 
 function updateSubmissionPhotos(id, photos) {
     updatePhotosStmt.run(JSON.stringify(photos), id);
-    return findByIdStmt.get(id);
-}
-
-function setPaymentProof(id, storedPath) {
-    setPaymentProofStmt.run(storedPath, id);
     return findByIdStmt.get(id);
 }
 
@@ -369,7 +359,7 @@ function listEditions() {
     return listEditionsStmt.all();
 }
 
-// retention: rows that still have photos or a payment proof on disk
+// retention: rows that still have photos on disk
 function listSubmissionsWithFiles() {
     return listWithFilesStmt.all();
 }
@@ -391,7 +381,6 @@ function getSubmissionStats(edition) {
                 SUM(CASE WHEN status = 'waitlist' THEN 1 ELSE 0 END) AS waitlist,
                 SUM(CASE WHEN status = 'withdrawn' THEN 1 ELSE 0 END) AS withdrawn,
                 SUM(CASE WHEN status = 'approved' AND payment_status = 'unpaid' THEN 1 ELSE 0 END) AS unpaid,
-                SUM(CASE WHEN status = 'approved' AND payment_status = 'verification' THEN 1 ELSE 0 END) AS paymentVerification,
                 SUM(CASE WHEN status = 'approved' AND payment_status = 'paid' THEN 1 ELSE 0 END) AS paid
             FROM submissions
             WHERE edition = ?
@@ -472,7 +461,6 @@ function getTopCarBrands(edition, limit = 8) {
 module.exports = {
     createSubmission,
     updateSubmissionPhotos,
-    setPaymentProof,
     ensurePassToken,
     findSubmissionByShortCode,
     findSubmissionByPassToken,

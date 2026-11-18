@@ -562,12 +562,12 @@ router.delete("/me", authenticate, authRateLimit, async (req, res) => {
     const submissions = submissionsDb.listSubmissionsByUser(user.id);
     const currentEdition = siteContentDb.getCurrentEdition();
 
-    // a paid (or being verified) place needs the organizer first - refund, reserve list
+    // a paid place needs the organizer first - refund, reserve list
     const paidPlace = submissions.find(
         (row) =>
             row.edition === currentEdition &&
             row.status === "approved" &&
-            ["paid", "verification"].includes(row.payment_status) &&
+            row.payment_status === "paid" &&
             !row.checked_in_at,
     );
     if (paidPlace) {
@@ -582,7 +582,7 @@ router.delete("/me", authenticate, authRateLimit, async (req, res) => {
         (row) =>
             row.edition === currentEdition &&
             (["pending", "approved", "waitlist"].includes(row.status) ||
-                ["paid", "verification"].includes(row.payment_status)),
+                row.payment_status === "paid"),
     );
     const snapshot = {
         email: user.email,

@@ -303,14 +303,6 @@ function DecisionTab({ submission, isBusy, actions, noteTemplates, zoneTemplates
     );
 }
 
-function proofName(url) {
-    try {
-        return decodeURIComponent(url.split("/").pop().split("?")[0]);
-    } catch {
-        return "potwierdzenie przelewu";
-    }
-}
-
 function PaymentTab({ submission, isBusy, actions }) {
     if (submission.status !== "approved") {
         return (
@@ -340,20 +332,6 @@ function PaymentTab({ submission, isBusy, actions }) {
             </div>
             {submission.paymentReminderSentAt && status !== "paid" && (
                 <p className="detail-muted">Przypomnienie wysłane {formatDate(submission.paymentReminderSentAt)}.</p>
-            )}
-            {submission.paymentProofUrl && (
-                <div className="detail-file">
-                    <span className="detail-file-icon">
-                        <i className="bi bi-file-earmark-pdf" aria-hidden="true" />
-                    </span>
-                    <span className="detail-file-name">
-                        <strong>{proofName(submission.paymentProofUrl)}</strong>
-                        <span>potwierdzenie od uczestnika</span>
-                    </span>
-                    <a className="link-action" href={submission.paymentProofUrl} target="_blank" rel="noopener noreferrer">
-                        Otwórz
-                    </a>
-                </div>
             )}
             <div className="detail-tiles">
                 <div>

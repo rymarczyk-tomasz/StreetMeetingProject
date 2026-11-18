@@ -187,7 +187,6 @@ const newSubmissionColumns = {
     consent_at: "TEXT",
     consent_version: "TEXT",
     photo_publish_consent: "INTEGER NOT NULL DEFAULT 0",
-    payment_proof: "TEXT",
     pass_token: "TEXT",
 
     pass_short_code: "TEXT",
@@ -198,7 +197,7 @@ const newSubmissionColumns = {
     payment_reminder_sent_at: "TEXT",
 
     showcase_hidden: "INTEGER NOT NULL DEFAULT 0",
-    // photos and payment proof removed by retention (src/retention.ts)
+    // photos removed by retention (src/retention.ts)
     files_purged_at: "TEXT",
 
     // "Poproś o poprawki": set by the admin, then answered by the participant
@@ -213,6 +212,9 @@ for (const [column, type] of Object.entries(newSubmissionColumns)) {
         db.exec(`ALTER TABLE submissions ADD COLUMN ${column} ${type}`);
     }
 }
+// participants no longer report payments ("verification" + payment_proof); only the
+// organizer confirms. The CHECK and an old payment_proof column stay, unused.
+db.exec("UPDATE submissions SET payment_status = 'unpaid' WHERE payment_status = 'verification'");
 if (!submissionColumns.has("approved_at")) {
     db.exec("UPDATE submissions SET approved_at = updated_at WHERE status = 'approved'");
 }

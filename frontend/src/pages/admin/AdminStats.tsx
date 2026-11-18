@@ -104,15 +104,6 @@ function buildTodos(stats, system) {
             open: ["zgloszenia", { status: "pending" }],
         });
     }
-    if (submissions.paymentVerification) {
-        todos.push({
-            count: submissions.paymentVerification,
-            title: words(submissions.paymentVerification, "opłata do weryfikacji", "opłaty do weryfikacji", "opłat do weryfikacji"),
-            text: "uczestnicy zgłosili opłatę lub dodali potwierdzenie przelewu",
-            action: "Sprawdź",
-            open: ["zgloszenia", { platnosc: "verification" }],
-        });
-    }
     if (submissions.overdue) {
         todos.push({
             count: submissions.overdue,
@@ -282,7 +273,7 @@ export default function AdminStats({ stats, error, system, onOpen }) {
                 <Tile
                     label="Opłacone"
                     value={submissions.paid}
-                    note={`${submissions.paymentVerification} do weryfikacji · ${submissions.unpaid} do opłaty`}
+                    note={`${submissions.unpaid} do opłaty`}
                 />
                 <Tile
                     label="Lista rezerwowa"

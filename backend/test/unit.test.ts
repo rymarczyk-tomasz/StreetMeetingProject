@@ -55,8 +55,7 @@ describe("payments: po terminie", () => {
         assert.equal(isPaymentOverdue({ status: "approved", payment_status: "unpaid" }, past), true);
     });
 
-    test("weryfikacja i opłacone nigdy nie są po terminie", () => {
-        assert.equal(isPaymentOverdue({ status: "approved", payment_status: "verification" }, past), false);
+    test("opłacone nigdy nie jest po terminie", () => {
         assert.equal(isPaymentOverdue({ status: "approved", payment_status: "paid" }, past), false);
     });
 

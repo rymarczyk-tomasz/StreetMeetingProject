@@ -54,7 +54,7 @@ router.use("/gallery", galleryRouter);
 const SUBMISSION_STATUSES = ["pending", "approved", "rejected", "waitlist"];
 const STATUS_FILTERS = [...SUBMISSION_STATUSES, "withdrawn"];
 // "overdue" is a filter only: approved, unpaid and past the payment deadline.
-const PAYMENT_STATUSES = ["unpaid", "verification", "paid"];
+const PAYMENT_STATUSES = ["unpaid", "paid"];
 const PAYMENT_FILTERS = [...PAYMENT_STATUSES, "overdue"];
 const MAX_BULK_IDS = 200;
 
@@ -96,11 +96,20 @@ const PAYMENT_SETTING_FIELDS = [
     ["paymentRecipient", "Odbiorca"],
     ["selectFeeAmount", "Kwota"],
     ["paymentTitleTemplate", "Tytuł przelewu"],
+    ...Object.entries(ZONES).flatMap(([zone, label]) => [
+        [`zonePayments.${zone}.amount`, `Kwota (${label})`],
+        [`zonePayments.${zone}.url`, `Link do płatności (${label})`],
+    ]),
 ];
+
+// "zonePayments.murawa.url" → settings.zonePayments.murawa.url
+function paymentFieldValue(settings, field) {
+    return String(field.split(".").reduce((value, key) => value?.[key], settings) ?? "");
+}
 
 function changedPaymentFields(previous, next) {
     return PAYMENT_SETTING_FIELDS.filter(
-        ([field]) => String(previous?.[field] ?? "") !== String(next?.[field] ?? ""),
+        ([field]) => paymentFieldValue(previous, field) !== paymentFieldValue(next, field),
     );
 }
 
@@ -208,7 +217,8 @@ router.patch("/content/:key", async (req, res) => {
             req,
             "zmieniono dane do przelewu",
             paymentChanges.map(
-                ([field, label]) => `${label}: „${previous[field] || "—"}” → „${saved[field] || "—"}”`,
+                ([field, label]) =>
+                    `${label}: „${paymentFieldValue(previous, field) || "—"}” → „${paymentFieldValue(saved, field) || "—"}”`,
             ),
         );
     }
@@ -265,7 +275,8 @@ router.post("/content/:key/revisions/:revisionId/restore", async (req, res) => {
             req,
             "zmieniono dane do przelewu (przywrócono starszą wersję)",
             paymentChanges.map(
-                ([field, label]) => `${label}: „${previous[field] || "—"}” → „${saved[field] || "—"}”`,
+                ([field, label]) =>
+                    `${label}: „${paymentFieldValue(previous, field) || "—"}” → „${paymentFieldValue(saved, field) || "—"}”`,
             ),
         );
     }
@@ -477,7 +488,6 @@ router.get("/stats", (req, res) => {
             withdrawn: submissions.withdrawn || 0,
             overdue,
             unpaid: submissions.unpaid || 0,
-            paymentVerification: submissions.paymentVerification || 0,
             paid: submissions.paid || 0,
         },
         capacity,

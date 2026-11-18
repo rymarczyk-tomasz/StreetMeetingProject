@@ -1,11 +1,20 @@
 const { EMAIL_REGEX, normalizeText, isSafeUrl } = require("../utils/validation");
 const { sanitizeRichText, isRichTextEmpty } = require("../utils/html");
+const { ZONES } = require("../zones");
 
 // Each validator turns untrusted admin input into the stored shape, or returns
 // { error } with a message for the panel. Unknown fields are always dropped.
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+function isHttpsUrl(value) {
+    try {
+        return new URL(value).protocol === "https:";
+    } catch {
+        return false;
+    }
+}
 
 function urlError(label) {
     return `${label}: podaj adres zaczynający się od https:// lub ścieżkę zaczynającą się od /.`;
@@ -351,7 +360,20 @@ function validateSettings(input) {
         paymentDaysAfterApproval: Number(input.paymentDaysAfterApproval || 0),
         showcaseEnabled: Boolean(input.showcaseEnabled),
         participantInfo: String(input.participantInfo || "").trim().slice(0, 3000),
+        zonePayments: Object.fromEntries(
+            Object.keys(ZONES).map((zone) => {
+                const entry = input.zonePayments?.[zone] || {};
+                return [zone, { amount: text(entry.amount, 100), url: text(entry.url, 1000) }];
+            }),
+        ),
     };
+
+    // the link goes into e-mails and the participant panel, so only a real https address
+    for (const [zone, entry] of Object.entries(content.zonePayments) as [string, any][]) {
+        if (entry.url && !isHttpsUrl(entry.url)) {
+            return { error: `Link do płatności (${ZONES[zone]}) musi być adresem zaczynającym się od https://.` };
+        }
+    }
 
     for (const [field, label] of [
         ["submissionsDeadline", "Termin zgłoszeń"],
@@ -418,7 +440,17 @@ function validateTemplates(input) {
         .slice(0, 3)
         .join("\n")
         .slice(0, 200);
-    return { content: { signature, items } };
+    // e-mails per place; blank = the built-in text in notifications/email.ts
+    const perZone = (value) =>
+        Object.fromEntries(Object.keys(ZONES).map((zone) => [zone, String(value?.[zone] || "").trim().slice(0, 5000)]));
+    return {
+        content: {
+            signature,
+            items,
+            acceptance: perZone(input.acceptance),
+            paymentConfirmed: perZone(input.paymentConfirmed),
+        },
+    };
 }
 
 const VALIDATORS = {

@@ -100,11 +100,6 @@ describe("submissionSteps", () => {
         }
     });
 
-    test("nextStep: weryfikacja ma pierwszeństwo przed terminem", () => {
-        const text = nextStep({ status: "approved", paymentStatus: "verification", paymentOverdue: true, payment: { complete: true } });
-        expect(text).toMatch(/sprawdza Twoją płatność/);
-    });
-
     test("prośba o poprawki: krok i podpowiedź", () => {
         const asked = { status: "pending", paymentStatus: "unpaid", changesRequestedAt: "2027-01-01 10:00:00" };
         expect(submissionSteps(asked)[1].label).toBe("Do poprawy");

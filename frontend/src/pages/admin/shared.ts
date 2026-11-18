@@ -10,7 +10,6 @@ export const STATUS_LABELS = {
 
 export const PAYMENT_STATUS_LABELS = {
     unpaid: "Do opłacenia",
-    verification: "Do weryfikacji",
     paid: "Opłacone",
 };
 

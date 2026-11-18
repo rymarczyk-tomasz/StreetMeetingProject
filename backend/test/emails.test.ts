@@ -132,31 +132,16 @@ describe("powiadomienia e-mail", () => {
         assert.equal(mailsTo(user.email).length, 0);
     });
 
-    test("potwierdzenie przelewu → organizator, potwierdzenie opłaty → uczestnik (raz)", async () => {
+    test("potwierdzenie opłaty przez organizatora → e-mail z wejściówką do uczestnika (raz)", async () => {
         const admin = createUser({ role: "admin" });
         const user = createUser();
         const row = createSubmission(user, { status: "approved" });
 
-        await api(user).post(`/api/submissions/${row.id}/payment-proof`).attach("proof", await pngBuffer(), "przelew.png");
-        assert.match(mailsTo(ADMIN_INBOX)[0].subject, /przelew|opłat|potwierdz/i);
-
         await api(admin).patch(`/api/admin/submissions/${row.id}/payment-status`).send({ paymentStatus: "paid" });
         await api(admin).patch(`/api/admin/submissions/${row.id}/payment-status`).send({ paymentStatus: "paid" });
         assert.equal(mailsTo(user.email).length, 1);
-    });
-
-    test("opłata zgłoszona bez potwierdzenia też trafia do organizatora (raz)", async () => {
-        const user = createUser();
-        const row = createSubmission(user, { status: "approved" });
-
-        await api(user).patch(`/api/submissions/${row.id}/payment-status`);
-        await api(user).patch(`/api/submissions/${row.id}/payment-status`);
-
-        const inbox = mailsTo(ADMIN_INBOX);
-        assert.equal(inbox.length, 1);
-        assert.match(inbox[0].subject, /zgłoszona opłata/);
-        assert.ok(inbox[0].text.includes("bez potwierdzenia przelewu"));
-        assert.ok(inbox[0].text.includes(`id=${row.id}&tab=oplata`));
+        assert.match(mailsTo(user.email)[0].subject, /opłata potwierdzona/);
+        assert.equal(mailsTo(ADMIN_INBOX).length, 0);
     });
 
     test("podpis wiadomości można zmienić i dotyczy wszystkich maili", async () => {

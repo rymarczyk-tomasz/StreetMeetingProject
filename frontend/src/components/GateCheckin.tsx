@@ -16,7 +16,6 @@ import {
 
 const PAYMENT_LABELS = {
     unpaid: "Nieopłacone",
-    verification: "Opłata w weryfikacji",
     paid: "Opłacone",
 };
 

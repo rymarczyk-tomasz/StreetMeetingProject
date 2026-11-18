@@ -85,24 +85,20 @@ describe("wylogowanie ze wszystkich urządzeń", () => {
 });
 
 describe("admin bez logowania dwuetapowego", () => {
-    test("nie obejrzy cudzych zdjęć ani potwierdzeń przelewu", async () => {
+    test("nie obejrzy cudzych zdjęć", async () => {
         const owner = createUser();
         createSubmission(owner);
         const dir = getUserSubmissionsDir(owner.id);
         fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(path.join(dir, "auto.jpg"), Buffer.from([0xff, 0xd8, 0xff, 0xe0]));
-        fs.writeFileSync(path.join(dir, "proof-1.pdf"), "%PDF-1.4");
 
         const photo = `/api/submissions/photos/${owner.id}/auto.jpg`;
-        const proof = `/api/submissions/proofs/${owner.id}/proof-1.pdf`;
 
         const halfAdmin = createUser({ role: "admin", twoFactor: false });
         assert.equal((await api(halfAdmin).get(photo)).status, 404);
-        assert.equal((await api(halfAdmin).get(proof)).status, 404);
 
         const admin = createUser({ role: "admin" });
         assert.equal((await api(admin).get(photo)).status, 200);
-        assert.equal((await api(admin).get(proof)).status, 200);
         assert.equal((await api(owner).get(photo)).status, 200);
         assert.equal((await api(createUser()).get(photo)).status, 404);
     });

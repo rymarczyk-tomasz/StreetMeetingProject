@@ -64,9 +64,6 @@ export function nextStep(submission) {
     if (status === "rejected") {
         return "Zgłoszenie nie zostało zakwalifikowane. Sprawdź komentarz organizatora poniżej.";
     }
-    if (paymentStatus === "verification") {
-        return "Organizator sprawdza Twoją płatność — damy znać po jej potwierdzeniu.";
-    }
     if (paymentStatus === "paid") {
         return "Wszystko gotowe! Pokaż wejściówkę z kodem QR przy wjeździe.";
     }
@@ -74,9 +71,9 @@ export function nextStep(submission) {
         return "Gratulacje, auto jest zakwalifikowane! Dane do opłaty wyślemy wkrótce.";
     }
     if (paymentOverdue) {
-        return "Termin opłaty minął. Opłać składkę jak najszybciej i zgłoś ją poniżej — inaczej miejsce może przejść na osobę z listy rezerwowej.";
+        return "Termin opłaty minął. Opłać składkę jak najszybciej — inaczej miejsce może przejść na osobę z listy rezerwowej. Organizator potwierdzi wpłatę po jej zaksięgowaniu.";
     }
     const amount = payment?.amount ? ` ${payment.amount}` : "";
     const deadline = payment?.deadline ? ` do ${formatDate(payment.deadline)}` : "";
-    return `Gratulacje, auto jest zakwalifikowane! Opłać składkę${amount}${deadline} i zgłoś opłatę poniżej.`;
+    return `Gratulacje, auto jest zakwalifikowane! Opłać składkę${amount}${deadline}. Organizator potwierdzi wpłatę po jej zaksięgowaniu i wyśle e-mail z wejściówką — nic więcej nie musisz klikać.`;
 }

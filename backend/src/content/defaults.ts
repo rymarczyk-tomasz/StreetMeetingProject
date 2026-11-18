@@ -174,10 +174,29 @@ const DEFAULTS = {
         paymentDaysAfterApproval: 0,
         showcaseEnabled: false,
         participantInfo: "",
+        // own amount and online payment link per place; empty amount = selectFeeAmount
+        zonePayments: {
+            murawa: { amount: "", url: "" },
+            tunel: { amount: "", url: "" },
+            korona: { amount: "", url: "" },
+        },
     },
     templates: {
         // closing line of every e-mail the site sends
         signature: "Street Show Crew",
+        // acceptance e-mail per place (notifications/email.ts#renderAcceptanceTemplate);
+        // a line whose variable is empty is left out, "- " makes a list, **text** is bold
+        // sent when the organizer confirms the payment (same rules as acceptance)
+        paymentConfirmed: {
+            murawa: "Dzień dobry,\n\npotwierdzamy otrzymanie płatności za miejsce w strefie Select Street Show {rok} dla auta {marka} ({rejestracja}). Dziękujemy!\n\nMiejsce Państwa auta: **{miejsce}**\nWydarzenie: **{obiekt}**, {adres}\n{data}\n\nWejściówka z kodem QR czeka w panelu uczestnika: {panel}\nProsimy pokazać ją przy wjeździe – na telefonie albo wydrukowaną. W panelu można ją też pobrać jako PDF lub PNG.\n\nSzczegóły dotyczące dojazdu oraz godzin wjazdu przekażemy w osobnym e-mailu organizacyjnym.\n\nW przypadku pytań lub wątpliwości pozostajemy do Państwa dyspozycji.",
+            tunel: "Dzień dobry,\n\npotwierdzamy otrzymanie płatności za miejsce w strefie Select Street Show {rok} dla auta {marka} ({rejestracja}). Dziękujemy!\n\nMiejsce Państwa auta: **{miejsce}**\nWydarzenie: **{obiekt}**, {adres}\n{data}\n\nWejściówka z kodem QR czeka w panelu uczestnika: {panel}\nProsimy pokazać ją przy wjeździe – na telefonie albo wydrukowaną. W panelu można ją też pobrać jako PDF lub PNG.\n\nSzczegóły dotyczące dojazdu oraz godzin wjazdu przekażemy w osobnym e-mailu organizacyjnym.\n\nW przypadku pytań lub wątpliwości pozostajemy do Państwa dyspozycji.",
+            korona: "Dzień dobry,\n\npotwierdzamy otrzymanie płatności za miejsce w strefie Select Street Show {rok} dla auta {marka} ({rejestracja}). Dziękujemy!\n\nMiejsce Państwa auta: **{miejsce}**\nWydarzenie: **{obiekt}**, {adres}\n{data}\n\nWejściówka z kodem QR czeka w panelu uczestnika: {panel}\nProsimy pokazać ją przy wjeździe – na telefonie albo wydrukowaną. W panelu można ją też pobrać jako PDF lub PNG.\n\nSzczegóły dotyczące dojazdu oraz godzin wjazdu przekażemy w osobnym e-mailu organizacyjnym.\n\nW przypadku pytań lub wątpliwości pozostajemy do Państwa dyspozycji.",
+        },
+        acceptance: {
+            murawa: "Dzień dobry,\n\nmiło nam poinformować, że Państwa zgłoszenie na strefę Select Street Show {rok} ({marka}, {rejestracja}) zostało pozytywnie rozpatrzone.\n**Gratulujemy!**\n\nWydarzenie odbędzie się na:\n**{obiekt}**\n{adres}\n{data}\n\nMiejsce Państwa auta: **{miejsce}**\n\nSzczegóły dotyczące instrukcji dojazdu oraz godzin rozpoczęcia wydarzenia przekażemy w kolejnym e-mailu organizacyjnym.\n\nProsimy o uregulowanie płatności za miejsce w strefie Select do {termin}.\nLink do płatności: {link_platnosci}\nNumer konta: {numer_konta}\nTytuł przelewu: {tytul_przelewu}\n\n**Kwota: {kwota}**\n**Cena obejmuje:**\n- wjazd do wnętrza stadionu na otok murawy,\n- wjazd z jedną osobą towarzyszącą,\n- atrakcyjny pakiet powitalny.\n\nPo zaksięgowaniu wpłaty potwierdzimy ją i wyślemy e-mail z wejściówką oraz dalszymi informacjami.\n\nW przypadku pytań lub wątpliwości pozostajemy do Państwa dyspozycji.",
+            tunel: "Dzień dobry,\n\nmiło nam poinformować, że Państwa zgłoszenie na strefę Select Street Show {rok} ({marka}, {rejestracja}) zostało pozytywnie rozpatrzone.\n**Gratulujemy!**\n\nWydarzenie odbędzie się na:\n**{obiekt}**\n{adres}\n{data}\n\nMiejsce Państwa auta: **{miejsce}**\n\nSzczegóły dotyczące instrukcji dojazdu oraz godzin rozpoczęcia wydarzenia przekażemy w kolejnym e-mailu organizacyjnym.\n\nProsimy o uregulowanie płatności za miejsce w strefie Select do {termin}.\nLink do płatności: {link_platnosci}\nNumer konta: {numer_konta}\nTytuł przelewu: {tytul_przelewu}\n\n**Kwota: {kwota}**\n**Cena obejmuje:**\n- wjazd do wnętrza stadionu – miejsce w tunelu,\n- wjazd z jedną osobą towarzyszącą,\n- atrakcyjny pakiet powitalny.\n\nPo zaksięgowaniu wpłaty potwierdzimy ją i wyślemy e-mail z wejściówką oraz dalszymi informacjami.\n\nW przypadku pytań lub wątpliwości pozostajemy do Państwa dyspozycji.",
+            korona: "Dzień dobry,\n\nmiło nam poinformować, że Państwa zgłoszenie na strefę Select Street Show {rok} ({marka}, {rejestracja}) zostało pozytywnie rozpatrzone.\n**Gratulujemy!**\n\nWydarzenie odbędzie się na:\n**{obiekt}**\n{adres}\n{data}\n\nMiejsce Państwa auta: **{miejsce}**\n\nSzczegóły dotyczące instrukcji dojazdu oraz godzin rozpoczęcia wydarzenia przekażemy w kolejnym e-mailu organizacyjnym.\n\nProsimy o uregulowanie płatności za miejsce w strefie Select do {termin}.\nLink do płatności: {link_platnosci}\nNumer konta: {numer_konta}\nTytuł przelewu: {tytul_przelewu}\n\n**Kwota: {kwota}**\n**Cena obejmuje:**\n- wjazd na teren stadionu – miejsce na koronie,\n- wjazd z jedną osobą towarzyszącą,\n- atrakcyjny pakiet powitalny.\n\nPo zaksięgowaniu wpłaty potwierdzimy ją i wyślemy e-mail z wejściówką oraz dalszymi informacjami.\n\nW przypadku pytań lub wątpliwości pozostajemy do Państwa dyspozycji.",
+        },
         items: [
             {
                 id: "note-photos",

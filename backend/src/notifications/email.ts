@@ -58,6 +58,133 @@ function escapeHtml(value) {
         .replace(/'/g, "&#039;");
 }
 
+const URL_PATTERN = /https?:\/\/[^\s<]+?(?=[.,;:)]*(?:\s|<|$))/g;
+
+// links typed by the admin (template, payment link, panel); anything else stays plain
+// text, so a participant can't plant a clickable link in an e-mail from Street Show
+function linksIn(...texts) {
+    return new Set(texts.flatMap((text) => String(text || "").match(URL_PATTERN) || []));
+}
+
+// one line: escaped, **bold**, allowed https links clickable
+function inlineHtml(line, links = new Set()) {
+    return escapeHtml(line)
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(URL_PATTERN, (url) => {
+            const raw = url.replace(/&amp;/g, "&");
+            return links.has(raw) ? `<a href="${url}">${url}</a>` : url;
+        });
+}
+
+// paragraphs split by blank lines, "- " lines become a list
+function textToHtml(text, links) {
+    return String(text)
+        .split(/\n{2,}/)
+        .map((block) => {
+            const out = [];
+            let paragraph = [];
+            let list = [];
+            const flushParagraph = () => {
+                if (paragraph.length) out.push(`<p>${paragraph.map((line) => inlineHtml(line, links)).join("<br>")}</p>`);
+                paragraph = [];
+            };
+            const flushList = () => {
+                if (list.length) out.push(`<ul>${list.map((item) => `<li>${inlineHtml(item, links)}</li>`).join("")}</ul>`);
+                list = [];
+            };
+            for (const line of block.split("\n")) {
+                if (/^\s*[-•]\s+/.test(line)) {
+                    flushParagraph();
+                    list.push(line.replace(/^\s*[-•]\s+/, ""));
+                } else {
+                    flushList();
+                    paragraph.push(line);
+                }
+            }
+            flushParagraph();
+            flushList();
+            return out.join("");
+        })
+        .join("");
+}
+
+// {variable} -> value; a line where a known variable came out empty is left out,
+// so "Link do płatności: {link_platnosci}" disappears when there is no link
+function fillTemplate(template, values) {
+    return String(template)
+        .split(/\r?\n/)
+        .map((line) => {
+            let empty = false;
+            const filled = line.replace(/\{([a-z_]+)\}/g, (match, key) => {
+                if (!Object.prototype.hasOwnProperty.call(values, key)) return match;
+                const value = String(values[key] ?? "").trim();
+                if (!value) empty = true;
+                return value;
+            });
+            return empty ? null : filled;
+        })
+        .filter((line) => line !== null)
+        .join("\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+}
+
+function formatEventDate(edition) {
+    if (!edition?.date) return String(edition?.dateText || "").trim();
+    const value = new Date(`${edition.date}T12:00:00`);
+    const weekday = new Intl.DateTimeFormat("pl-PL", { weekday: "long" }).format(value);
+    return `${weekday}, ${formatDeadline(edition.date)} r.`;
+}
+
+// Admin → Ustawienia → Szablony wiadomości: e-mail akceptacji ("acceptance") and e-mail
+// po potwierdzeniu opłaty ("paymentConfirmed"), one text per place
+function zoneTemplateFor(kind, zone) {
+    const templates = siteContentDb.getContent("templates")?.[kind] || {};
+    return zone ? String(templates[zone] || "").trim() : "";
+}
+
+function templatedMail({ to, subject, template, values, extraText = "", extraHtml = "" }) {
+    const body = fillTemplate(template, values);
+    const links = linksIn(template, values.link_platnosci, values.panel);
+    return sendMail({
+        to,
+        subject,
+        text: [body.replace(/\*\*(.+?)\*\*/g, "$1"), extraText, "", signatureText()].join("\n"),
+        html: `
+            ${textToHtml(body, links)}
+            ${extraHtml}
+            <p>${signatureHtml()}</p>
+        `,
+    });
+}
+
+// participant-typed text must not turn into bold or a list in the e-mail
+function plainValue(value) {
+    return String(value || "").replace(/\*/g, "").replace(/^\s*[-•]\s+/, "");
+}
+
+function acceptanceValues(submission, user) {
+    const payment = getPaymentDetails(submission);
+    const edition = siteContentDb.getContent("edition") || {};
+    return {
+        imie: plainValue(user?.first_name || submission.first_name),
+        marka: plainValue(submission.car_brand),
+        rejestracja: plainValue(submission.license_plate),
+        rok: String(submission.edition ?? ""),
+        miejsce: zoneLabel(submission.zone),
+        kwota: payment.amount,
+        termin: payment.deadline ? `${formatDeadline(payment.deadline)} r.` : "terminu podanego w panelu",
+        link_platnosci: payment.url,
+        numer_konta: payment.account,
+        odbiorca: payment.recipient,
+        tytul_przelewu: plainValue(payment.title),
+        obiekt: edition.venueName || "",
+        adres: edition.venueAddress || "",
+        data: formatEventDate(edition),
+        panel: `${getAppUrl()}/panel`,
+    };
+}
+
 function getReplyTo() {
     return String(process.env.SMTP_REPLY_TO || "").trim();
 }
@@ -109,11 +236,14 @@ function paymentLines(submission) {
         `Prosimy o opłacenie składki w wysokości ${payment.amount || "wskazanej przez organizatora"}${payment.deadline ? ` do ${formatDeadline(payment.deadline)}` : ""}.`,
     ];
     if (payment.complete) {
-        if (payment.recipient) lines.push(`Odbiorca: ${payment.recipient}`);
-        lines.push(`Numer konta: ${payment.account}`);
-        lines.push(`Tytuł przelewu: ${payment.title}`);
+        if (payment.account) {
+            if (payment.recipient) lines.push(`Odbiorca: ${payment.recipient}`);
+            lines.push(`Numer konta: ${payment.account}`);
+            lines.push(`Tytuł przelewu: ${payment.title}`);
+        }
     }
-    lines.push("Po wykonaniu przelewu zgłoś opłatę w panelu (możesz dołączyć potwierdzenie).");
+    if (payment.url) lines.push(`Zapłać online: ${payment.url}`);
+    lines.push("Po zaksięgowaniu wpłaty organizator potwierdzi opłatę — dostaniesz e-mail z wejściówką. Nic więcej nie musisz klikać.");
     return lines;
 }
 
@@ -138,6 +268,17 @@ async function sendSubmissionStatusEmail({
     const noteHtml = note
         ? `<p><strong>Wiadomość od organizatora:</strong><br>${escapeHtml(note).replace(/\n/g, "<br>")}</p>`
         : "";
+
+    if (status === "approved" && zoneTemplateFor("acceptance", submission.zone)) {
+        return templatedMail({
+            to: user.email,
+            subject: "Street Show: Akceptacja na Strefę Select",
+            template: zoneTemplateFor("acceptance", submission.zone),
+            values: acceptanceValues(submission, user),
+            extraText: noteText,
+            extraHtml: noteHtml,
+        });
+    }
 
     if (status === "approved") {
         const payment = paymentLines(submission);
@@ -171,7 +312,7 @@ async function sendSubmissionStatusEmail({
                 <p>Cześć ${escapeHtml(firstName)},</p>
                 <p>${escapeHtml(intro)}</p>
                 ${zone ? `<p>Miejsce na wydarzeniu: <strong>${escapeHtml(zone)}</strong></p>` : `<p>${escapeHtml(zoneText)}</p>`}
-                <p>${payment.map((line) => escapeHtml(line)).join("<br>")}</p>
+                <p>${payment.map((line) => inlineHtml(line, linksIn(getPaymentDetails(submission).url))).join("<br>")}</p>
                 ${noteHtml}
                 <p>Szczegóły znajdziesz w <a href="${escapeHtml(panelUrl)}">swoim panelu</a>.</p>
                 <p>Pozdrawiamy<br>${signatureHtml()}</p>
@@ -240,6 +381,10 @@ async function sendZoneChangedEmail({ submission, user, previousZone, adminNote 
     const intro = previous
         ? `Zmieniliśmy miejsce Twojego auta ${car} na wydarzeniu.`
         : `Przydzieliliśmy miejsce Twojemu autu ${car} na wydarzeniu.`;
+    // amount and payment link can differ per place, so an unpaid car gets the current ones
+    const unpaid = (submission.payment_status || "unpaid") === "unpaid";
+    const payment = unpaid ? paymentLines(submission) : [];
+    const paymentLinks = linksIn(getPaymentDetails(submission).url);
 
     return sendMail({
         to: user.email,
@@ -252,6 +397,7 @@ async function sendZoneChangedEmail({ submission, user, previousZone, adminNote 
             intro,
             ...(previous ? [`Poprzednie miejsce: ${previous}.`] : []),
             `${previous ? "Nowe miejsce" : "Miejsce"}: ${zone}.`,
+            ...(payment.length ? ["", ...payment] : []),
             ...(note ? ["", "Wiadomość od organizatora:", note] : []),
             "",
             `Szczegóły znajdziesz w swoim panelu: ${panelUrl}`,
@@ -263,6 +409,7 @@ async function sendZoneChangedEmail({ submission, user, previousZone, adminNote 
             <p>Cześć ${escapeHtml(firstName)},</p>
             <p>${escapeHtml(intro)}</p>
             <p>${previous ? `Poprzednie miejsce: ${escapeHtml(previous)}<br>` : ""}${previous ? "Nowe miejsce" : "Miejsce"}: <strong>${escapeHtml(zone)}</strong></p>
+            ${payment.length ? `<p>${payment.map((line) => inlineHtml(line, paymentLinks)).join("<br>")}</p>` : ""}
             ${note ? `<p><strong>Wiadomość od organizatora:</strong><br>${escapeHtml(note).replace(/\n/g, "<br>")}</p>` : ""}
             <p>Szczegóły znajdziesz w <a href="${escapeHtml(panelUrl)}">swoim panelu</a>.</p>
             <p>Pozdrawiamy<br>${signatureHtml()}</p>
@@ -317,13 +464,14 @@ async function sendPaymentReminderEmail({ submission, email, firstName }) {
     const details = payment.complete
         ? [
               `Kwota: ${payment.amount}`,
-              payment.recipient ? `Odbiorca: ${payment.recipient}` : "",
-              `Numer konta: ${payment.account}`,
-              `Tytuł przelewu: ${payment.title}`,
+              payment.url ? `Zapłać online: ${payment.url}` : "",
+              payment.account && payment.recipient ? `Odbiorca: ${payment.recipient}` : "",
+              payment.account ? `Numer konta: ${payment.account}` : "",
+              payment.account ? `Tytuł przelewu: ${payment.title}` : "",
           ].filter(Boolean)
         : [];
     const closing =
-        "Jeśli opłata jest już wykonana, zgłoś ją w panelu (najlepiej z potwierdzeniem przelewu). Jeśli nie możesz przyjechać, napisz do nas w wiadomościach w panelu — miejsce dostanie ktoś z listy rezerwowej.";
+        "Jeśli opłata jest już wykonana, nic nie musisz robić — organizator potwierdzi ją po zaksięgowaniu i wyśle e-mail z wejściówką. Jeśli nie możesz przyjechać, napisz do nas w wiadomościach w panelu — miejsce dostanie ktoś z listy rezerwowej.";
 
     return sendMail({
         to: email,
@@ -343,7 +491,7 @@ async function sendPaymentReminderEmail({ submission, email, firstName }) {
         html: `
             <p>Cześć ${escapeHtml(name)},</p>
             ${lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}
-            ${details.length ? `<p>${details.map((line) => escapeHtml(line)).join("<br>")}</p>` : ""}
+            ${details.length ? `<p>${details.map((line) => inlineHtml(line, linksIn(payment.url))).join("<br>")}</p>` : ""}
             <p>${escapeHtml(closing)}</p>
             <p><a href="${escapeHtml(panelUrl)}">Przejdź do panelu</a></p>
             <p>${signatureHtml()}</p>
@@ -356,6 +504,15 @@ async function sendPaymentReminderEmail({ submission, email, firstName }) {
 async function sendPaymentConfirmedEmail({ submission, user }) {
     const email = user?.email;
     if (!email) return { sent: false, reason: "not_applicable" };
+    const template = zoneTemplateFor("paymentConfirmed", submission.zone);
+    if (template) {
+        return templatedMail({
+            to: email,
+            subject: "Street Show: opłata potwierdzona — Twoja wejściówka",
+            template,
+            values: acceptanceValues(submission, user),
+        });
+    }
     const panelUrl = `${getAppUrl()}/panel`;
     const name = user.first_name || submission.first_name || "Uczestniku";
     const summary = `${submission.car_brand} (${submission.license_plate})`;
@@ -540,7 +697,7 @@ const STATUS_NAMES = {
     rejected: "odrzucone",
     withdrawn: "rezygnacja",
 };
-const PAYMENT_NAMES = { unpaid: "nieopłacone", verification: "do weryfikacji", paid: "opłacone" };
+const PAYMENT_NAMES = { unpaid: "nieopłacone", paid: "opłacone" };
 
 // to every admin: payment details changed, a new admin, two-step login reset…
 async function sendSecurityAlertEmail({ recipients, title, lines, actor = "", ip = "" }) {
@@ -648,41 +805,6 @@ async function sendChangesSubmittedAdminEmail({ submission, userEmail }) {
             <p><strong>${escapeHtml(summary)}</strong><br>
             ${escapeHtml(name)} (${escapeHtml(userEmail)})</p>
             <p><a href="${escapeHtml(adminUrl)}">Zobacz zgłoszenie w panelu administratora</a></p>
-        `,
-    });
-}
-
-// withProof = false: the participant clicked "Zgłoś opłatę bez potwierdzenia"
-async function sendPaymentProofAdminEmail({ submission, userEmail, withProof = true }) {
-    const recipients = adminNotifyRecipients();
-    if (!recipients) return { sent: false, reason: "not_configured" };
-
-    const intro = withProof
-        ? "Uczestnik dodał potwierdzenie przelewu za strefę Select:"
-        : "Uczestnik zgłosił opłatę za strefę Select (bez potwierdzenia przelewu):";
-
-    const adminUrl = `${getAppUrl()}/admin/zgloszenia?id=${encodeURIComponent(submission.id)}&tab=oplata`;
-    const name = `${submission.first_name} ${submission.last_name}`;
-    const summary = `${submission.car_brand} — ${submission.license_plate}`;
-
-    return sendMail({
-        to: recipients,
-        subject: withProof
-            ? `Street Show: nowe potwierdzenie przelewu (${submission.car_brand}, ${name})`
-            : `Street Show: zgłoszona opłata do sprawdzenia (${submission.car_brand}, ${name})`,
-        text: [
-            intro,
-            "",
-            `Pojazd: ${summary}`,
-            `Zgłaszający: ${name} (${userEmail})`,
-            "",
-            `Sprawdź opłatę w panelu: ${adminUrl}`,
-        ].join("\n"),
-        html: `
-            <p>${escapeHtml(intro)}</p>
-            <p><strong>${escapeHtml(summary)}</strong><br>
-            ${escapeHtml(name)} (${escapeHtml(userEmail)})</p>
-            <p><a href="${escapeHtml(adminUrl)}">Sprawdź opłatę w panelu administratora</a></p>
         `,
     });
 }
@@ -862,7 +984,6 @@ module.exports = {
     sendAccountDeletedAdminEmail,
     sendSecurityAlertEmail,
     sendNewSubmissionAdminEmail,
-    sendPaymentProofAdminEmail,
     sendChangesSubmittedAdminEmail,
     sendPaymentReminderEmail,
     sendPaymentConfirmedEmail,

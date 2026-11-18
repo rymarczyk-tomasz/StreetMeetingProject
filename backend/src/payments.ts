@@ -6,8 +6,18 @@ function formatAccount(account) {
     return `${digits.slice(0, 2)} ${digits.slice(2).replace(/(\d{4})(?=\d)/g, "$1 ")}`;
 }
 
-function getFeeAmount(settings = siteContentDb.getSettings()) {
-    return String(settings.selectFeeAmount || process.env.SELECT_FEE_AMOUNT || "").trim();
+// a zone may have its own amount and online payment link (Ustawienia → Opłaty);
+// an empty zone amount falls back to the common one
+function zonePayment(settings, zone) {
+    const entry = (zone && settings.zonePayments?.[zone]) || {};
+    return { amount: String(entry.amount || "").trim(), url: String(entry.url || "").trim() };
+}
+
+function getFeeAmount(settings = siteContentDb.getSettings(), zone = "") {
+    return (
+        zonePayment(settings, zone).amount ||
+        String(settings.selectFeeAmount || process.env.SELECT_FEE_AMOUNT || "").trim()
+    );
 }
 
 // deadlines flip at polish midnight, not utc
@@ -45,7 +55,10 @@ function isPaymentOverdue(submission, settings = siteContentDb.getSettings()) {
 }
 
 function hasPaymentDetails(settings = siteContentDb.getSettings()) {
-    return Boolean(getFeeAmount(settings) && String(settings.paymentAccount || "").trim());
+    const zones = Object.values(settings.zonePayments || {}) as any[];
+    const amount = getFeeAmount(settings) || zones.some((entry) => String(entry?.amount || "").trim());
+    const channel = String(settings.paymentAccount || "").trim() || zones.some((entry) => String(entry?.url || "").trim());
+    return Boolean(amount && channel);
 }
 
 function getPaymentDetails(submission, settings = siteContentDb.getSettings()) {
@@ -53,13 +66,18 @@ function getPaymentDetails(submission, settings = siteContentDb.getSettings()) {
         .replace(/\{rok\}/g, String(submission.edition ?? ""))
         .replace(/\{rejestracja\}/g, submission.license_plate || "");
 
+    const amount = getFeeAmount(settings, submission.zone);
+    const account = formatAccount(settings.paymentAccount);
+    const url = zonePayment(settings, submission.zone).url;
     return {
-        amount: getFeeAmount(settings),
+        amount,
         recipient: String(settings.paymentRecipient || "").trim(),
-        account: formatAccount(settings.paymentAccount),
+        account,
         title: title.trim(),
+        // online payment (e.g. Przelewy24) for the car's place, shown next to the transfer data
+        url,
         deadline: getPaymentDueDate(submission, settings),
-        complete: hasPaymentDetails(settings),
+        complete: Boolean(amount && (account || url)),
     };
 }
 

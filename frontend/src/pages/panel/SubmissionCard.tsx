@@ -19,8 +19,7 @@ const STATUS_LABELS = {
 };
 
 const PAYMENT_STATUS_LABELS = {
-    unpaid: "Do opłacenia",
-    verification: "Opłata w weryfikacji",
+    unpaid: "Czeka na potwierdzenie",
     paid: "Opłacone",
 };
 
@@ -75,35 +74,11 @@ function Timeline({ submission }) {
     );
 }
 
-function PaymentBox({ submission, onChanged, notify }) {
-    const [isUploading, setIsUploading] = useState(false);
+// The participant only pays (link or transfer); the organizer sees the money in
+// Przelewy24 / on the account and confirms it in the admin panel, which sends the pass.
+function PaymentBox({ submission }) {
     const { payment, paymentStatus } = submission;
-
-    async function sendProof(file) {
-        if (!file) return;
-        setIsUploading(true);
-        try {
-            const formData = new FormData();
-            formData.append("proof", file);
-            const { data } = await api.post(`/submissions/${submission.id}/payment-proof`, formData);
-            notify({ message: data.message });
-            await onChanged();
-        } catch (err) {
-            notify({ error: errorText(err, "Nie udało się przesłać potwierdzenia.") });
-        } finally {
-            setIsUploading(false);
-        }
-    }
-
-    async function reportWithoutProof() {
-        try {
-            await api.patch(`/submissions/${submission.id}/payment-status`);
-            notify({ message: "Zgłoszono opłatę — organizator ją sprawdzi." });
-            await onChanged();
-        } catch (err) {
-            notify({ error: errorText(err, "Nie udało się zgłosić opłaty.") });
-        }
-    }
+    const waiting = paymentStatus !== "paid";
 
     return (
         <div className="payment-box">
@@ -113,67 +88,48 @@ function PaymentBox({ submission, onChanged, notify }) {
                     {PAYMENT_STATUS_LABELS[paymentStatus]}
                 </span>
             </h3>
-            {paymentStatus === "unpaid" && payment?.deadline && (
+            {waiting && payment?.deadline && (
                 <p className={submission.paymentOverdue ? "payment-alert" : "payment-deadline"}>
                     {submission.paymentOverdue ? "Termin opłaty minął " : "Termin opłaty: "}
                     <strong>{formatDay(payment.deadline)}</strong>
                 </p>
             )}
-            {paymentStatus !== "paid" &&
+            {waiting &&
                 (payment?.complete ? (
-                    <dl className="payment-details">
-                        <CopyField label="Kwota" value={payment.amount} />
-                        <CopyField label="Odbiorca" value={payment.recipient} />
-                        <CopyField label="Numer konta" value={payment.account} />
-                        <CopyField label="Tytuł" value={payment.title} />
-                    </dl>
+                    <>
+                        {payment.url && (
+                            <a
+                                className="btn-street btn-street-primary payment-online"
+                                href={payment.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                <i className="bi bi-credit-card" aria-hidden="true" />
+                                Zapłać online ({payment.amount})
+                            </a>
+                        )}
+                        <dl className="payment-details">
+                            <CopyField label="Kwota" value={payment.amount} />
+                            {payment.account && (
+                                <>
+                                    <CopyField label="Odbiorca" value={payment.recipient} />
+                                    <CopyField label="Numer konta" value={payment.account} />
+                                    <CopyField label="Tytuł" value={payment.title} />
+                                </>
+                            )}
+                        </dl>
+                        <p className="payment-pending" role="status">
+                            <i className="bi bi-hourglass-split" aria-hidden="true" />
+                            Opłata czeka na potwierdzenie przez organizatora. Po zaksięgowaniu wpłaty dostaniesz
+                            e-mail z wejściówką — nic więcej nie musisz klikać.
+                        </p>
+                    </>
                 ) : (
                     <p className="payment-pending">
                         <i className="bi bi-hourglass-split" aria-hidden="true" />
-                        Dane do przelewu poda organizator – dostaniesz e-mail.
+                        Dane do opłaty poda organizator – dostaniesz e-mail.
                     </p>
                 ))}
-            {paymentStatus === "verification" && (
-                <p className="form-success" role="status">
-                    <i className="bi bi-check-circle-fill" aria-hidden="true" />{" "}
-                    {submission.paymentProofUrl ? "Potwierdzenie przelewu wysłane." : "Opłata zgłoszona."} Organizator
-                    sprawdzi płatność — damy znać e-mailem.
-                </p>
-            )}
-            {submission.paymentProofUrl && (
-                <p className="payment-proof-link">
-                    <i className="bi bi-file-earmark-check" aria-hidden="true" />{" "}
-                    <a href={submission.paymentProofUrl} target="_blank" rel="noopener noreferrer">
-                        Twoje potwierdzenie przelewu
-                    </a>
-                </p>
-            )}
-            {/* Nothing to report before the participant knows how much and where to pay. */}
-            {paymentStatus !== "paid" && (payment?.complete || submission.paymentProofUrl) && (
-                <div className="payment-actions">
-                    <label className={`btn-street btn-street-dark file-button${isUploading ? " is-busy" : ""}`}>
-                        <i className="bi bi-upload" aria-hidden="true" />
-                        {isUploading
-                            ? "Przesyłanie..."
-                            : submission.paymentProofUrl
-                              ? "Podmień potwierdzenie przelewu"
-                              : "Dodaj potwierdzenie przelewu"}
-                        <input
-                            type="file"
-                            className="visually-hidden"
-                            accept="image/jpeg,image/png,image/webp,application/pdf"
-                            disabled={isUploading}
-                            onChange={(event) => sendProof(event.target.files?.[0])}
-                        />
-                    </label>
-                    {paymentStatus === "unpaid" && (
-                        <button type="button" className="text-action" onClick={reportWithoutProof}>
-                            Zgłoś opłatę bez potwierdzenia
-                        </button>
-                    )}
-                    <p className="payment-hint">Zrzut ekranu lub PDF z banku (JPG, PNG, WEBP, PDF).</p>
-                </div>
-            )}
         </div>
     );
 }
@@ -384,7 +340,7 @@ export default function SubmissionCard({
                 )}
 
                 {!archived && s.status === "approved" && (
-                    <PaymentBox submission={s} onChanged={onChanged} notify={say} />
+                    <PaymentBox submission={s} />
                 )}
 
                 {s.hasPass && !archived && (

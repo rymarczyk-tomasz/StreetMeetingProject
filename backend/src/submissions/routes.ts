@@ -1,13 +1,11 @@
 const crypto = require("crypto");
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
 
 const submissionsDb = require("../db/submissions");
 const usersDb = require("../db/users");
 const siteContentDb = require("../db/siteContent");
 const vehiclesDb = require("../db/vehicles");
-const { authenticate, isFullAdmin } = require("../auth/middleware");
+const { authenticate } = require("../auth/middleware");
 const { isTestMode } = require("../testMode");
 const { createRateLimiter } = require("../utils/rateLimiter");
 const {
@@ -21,9 +19,6 @@ const {
     processUploadedImages,
     asyncHandler,
     removeFiles,
-    createProofUpload,
-    verifyUploadedProof,
-    isAllowedProofFilename,
     uploadErrorHandler,
 } = require("../utils/imageUpload");
 const {
@@ -34,7 +29,6 @@ const {
     toPhotoUrl,
     storedPathFor,
     removeStoredPhotos,
-    removeStoredProof,
     copyStoredPhotos,
     applyPhotoChanges,
     servePhoto,
@@ -48,7 +42,6 @@ const { getThread, postToThread, readMessageBody } = require("./thread");
 const {
     isEmailConfigured,
     sendNewSubmissionAdminEmail,
-    sendPaymentProofAdminEmail,
     sendChangesSubmittedAdminEmail,
 } = require("../notifications/email");
 
@@ -74,11 +67,6 @@ const upload = createImageUpload({
     maxFileSize: MAX_TOTAL_PHOTOS_SIZE,
 });
 
-const proofUpload = createProofUpload({
-    destination: (req) => getUserSubmissionsDir(req.user.sub),
-    maxFileSize: 10 * 1024 * 1024,
-});
-
 const messageRateLimit = createRateLimiter({
     windowMs: 60 * 1000,
     maxRequests: 6,
@@ -91,15 +79,9 @@ const submissionRateLimit = createRateLimiter({
     message: "Za dużo prób wysyłki. Spróbuj ponownie za chwilę.",
 });
 
-function proofUrl(storedPath) {
-    const match = /^\/uploads\/submissions\/(\d+)\/([^/]+)$/.exec(storedPath || "");
-    return match ? `/api/submissions/proofs/${match[1]}/${match[2]}` : null;
-}
-
 function removeSubmissionPhotos(row) {
     removeStoredPhotos(JSON.parse(row.photos || "[]"));
     removeShowcaseCopies(row.id);
-    if (row.payment_proof) removeStoredProof(row.payment_proof);
 }
 
 function toPublicSubmission(row) {
@@ -116,7 +98,6 @@ function toPublicSubmission(row) {
         edition: row.edition,
         status: row.status,
         paymentStatus: row.payment_status || "unpaid",
-        paymentProofUrl: proofUrl(row.payment_proof),
         payment: approved ? getPaymentDetails(row) : null,
         paymentOverdue: isPaymentOverdue(row),
         withdrawnAt: row.withdrawn_at,
@@ -281,92 +262,8 @@ router.get("/overview", (req, res) => {
 
 router.get("/photos/:userId/:filename", servePhoto("submissions"));
 
-router.get("/proofs/:userId/:filename", (req, res) => {
-    const ownerId = Number(req.params.userId);
-    const { filename } = req.params;
-
-    if (!isFullAdmin(req.user) && Number(req.user.sub) !== ownerId) {
-        return res.status(404).end();
-    }
-    if (!Number.isInteger(ownerId) || !isAllowedProofFilename(filename)) {
-        return res.status(404).end();
-    }
-
-    res.set("Cache-Control", "private, max-age=3600");
-    res.sendFile(path.join(getUserSubmissionsDir(ownerId), filename), { dotfiles: "deny" }, (error) => {
-        if (error && !res.headersSent) res.status(404).end();
-    });
-});
-
-router.patch("/:id/payment-status", (req, res) => {
-    const submission = findOwnSubmission(req);
-
-    if (!submission) {
-        return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
-    }
-
-    if (submission.status !== "approved") {
-        return res.status(400).json({
-            message: "Możesz zgłosić opłatę dopiero po akceptacji zgłoszenia.",
-        });
-    }
-
-    if (submission.payment_status === "paid") {
-        return res
-            .status(400)
-            .json({ message: "Ta opłata jest już potwierdzona." });
-    }
-
-    const updated = submissionsDb.updateSubmissionPaymentStatus(
-        submission.id,
-        "verification",
-    );
-    // once: a second click while it's already being verified doesn't mail again
-    if (submission.payment_status !== "verification") {
-        void sendPaymentProofAdminEmail({
-            submission: updated,
-            userEmail: req.user.email,
-            withProof: false,
-        }).catch((emailError) =>
-            console.error("[email] Powiadomienie o zgłoszonej opłacie:", emailError.message),
-        );
-    }
-    res.json({ submission: toPublicSubmission(updated) });
-});
-
-router.post("/:id/payment-proof", (req, res, next) => {
-    const submission = findOwnSubmission(req);
-    if (!submission) return res.status(404).json({ message: "Nie znaleziono zgłoszenia." });
-    if (submission.status !== "approved") {
-        return res.status(400).json({
-            message: "Potwierdzenie przelewu możesz dodać po akceptacji zgłoszenia.",
-        });
-    }
-    if (submission.payment_status === "paid") {
-        return res.status(400).json({ message: "Ta opłata jest już potwierdzona." });
-    }
-    req.submission = submission;
-    next();
-}, proofUpload.single("proof"), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ message: "Dodaj plik z potwierdzeniem przelewu." });
-    }
-    verifyUploadedProof(req.file);
-
-    if (req.submission.payment_proof) removeStoredProof(req.submission.payment_proof);
-    const updated = submissionsDb.setPaymentProof(
-        req.submission.id,
-        storedPathFor("submissions", req.user.sub, req.file.filename),
-    );
-    void sendPaymentProofAdminEmail({ submission: updated, userEmail: req.user.email }).catch(
-        (emailError) =>
-            console.error("[email] Powiadomienie o potwierdzeniu przelewu:", emailError.message),
-    );
-    res.json({
-        submission: toPublicSubmission(updated),
-        message: "Dziękujemy! Organizator sprawdzi płatność.",
-    });
-});
+// No payment reporting by the participant: the organizer sees the money in Przelewy24
+// (or on the account) and confirms it in the admin panel, which sends the pass.
 
 router.patch("/:id", (req, res) => {
     const submission = findOwnSubmission(req);

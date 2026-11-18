@@ -4,6 +4,7 @@ import { askConfirm } from "../../api/confirm";
 import { moveItem, newId } from "./shared";
 import { ContentForm } from "./ContentForm";
 import { useContentEditor } from "./useContentEditor";
+import { ZONES } from "../../utils/zones";
 
 // Admin → Ustawienia → Szablony: a list of rows; one row at a time opens for
 // editing in place and is saved on its own. Rows are reordered by dragging the
@@ -31,6 +32,103 @@ const VARIABLE_HINTS = {
     group: "{rok} zostanie podmienione po wybraniu szablonu. Wiadomość zaczyna się sama od „Cześć Imię,” — nie wpisuj powitania w treści.",
     zone: "Używany przy zmianie miejsca auta w zgłoszeniu. {miejsce} to nowe miejsce. E-mail sam zaczyna się od powitania i podaje stare oraz nowe miejsce — w treści wpisz powód i dodatkowe informacje.",
 };
+
+// filled in by the server when the acceptance e-mail goes out (notifications/email.ts)
+const ACCEPTANCE_VARIABLES = [
+    "{imie}",
+    "{marka}",
+    "{rejestracja}",
+    "{rok}",
+    "{miejsce}",
+    "{obiekt}",
+    "{adres}",
+    "{data}",
+    "{kwota}",
+    "{termin}",
+    "{link_platnosci}",
+    "{numer_konta}",
+    "{odbiorca}",
+    "{tytul_przelewu}",
+    "{panel}",
+];
+
+// E-mail texts kept per place ("acceptance", "paymentConfirmed"); the place is chosen by the admin on approval.
+function ZoneTemplates({ editor, field, legend, hint, saveLabel }) {
+    const [zone, setZone] = useState(ZONES[0][0]);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const texts = editor.content?.[field] || {};
+    const value = texts[zone] ?? "";
+
+    function setValue(next) {
+        editor.update({ [field]: { ...texts, [zone]: next } });
+    }
+
+    function insertVariable(variable) {
+        const element = textareaRef.current;
+        const start = element ? element.selectionStart : value.length;
+        const end = element ? element.selectionEnd : value.length;
+        setValue(value.slice(0, start) + variable + value.slice(end));
+        requestAnimationFrame(() => {
+            if (!element) return;
+            element.focus();
+            element.setSelectionRange(start + variable.length, start + variable.length);
+        });
+    }
+
+    return (
+        <fieldset className="templates-signature templates-acceptance">
+            <legend>{legend}</legend>
+            <p className="admin-hint">
+                {hint} Linia, w której zmienna jest pusta
+                (np. brak linku do płatności), zostanie pominięta. <code>**tekst**</code> to pogrubienie, linia
+                zaczynająca się od <code>- </code> to punkt listy. Podpis dodaje się sam.
+            </p>
+            <div className="subs-chip-group" role="group" aria-label="Miejsce na wydarzeniu">
+                {ZONES.map(([key, label]) => (
+                    <button
+                        key={key}
+                        type="button"
+                        className={`subs-chip${zone === key ? " is-active" : ""}`}
+                        aria-pressed={zone === key}
+                        onClick={() => setZone(key)}
+                    >
+                        {label}
+                        {!String(texts[key] || "").trim() && <span>domyślny</span>}
+                    </button>
+                ))}
+            </div>
+            <AutoTextarea
+                textareaRef={textareaRef}
+                value={value}
+                maxLength={5000}
+                aria-label={`${legend}: ${ZONES.find(([key]) => key === zone)?.[1]}`}
+                onChange={setValue}
+            />
+            <div className="templates-variables">
+                <span>Wstaw:</span>
+                {ACCEPTANCE_VARIABLES.map((variable) => (
+                    <button key={variable} type="button" className="subs-chip" onClick={() => insertVariable(variable)}>
+                        {variable}
+                    </button>
+                ))}
+            </div>
+            <p className="admin-hint">
+                {"{kwota}"} i {"{link_platnosci}"} biorą się z Ustawienia → Opłaty (osobno dla każdego miejsca),{" "}
+                {"{termin}"} to termin płatności, {"{obiekt}"}, {"{adres}"} i {"{data}"} — z sekcji Edycja.
+            </p>
+            <div className="templates-form-footer">
+                <button
+                    type="button"
+                    className="btn-street btn-street-primary"
+                    disabled={editor.isSaving}
+                    onClick={() => editor.save(null)}
+                >
+                    {editor.isSaving ? "Zapisywanie..." : saveLabel}
+                </button>
+            </div>
+        </fieldset>
+    );
+}
 
 function firstLine(text) {
     return String(text || "").split("\n").find((line) => line.trim()) || "";
@@ -305,6 +403,21 @@ export default function TemplatesEditor({ onAction }) {
                 })}
                 {newRow && <li className="templates-row is-open">{renderForm()}</li>}
             </ul>
+
+            <ZoneTemplates
+                editor={editor}
+                field="acceptance"
+                legend="E-mail akceptacji"
+                hint="Wysyłany po zaakceptowaniu zgłoszenia — treść zależy od miejsca wybranego przy akceptacji. Puste pole = krótki e-mail domyślny z danymi do opłaty."
+                saveLabel="Zapisz e-mail akceptacji"
+            />
+            <ZoneTemplates
+                editor={editor}
+                field="paymentConfirmed"
+                legend="E-mail po potwierdzeniu opłaty"
+                hint="Wysyłany, gdy w panelu admina klikniesz „Potwierdź opłatę i wyślij wejściówkę”. Tu wpisz informacje na dzień wydarzenia; {panel} prowadzi do wejściówki z kodem QR. Puste pole = krótki e-mail domyślny."
+                saveLabel="Zapisz e-mail po opłacie"
+            />
 
             <fieldset className="templates-signature">
                 <legend>Podpis w e-mailach</legend>

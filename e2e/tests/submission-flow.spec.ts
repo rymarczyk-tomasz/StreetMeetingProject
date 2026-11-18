@@ -5,7 +5,6 @@ import {
     adminPage,
     login,
     linkFrom,
-    PNG,
     register,
     submitCar,
     uniqueEmail,
@@ -92,7 +91,7 @@ test("akceptacja: uczestnik dostaje maila i widzi dane do przelewu", async ({ pa
 
     const mail = await waitForMail(email, /Akceptacja na Strefę Select/);
     expect(mail.text).toContain("150 zł");
-    expect(mail.text).toContain("Miejsce na wydarzeniu: Tunel");
+    expect(mail.text).toContain("Miejsce Państwa auta: Tunel");
 
     await login(page, email);
     await page.goto("/panel");
@@ -102,14 +101,12 @@ test("akceptacja: uczestnik dostaje maila i widzi dane do przelewu", async ({ pa
     await expect(page.getByRole("button", { name: "Edytuj dane" })).toHaveCount(0);
 });
 
-test("uczestnik wgrywa potwierdzenie przelewu", async ({ page }) => {
+test("uczestnik nic nie zgłasza, opłata czeka na potwierdzenie organizatora", async ({ page }) => {
     await login(page, email);
     await page.goto("/panel");
-    await page.locator('.payment-actions input[type="file"]').setInputFiles({ ...PNG, name: "przelew.png" });
-    await expect(page.getByRole("link", { name: "Twoje potwierdzenie przelewu" })).toBeVisible();
+    await expect(page.getByText(/Opłata czeka na potwierdzenie przez organizatora/)).toBeVisible();
+    await expect(page.locator(".payment-actions")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Pokaż wejściówkę" })).toHaveCount(0);
-
-    await waitForMail("org@streetshow.test", /przelew|opłat/i);
 });
 
 test("admin potwierdza opłatę, uczestnik dostaje wejściówkę z kodem QR", async ({ page, browser }) => {

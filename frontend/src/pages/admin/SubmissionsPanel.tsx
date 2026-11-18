@@ -536,7 +536,6 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                         >
                             <option value="">Opłata: wszystkie</option>
                             <option value="unpaid">Do opłacenia</option>
-                            <option value="verification">Do weryfikacji</option>
                             <option value="paid">Opłacone</option>
                             <option value="overdue">Po terminie płatności</option>
                         </Select>

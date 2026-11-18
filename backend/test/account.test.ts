@@ -189,8 +189,8 @@ describe("usuwanie konta", () => {
         assert.equal(mails.length, 0);
     });
 
-    test("blokada przy opłaconym lub weryfikowanym miejscu w bieżącej edycji", async () => {
-        for (const paymentStatus of ["paid", "verification"]) {
+    test("blokada przy opłaconym miejscu w bieżącej edycji", async () => {
+        for (const paymentStatus of ["paid"]) {
             const user = createUser();
             createSubmission(user, { status: "approved", paymentStatus });
             const res = await deleteAccount(user);
