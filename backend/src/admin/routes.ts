@@ -95,15 +95,11 @@ const PAYMENT_SETTING_FIELDS = [
     ["paymentRecipient", "Odbiorca"],
     ["selectFeeAmount", "Kwota"],
     ["paymentTitleTemplate", "Tytuł przelewu"],
-    ...Object.entries(ZONES).flatMap(([zone, label]) => [
-        [`zonePayments.${zone}.amount`, `Kwota (${label})`],
-        [`zonePayments.${zone}.url`, `Link do płatności (${label})`],
-    ]),
+    ["paymentUrl", "Link do płatności"],
 ];
 
-// "zonePayments.murawa.url" → settings.zonePayments.murawa.url
 function paymentFieldValue(settings, field) {
-    return String(field.split(".").reduce((value, key) => value?.[key], settings) ?? "");
+    return String(settings?.[field] ?? "");
 }
 
 function changedPaymentFields(previous, next) {

@@ -101,6 +101,20 @@ function isKnownContentKey(key) {
     return Object.prototype.hasOwnProperty.call(DEFAULTS, key);
 }
 
+// settings saved when every place had its own amount and link: the first ones filled in
+// become the common ones until the next save drops the old field
+function withoutZonePayments(key, content) {
+    if (key !== "settings" || !content.zonePayments) return content;
+    const { zonePayments, ...settings } = content;
+    const first = (field) =>
+        (Object.values(zonePayments) as any[]).map((entry) => String(entry?.[field] || "").trim()).find(Boolean) || "";
+    return {
+        ...settings,
+        selectFeeAmount: settings.selectFeeAmount || first("amount"),
+        paymentUrl: settings.paymentUrl || first("url"),
+    };
+}
+
 function getContent(key) {
     assertKnownKey(key);
 
@@ -110,7 +124,7 @@ function getContent(key) {
 
     // Merge over defaults so fields added after a section was first saved don't come back undefined.
     try {
-        return withEnvOverrides(key, { ...defaults, ...JSON.parse(row.content) });
+        return withEnvOverrides(key, withoutZonePayments(key, { ...defaults, ...JSON.parse(row.content) }));
     } catch {
         return withEnvOverrides(key, defaults);
     }
@@ -157,7 +171,7 @@ function getContentVersion(key) {
 
 function getRevisionContent(key, revisionId) {
     const row = getRevisionStmt.get(revisionId, key);
-    return row ? JSON.parse(row.content) : null;
+    return row ? withoutZonePayments(key, JSON.parse(row.content)) : null;
 }
 
 function getSettings() {

@@ -381,7 +381,7 @@ async function sendZoneChangedEmail({ submission, user, previousZone, adminNote 
     const intro = previous
         ? `Zmieniliśmy miejsce Twojego auta ${car} na wydarzeniu.`
         : `Przydzieliliśmy miejsce Twojemu autu ${car} na wydarzeniu.`;
-    // amount and payment link can differ per place, so an unpaid car gets the current ones
+    // an unpaid car gets the payment details again with its place
     const unpaid = (submission.payment_status || "unpaid") === "unpaid";
     const payment = unpaid ? paymentLines(submission) : [];
     const paymentLinks = linksIn(getPaymentDetails(submission).url);

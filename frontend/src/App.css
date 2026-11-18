@@ -4755,25 +4755,6 @@ body.is-dialog-open {
     font-size: 18px;
 }
 
-/* Ustawienia → Opłaty: amount and payment link per place */
-.admin-subsection {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    min-width: 0;
-    margin: 8px 0 0;
-    padding: 14px 16px;
-    border: 1px solid var(--street-border);
-    border-radius: 4px;
-}
-
-.admin-subsection legend {
-    width: auto;
-    padding: 0 4px;
-    font-size: 15px;
-    font-weight: 700;
-}
-
 /* participant panel: online payment (e.g. Przelewy24) */
 .payment-online {
     display: inline-flex;

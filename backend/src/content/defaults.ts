@@ -174,12 +174,8 @@ const DEFAULTS = {
         paymentDaysAfterApproval: 0,
         showcaseEnabled: false,
         participantInfo: "",
-        // own amount and online payment link per place; empty amount = selectFeeAmount
-        zonePayments: {
-            murawa: { amount: "", url: "" },
-            tunel: { amount: "", url: "" },
-            korona: { amount: "", url: "" },
-        },
+        // online payment link (e.g. Przelewy24), one for every place
+        paymentUrl: "",
     },
     templates: {
         // closing line of every e-mail the site sends

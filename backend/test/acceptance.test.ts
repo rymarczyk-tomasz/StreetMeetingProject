@@ -1,20 +1,12 @@
-// Acceptance e-mail per place (templates.acceptance) and amount + payment link per place (settings.zonePayments).
+// Acceptance e-mail per place (templates.acceptance); one amount and one payment link for every place (settings.paymentUrl).
 const { api, createUser, createSubmission, saveSettings, mails, mailsTo, stepUpFor } = require("./helpers");
 const { test, describe, beforeEach } = require("node:test");
 const assert = require("node:assert/strict");
 const siteContentDb = require("../src/db/siteContent");
+const db = require("../src/db/database");
 
-const P24 = "https://sklep.przelewy24.pl/zakup.php?z24_id_sprzedawcy=1&z24_kwota=19900";
+const P24 = "https://sklep.przelewy24.pl/zakup.php?z24_id_sprzedawcy=1&z24_kwota=15000";
 const ACCOUNT = "12345678901234567890123456";
-
-function zonePayments(overrides = {}) {
-    return {
-        murawa: { amount: "", url: "" },
-        tunel: { amount: "", url: "" },
-        korona: { amount: "", url: "" },
-        ...overrides,
-    };
-}
 
 function setAcceptance(patch) {
     const templates = siteContentDb.getContent("templates");
@@ -33,7 +25,7 @@ beforeEach(() => {
         selectFeeAmount: "150 zł",
         paymentAccount: "",
         paymentDaysAfterApproval: 7,
-        zonePayments: zonePayments({ murawa: { amount: "199 zł", url: P24 } }),
+        paymentUrl: P24,
     });
     siteContentDb.saveContent("templates", { ...siteContentDb.getContent("templates"), acceptance: undefined, paymentConfirmed: undefined });
 });
@@ -47,7 +39,7 @@ describe("e-mail akceptacji według miejsca", () => {
         const [mail] = mailsTo(user.email);
         assert.equal(mail.subject, "Street Show: Akceptacja na Strefę Select");
         assert.match(mail.text, /zostało pozytywnie rozpatrzone/);
-        assert.match(mail.text, /Kwota: 199 zł/);
+        assert.match(mail.text, /Kwota: 150 zł/);
         assert.match(mail.text, /Link do płatności: https:\/\/sklep\.przelewy24\.pl/);
         assert.match(mail.text, /wjazd do wnętrza stadionu na otok murawy/);
         assert.doesNotMatch(mail.text, /Numer konta/);
@@ -59,8 +51,19 @@ describe("e-mail akceptacji według miejsca", () => {
         assert.ok(mail.html.includes(`<a href="${P24.replace(/&/g, "&amp;")}">`), "link do płatności nie jest klikalny");
     });
 
-    test("tunel bez własnej kwoty i linku: kwota wspólna, dane do przelewu zamiast linku", async () => {
-        saveSettings({ paymentAccount: ACCOUNT });
+    test("tunel: ta sama kwota i ten sam link", async () => {
+        const admin = createUser({ role: "admin" });
+        const user = createUser();
+        await approve(admin, createSubmission(user), "tunel");
+
+        const { text } = mailsTo(user.email)[0];
+        assert.match(text, /Kwota: 150 zł/);
+        assert.match(text, /Link do płatności: https:\/\/sklep\.przelewy24\.pl/);
+        assert.match(text, /miejsce w tunelu/);
+    });
+
+    test("bez linku: dane do przelewu zamiast linku", async () => {
+        saveSettings({ paymentAccount: ACCOUNT, paymentUrl: "" });
         const admin = createUser({ role: "admin" });
         const user = createUser();
         await approve(admin, createSubmission(user), "tunel");
@@ -68,7 +71,6 @@ describe("e-mail akceptacji według miejsca", () => {
         const { text } = mailsTo(user.email)[0];
         assert.match(text, /Kwota: 150 zł/);
         assert.match(text, /Numer konta: 12 3456/);
-        assert.match(text, /miejsce w tunelu/);
         assert.doesNotMatch(text, /Link do płatności/);
     });
 
@@ -85,30 +87,29 @@ describe("e-mail akceptacji według miejsca", () => {
 
     test("pusty szablon miejsca: krótki e-mail domyślny, z linkiem do płatności", async () => {
         setAcceptance({ korona: "" });
-        saveSettings({ zonePayments: zonePayments({ korona: { amount: "99 zł", url: P24 } }) });
         const admin = createUser({ role: "admin" });
         const user = createUser();
         await approve(admin, createSubmission(user), "korona");
 
         const { text } = mailsTo(user.email)[0];
         assert.match(text, /Miejsce na wydarzeniu: Korona\./);
-        assert.match(text, /99 zł/);
+        assert.match(text, /150 zł/);
         assert.match(text, /Zapłać online: https:\/\/sklep\.przelewy24\.pl/);
     });
 
-    test("uczestnik widzi w panelu kwotę i link swojego miejsca", async () => {
+    test("uczestnik widzi w panelu kwotę i link", async () => {
         const admin = createUser({ role: "admin" });
         const user = createUser();
         const row = createSubmission(user);
-        await approve(admin, row, "murawa");
+        await approve(admin, row, "korona");
 
         const own = (await api(user).get("/api/submissions")).body.submissions.find((item) => item.id === row.id);
-        assert.equal(own.payment.amount, "199 zł");
+        assert.equal(own.payment.amount, "150 zł");
         assert.equal(own.payment.url, P24);
         assert.equal(own.payment.complete, true);
     });
 
-    test("zmiana miejsca nieopłaconego auta podaje nową kwotę i link", async () => {
+    test("zmiana miejsca nieopłaconego auta przypomina kwotę i link", async () => {
         const admin = createUser({ role: "admin" });
         const user = createUser();
         const row = createSubmission(user);
@@ -119,7 +120,7 @@ describe("e-mail akceptacji według miejsca", () => {
         assert.equal(res.status, 200, res.body.message);
         const { text } = mailsTo(user.email)[0];
         assert.match(text, /Nowe miejsce: Otok murawy/);
-        assert.match(text, /199 zł/);
+        assert.match(text, /150 zł/);
         assert.match(text, /Zapłać online: https:\/\/sklep\.przelewy24\.pl/);
     });
 });
@@ -165,7 +166,7 @@ describe("e-mail po potwierdzeniu opłaty", () => {
     });
 });
 
-describe("ustawienia opłat według miejsca", () => {
+describe("ustawienia opłat", () => {
     function saveAs(admin, patch, stepUp = undefined) {
         return api(admin)
             .patch("/api/admin/content/settings")
@@ -174,35 +175,46 @@ describe("ustawienia opłat według miejsca", () => {
 
     test("link do płatności musi być adresem https", async () => {
         const admin = createUser({ role: "admin" });
-        const res = await saveAs(
-            admin,
-            { zonePayments: zonePayments({ murawa: { amount: "199 zł", url: "http://przelewy24.pl/x" } }) },
-            stepUpFor(admin),
-        );
+        const res = await saveAs(admin, { paymentUrl: "http://przelewy24.pl/x" }, stepUpFor(admin));
         assert.equal(res.status, 400);
-        assert.match(res.body.message, /Otok murawy/);
+        assert.match(res.body.message, /https/);
     });
 
     test("zmiana linku do płatności wymaga hasła i kodu i wysyła alert", async () => {
         const admin = createUser({ role: "admin" });
-        const changed = zonePayments({ murawa: { amount: "199 zł", url: "https://inny.example/platnosc" } });
+        const changed = "https://inny.example/platnosc";
 
-        const bare = await saveAs(admin, { zonePayments: changed });
+        const bare = await saveAs(admin, { paymentUrl: changed });
         assert.equal(bare.status, 403);
         assert.equal(bare.body.code, "step_up_required");
-        assert.equal(siteContentDb.getSettings().zonePayments.murawa.url, P24);
+        assert.equal(siteContentDb.getSettings().paymentUrl, P24);
 
-        const ok = await saveAs(admin, { zonePayments: changed }, stepUpFor(admin));
+        const ok = await saveAs(admin, { paymentUrl: changed }, stepUpFor(admin));
         assert.equal(ok.status, 200, ok.body.message);
-        assert.equal(siteContentDb.getSettings().zonePayments.murawa.url, "https://inny.example/platnosc");
+        assert.equal(siteContentDb.getSettings().paymentUrl, changed);
         const alert = mails.find((mail) => /dane do przelewu/.test(mail.subject));
         assert.ok(alert, "brak alertu");
-        assert.match(alert.text, /Link do płatności \(Otok murawy\)/);
+        assert.match(alert.text, /Link do płatności/);
     });
 
     test("zapis innych ustawień nie wymaga potwierdzenia", async () => {
         const admin = createUser({ role: "admin" });
         const res = await saveAs(admin, { maxVehiclesPerUser: 4 });
         assert.equal(res.status, 200, res.body.message);
+    });
+
+    test("ustawienia zapisane z kwotą i linkiem per miejsce przechodzą na wspólne", () => {
+        const stored = { ...siteContentDb.getSettings(), selectFeeAmount: "", paymentUrl: undefined };
+        stored.zonePayments = {
+            murawa: { amount: "", url: "" },
+            tunel: { amount: "199 zł", url: P24 },
+            korona: { amount: "", url: "" },
+        };
+        db.prepare("UPDATE site_content SET content = ? WHERE content_key = 'settings'").run(JSON.stringify(stored));
+
+        const settings = siteContentDb.getSettings();
+        assert.equal(settings.selectFeeAmount, "199 zł");
+        assert.equal(settings.paymentUrl, P24);
+        assert.equal(settings.zonePayments, undefined);
     });
 });
