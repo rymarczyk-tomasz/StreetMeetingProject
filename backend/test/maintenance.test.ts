@@ -57,6 +57,14 @@ describe("tryb serwisowy", () => {
         assert.equal((await admin.get("/api/admin/content/maintenance")).status, 200);
     });
 
+    test("wygasła sesja dostaje 401 (klient odświeża ją i ponawia), a nie 503", async () => {
+        const admin = api(createUser({ role: "admin" }));
+        await setMaintenance(admin, NOTICE);
+        const expired = await api().get("/api/admin/stats").set("Cookie", "access_token=wygasly.token.jwt");
+        assert.equal(expired.status, 401);
+        assert.equal((await api().get("/api/admin/stats")).status, 503);
+    });
+
     test("obsługa wjazdu zostaje czynna, zwykły użytkownik nie", async () => {
         const admin = api(createUser({ role: "admin" }));
         await setMaintenance(admin, NOTICE);

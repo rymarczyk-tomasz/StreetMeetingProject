@@ -79,9 +79,11 @@ const cookieBaseOptions = {
 };
 
 function setAuthCookies(res, { accessToken, refreshToken }) {
+    // the JWT inside expires after 15 min; the cookie outlives it so the server can tell
+    // an expired session (401, the client refreshes) from a visitor without one
     res.cookie("access_token", accessToken, {
         ...cookieBaseOptions,
-        maxAge: 15 * 60 * 1000,
+        maxAge: REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000,
     });
     res.cookie("refresh_token", refreshToken, {
         ...cookieBaseOptions,

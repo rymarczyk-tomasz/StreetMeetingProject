@@ -10,6 +10,11 @@ function maintenanceGuard(req, res, next) {
         const user = req.user;
         if (user?.role === "admin") return next();
         if (user?.canCheckIn && req.originalUrl.startsWith("/api/gate")) return next();
+        // an expired session gets 401 so the client refreshes it and retries; a 503 here
+        // left the admin panel half empty after a break
+        if (!user && req.cookies?.access_token) {
+            return res.status(401).json({ message: "Sesja wygasła lub konto jest niedostępne." });
+        }
         res.status(503).json({ maintenance: true, message: "Strona jest w przebudowie. Wróć za jakiś czas." });
     });
 }
