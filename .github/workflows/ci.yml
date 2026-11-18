@@ -1,10 +1,11 @@
 name: CI
 
-# newProject runs the same checks inside deploy.yml before deploying
+# newProject and production run the same checks inside deploy.yml before deploying
 on:
     push:
         branches-ignore:
             - newProject
+            - production
     pull_request:
 
 jobs:

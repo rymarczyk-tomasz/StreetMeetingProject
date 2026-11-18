@@ -70,7 +70,7 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 3. Wkleić certyfikat i klucz z Cloudflare do `/etc/ssl/cloudflare/origin.pem` i `origin.key`, uzupełnić `/home/streetshow/streetshow/backend/config/.env` (SMTP, Google, `ADMIN_NOTIFY_EMAIL`) i uruchomić skrypt ponownie — włączy nginx, zbuduje i wystartuje aplikację.
 4. Test przed przełączeniem domeny: `sudo DOMAIN=nowa.streetshow.pl APEX=none bash setup.sh` + rekord `nowa` w Cloudflare (proxied). Po testach uruchomić skrypt bez tych zmiennych i poprawić `APP_URL`/`CORS_ORIGINS` w `.env` na `www.streetshow.pl` (`pm2 restart streetshow-api --update-env`).
 5. Przełączenie: w Cloudflare rekordy `www` i `streetshow.pl` → A/AAAA serwera (proxied), zamiast CNAME na Azure.
-6. GitHub → Settings → Secrets: `DEPLOY_HOST`, `DEPLOY_SSH_KEY`; Variables: `DEPLOY_USER=streetshow`, `DEPLOY_PORT=22`, `DEPLOY_PATH=/home/streetshow/streetshow`. Bez nich workflow dalej deployuje na Mikrusa.
+6. GitHub → Settings → Secrets: `DEPLOY_HOST`, `DEPLOY_SSH_KEY`; Variables: `DEPLOY_USER=streetshow`, `DEPLOY_PORT=22`, `DEPLOY_PATH=/home/streetshow/streetshow`. Wdrożenie na OVH idzie z gałęzi `production` (push do `newProject` dalej wdraża na Mikrusa); bez tych sekretów push do `production` kończy się błędem i niczego nie wdraża.
 
 ### Bezpieczeństwo serwera — do zrobienia ręcznie
 
@@ -85,9 +85,9 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 
 ## 4. GitHub Actions (automatyczny deploy)
 
-- [ ] Sekrety repo: `DEPLOY_HOST`, `DEPLOY_SSH_KEY`; zmienne: `DEPLOY_USER=streetshow`, `DEPLOY_PORT=22`, `DEPLOY_PATH=/home/streetshow/streetshow` (bez nich workflow deployuje na stary serwer testowy)
-- [ ] Po przełączeniu usunąć sekrety `MIKRUS_*` i domyślne wartości Mikrusa z `deploy.yml`
-- [ ] Rozważyć deploy z `main` zamiast `newProject` po scaleniu gałęzi
+- [ ] Sekrety repo: `DEPLOY_HOST`, `DEPLOY_SSH_KEY`; zmienne: `DEPLOY_USER=streetshow`, `DEPLOY_PORT=22`, `DEPLOY_PATH=/home/streetshow/streetshow`, używane przy pushu do gałęzi `production`
+- [ ] `newProject` → Mikrus (sekrety `MIKRUS_*`, serwer testowy klienta z `TEST_MODE`), `production` → OVH. Wydanie na produkcję: fast-forward `production` do przetestowanego `newProject` i push
+- [ ] Gdy Mikrus nie będzie już potrzebny: usunąć sekrety `MIKRUS_*` i gałąź Mikrusa z `deploy.yml`
 
 ## 5. Kopie zapasowe
 

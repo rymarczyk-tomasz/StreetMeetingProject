@@ -1,13 +1,16 @@
 name: Deploy Street Show
 
+# newProject → Mikrus (the client's test server, MIKRUS_* secrets)
+# production → OVH (secrets DEPLOY_HOST / DEPLOY_SSH_KEY, variables DEPLOY_USER / DEPLOY_PORT / DEPLOY_PATH)
 on:
     push:
         branches:
             - newProject
+            - production
     workflow_dispatch:
 
 concurrency:
-    group: streetshow-production
+    group: streetshow-deploy-${{ github.ref_name }}
     cancel-in-progress: true
 
 jobs:
@@ -17,30 +20,44 @@ jobs:
 
     deploy:
         needs: checks
+        if: github.ref_name == 'newProject' || github.ref_name == 'production'
         runs-on: ubuntu-latest
+        env:
+            IS_PRODUCTION: ${{ github.ref_name == 'production' }}
         steps:
-            # Target server: secrets DEPLOY_HOST / DEPLOY_SSH_KEY and repo variables
-            # DEPLOY_USER / DEPLOY_PORT / DEPLOY_PATH / API_PORT. Unset = old Mikrus values.
+            - name: Check production secrets
+              if: env.IS_PRODUCTION == 'true'
+              env:
+                  HOST: ${{ secrets.DEPLOY_HOST }}
+                  KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+              run: |
+                  if [ -z "$HOST" ] || [ -z "$KEY" ]; then
+                    echo "Brak sekretów DEPLOY_HOST / DEPLOY_SSH_KEY - nie wdrażam produkcji." >&2
+                    exit 1
+                  fi
+
             - name: Deploy over SSH
               # pinned to a commit: this action receives the server's SSH key
               uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
               env:
-                  APP_DIR: ${{ vars.DEPLOY_PATH || '/root/streetshow' }}
+                  BRANCH: ${{ github.ref_name }}
+                  APP_DIR: ${{ env.IS_PRODUCTION == 'true' && (vars.DEPLOY_PATH || '/home/streetshow/streetshow') || '/root/streetshow' }}
                   API_PORT: ${{ vars.API_PORT || '4001' }}
-                  # the old Mikrus box (no DEPLOY_HOST) is the client's test server: no working e-mail there
-                  IS_MIKRUS: ${{ secrets.DEPLOY_HOST == '' }}
+                  # Mikrus is the client's test server: no working e-mail there
+                  IS_MIKRUS: ${{ env.IS_PRODUCTION != 'true' }}
               with:
-                  host: ${{ secrets.DEPLOY_HOST || secrets.MIKRUS_HOST }}
-                  username: ${{ vars.DEPLOY_USER || 'root' }}
-                  key: ${{ secrets.DEPLOY_SSH_KEY || secrets.MIKRUS_SSH_KEY }}
-                  port: ${{ vars.DEPLOY_PORT || '10192' }}
-                  envs: APP_DIR,API_PORT,IS_MIKRUS
+                  host: ${{ env.IS_PRODUCTION == 'true' && secrets.DEPLOY_HOST || secrets.MIKRUS_HOST }}
+                  username: ${{ env.IS_PRODUCTION == 'true' && (vars.DEPLOY_USER || 'streetshow') || 'root' }}
+                  key: ${{ env.IS_PRODUCTION == 'true' && secrets.DEPLOY_SSH_KEY || secrets.MIKRUS_SSH_KEY }}
+                  port: ${{ env.IS_PRODUCTION == 'true' && (vars.DEPLOY_PORT || '22') || '10192' }}
+                  envs: BRANCH,APP_DIR,API_PORT,IS_MIKRUS
                   script: |
                       set -eu
 
                       cd "$APP_DIR"
                       git restore backend/package-lock.json frontend/package-lock.json
-                      git pull --ff-only origin newProject
+                      git fetch --quiet origin "$BRANCH"
+                      git checkout --quiet -B "$BRANCH" "origin/$BRANCH"
 
                       cd "$APP_DIR/backend"
                       npm ci
