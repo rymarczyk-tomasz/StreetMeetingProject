@@ -115,6 +115,13 @@ function withoutZonePayments(key, content) {
     };
 }
 
+// the payment-confirmed e-mail used to be kept per place: the first text filled in becomes the common one
+function withSinglePaymentConfirmed(key, content) {
+    if (key !== "templates" || !content.paymentConfirmed || typeof content.paymentConfirmed !== "object") return content;
+    const first = Object.values(content.paymentConfirmed).map((text) => String(text || "").trim()).find(Boolean) || "";
+    return { ...content, paymentConfirmed: first };
+}
+
 function getContent(key) {
     assertKnownKey(key);
 
@@ -124,7 +131,7 @@ function getContent(key) {
 
     // Merge over defaults so fields added after a section was first saved don't come back undefined.
     try {
-        return withEnvOverrides(key, withoutZonePayments(key, { ...defaults, ...JSON.parse(row.content) }));
+        return withEnvOverrides(key, withSinglePaymentConfirmed(key, withoutZonePayments(key, { ...defaults, ...JSON.parse(row.content) })));
     } catch {
         return withEnvOverrides(key, defaults);
     }
@@ -231,6 +238,28 @@ function applyLegalDefaults() {
 
 applyLegalDefaults();
 
+// Same once-per-version swap for the acceptance, rejection and reserve-list e-mails;
+// the other templates (comments, signature, payment confirmation) are kept.
+const EMAIL_DEFAULTS_VERSION = "2027-3";
+
+function applyEmailDefaults() {
+    const done = db.prepare("SELECT value FROM app_meta WHERE key = 'email_defaults_version'").get();
+    if (done && done.value === EMAIL_DEFAULTS_VERSION) return false;
+
+    const replaced = Boolean(getRowStmt.get("templates"));
+    if (replaced) {
+        const defaults = JSON.parse(JSON.stringify(DEFAULTS.templates));
+        saveContent("templates", { ...getContent("templates"), acceptance: defaults.acceptance, rejection: defaults.rejection, waitlist: defaults.waitlist }, null);
+    }
+    db.prepare(
+        "INSERT INTO app_meta (key, value) VALUES ('email_defaults_version', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+    ).run(EMAIL_DEFAULTS_VERSION);
+    if (replaced) console.log("Szablony e-maili: podmieniono e-mail akceptacji, odrzucenia i rezerwy, stare wersje są w historii zmian.");
+    return replaced;
+}
+
+applyEmailDefaults();
+
 module.exports = {
     isKnownContentKey,
     getContent,
@@ -244,4 +273,5 @@ module.exports = {
     getEditionDate,
     getSubmissionsAvailability,
     applyLegalDefaults,
+    applyEmailDefaults,
 };

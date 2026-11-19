@@ -76,17 +76,28 @@ function linkText(raw, url) {
     } catch {
         return url;
     }
-    const paymentUrl = String(siteContentDb.getSettings().paymentUrl || "").trim();
-    if (raw === paymentUrl) {
+    const settings = siteContentDb.getSettings();
+    if (raw === String(settings.paymentUrl || "").trim()) {
+        const label = String(settings.paymentLinkLabel || "").trim();
+        if (label) return escapeHtml(label);
         return /przelewy24\./.test(host) ? "kliknij, aby zapłacić przez Przelewy24" : "kliknij, aby zapłacić";
     }
     return raw.length > LONG_LINK ? escapeHtml(host) : url;
 }
 
-// one line: escaped, **bold**, allowed https links clickable
+// !!text!! — bold, red and underlined (e.g. the payment deadline)
+const EMPHASIS_STYLE = "color:#d93a2b;text-decoration:underline";
+
+// formatting marks dropped for the plain-text version
+function plainText(text) {
+    return String(text).replace(/\*\*(.+?)\*\*/g, "$1").replace(/!!(.+?)!!/g, "$1");
+}
+
+// one line: escaped, **bold**, !!emphasis!!, allowed https links clickable
 function inlineHtml(line, links = new Set()) {
     return escapeHtml(line)
         .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/!!(.+?)!!/g, `<strong style="${EMPHASIS_STYLE}">$1</strong>`)
         .replace(URL_PATTERN, (url) => {
             const raw = url.replace(/&amp;/g, "&");
             return links.has(raw) ? `<a href="${url}">${linkText(raw, url)}</a>` : url;
@@ -153,8 +164,7 @@ function formatEventDate(edition) {
     return `${weekday}, ${formatDeadline(edition.date)} r.`;
 }
 
-// Admin → Ustawienia → Szablony wiadomości: e-mail akceptacji ("acceptance") and e-mail
-// po potwierdzeniu opłaty ("paymentConfirmed"), one text per place
+// Admin → Ustawienia → Szablony wiadomości: e-mail akceptacji ("acceptance") is kept per place
 function zoneTemplateFor(kind, zone) {
     const templates = siteContentDb.getContent("templates")?.[kind] || {};
     return zone ? String(templates[zone] || "").trim() : "";
@@ -166,7 +176,7 @@ function templatedMail({ to, subject, template, values, extraText = "", extraHtm
     return sendMail({
         to,
         subject,
-        text: [body.replace(/\*\*(.+?)\*\*/g, "$1"), extraText, "", signatureText()].join("\n"),
+        text: [plainText(body), extraText, "", signatureText()].join("\n"),
         html: `
             ${textToHtml(body, links)}
             ${extraHtml}
@@ -177,7 +187,34 @@ function templatedMail({ to, subject, template, values, extraText = "", extraHtm
 
 // participant-typed text must not turn into bold or a list in the e-mail
 function plainValue(value) {
-    return String(value || "").replace(/\*/g, "").replace(/^\s*[-•]\s+/, "");
+    return String(value || "").replace(/\*/g, "").replace(/!{2,}/g, "!").replace(/^\s*[-•]\s+/, "");
+}
+
+const WEEKDAY_ACCUSATIVE = { sobota: "sobotę", środa: "środę", niedziela: "niedzielę" };
+
+// "w sobotę, 29 maja 2027 r."
+function eventDateWithPreposition(edition) {
+    const date = formatEventDate(edition);
+    if (!date || !edition?.date) return date;
+    const [weekday, ...rest] = date.split(", ");
+    return `w ${WEEKDAY_ACCUSATIVE[weekday] || weekday}, ${rest.join(", ")}`;
+}
+
+function daysLabel(days) {
+    return days === 1 ? "1 dzień" : `${days} dni`;
+}
+
+// "w ciągu 7 dni od momentu otrzymania akceptacji." from Ustawienia → Opłaty → Dni na opłatę od akceptacji,
+// or the fixed deadline when it comes first (or there are no days set)
+function paymentDeadlinePhrase(payment) {
+    const settings = siteContentDb.getSettings();
+    const days = Number(settings.paymentDaysAfterApproval) || 0;
+    const fixed = String(settings.paymentDeadline || "");
+    if (days > 0 && (!payment.deadline || payment.deadline !== fixed)) {
+        return `w ciągu !!${daysLabel(days)} od momentu otrzymania akceptacji.!!`;
+    }
+    if (payment.deadline) return `do !!${formatDeadline(payment.deadline)} r.!!`;
+    return "w terminie podanym w panelu uczestnika.";
 }
 
 function acceptanceValues(submission, user) {
@@ -191,6 +228,7 @@ function acceptanceValues(submission, user) {
         miejsce: zoneLabel(submission.zone),
         kwota: payment.amount,
         termin: payment.deadline ? `${formatDeadline(payment.deadline)} r.` : "terminu podanego w panelu",
+        termin_platnosci: paymentDeadlinePhrase(payment),
         link_platnosci: payment.url,
         numer_konta: payment.account,
         odbiorca: payment.recipient,
@@ -198,6 +236,7 @@ function acceptanceValues(submission, user) {
         obiekt: edition.venueName || "",
         adres: edition.venueAddress || "",
         data: formatEventDate(edition),
+        kiedy: eventDateWithPreposition(edition),
         panel: `${getAppUrl()}/panel`,
     };
 }
@@ -337,6 +376,18 @@ async function sendSubmissionStatusEmail({
         });
     }
 
+    const waitlist = String(siteContentDb.getContent("templates")?.waitlist || "").trim();
+    if (status === "waitlist" && waitlist) {
+        return templatedMail({
+            to: user.email,
+            subject: `Street Show ${submission.edition ?? ""}: zgłoszenie na liście rezerwowej`.replace("  ", " "),
+            template: waitlist,
+            values: acceptanceValues(submission, user),
+            extraText: noteText,
+            extraHtml: noteHtml,
+        });
+    }
+
     if (status === "waitlist") {
         const lines = [
             `Twój samochód ${carBrand} trafił na listę rezerwową strefy Select.`,
@@ -362,6 +413,18 @@ async function sendSubmissionStatusEmail({
                 <p>Status zgłoszenia zobaczysz w <a href="${escapeHtml(panelUrl)}">swoim panelu</a>.</p>
                 <p>${signatureHtml()}</p>
             `,
+        });
+    }
+
+    const rejection = String(siteContentDb.getContent("templates")?.rejection || "").trim();
+    if (rejection) {
+        return templatedMail({
+            to: user.email,
+            subject: `Street Show ${submission.edition ?? ""}: informacja o zgłoszeniu do strefy Select`.replace("  ", " "),
+            template: rejection,
+            values: acceptanceValues(submission, user),
+            extraText: noteText,
+            extraHtml: noteHtml,
         });
     }
 
@@ -521,7 +584,7 @@ async function sendPaymentReminderEmail({ submission, email, firstName }) {
 async function sendPaymentConfirmedEmail({ submission, user }) {
     const email = user?.email;
     if (!email) return { sent: false, reason: "not_applicable" };
-    const template = zoneTemplateFor("paymentConfirmed", submission.zone);
+    const template = String(siteContentDb.getContent("templates")?.paymentConfirmed || "").trim();
     if (template) {
         return templatedMail({
             to: email,

@@ -43,8 +43,10 @@ const ACCEPTANCE_VARIABLES = [
     "{obiekt}",
     "{adres}",
     "{data}",
+    "{kiedy}",
     "{kwota}",
     "{termin}",
+    "{termin_platnosci}",
     "{link_platnosci}",
     "{numer_konta}",
     "{odbiorca}",
@@ -52,7 +54,7 @@ const ACCEPTANCE_VARIABLES = [
     "{panel}",
 ];
 
-// E-mail texts kept per place ("acceptance", "paymentConfirmed"); the place is chosen by the admin on approval.
+// The acceptance e-mail is kept per place; the place is chosen by the admin on approval.
 function ZoneTemplates({ editor, field, legend, hint, saveLabel }) {
     const [zone, setZone] = useState(ZONES[0][0]);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -80,8 +82,9 @@ function ZoneTemplates({ editor, field, legend, hint, saveLabel }) {
             <legend>{legend}</legend>
             <p className="admin-hint">
                 {hint} Linia, w której zmienna jest pusta
-                (np. brak linku do płatności), zostanie pominięta. <code>**tekst**</code> to pogrubienie, linia
-                zaczynająca się od <code>- </code> to punkt listy. Podpis dodaje się sam.
+                (np. brak linku do płatności), zostanie pominięta. <code>**tekst**</code> to pogrubienie,{" "}
+                <code>!!tekst!!</code> to czerwone podkreślenie, linia zaczynająca się od <code>- </code> to punkt
+                listy. Podpis dodaje się sam.
             </p>
             <div className="subs-chip-group" role="group" aria-label="Miejsce na wydarzeniu">
                 {ZONES.map(([key, label]) => (
@@ -113,9 +116,67 @@ function ZoneTemplates({ editor, field, legend, hint, saveLabel }) {
                 ))}
             </div>
             <p className="admin-hint">
-                {"{kwota}"} i {"{link_platnosci}"} biorą się z Ustawienia → Opłaty (osobno dla każdego miejsca),{" "}
-                {"{termin}"} to termin płatności, {"{obiekt}"}, {"{adres}"} i {"{data}"} — z sekcji Edycja.
+                {"{kwota}"} i {"{link_platnosci}"} biorą się z Ustawienia → Opłaty,{" "}
+                {"{termin}"} to termin płatności, {"{termin_platnosci}"} to „w ciągu 7 dni od momentu otrzymania
+                akceptacji.” (liczba dni z Ustawienia → Opłaty) albo „do 15 maja 2027 r.”, gdy obowiązuje stały termin,{" "}
+                {"{obiekt}"}, {"{adres}"} i {"{data}"} — z sekcji Edycja,{" "}
+                {"{kiedy}"} to data w formie „w sobotę, 29 maja 2027 r.”.
             </p>
+            <div className="templates-form-footer">
+                <button
+                    type="button"
+                    className="btn-street btn-street-primary"
+                    disabled={editor.isSaving}
+                    onClick={() => editor.save(null)}
+                >
+                    {editor.isSaving ? "Zapisywanie..." : saveLabel}
+                </button>
+            </div>
+        </fieldset>
+    );
+}
+
+const STATUS_VARIABLES = ["{imie}", "{marka}", "{rejestracja}", "{rok}"];
+
+// one text for every place: odrzucenie, rezerwa, potwierdzenie opłaty
+function StatusTemplate({ editor, field, legend, hint, saveLabel, variables = STATUS_VARIABLES }) {
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const value = editor.content?.[field] ?? "";
+
+    function insertVariable(variable) {
+        const element = textareaRef.current;
+        const start = element ? element.selectionStart : value.length;
+        const end = element ? element.selectionEnd : value.length;
+        editor.update({ [field]: value.slice(0, start) + variable + value.slice(end) });
+        requestAnimationFrame(() => {
+            if (!element) return;
+            element.focus();
+            element.setSelectionRange(start + variable.length, start + variable.length);
+        });
+    }
+
+    return (
+        <fieldset className="templates-signature templates-acceptance">
+            <legend>{legend}</legend>
+            <p className="admin-hint">
+                {hint} <code>**tekst**</code> to pogrubienie, <code>!!tekst!!</code> to czerwone podkreślenie. Podpis
+                dodaje się sam. Puste pole = krótki e-mail domyślny.
+            </p>
+            <AutoTextarea
+                textareaRef={textareaRef}
+                value={value}
+                maxLength={5000}
+                aria-label={legend}
+                onChange={(next) => editor.update({ [field]: next })}
+            />
+            <div className="templates-variables">
+                <span>Wstaw:</span>
+                {variables.map((variable) => (
+                    <button key={variable} type="button" className="subs-chip" onClick={() => insertVariable(variable)}>
+                        {variable}
+                    </button>
+                ))}
+            </div>
             <div className="templates-form-footer">
                 <button
                     type="button"
@@ -411,12 +472,28 @@ export default function TemplatesEditor({ onAction }) {
                 hint="Wysyłany po zaakceptowaniu zgłoszenia — treść zależy od miejsca wybranego przy akceptacji. Puste pole = krótki e-mail domyślny z danymi do opłaty."
                 saveLabel="Zapisz e-mail akceptacji"
             />
-            <ZoneTemplates
+            <StatusTemplate
                 editor={editor}
                 field="paymentConfirmed"
                 legend="E-mail po potwierdzeniu opłaty"
-                hint="Wysyłany, gdy w panelu admina klikniesz „Potwierdź opłatę i wyślij wejściówkę”. Tu wpisz informacje na dzień wydarzenia; {panel} prowadzi do wejściówki z kodem QR. Puste pole = krótki e-mail domyślny."
+                hint="Wysyłany, gdy w panelu admina klikniesz „Potwierdź opłatę i wyślij wejściówkę”. Jeden tekst dla każdego miejsca — {miejsce} wstawi się samo. {panel} prowadzi do wejściówki z kodem QR."
                 saveLabel="Zapisz e-mail po opłacie"
+                variables={ACCEPTANCE_VARIABLES}
+            />
+
+            <StatusTemplate
+                editor={editor}
+                field="waitlist"
+                legend="E-mail rezerwy"
+                hint="Wysyłany, gdy zgłoszenie trafia na listę rezerwową. Komentarz wpisany przy decyzji dopisze się pod treścią."
+                saveLabel="Zapisz e-mail rezerwy"
+            />
+            <StatusTemplate
+                editor={editor}
+                field="rejection"
+                legend="E-mail odrzucenia"
+                hint="Wysyłany po odrzuceniu zgłoszenia. Komentarz wpisany przy odrzuceniu dopisze się pod treścią."
+                saveLabel="Zapisz e-mail odrzucenia"
             />
 
             <fieldset className="templates-signature">

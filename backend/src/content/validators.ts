@@ -361,6 +361,7 @@ function validateSettings(input) {
         showcaseEnabled: Boolean(input.showcaseEnabled),
         participantInfo: String(input.participantInfo || "").trim().slice(0, 3000),
         paymentUrl: text(input.paymentUrl, 1000),
+        paymentLinkLabel: text(input.paymentLinkLabel, 120),
     };
 
     // the link goes into e-mails and the participant panel, so only a real https address
@@ -409,6 +410,14 @@ function validateSettings(input) {
 // note = comment on a decision, group = group e-mail, zone = message with a change of place
 const TEMPLATE_KINDS = ["note", "group", "zone"];
 
+// one text for every place; an old save kept one per place
+function firstZoneText(value) {
+    if (value && typeof value === "object") {
+        return Object.values(value).map((text) => String(text || "").trim()).find(Boolean) || "";
+    }
+    return value || "";
+}
+
 function validateTemplates(input) {
     const items = asArray(input.items)
         .slice(0, 60)
@@ -441,7 +450,9 @@ function validateTemplates(input) {
             signature,
             items,
             acceptance: perZone(input.acceptance),
-            paymentConfirmed: perZone(input.paymentConfirmed),
+            paymentConfirmed: String(firstZoneText(input.paymentConfirmed)).trim().slice(0, 5000),
+            rejection: String(input.rejection || "").trim().slice(0, 5000),
+            waitlist: String(input.waitlist || "").trim().slice(0, 5000),
         },
     };
 }

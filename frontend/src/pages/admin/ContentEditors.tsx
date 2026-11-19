@@ -1119,9 +1119,18 @@ export function SubmissionSettingsEditor({ onAction, part = "zapisy" }) {
                             inputMode="url"
                             onChange={(url) => editor.update({ paymentUrl: url.trim() })}
                         />
+                        <TextInput
+                            label="Napis linku w e-mailach"
+                            hint="widoczny zamiast adresu, np. „kliknij, aby zapłacić przez Przelewy24”"
+                            value={settings.paymentLinkLabel || ""}
+                            maxLength={120}
+                            placeholder="kliknij, aby zapłacić przez Przelewy24"
+                            onChange={(paymentLinkLabel) => editor.update({ paymentLinkLabel })}
+                        />
                         <p className="admin-hint">
                             Link pojawia się w panelu uczestnika jako przycisk „Zapłać online”, w e-mailu
-                            akceptacji ({"{link_platnosci}"}) i w przypomnieniu o opłacie.
+                            akceptacji ({"{link_platnosci}"}) i w przypomnieniu o opłacie. W e-mailach ludzie widzą
+                            napis powyżej, a kliknięcie prowadzi pod link.
                         </p>
                         <div className="admin-form-row">
                             <DateField

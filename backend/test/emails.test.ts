@@ -44,7 +44,7 @@ describe("powiadomienia e-mail", () => {
         for (const [status, subject] of [
             ["approved", /Akceptacja na Strefę Select/],
             ["waitlist", /liście rezerwowej/],
-            ["rejected", /odrzucone/],
+            ["rejected", /informacja o zgłoszeniu do strefy Select/],
         ]) {
             const user = createUser();
             const row = createSubmission(user);
