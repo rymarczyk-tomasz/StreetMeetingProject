@@ -45,6 +45,7 @@ export default function SubmissionPage() {
     const [vehicles, setVehicles] = useState([]);
     const [vehicleId, setVehicleId] = useState("");
     const [error, setError] = useState("");
+    const [photoError, setPhotoError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -116,19 +117,19 @@ export default function SubmissionPage() {
         const totalSize = next.reduce((sum, photo) => sum + photo.size, 0);
 
         if (next.length > MAX_PHOTOS) {
-            setError(`Możesz dodać maksymalnie ${MAX_PHOTOS} zdjęć.`);
+            setPhotoError(`Możesz dodać maksymalnie ${MAX_PHOTOS} zdjęć.`);
             return;
         }
         if (files.some((photo) => !isAcceptedPhoto(photo))) {
-            setError("Dozwolone są tylko zdjęcia w formatach JPG, PNG, WEBP lub AVIF.");
+            setPhotoError("Dozwolone są tylko zdjęcia w formatach JPG, PNG, WEBP lub AVIF.");
             return;
         }
         if (totalSize > MAX_TOTAL_SIZE) {
-            setError(`Łączny rozmiar zdjęć (${formatMegabytes(totalSize)}) przekracza 50 MB.`);
+            setPhotoError(`Łączny rozmiar zdjęć (${formatMegabytes(totalSize)}) przekracza 50 MB.`);
             return;
         }
 
-        setError("");
+        setPhotoError("");
         setPhotos(next);
     }
 
@@ -138,21 +139,23 @@ export default function SubmissionPage() {
     }
 
     function removePhoto(index: number) {
+        setPhotoError("");
         setPhotos((current) => current.filter((_, i) => i !== index));
     }
 
     async function handleSubmit(event) {
         event.preventDefault();
         setError("");
+        setPhotoError("");
 
         if (usesGaragePhotos && vehicle.photos.length !== MAX_PHOTOS) {
-            setError(
+            setPhotoError(
                 `Ten pojazd ma w garażu ${vehicle.photos.length} z ${MAX_PHOTOS} wymaganych zdjęć. Dodaj tutaj ${MAX_PHOTOS} nowych zdjęć albo uzupełnij je w garażu.`,
             );
             return;
         }
         if (!usesGaragePhotos && photos.length !== MAX_PHOTOS) {
-            setError(`Dodaj dokładnie ${MAX_PHOTOS} zdjęć pojazdu – teraz jest ${photos.length}.`);
+            setPhotoError(`Dodaj dokładnie ${MAX_PHOTOS} zdjęć pojazdu – teraz jest ${photos.length}.`);
             return;
         }
 
@@ -192,6 +195,7 @@ export default function SubmissionPage() {
         setVehicleId("");
         setConsents({ acceptTerms: false });
         setError("");
+        setPhotoError("");
         setIsSubmitted(false);
     }
 
@@ -440,6 +444,12 @@ export default function SubmissionPage() {
                         </p>
                     </div>
                 </fieldset>
+
+                {photoError && (
+                    <p className="form-error" role="alert">
+                        {photoError}
+                    </p>
+                )}
 
                 <fieldset className="form-card">
                     <legend className="form-card-title">

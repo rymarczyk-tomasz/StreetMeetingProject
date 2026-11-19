@@ -66,13 +66,31 @@ function linksIn(...texts) {
     return new Set(texts.flatMap((text) => String(text || "").match(URL_PATTERN) || []));
 }
 
+const LONG_LINK = 60;
+
+// the payment link (Przelewy24 with all its parameters) is unreadable, so the e-mail shows a label
+function linkText(raw, url) {
+    if (raw.length <= LONG_LINK) return url;
+    const paymentUrl = String(siteContentDb.getSettings().paymentUrl || "").trim();
+    let host = "";
+    try {
+        host = new URL(raw).hostname.replace(/^www\./, "");
+    } catch {
+        return url;
+    }
+    if (raw === paymentUrl) {
+        return /przelewy24\./.test(host) ? "kliknij, aby zapłacić przez Przelewy24" : "kliknij, aby zapłacić";
+    }
+    return escapeHtml(host);
+}
+
 // one line: escaped, **bold**, allowed https links clickable
 function inlineHtml(line, links = new Set()) {
     return escapeHtml(line)
         .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
         .replace(URL_PATTERN, (url) => {
             const raw = url.replace(/&amp;/g, "&");
-            return links.has(raw) ? `<a href="${url}">${url}</a>` : url;
+            return links.has(raw) ? `<a href="${url}">${linkText(raw, url)}</a>` : url;
         });
 }
 
