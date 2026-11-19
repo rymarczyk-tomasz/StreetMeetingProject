@@ -114,7 +114,7 @@ function PaymentBox({ submission }) {
                                 <>
                                     <CopyField label="Odbiorca" value={payment.recipient} />
                                     <CopyField label="Numer konta" value={payment.account} />
-                                    <CopyField label="Tytuł" value={payment.title} />
+                                    {payment.title && <CopyField label="Tytuł" value={payment.title} />}
                                 </>
                             )}
                         </dl>

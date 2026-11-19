@@ -26,6 +26,7 @@ beforeEach(() => {
         paymentAccount: "",
         paymentDaysAfterApproval: 7,
         paymentUrl: P24,
+        paymentTitleTemplate: "Strefa Select {rok} – {rejestracja}",
     });
     siteContentDb.saveContent("templates", { ...siteContentDb.getContent("templates"), acceptance: undefined, paymentConfirmed: undefined });
 });
@@ -60,6 +61,27 @@ describe("e-mail akceptacji według miejsca", () => {
         assert.match(text, /Kwota: 150 zł/);
         assert.match(text, /Link do płatności: https:\/\/sklep\.przelewy24\.pl/);
         assert.match(text, /miejsce w tunelu/);
+    });
+
+    test("krótki link Przelewy24 też jest opisany słowami, nie adresem", async () => {
+        saveSettings({ paymentUrl: "https://s.przelewy24.pl/8wLhm23vcPdw" });
+        const admin = createUser({ role: "admin" });
+        const user = createUser();
+        await approve(admin, createSubmission(user), "tunel");
+
+        const { html } = mailsTo(user.email)[0];
+        assert.ok(html.includes('<a href="https://s.przelewy24.pl/8wLhm23vcPdw">kliknij, aby zapłacić przez Przelewy24</a>'));
+    });
+
+    test("wyczyszczony tytuł przelewu nie pojawia się w e-mailu", async () => {
+        saveSettings({ paymentAccount: ACCOUNT, paymentTitleTemplate: "" });
+        const admin = createUser({ role: "admin" });
+        const user = createUser();
+        await approve(admin, createSubmission(user), "tunel");
+
+        const { text } = mailsTo(user.email)[0];
+        assert.match(text, /Numer konta: 12 3456/);
+        assert.doesNotMatch(text, /Tytuł przelewu/);
     });
 
     test("bez linku: dane do przelewu zamiast linku", async () => {

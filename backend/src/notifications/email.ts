@@ -68,20 +68,19 @@ function linksIn(...texts) {
 
 const LONG_LINK = 60;
 
-// the payment link (Przelewy24 with all its parameters) is unreadable, so the e-mail shows a label
+// the payment link shows as a label, other long links as their domain
 function linkText(raw, url) {
-    if (raw.length <= LONG_LINK) return url;
-    const paymentUrl = String(siteContentDb.getSettings().paymentUrl || "").trim();
     let host = "";
     try {
         host = new URL(raw).hostname.replace(/^www\./, "");
     } catch {
         return url;
     }
+    const paymentUrl = String(siteContentDb.getSettings().paymentUrl || "").trim();
     if (raw === paymentUrl) {
         return /przelewy24\./.test(host) ? "kliknij, aby zapłacić przez Przelewy24" : "kliknij, aby zapłacić";
     }
-    return escapeHtml(host);
+    return raw.length > LONG_LINK ? escapeHtml(host) : url;
 }
 
 // one line: escaped, **bold**, allowed https links clickable
@@ -257,7 +256,7 @@ function paymentLines(submission) {
         if (payment.account) {
             if (payment.recipient) lines.push(`Odbiorca: ${payment.recipient}`);
             lines.push(`Numer konta: ${payment.account}`);
-            lines.push(`Tytuł przelewu: ${payment.title}`);
+            if (payment.title) lines.push(`Tytuł przelewu: ${payment.title}`);
         }
     }
     if (payment.url) lines.push(`Zapłać online: ${payment.url}`);
@@ -485,7 +484,7 @@ async function sendPaymentReminderEmail({ submission, email, firstName }) {
               payment.url ? `Zapłać online: ${payment.url}` : "",
               payment.account && payment.recipient ? `Odbiorca: ${payment.recipient}` : "",
               payment.account ? `Numer konta: ${payment.account}` : "",
-              payment.account ? `Tytuł przelewu: ${payment.title}` : "",
+              payment.account && payment.title ? `Tytuł przelewu: ${payment.title}` : "",
           ].filter(Boolean)
         : [];
     const closing =

@@ -50,7 +50,8 @@ function hasPaymentDetails(settings = siteContentDb.getSettings()) {
 }
 
 function getPaymentDetails(submission, settings = siteContentDb.getSettings()) {
-    const title = String(settings.paymentTitleTemplate || "Strefa Select {rok} – {rejestracja}")
+    // a title cleared in the panel stays empty (no "Tytuł przelewu" line), not the default
+    const title = String(settings.paymentTitleTemplate ?? "Strefa Select {rok} – {rejestracja}")
         .replace(/\{rok\}/g, String(submission.edition ?? ""))
         .replace(/\{rejestracja\}/g, submission.license_plate || "");
 
