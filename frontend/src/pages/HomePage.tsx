@@ -458,8 +458,9 @@ function HeroTitle({ title, year }) {
 function useEventJsonLd(edition, home, contact) {
     useEffect(() => {
         const data = buildEventJsonLd(edition, {
-            ticketUrl: home?.ticketUrl,
             contact,
+            description: home?.heroLead,
+            image: home?.heroImage,
         });
         if (!data) return;
 

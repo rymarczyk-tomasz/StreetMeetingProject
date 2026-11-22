@@ -183,15 +183,36 @@ describe("edition", () => {
     });
 
     test("JSON-LD tylko gdy jest data", () => {
-        expect(buildEventJsonLd({ dateText: "Termin wkrótce" }, { ticketUrl: "", contact: null })).toBeNull();
+        expect(buildEventJsonLd({ dateText: "Termin wkrótce" }, { contact: null })).toBeNull();
         const ld = buildEventJsonLd(
             { name: "Street Show 2027", date: "2027-06-01", startTime: "12:00", venueName: "Arena" },
-            { ticketUrl: "", contact: { facebookUrl: "https://fb.com/x", instagramUrl: "" } },
+            { contact: { facebookUrl: "https://fb.com/x", instagramUrl: "" } },
         );
-        expect(ld.startDate).toBe("2027-06-01T12:00");
+        expect(ld.startDate).toBe("2027-06-01T12:00:00+02:00");
         expect(ld).not.toHaveProperty("endDate");
         expect(ld).not.toHaveProperty("offers");
         expect(ld.organizer.sameAs).toEqual(["https://fb.com/x"]);
+        expect(ld.image).toEqual(["https://www.streetshow.pl/img/og-image.jpg"]);
+        expect(ld).not.toHaveProperty("description");
+    });
+
+    test("JSON-LD: opis, zdjęcie, adres w częściach i czas zimowy", () => {
+        const ld = buildEventJsonLd(
+            { date: "2027-12-04", startTime: "10:00", endTime: "18:00", venueAddress: "ul. Testowa 1, 80-560 Gdańsk" },
+            { contact: null, description: "Opis", image: "/uploads/content/hero.webp" },
+        );
+        expect(ld.description).toBe("Opis");
+        expect(ld.image).toEqual(["https://www.streetshow.pl/uploads/content/hero.webp"]);
+        expect(ld.endDate).toBe("2027-12-04T18:00:00+01:00");
+        expect(ld.location.address).toEqual({
+            "@type": "PostalAddress",
+            streetAddress: "ul. Testowa 1",
+            postalCode: "80-560",
+            addressLocality: "Gdańsk",
+            addressCountry: "PL",
+        });
+        const loose = buildEventJsonLd({ date: "2027-12-04", venueAddress: "Gdańsk, stadion" }, { contact: null });
+        expect(loose.location.address).toBe("Gdańsk, stadion");
     });
 });
 
