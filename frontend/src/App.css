@@ -4012,6 +4012,26 @@ body.is-dialog-open {
     width: 100%;
 }
 
+/* media accreditation: public form and admin list */
+.accreditation-form {
+    max-width: 560px;
+}
+
+.accreditation-filters {
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.accreditation-signature {
+    white-space: pre-line;
+}
+
+.accreditation-table small {
+    display: block;
+    margin-top: 4px;
+    color: var(--street-muted);
+}
+
 /* ---- Other sections: tables, system checks ---- */
 .admin-table-wrapper {
     overflow: auto;

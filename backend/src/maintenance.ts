@@ -7,7 +7,7 @@ const passwordResetTokensDb = require("./db/passwordResetTokens");
 const emailTokensDb = require("./db/emailTokens");
 const dateSubscribersDb = require("./db/dateSubscribers");
 const { sendDuePaymentReminders } = require("./submissions/paymentReminders");
-const { purgeDueSubmissionFiles } = require("./retention");
+const { purgeDueAccreditations, purgeDueSubmissionFiles } = require("./retention");
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -71,6 +71,12 @@ function runRetention() {
         }
     } catch (error) {
         console.error("[retention] Czyszczenie zdjęć:", error.message);
+    }
+    try {
+        const count = purgeDueAccreditations();
+        if (count) console.log(`[retention] Usunięto ${count} wniosków o akredytację po wydarzeniu.`);
+    } catch (error) {
+        console.error("[retention] Czyszczenie akredytacji:", error.message);
     }
 }
 

@@ -455,6 +455,7 @@ function HomeFooter({ contact }) {
                     </p>
                     <nav className="site-footer-links" aria-label="Stopka">
                         <Link to="/faq">FAQ</Link>
+                        <Link to="/akredytacje">Akredytacje medialne</Link>
                         <Link to="/regulamin">Regulamin</Link>
                         <Link to="/regulamin-select">Regulamin Select i Expo</Link>
                         <Link to="/polityka-prywatnosci">Polityka prywatności</Link>
@@ -475,6 +476,7 @@ function PageFooter({ contact }) {
                 <div className="site-footer-row-links">
                     <nav className="site-footer-links" aria-label="Stopka">
                         <Link to="/faq">FAQ</Link>
+                        <Link to="/akredytacje">Akredytacje medialne</Link>
                         <Link to="/regulamin">Regulamin</Link>
                         <Link to="/regulamin-select">Regulamin Select i Expo</Link>
                         <Link to="/polityka-prywatnosci">Polityka prywatności</Link>

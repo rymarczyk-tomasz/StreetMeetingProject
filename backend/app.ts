@@ -10,6 +10,7 @@ const messagesRoutes = require("./src/messages/routes");
 const gateRoutes = require("./src/gate/routes");
 const { router: showcaseRoutes } = require("./src/showcase/routes");
 const dateSubscribersRoutes = require("./src/notifications/dateSubscribersRoutes");
+const accreditationsRoutes = require("./src/accreditations/routes");
 const siteContentDb = require("./src/db/siteContent");
 const { maintenanceGuard } = require("./src/maintenanceGuard");
 const { PUBLIC_CONTENT_KEYS } = require("./src/content/defaults");
@@ -149,6 +150,7 @@ app.get("/api/health", (req, res) => {
 // everything below answers 503 to non-admins while maintenance mode is on
 app.use("/api", maintenanceGuard);
 app.use("/api/notify", dateSubscribersRoutes);
+app.use("/api/accreditations", accreditationsRoutes);
 app.use("/api/gallery", galleryPublicRoutes);
 app.use("/api/showcase", showcaseRoutes);
 app.use("/api/admin", adminRoutes);

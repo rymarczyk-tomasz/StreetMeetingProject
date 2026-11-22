@@ -59,6 +59,11 @@ const ACTION_LABELS = {
     "edition.content_updated": "zmienił edycję wydarzenia",
     "settings.updated": "zmienił ustawienia zgłoszeń",
     "templates.content_updated": "zmienił szablony wiadomości",
+    "accreditation.approved": "zaakceptował wniosek o akredytację",
+    "accreditation.rejected": "odrzucił wniosek o akredytację",
+    "accreditation.deleted": "usunął wniosek o akredytację",
+    "accreditation.purged": "usunął wnioski o akredytację po wydarzeniu (retencja)",
+    "accreditation.list_viewed": "przeglądał wnioski o akredytację",
     "email.group_sent": "wysłał wiadomość do uczestników",
     "date_subscribers.notified": "wysłał powiadomienie o dacie do listy zapisanych",
     "date_subscribers.exported": "pobrał listę zapisanych na powiadomienie o dacie",
@@ -152,6 +157,7 @@ function dayLabel(date) {
 
 const CATEGORY_OPTIONS = [
     ["submission.", "Zgłoszenia"],
+    ["accreditation.", "Akredytacje"],
     ["user.", "Użytkownicy"],
     ["settings.", "Ustawienia"],
     ["templates.", "Szablony wiadomości"],

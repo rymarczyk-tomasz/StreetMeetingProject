@@ -18,6 +18,7 @@ const SubmissionPage = lazy(() => import("./pages/SubmissionPage"));
 const AdminPage = lazy(() => import("./pages/admin/AdminPage"));
 const GaragePage = lazy(() => import("./pages/GaragePage"));
 const EmailTokenPage = lazy(() => import("./pages/EmailTokenPage"));
+const AccreditationPage = lazy(() => import("./pages/AccreditationPage"));
 const GatePage = lazy(() => import("./pages/GatePage"));
 const ShowcasePage = lazy(() => import("./pages/ShowcasePage"));
 const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
@@ -42,6 +43,7 @@ function App() {
                     path="polityka-prywatnosci"
                     element={<RegulaminPage contentKey="privacy" fallbackTitle="Polityka prywatności" />}
                 />
+                <Route path="akredytacje" element={<AccreditationPage />} />
                 <Route path="logowanie" element={<LoginPage />} />
                 <Route path="rejestracja" element={<RegisterPage />} />
                 <Route

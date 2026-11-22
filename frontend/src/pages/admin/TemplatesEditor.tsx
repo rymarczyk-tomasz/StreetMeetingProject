@@ -136,10 +136,11 @@ function ZoneTemplates({ editor, field, legend, hint, saveLabel }) {
     );
 }
 
+const ACCREDITATION_VARIABLES = ["{rok}", "{obiekt}", "{adres}", "{data}", "{kiedy}"];
 const STATUS_VARIABLES = ["{imie}", "{marka}", "{rejestracja}", "{rok}"];
 
 // one text for every place: odrzucenie, rezerwa, potwierdzenie opłaty
-function StatusTemplate({ editor, field, legend, hint, saveLabel, variables = STATUS_VARIABLES }) {
+function StatusTemplate({ editor, field, legend, hint, saveLabel, variables = STATUS_VARIABLES, subjectField = "" }) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const value = editor.content?.[field] ?? "";
 
@@ -162,6 +163,16 @@ function StatusTemplate({ editor, field, legend, hint, saveLabel, variables = ST
                 {hint} <code>**tekst**</code> to pogrubienie, <code>!!tekst!!</code> to czerwone podkreślenie. Podpis
                 dodaje się sam. Puste pole = krótki e-mail domyślny.
             </p>
+            {subjectField && (
+                <input
+                    className="field-input"
+                    aria-label={`${legend}: temat`}
+                    placeholder="Temat wiadomości"
+                    maxLength={200}
+                    value={editor.content?.[subjectField] ?? ""}
+                    onChange={(event) => editor.update({ [subjectField]: event.target.value })}
+                />
+            )}
             <AutoTextarea
                 textareaRef={textareaRef}
                 value={value}
@@ -494,6 +505,25 @@ export default function TemplatesEditor({ onAction }) {
                 legend="E-mail odrzucenia"
                 hint="Wysyłany po odrzuceniu zgłoszenia. Komentarz wpisany przy odrzuceniu dopisze się pod treścią."
                 saveLabel="Zapisz e-mail odrzucenia"
+            />
+
+            <StatusTemplate
+                editor={editor}
+                field="accreditationApproved"
+                subjectField="accreditationApprovedSubject"
+                legend="E-mail: akredytacja przyznana"
+                hint="Wczytuje się po kliknięciu „Akceptuj” w Akredytacjach. Przed wysłaniem można go jeszcze poprawić dla tej jednej osoby."
+                saveLabel="Zapisz e-mail akredytacji"
+                variables={ACCREDITATION_VARIABLES}
+            />
+            <StatusTemplate
+                editor={editor}
+                field="accreditationRejected"
+                subjectField="accreditationRejectedSubject"
+                legend="E-mail: akredytacja odrzucona"
+                hint="Wczytuje się po kliknięciu „Odrzuć” w Akredytacjach. Przed wysłaniem można go jeszcze poprawić dla tej jednej osoby."
+                saveLabel="Zapisz e-mail odmowy akredytacji"
+                variables={ACCREDITATION_VARIABLES}
             />
 
             <fieldset className="templates-signature">

@@ -1,6 +1,7 @@
 const { EMAIL_REGEX, normalizeText, isSafeUrl } = require("../utils/validation");
 const { sanitizeRichText, isRichTextEmpty } = require("../utils/html");
 const { ZONES } = require("../zones");
+const { DEFAULTS: CONTENT_DEFAULTS } = require("./defaults");
 
 // Each validator turns untrusted admin input into the stored shape, or returns
 // { error } with a message for the panel. Unknown fields are always dropped.
@@ -453,6 +454,15 @@ function validateTemplates(input) {
             paymentConfirmed: String(firstZoneText(input.paymentConfirmed)).trim().slice(0, 5000),
             rejection: String(input.rejection || "").trim().slice(0, 5000),
             waitlist: String(input.waitlist || "").trim().slice(0, 5000),
+            // blank = back to the built-in text
+            accreditationApprovedSubject:
+                text(input.accreditationApprovedSubject, 200) || CONTENT_DEFAULTS.templates.accreditationApprovedSubject,
+            accreditationApproved:
+                String(input.accreditationApproved || "").trim().slice(0, 5000) || CONTENT_DEFAULTS.templates.accreditationApproved,
+            accreditationRejectedSubject:
+                text(input.accreditationRejectedSubject, 200) || CONTENT_DEFAULTS.templates.accreditationRejectedSubject,
+            accreditationRejected:
+                String(input.accreditationRejected || "").trim().slice(0, 5000) || CONTENT_DEFAULTS.templates.accreditationRejected,
         },
     };
 }

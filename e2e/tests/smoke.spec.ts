@@ -7,6 +7,7 @@ const PUBLIC_PAGES: [string, RegExp][] = [
     ["/regulamin-select", /Select i Expo/i],
     ["/polityka-prywatnosci", /Polityka prywatności/i],
     ["/galeria", /Galeria/i],
+    ["/akredytacje", /Akredytacje medialne/i],
     ["/logowanie", /Logowanie/i],
     ["/rejestracja", /Rejestracja/i],
     ["/nie-pamietam-hasla", /hasł/i],

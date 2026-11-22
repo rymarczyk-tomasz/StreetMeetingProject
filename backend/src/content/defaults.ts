@@ -195,6 +195,14 @@ const DEFAULTS = {
         rejection: "Dzień dobry,\n\nDziękujemy za przesłanie zgłoszenia do udziału w Street Show {rok}.\n\nZ przykrością informujemy, że w związku z ograniczoną liczbą miejsc oraz bardzo dużą liczbą zgłoszeń, nie możemy w tym roku zakwalifikować Państwa do udziału w strefie select.\n\nChcielibyśmy jednak serdecznie zaprosić Państwa jako uczestników wydarzenia!\n\nUdział w Street Show {rok} to wspaniała okazja, aby wspólnie cieszyć się atmosferą naszego eventu, podziwiać inne pojazdy i wziąć udział w licznych atrakcjach przygotowanych dla gości.\n\nDziękujemy za zainteresowanie i wkład w rozwój Street Show – mamy nadzieję, że mimo wszystko będziemy mogli spotkać się z Państwem podczas tegorocznego wydarzenia.\n\nW razie jakichkolwiek pytań pozostajemy do Państwa dyspozycji.",
         // sent when a submission goes to the reserve list; the admin's note is added below it
         waitlist: "Dzień dobry,\n\nDziękujemy za przesłanie zgłoszenia do udziału w Street Show {rok}.\n\nInformujemy, że Państwa zgłoszenie ({marka}, {rejestracja}) trafiło na **listę rezerwową** strefy select. Ze względu na ograniczoną liczbę miejsc oraz bardzo dużą liczbę zgłoszeń nie możemy w tej chwili potwierdzić miejsca.\n\nJeżeli zwolni się miejsce, skontaktujemy się z Państwem e-mailem i prześlemy informacje dotyczące płatności. Do tego czasu nie trzeba niczego opłacać.\n\nW razie jakichkolwiek pytań pozostajemy do Państwa dyspozycji.",
+        // media accreditation decisions; the admin sees and can change the text before it goes out.
+        // No variable for the applicant's data: the form is open to anyone
+        accreditationApprovedSubject: "Street Show: akredytacja medialna przyznana",
+        accreditationApproved:
+            "Dzień dobry,\n\nakredytacja medialna na Street Show {rok} została przyznana.\n\nWydarzenie: {obiekt}, {adres}\nTermin: {data}\n\nW razie pytań prosimy o odpowiedź na tę wiadomość.",
+        accreditationRejectedSubject: "Street Show: akredytacja medialna – decyzja",
+        accreditationRejected:
+            "Dzień dobry,\n\ndziękujemy za wniosek o akredytację medialną na Street Show {rok}. Niestety tym razem nie możemy przyznać akredytacji.\n\nW razie pytań prosimy o odpowiedź na tę wiadomość.",
         items: [
             {
                 id: "note-photos",

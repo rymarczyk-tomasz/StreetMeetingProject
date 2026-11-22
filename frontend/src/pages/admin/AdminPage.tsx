@@ -27,6 +27,7 @@ import {
 } from "./ContentEditors";
 import GalleryPanel from "./GalleryPanel";
 import MessagesPanel from "./MessagesPanel";
+import AccreditationsPanel from "./AccreditationsPanel";
 import SubmissionsPanel from "./SubmissionsPanel";
 import UsersPanel from "./UsersPanel";
 import DateSubscribersPanel from "./DateSubscribersPanel";
@@ -40,6 +41,7 @@ const NAV_GROUPS: [string, [string, string, string][]][] = [
         [
             ["dashboard", "Dashboard", "speedometer2"],
             ["zgloszenia", "Zgłoszenia", "card-checklist"],
+            ["akredytacje", "Akredytacje", "camera"],
             ["wjazd", "Wjazd", "qr-code-scan"],
             ["wiadomosci", "Wiadomości", "envelope"],
             ["raport", "Raport", "bar-chart"],
@@ -110,6 +112,9 @@ function NavBadge({ id, counts }) {
     if (id === "zgloszenia" && counts.pending > 0) {
         return <span className="admin-nav-count is-yellow" title="Oczekujące zgłoszenia">{counts.pending}</span>;
     }
+    if (id === "akredytacje" && counts.accreditations > 0) {
+        return <span className="admin-nav-count is-yellow" title="Oczekujące akredytacje">{counts.accreditations}</span>;
+    }
     if (id === "wiadomosci" && counts.unread > 0) {
         return <span className="admin-nav-count" title="Nieprzeczytane wiadomości">{counts.unread}</span>;
     }
@@ -155,6 +160,7 @@ function Sidebar({ active, rail, counts, editions, edition, onEdition, onOpen })
                                     <option value={id} key={id}>
                                         {label}
                                         {id === "zgloszenia" && counts.pending ? ` (${counts.pending})` : ""}
+                                        {id === "akredytacje" && counts.accreditations ? ` (${counts.accreditations})` : ""}
                                         {id === "wiadomosci" && counts.unread ? ` (${counts.unread})` : ""}
                                     </option>
                                 ))}
@@ -270,6 +276,7 @@ function AdminPanel() {
 
     const counts = {
         pending: stats?.submissions.pending || 0,
+        accreditations: stats?.pendingAccreditations || 0,
         unread: stats?.unreadMessages || 0,
         systemError: Boolean(system?.checks?.some((check) => check.level === "error")),
     };
@@ -299,6 +306,10 @@ function AdminPanel() {
 
                     {activeSection === "zgloszenia" && (
                         <SubmissionsPanel edition={edition} onAction={onAction} />
+                    )}
+
+                    {activeSection === "akredytacje" && (
+                        <AccreditationsPanel key={edition} edition={edition} onAction={onAction} />
                     )}
 
                     {activeSection === "wjazd" && (

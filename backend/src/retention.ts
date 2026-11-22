@@ -1,6 +1,7 @@
 const submissionsDb = require("./db/submissions");
 const siteContentDb = require("./db/siteContent");
 const auditLogDb = require("./db/auditLog");
+const accreditationsDb = require("./db/accreditations");
 const { removeStoredPhotos } = require("./utils/userPhotos");
 const { removeShowcaseCopies } = require("./showcase/routes");
 const { todayInPoland } = require("./payments");
@@ -11,6 +12,8 @@ const { todayInPoland } = require("./payments");
 const RETENTION = {
     approved: { months: 12 },
     other: { days: 30 },
+    // the whole request, not just files
+    accreditation: { months: 3 },
 };
 
 function shiftDate(date, { days = 0, months = 0 }) {
@@ -54,4 +57,26 @@ function purgeDueSubmissionFiles(today = todayInPoland()) {
     return purged;
 }
 
-module.exports = { purgeDueSubmissionFiles, purgeDateOf, RETENTION };
+// counted from the event, or from the request when it came after the event
+function purgeDueAccreditations(today = todayInPoland()) {
+    let count = 0;
+    for (const row of accreditationsDb.listAccreditationDates()) {
+        const eventDate = eventDateOf(row.edition, today);
+        if (!eventDate) continue;
+        const created = String(row.created_at).slice(0, 10);
+        const from = created > eventDate ? created : eventDate;
+        if (shiftDate(from, RETENTION.accreditation) > today) continue;
+        if (accreditationsDb.deleteAccreditation(row.id)) count += 1;
+    }
+    if (count) {
+        auditLogDb.createAuditEntry({
+            adminId: null,
+            action: "accreditation.purged",
+            targetType: "accreditation",
+            details: { count },
+        });
+    }
+    return count;
+}
+
+module.exports = { purgeDueAccreditations, purgeDueSubmissionFiles, purgeDateOf, RETENTION };

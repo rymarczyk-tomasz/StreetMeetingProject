@@ -43,11 +43,14 @@ const threadsDb = require("../db/threads");
 const { ZONES, isZone } = require("../zones");
 const { getThread, postToThread, readMessageBody } = require("../submissions/thread");
 const { adminRouter: galleryRouter } = require("../gallery/routes");
+const accreditationsDb = require("../db/accreditations");
+const accreditationsRouter = require("../accreditations/adminRoutes");
 
 const router = express.Router();
 
 router.use(authenticate, requireRole("admin"));
 router.use("/gallery", galleryRouter);
+router.use("/accreditations", accreditationsRouter);
 
 // "withdrawn" only exists on old rows, nobody can set it any more
 const SUBMISSION_STATUSES = ["pending", "approved", "rejected", "waitlist"];
@@ -460,6 +463,7 @@ router.get("/stats", (req, res) => {
         currentEdition: siteContentDb.getCurrentEdition(),
         // Approved participants see empty transfer details until this is filled in.
         paymentDetailsMissing: !hasPaymentDetails(settings),
+        pendingAccreditations: accreditationsDb.countPendingAccreditations(edition),
         unreadMessages: [...threadsDb.unreadCountsForAdmin().values()].reduce((sum, count) => sum + count, 0),
         dateSubscribers: {
             pending: dateSubscribersDb.countSubscribers().pending || 0,

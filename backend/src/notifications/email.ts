@@ -861,6 +861,65 @@ async function sendNewSubmissionAdminEmail({ submission, userEmail }) {
     });
 }
 
+async function sendNewAccreditationAdminEmail({ accreditation }) {
+    const recipients = adminNotifyRecipients();
+    if (!recipients) return { sent: false, reason: "not_configured" };
+
+    const adminUrl = `${getAppUrl()}/admin/akredytacje`;
+    const details = [
+        `Imię i nazwisko: ${accreditation.name}`,
+        `E-mail: ${accreditation.email}`,
+        `Telefon: ${accreditation.phone}`,
+        `Instagram: ${accreditation.instagram_url}`,
+    ];
+
+    return sendMail({
+        to: recipients,
+        subject: "Street Show: nowy wniosek o akredytację medialną",
+        text: ["Nowy wniosek o akredytację medialną:", "", ...details, "", `Panel administratora: ${adminUrl}`].join("\n"),
+        html: `
+            <p>Nowy wniosek o akredytację medialną:</p>
+            <p>${details.map(escapeHtml).join("<br>")}</p>
+            <p><a href="${escapeHtml(adminUrl)}">Otwórz panel administratora</a></p>
+        `,
+    });
+}
+
+// what the admin sees before sending. The form needs no account, so nothing typed into it
+// is filled in here: anyone could otherwise send their own text to a stranger from our address
+function accreditationDraft(accreditation, status) {
+    const templates = siteContentDb.getContent("templates");
+    const field = status === "approved" ? "accreditationApproved" : "accreditationRejected";
+    const edition = siteContentDb.getContent("edition") || {};
+    // place and date are known only for the current edition
+    const event = Number(edition.year) === accreditation.edition ? edition : null;
+    const values = {
+        rok: String(accreditation.edition),
+        obiekt: event?.venueName || "",
+        adres: event?.venueAddress || "",
+        data: event ? formatEventDate(event) : "",
+        kiedy: event ? eventDateWithPreposition(event) : "",
+    };
+    return {
+        subject: fillTemplate(templates[`${field}Subject`], values),
+        message: fillTemplate(templates[field], values),
+        signature: signatureText(),
+    };
+}
+
+// subject and message as the admin left them in the dialog, so their links may be clickable
+async function sendAccreditationDecisionEmail({ accreditation, subject, message }) {
+    return sendMail({
+        to: accreditation.email,
+        subject,
+        text: [plainText(message), "", signatureText()].join("\n"),
+        html: `
+            ${textToHtml(message, linksIn(message))}
+            <p>${signatureHtml()}</p>
+        `,
+    });
+}
+
 async function sendChangesSubmittedAdminEmail({ submission, userEmail }) {
     const recipients = adminNotifyRecipients();
     if (!recipients) return { sent: false, reason: "not_configured" };
@@ -1064,6 +1123,9 @@ module.exports = {
     sendAccountDeletedAdminEmail,
     sendSecurityAlertEmail,
     sendNewSubmissionAdminEmail,
+    sendNewAccreditationAdminEmail,
+    sendAccreditationDecisionEmail,
+    accreditationDraft,
     sendChangesSubmittedAdminEmail,
     sendPaymentReminderEmail,
     sendPaymentConfirmedEmail,
