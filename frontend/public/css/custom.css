@@ -2761,15 +2761,22 @@ body {
     text-transform: uppercase;
 }
 
+/* label and link on one row, the input below; the link is last in the markup for the Tab order */
 .field-label-row {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: baseline;
-    gap: 4px 16px;
+    gap: 8px 16px;
 }
 
-.field-label-row a {
+.field-label-row > .field-password {
+    grid-column: 1 / -1;
+    grid-row: 2;
+}
+
+.field-label-row > a {
+    grid-column: 2;
+    grid-row: 1;
     font-size: 14px;
     font-weight: 600;
 }

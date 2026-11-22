@@ -145,13 +145,11 @@ export default function LoginPage() {
                         required
                     />
                 </label>
-                <div className="form-field">
-                    <div className="field-label-row">
-                        <label htmlFor="login-password" className="field-label">
-                            Hasło
-                        </label>
-                        <Link to="/nie-pamietam-hasla">Nie pamiętasz hasła?</Link>
-                    </div>
+                {/* the link comes after the input so Tab goes e-mail → password; CSS puts it next to the label */}
+                <div className="form-field field-label-row">
+                    <label htmlFor="login-password" className="field-label">
+                        Hasło
+                    </label>
                     <PasswordInput
                         id="login-password"
                         value={password}
@@ -159,6 +157,7 @@ export default function LoginPage() {
                         autoComplete="current-password"
                         required
                     />
+                    <Link to="/nie-pamietam-hasla">Nie pamiętasz hasła?</Link>
                 </div>
                 {error && (
                     <p className="form-error" role="alert">

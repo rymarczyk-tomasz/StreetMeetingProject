@@ -66,7 +66,10 @@ test("złe hasło przy logowaniu pokazuje błąd", async ({ page }) => {
     await page.context().clearCookies();
     await page.goto("/logowanie");
     await page.getByLabel("E-mail").fill(email);
-    await page.getByLabel("Hasło", { exact: true }).fill("zupelnie-zle-haslo");
+    // Tab from the e-mail goes straight to the password, not to "Nie pamiętasz hasła?"
+    await page.keyboard.press("Tab");
+    await expect(page.getByLabel("Hasło", { exact: true })).toBeFocused();
+    await page.keyboard.type("zupelnie-zle-haslo");
     await page.getByRole("button", { name: "Zaloguj się" }).click();
     await expect(page.getByRole("alert")).toContainText(/Nieprawidłowy e-mail lub hasło/);
 });
