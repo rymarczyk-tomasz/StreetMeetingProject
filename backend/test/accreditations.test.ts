@@ -38,6 +38,18 @@ describe("wniosek o akredytację", () => {
         assert.match(mailsTo("org@streetshow.test")[0].text, /Anna Nowak/);
     });
 
+    test("osobny adres do akredytacji zastępuje adresy organizatorów", async () => {
+        process.env.ACCREDITATION_NOTIFY_EMAIL = "media@streetshow.test";
+        try {
+            await apply();
+            assert.equal(mails.length, 1);
+            assert.equal(mailsTo("media@streetshow.test").length, 1);
+            assert.equal(mailsTo("org@streetshow.test").length, 0);
+        } finally {
+            delete process.env.ACCREDITATION_NOTIFY_EMAIL;
+        }
+    });
+
     test("przyjmuje różne zapisy profilu", async () => {
         const inputs = ["@Anna.Foto", "anna.foto", "instagram.com/anna.foto", "http://m.instagram.com/anna.foto/"];
         for (const instagram of inputs) {

@@ -15,6 +15,7 @@ Bez SMTP nie działają: reset hasła, weryfikacja i zmiana adresu e-mail, powia
 - [ ] Opcjonalnie `SMTP_REPLY_TO` — adres, na który trafią odpowiedzi na maile (np. `kontakt@streetshow.pl`, gdy nadawcą jest `no-reply@…`); bez niej odpowiedzi idą na `SMTP_FROM`
 - [ ] DNS domeny: rekord **SPF**, **DKIM** i **DMARC** dla serwera pocztowego — inaczej maile lądują w spamie
 - [ ] `ADMIN_NOTIFY_EMAIL` — adres(y) organizatorów, po przecinku
+- [ ] `ACCREDITATION_NOTIFY_EMAIL` — kto dostaje wnioski o akredytację medialną (puste = `ADMIN_NOTIFY_EMAIL`)
 - [ ] Panel admina → System → wysłać testowy e-mail
 - [ ] Przetestować na żywo: rejestracja, reset hasła, akceptacja zgłoszenia — sprawdzić, czy maile dochodzą (i nie do spamu) na Gmail, Onet, WP, Outlook
 

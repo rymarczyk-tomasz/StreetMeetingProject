@@ -90,6 +90,7 @@ Pozostałe (opcjonalne) zmienne:
 
 ```env
 APP_URL=https://www.streetshow.pl      # do linków w e-mailach (reset hasła, panel)
+ACCREDITATION_NOTIFY_EMAIL=           # wnioski o akredytację medialną; puste = ADMIN_NOTIFY_EMAIL
 ADMIN_NOTIFY_EMAIL=org@example.com    # e-mail(e) organizatorów o każdym nowym zgłoszeniu, po przecinku
 TRUST_PROXY=loopback                  # nginx na tym samym serwerze; liczba hopów, jeśli przed nginx jest kolejne proxy
 BACKUP_DIR=/home/streetshow/backups    # domyślnie backend/backups

@@ -702,6 +702,11 @@ function adminNotifyRecipients() {
     return String(process.env.ADMIN_NOTIFY_EMAIL || "").trim();
 }
 
+// whoever handles media accreditations; empty = the usual organizer addresses
+function accreditationNotifyRecipients() {
+    return String(process.env.ACCREDITATION_NOTIFY_EMAIL || "").trim() || adminNotifyRecipients();
+}
+
 function formatPolishDateTime(date = new Date()) {
     return date.toLocaleString("pl-PL", {
         timeZone: "Europe/Warsaw",
@@ -862,7 +867,7 @@ async function sendNewSubmissionAdminEmail({ submission, userEmail }) {
 }
 
 async function sendNewAccreditationAdminEmail({ accreditation }) {
-    const recipients = adminNotifyRecipients();
+    const recipients = accreditationNotifyRecipients();
     if (!recipients) return { sent: false, reason: "not_configured" };
 
     const adminUrl = `${getAppUrl()}/admin/akredytacje`;
