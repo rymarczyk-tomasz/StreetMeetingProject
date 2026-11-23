@@ -10,6 +10,7 @@ import "@fontsource/chakra-petch/700.css";
 import "./index.css";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
+import { startCookieConsent } from "./utils/cookieConsent";
 
 // Offline app shell (public/sw.js) — production only, so dev reloads stay fresh.
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
@@ -17,6 +18,8 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js").catch(() => {});
     });
 }
+
+void startCookieConsent();
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>

@@ -11,6 +11,7 @@ const gateRoutes = require("./src/gate/routes");
 const { router: showcaseRoutes } = require("./src/showcase/routes");
 const dateSubscribersRoutes = require("./src/notifications/dateSubscribersRoutes");
 const accreditationsRoutes = require("./src/accreditations/routes");
+const consentsRoutes = require("./src/consents/routes");
 const siteContentDb = require("./src/db/siteContent");
 const { maintenanceGuard } = require("./src/maintenanceGuard");
 const { PUBLIC_CONTENT_KEYS } = require("./src/content/defaults");
@@ -144,6 +145,8 @@ app.get("/api/select-status", (req, res) => {
         edition: siteContentDb.getCurrentEdition(),
     });
 });
+// cookie banner choices, also while the site is in maintenance mode
+app.use("/api/consents", consentsRoutes);
 app.get("/api/health", (req, res) => {
     res.json({ status: "OK" });
 });

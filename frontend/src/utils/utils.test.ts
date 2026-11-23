@@ -14,6 +14,7 @@ import {
     tokenFromCode,
 } from "./gateOffline";
 import { buildEventJsonLd, formatEditionHours } from "./edition";
+import { consentModeState, hasCookieBanner } from "./cookieConsent";
 import { faqFirstNumbers } from "./faq";
 import { transformWordHtml } from "./wordPaste";
 
@@ -214,6 +215,26 @@ describe("edition", () => {
         const loose = buildEventJsonLd({ date: "2027-12-04", venueAddress: "Gdańsk, stadion" }, { contact: null });
         expect(loose.location.address).toBe("Gdańsk, stadion");
     });
+});
+
+test("baner cookies na streetshow.pl i serwerze testowym", () => {
+    expect(hasCookieBanner("www.streetshow.pl")).toBe(true);
+    expect(hasCookieBanner("streetshow.pl")).toBe(true);
+    expect(hasCookieBanner("streetshow.tojest.dev")).toBe(true);
+    expect(hasCookieBanner("localhost")).toBe(false);
+    expect(hasCookieBanner("streetshow.pl.zly.example")).toBe(false);
+});
+
+test("Consent Mode: statystyki i marketing osobno", () => {
+    expect(consentModeState(["necessary"])).toEqual({
+        analytics_storage: "denied",
+        ad_storage: "denied",
+        ad_user_data: "denied",
+        ad_personalization: "denied",
+    });
+    expect(consentModeState(["necessary", "analytics"]).analytics_storage).toBe("granted");
+    expect(consentModeState(["necessary", "analytics"]).ad_storage).toBe("denied");
+    expect(consentModeState(["necessary", "marketing"]).ad_user_data).toBe("granted");
 });
 
 test("faqFirstNumbers numeruje pytania przez kategorie", () => {

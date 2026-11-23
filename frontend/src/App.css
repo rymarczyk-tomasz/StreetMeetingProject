@@ -4012,6 +4012,40 @@ body.is-dialog-open {
     width: 100%;
 }
 
+/* cookie banner (vanilla-cookieconsent) in the site's colours */
+#cc-main {
+    --cc-font-family: inherit;
+    --cc-modal-border-radius: 4px;
+    --cc-btn-border-radius: 4px;
+    --cc-primary-color: #171717;
+    --cc-link-color: #171717;
+    --cc-btn-primary-bg: #f4c542;
+    --cc-btn-primary-color: #171717;
+    --cc-btn-primary-border-color: #f4c542;
+    --cc-btn-primary-hover-bg: #171717;
+    --cc-btn-primary-hover-color: #fff;
+    --cc-btn-primary-hover-border-color: #171717;
+    --cc-btn-secondary-bg: #fff;
+    --cc-btn-secondary-color: #171717;
+    --cc-btn-secondary-border-color: #171717;
+    --cc-btn-secondary-hover-bg: #171717;
+    --cc-btn-secondary-hover-color: #fff;
+    --cc-btn-secondary-hover-border-color: #171717;
+    --cc-toggle-on-bg: #171717;
+    --cc-toggle-readonly-bg: #8a8f96;
+}
+
+/* footer "Ustawienia cookies": a button that looks like the links next to it */
+.site-footer-link-button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-decoration: inherit;
+    cursor: pointer;
+}
+
 /* media accreditation: public form and admin list */
 .accreditation-form {
     max-width: 560px;

@@ -4,6 +4,7 @@ import { useAuth } from "../context/auth";
 import { useContent } from "../api/content";
 import { formatEditionDate } from "../utils/edition";
 import { useScrollLock } from "../utils/useScrollLock";
+import { cookieBannerEnabled, openCookieSettings } from "../utils/cookieConsent";
 import AnnouncementBar from "./AnnouncementBar";
 import ConfirmDialog from "./ConfirmDialog";
 import MaintenanceScreen from "./MaintenanceScreen";
@@ -397,6 +398,15 @@ function SocialLinks({ contact }) {
     );
 }
 
+function CookieSettingsLink() {
+    if (!cookieBannerEnabled()) return null;
+    return (
+        <button type="button" className="site-footer-link-button" onClick={openCookieSettings}>
+            Ustawienia cookies
+        </button>
+    );
+}
+
 function AuthorCredit() {
     return (
         <span className="site-footer-credit">
@@ -459,6 +469,7 @@ function HomeFooter({ contact }) {
                         <Link to="/regulamin">Regulamin</Link>
                         <Link to="/regulamin-select">Regulamin Select i Expo</Link>
                         <Link to="/polityka-prywatnosci">Polityka prywatności</Link>
+                        <CookieSettingsLink />
                     </nav>
                 </div>
             </div>
@@ -480,6 +491,7 @@ function PageFooter({ contact }) {
                         <Link to="/regulamin">Regulamin</Link>
                         <Link to="/regulamin-select">Regulamin Select i Expo</Link>
                         <Link to="/polityka-prywatnosci">Polityka prywatności</Link>
+                        <CookieSettingsLink />
                         {contact?.email && <a href={`mailto:${contact.email}`}>{contact.email}</a>}
                     </nav>
                     <div className="site-footer-social">
@@ -491,7 +503,28 @@ function PageFooter({ contact }) {
     );
 }
 
+// the app changes pages without a reload, so GTM gets an event for every later page
+function usePageViewEvents() {
+    const { pathname, search } = useLocation();
+    const first = useRef(true);
+    useEffect(() => {
+        if (first.current) {
+            first.current = false;
+            return;
+        }
+        const w = window as any;
+        w.dataLayer = w.dataLayer || [];
+        w.dataLayer.push({
+            event: "spa_page_view",
+            page_path: pathname + search,
+            page_location: window.location.href,
+            page_title: document.title,
+        });
+    }, [pathname, search]);
+}
+
 export default function Layout() {
+    usePageViewEvents();
     const { user, logout, isLoading: authLoading } = useAuth();
     const location = useLocation();
     const isHome = location.pathname === "/";
