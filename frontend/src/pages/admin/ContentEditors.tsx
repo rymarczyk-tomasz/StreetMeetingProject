@@ -249,6 +249,24 @@ export function HomeEditor({ onAction }) {
                         value={home.ticketUrl}
                         onChange={(ticketUrl) => editor.update({ ticketUrl })}
                     />
+                    <p className="admin-hint">
+                        Cena i data poniżej nie są widoczne na stronie — trafiają tylko do danych dla Google
+                        (wynik wydarzenia z ceną biletu). Przy zmianie puli zaktualizuj cenę.
+                    </p>
+                    <TextInput
+                        label="Cena biletu od (zł)"
+                        value={home.ticketPriceFrom || ""}
+                        onChange={(ticketPriceFrom) => editor.update({ ticketPriceFrom })}
+                        inputMode="decimal"
+                        hint="Najtańszy bilet w obecnej puli, np. 65. Puste = bez ceny dla Google"
+                    />
+                    <TextInput
+                        label="Sprzedaż biletów od"
+                        type="date"
+                        value={home.ticketSaleFrom || ""}
+                        onChange={(ticketSaleFrom) => editor.update({ ticketSaleFrom })}
+                        hint="Opcjonalne"
+                    />
 
                 </>
             )}

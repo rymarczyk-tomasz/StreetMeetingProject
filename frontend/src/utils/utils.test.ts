@@ -197,6 +197,27 @@ describe("edition", () => {
         expect(ld).not.toHaveProperty("description");
     });
 
+    test("JSON-LD: oferta biletów tylko z linkiem i ceną", () => {
+        const edition = { name: "Street Show 2027", date: "2027-05-29", startTime: "12:00", venueName: "Arena" };
+        const withPrice = buildEventJsonLd(edition, {
+            contact: null,
+            home: { ticketUrl: "https://bkb.pl/x", ticketPriceFrom: "65", ticketSaleFrom: "2026-11-01" },
+        });
+        expect(withPrice.offers).toEqual({
+            "@type": "Offer",
+            url: "https://bkb.pl/x",
+            price: "65",
+            priceCurrency: "PLN",
+            availability: "https://schema.org/InStock",
+            validFrom: "2026-11-01T00:00:00+01:00",
+        });
+
+        const noDate = buildEventJsonLd(edition, { contact: null, home: { ticketUrl: "https://bkb.pl/x", ticketPriceFrom: "65" } });
+        expect(noDate.offers).not.toHaveProperty("validFrom");
+        expect(buildEventJsonLd(edition, { contact: null, home: { ticketUrl: "https://bkb.pl/x" } })).not.toHaveProperty("offers");
+        expect(buildEventJsonLd(edition, { contact: null, home: { ticketPriceFrom: "65" } })).not.toHaveProperty("offers");
+    });
+
     test("JSON-LD: opis, zdjęcie, adres w częściach i czas zimowy", () => {
         const ld = buildEventJsonLd(
             { date: "2027-12-04", startTime: "10:00", endTime: "18:00", venueAddress: "ul. Testowa 1, 80-560 Gdańsk" },

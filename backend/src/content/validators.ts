@@ -101,7 +101,16 @@ function validateHome(input) {
         heroMobileRotate: Boolean(input.heroMobileRotate),
         heroCropDesktop: readCrop(input.heroCropDesktop),
         heroCropMobile: readCrop(input.heroCropMobile),
+        ticketPriceFrom: text(input.ticketPriceFrom, 12).replace(/\s|zł/gi, "").replace(",", "."),
+        ticketSaleFrom: text(input.ticketSaleFrom, 10),
     };
+
+    if (content.ticketPriceFrom && !/^\d{1,6}(\.\d{1,2})?$/.test(content.ticketPriceFrom)) {
+        return { error: "Cena biletu od: podaj kwotę w złotych, np. 65 albo 64,99." };
+    }
+    if (content.ticketSaleFrom && !DATE_REGEX.test(content.ticketSaleFrom)) {
+        return { error: "Sprzedaż biletów od: data musi mieć format RRRR-MM-DD." };
+    }
 
     if (!isSafeUrl(content.heroImage)) return { error: urlError("Zdjęcie hero") };
     if (!isSafeUrl(content.heroImageMobile, { allowEmpty: true })) {

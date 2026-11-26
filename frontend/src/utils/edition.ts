@@ -43,10 +43,24 @@ function postalAddress(address) {
     };
 }
 
-type EventPage = { contact: any; description?: string; image?: string };
+type EventPage = { contact: any; description?: string; image?: string; home?: any };
 
-export function buildEventJsonLd(edition, { contact, description, image }: EventPage) {
+// only with a link and a price: an offer without a price is just another warning in Search Console
+function ticketOffer(home) {
+    if (!home?.ticketUrl || !home?.ticketPriceFrom) return null;
+    return {
+        "@type": "Offer",
+        url: home.ticketUrl,
+        price: home.ticketPriceFrom,
+        priceCurrency: "PLN",
+        availability: "https://schema.org/InStock",
+        ...(home.ticketSaleFrom ? { validFrom: polishDateTime(home.ticketSaleFrom, "00:00") } : {}),
+    };
+}
+
+export function buildEventJsonLd(edition, { contact, description, image, home }: EventPage) {
     if (!edition?.date) return null;
+    const offer = ticketOffer(home);
 
     return {
         "@context": "https://schema.org",
@@ -63,6 +77,7 @@ export function buildEventJsonLd(edition, { contact, description, image }: Event
             name: edition.venueName,
             address: postalAddress(edition.venueAddress),
         },
+        ...(offer ? { offers: offer } : {}),
         organizer: {
             "@type": "Organization",
             name: "Street Meeting Poland",

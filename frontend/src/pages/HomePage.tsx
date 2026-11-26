@@ -460,6 +460,7 @@ function useEventJsonLd(edition, home, contact) {
             contact,
             description: home?.heroLead,
             image: home?.heroImage,
+            home,
         });
         if (!data) return;
 

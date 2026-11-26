@@ -26,6 +26,9 @@ const DEFAULTS = {
         heroCropMobile: { x: 50, y: 50, zoom: 1 },
         ticketLabel: "Kup bilety",
         ticketUrl: "https://bkb.pl/225497-e27af",
+        // only for Google (event offers), not shown on the page; empty = no offer
+        ticketPriceFrom: "",
+        ticketSaleFrom: "",
         heroLead:
             "Najbardziej unikalne wydarzenie motoryzacyjne w Polsce – auta na murawie stadionu, drift taxi i strefa expo.",
     },

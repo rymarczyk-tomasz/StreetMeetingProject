@@ -147,6 +147,20 @@ describe("walidatory treści", () => {
         assert.ok(validateContent("settings", { maxVehiclesPerUser: 0 }).error);
     });
 
+    test("home: cena biletu od i data sprzedaży (tylko dla Google)", () => {
+        const home = { heroTitle: "Street Show", heroImage: "/img/hero.webp", ticketLabel: "Kup bilety", ticketUrl: "https://bkb.pl/x" };
+        const empty = validateContent("home", home);
+        assert.equal(empty.content.ticketPriceFrom, "");
+        assert.equal(empty.content.ticketSaleFrom, "");
+
+        const filled = validateContent("home", { ...home, ticketPriceFrom: " 64,99 zł", ticketSaleFrom: "2026-11-01" });
+        assert.equal(filled.content.ticketPriceFrom, "64.99");
+        assert.equal(filled.content.ticketSaleFrom, "2026-11-01");
+
+        assert.match(validateContent("home", { ...home, ticketPriceFrom: "od 65" }).error, /Cena biletu/);
+        assert.match(validateContent("home", { ...home, ticketSaleFrom: "1 listopada" }).error, /Sprzedaż biletów/);
+    });
+
     test("akceptuje IBAN ze spacjami i PL", () => {
         const res = validateContent("settings", { ...validSettings, paymentAccount: "PL12 3456 7890 1234 5678 9012 3456" });
         assert.equal(res.error, undefined);
