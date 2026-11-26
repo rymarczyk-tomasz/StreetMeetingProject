@@ -1995,6 +1995,11 @@ body {
     z-index: 0;
 }
 
+/* CMS content not here yet: plain dark background instead of the built-in photo */
+.home.hero-pending {
+    --hero-fallback: none;
+}
+
 /* Frame (rotated on phones if enabled) clipping the photo layer. */
 .hero-photo {
     position: absolute;

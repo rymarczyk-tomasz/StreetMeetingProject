@@ -51,7 +51,6 @@ const FALLBACK = {
     home: {
         heroTitle: "Street Show",
         heroLead: DEFAULT_HERO_LEAD,
-        heroImage: "/img/photos/Hero-image.webp",
         heroMobileRotate: true,
         ticketLabel: "Kup bilety",
         ticketUrl: "",
@@ -486,7 +485,9 @@ function useEditionTitle(edition) {
 
 export default function HomePage() {
     const { user } = useAuth();
-    const { content } = useContent(CONTENT_KEYS);
+    const { content, error } = useContent(CONTENT_KEYS, { cache: true });
+    // no photo until we know which one: the built-in one only if the api fails
+    const heroPending = !content && !error;
     const { edition, home, event, select, gallery, contact, partners } = {
         ...FALLBACK,
         ...content,
@@ -502,7 +503,7 @@ export default function HomePage() {
         <>
             <header
                 id="home"
-                className={`home${shouldRotateOnMobile(home) ? " hero-rotate-mobile" : ""}`}
+                className={`home${shouldRotateOnMobile(home) ? " hero-rotate-mobile" : ""}${heroPending ? " hero-pending" : ""}`}
                 style={heroPhotoVars(home)}
             >
                 <HeroPhoto />
