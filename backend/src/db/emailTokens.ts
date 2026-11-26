@@ -18,6 +18,14 @@ const deleteExpiredStmt = db.prepare(
     `DELETE FROM email_tokens WHERE expires_at <= datetime('now')`,
 );
 
+const lastIssuedStmt = db.prepare(
+    `SELECT MAX(created_at) AS created_at FROM email_tokens WHERE user_id = ? AND kind = ?`,
+);
+
+function lastIssuedAt(userId, kind) {
+    return lastIssuedStmt.get(userId, kind)?.created_at || null;
+}
+
 function hashToken(token) {
     return crypto.createHash("sha256").update(String(token || "")).digest("hex");
 }
@@ -39,4 +47,4 @@ function pruneExpiredEmailTokens() {
     deleteExpiredStmt.run();
 }
 
-module.exports = { createEmailToken, consumeEmailToken, pruneExpiredEmailTokens };
+module.exports = { createEmailToken, consumeEmailToken, pruneExpiredEmailTokens, lastIssuedAt };

@@ -35,6 +35,7 @@ const ACTION_LABELS = {
     "user.blocked": "zablokował użytkownika",
     "user.unblocked": "odblokował użytkownika",
     "user.sessions_revoked": "wylogował użytkownika ze wszystkich urządzeń",
+    "user.verification_resent": "wysłał ponownie link potwierdzający e-mail",
     "user.gate_staff_granted": "nadał obsługę wjazdu",
     "user.gate_staff_revoked": "odebrał obsługę wjazdu",
     "event.content_updated": "zaktualizował treść Eventu",

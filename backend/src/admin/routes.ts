@@ -21,7 +21,11 @@ const {
     sendDateSubscribersEmail,
     sendTestEmail,
     sendSecurityAlertEmail,
+    sendVerificationEmail,
 } = require("../notifications/email");
+const emailTokensDb = require("../db/emailTokens");
+const { isTestMode } = require("../testMode");
+const { createRateLimiter } = require("../utils/rateLimiter");
 const twoFactorDb = require("../db/twoFactor");
 const { confirmStepUp } = require("../auth/stepUp");
 const dateSubscribersDb = require("../db/dateSubscribers");
@@ -111,9 +115,20 @@ function changedPaymentFields(previous, next) {
     );
 }
 
-function toAdminSubmission(row) {
+// TEST_MODE counts every address as confirmed; without SMTP nobody could confirm, so it isn't required
+function emailVerificationMode() {
+    if (isTestMode()) return "test_mode";
+    if (!isEmailConfigured()) return "smtp_off";
+    return "required";
+}
+
+function toAdminSubmission(row, verificationRequired = emailVerificationMode() === "required") {
     return {
         ...toPublicSubmission(row),
+        userId: row.user_id,
+        // only rows joined with users carry the owner's confirmation
+        userEmailUnverified: "user_email_verified_at" in row && verificationRequired && !row.user_email_verified_at,
+        userRegisteredAt: row.user_created_at,
         internalNote: row.internal_note,
         approvedAt: row.approved_at,
         paymentReminderSentAt: row.payment_reminder_sent_at,
@@ -298,7 +313,13 @@ router.get("/users", (req, res) => {
             .json({ message: "Nieprawidłowy filtr statusu." });
     }
 
-    const users = usersDb.listUsers({ search, role, active });
+    const emailVerification = emailVerificationMode();
+    const required = emailVerification === "required";
+    // when confirming isn't required nobody counts as unconfirmed
+    const users =
+        req.query.unverified === "1" && !required
+            ? []
+            : usersDb.listUsers({ search, role, active, unverified: req.query.unverified === "1" });
     auditLogDb.createThrottledAuditEntry({
         adminId: req.user.sub,
         action: "user.list_viewed",
@@ -306,7 +327,66 @@ router.get("/users", (req, res) => {
         targetId: null,
         details: { count: users.length },
     });
-    res.json({ users });
+    res.json({
+        users: users.map((user) => ({ ...user, email_unverified: required && !user.email_verified_at })),
+        emailVerification,
+    });
+});
+
+const VERIFICATION_RESEND_COOLDOWN_MS = 10 * 60 * 1000;
+const verificationResendLimit = createRateLimiter({
+    windowMs: 60 * 60 * 1000,
+    maxRequests: 30,
+    message: "Zbyt wiele wysyłek linków potwierdzających. Spróbuj ponownie później.",
+});
+
+function sqliteTime(value) {
+    return value ? Date.parse(`${value.replace(" ", "T")}Z`) : 0;
+}
+
+// the admin can only resend the link, confirming stays with the address owner
+router.post("/users/:id/resend-verification", verificationResendLimit, async (req, res) => {
+    const id = Number(req.params.id);
+    const target = usersDb.findUserById(id);
+    if (!target) {
+        return res.status(404).json({ message: "Nie znaleziono użytkownika." });
+    }
+    if (target.email_verified_at) {
+        return res.status(400).json({ message: "Ten adres e-mail jest już potwierdzony." });
+    }
+    if (!target.is_active) {
+        return res.status(400).json({ message: "Konto jest zablokowane." });
+    }
+    const mode = emailVerificationMode();
+    if (mode === "test_mode") {
+        return res.status(400).json({
+            message: "W trybie testowym adres e-mail traktowany jest jak potwierdzony.",
+        });
+    }
+    if (mode === "smtp_off") {
+        return res.status(503).json({
+            message: "Wysyłka e-maili nie jest skonfigurowana, potwierdzenie adresu nie jest wymagane.",
+        });
+    }
+
+    const waitMs = sqliteTime(emailTokensDb.lastIssuedAt(id, "verify")) + VERIFICATION_RESEND_COOLDOWN_MS - Date.now();
+    if (waitMs > 0) {
+        return res.status(429).json({
+            message: `Link wysłano niedawno. Kolejny możesz wysłać za ${Math.ceil(waitMs / 60000)} min.`,
+        });
+    }
+
+    const { token, ttlHours } = emailTokensDb.createEmailToken(id, "verify");
+    try {
+        await sendVerificationEmail({ user: target, token, ttlHours });
+    } catch (error) {
+        console.error("[email] potwierdzenie adresu (admin):", error?.message || error);
+        return res.status(502).json({
+            message: "Nie udało się wysłać e-maila. Spróbuj ponownie za chwilę.",
+        });
+    }
+    audit(req, "user.verification_resent", "user", id, { email: target.email });
+    res.json({ message: `Wysłano link potwierdzający na ${target.email}.` });
 });
 
 router.patch("/users/:id/role", async (req, res) => {
@@ -654,8 +734,9 @@ router.get("/submissions", (req, res) => {
     } else {
         auditLogDb.createThrottledAuditEntry({ ...entry, action: "submission.list_viewed" });
     }
+    const verificationRequired = emailVerificationMode() === "required";
     res.json({
-        submissions: rows.map(toAdminSubmission),
+        submissions: rows.map((row) => toAdminSubmission(row, verificationRequired)),
         counts: countSubmissionsByFilter(filters),
     });
 });

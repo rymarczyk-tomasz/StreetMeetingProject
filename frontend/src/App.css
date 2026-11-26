@@ -673,7 +673,15 @@ body {
 }
 
 .user-filters {
-    grid-template-columns: minmax(0, 2fr) repeat(2, minmax(150px, 1fr));
+    grid-template-columns: minmax(0, 2fr) repeat(2, minmax(150px, 1fr)) auto;
+}
+
+.user-filters-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    cursor: pointer;
 }
 
 .submission-filters {
@@ -4609,7 +4617,7 @@ body.is-dialog-open {
         gap: 8px;
     }
 
-    .admin-page .user-filters .user-filters-search {
+    .admin-page .user-filters :is(.user-filters-search, .user-filters-check) {
         grid-column: 1 / -1;
     }
 

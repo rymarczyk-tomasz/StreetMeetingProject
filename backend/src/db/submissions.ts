@@ -249,7 +249,8 @@ function listAllSubmissions(filters: SubmissionFilters = {}) {
     return db
         .prepare(
             `
-            SELECT submissions.*, users.email AS user_email
+            SELECT submissions.*, users.email AS user_email,
+                   users.email_verified_at AS user_email_verified_at, users.created_at AS user_created_at
             FROM submissions
             JOIN users ON users.id = submissions.user_id
             ${where}

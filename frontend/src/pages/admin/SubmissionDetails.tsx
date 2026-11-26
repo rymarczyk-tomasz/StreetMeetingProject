@@ -5,7 +5,7 @@ import { TemplatePicker } from "./templates";
 import { fillTemplate } from "./templateData";
 import { ZONES, ZONE_LABELS } from "../../utils/zones";
 import { DETAIL_TABS, PAYMENT_STATUS_LABELS, STATUS_LABELS, formatDate, formatDay } from "./shared";
-
+import EmailUnverifiedBadge from "./EmailUnverifiedBadge";
 
 function PhotoMosaic({ submission, onOpen }) {
     const photos = submission.photos;
@@ -433,6 +433,20 @@ export default function SubmissionDetails({
                         <dt>E-mail</dt>
                         <dd>
                             <a href={`mailto:${s.userEmail}`}>{s.userEmail}</a>
+                            {s.userEmailUnverified && (
+                                <>
+                                    {" "}
+                                    <EmailUnverifiedBadge registeredAt={s.userRegisteredAt} />{" "}
+                                    <button
+                                        type="button"
+                                        className="link-button"
+                                        disabled={isBusy}
+                                        onClick={() => actions.resendVerification(s)}
+                                    >
+                                        Wyślij ponownie link potwierdzający
+                                    </button>
+                                </>
+                            )}
                         </dd>
                     </div>
                 </dl>

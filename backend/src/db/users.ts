@@ -9,7 +9,7 @@ const insertUserStmt = db.prepare(`
 const findByEmailStmt = db.prepare(`SELECT * FROM users WHERE email = ?`);
 const findByIdStmt = db.prepare(`SELECT * FROM users WHERE id = ?`);
 const listUsersQuery = `
-    SELECT id, email, first_name, last_name, role, is_active, gate_staff, created_at,
+    SELECT id, email, first_name, last_name, role, is_active, gate_staff, created_at, email_verified_at,
            (totp_enabled_at IS NOT NULL AND totp_secret IS NOT NULL) AS two_factor
     FROM users
 `;
@@ -122,7 +122,8 @@ function listUsers({
     search,
     role,
     active,
-}: { search?: string; role?: string; active?: string | number } = {}) {
+    unverified = false,
+}: { search?: string; role?: string; active?: string | number; unverified?: boolean } = {}) {
     const conditions = [];
     const parameters = [];
 
@@ -143,6 +144,8 @@ function listUsers({
         conditions.push("is_active = ?");
         parameters.push(Number(active));
     }
+
+    if (unverified) conditions.push("email_verified_at IS NULL");
 
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
     return db

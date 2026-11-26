@@ -5,6 +5,7 @@ import { askConfirm } from "../../api/confirm";
 import { withStepUp } from "../../api/stepUp";
 import { plural } from "../../utils/plural";
 import AdminHeading from "./AdminHeading";
+import EmailUnverifiedBadge from "./EmailUnverifiedBadge";
 import { errorMessage } from "./shared";
 
 function RowMenu({ label, items }) {
@@ -68,7 +69,9 @@ export default function UsersPanel({ onAction }) {
         search: "",
         role: "",
         active: "",
+        unverified: "",
     });
+    const [emailVerification, setEmailVerification] = useState("required");
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
     const [isLoading, setIsLoading] = useState(true);
@@ -79,6 +82,7 @@ export default function UsersPanel({ onAction }) {
                 params: userFilters,
             });
             setUsers(data.users);
+            setEmailVerification(data.emailVerification || "required");
         } catch (err) {
             setError(
                 errorMessage(err, "Nie udało się pobrać listy użytkowników."),
@@ -192,8 +196,21 @@ export default function UsersPanel({ onAction }) {
         if (data) setMessage(data.message);
     }
 
+    async function resendVerification(targetUser) {
+        const data = await runAction(
+            () => api.post(`/admin/users/${targetUser.id}/resend-verification`),
+            "Nie udało się wysłać linku potwierdzającego.",
+        );
+        if (data) setMessage(data.message);
+    }
+
     function menuItems(u) {
         return [
+            Boolean(u.email_unverified) && {
+                label: "Wyślij ponownie link potwierdzający",
+                title: "Nowy link na adres konta; potwierdzić może tylko właściciel adresu",
+                run: () => resendVerification(u),
+            },
             { label: u.role === "admin" ? "Odbierz admina" : "Nadaj admina", run: () => toggleRole(u) },
             u.role !== "admin" && {
                 label: u.gate_staff ? "Odbierz obsługę wjazdu" : "Nadaj obsługę wjazdu",
@@ -263,7 +280,29 @@ export default function UsersPanel({ onAction }) {
                     <option value="1">Status: aktywne</option>
                     <option value="0">Status: zablokowane</option>
                 </Select>
+                {emailVerification === "required" && (
+                    <label className="user-filters-check">
+                        <input
+                            type="checkbox"
+                            checked={userFilters.unverified === "1"}
+                            onChange={(event) =>
+                                setUserFilters({
+                                    ...userFilters,
+                                    unverified: event.target.checked ? "1" : "",
+                                })
+                            }
+                        />
+                        Tylko niepotwierdzone
+                    </label>
+                )}
             </div>
+            {emailVerification !== "required" && (
+                <p className="detail-note">
+                    {emailVerification === "test_mode"
+                        ? "Tryb testowy: adresy e-mail traktowane są jak potwierdzone."
+                        : "Wysyłka e-maili nie jest skonfigurowana, więc potwierdzenie adresu nie jest wymagane."}
+                </p>
+            )}
             {isLoading ? (
                 <p className="page-status">Ładowanie...</p>
             ) : (
@@ -287,6 +326,7 @@ export default function UsersPanel({ onAction }) {
                                             <span className="status-badge">wjazd</span>
                                         )}
                                         {!u.is_active && <span className="status-badge status-rejected">zablokowany</span>}
+                                        {Boolean(u.email_unverified) && <EmailUnverifiedBadge registeredAt={u.created_at} />}
                                     </p>
                                     <p className="user-row-name">
                                         {[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}

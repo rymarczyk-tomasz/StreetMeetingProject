@@ -276,6 +276,13 @@ export default function SubmissionsPanel({ edition = "", onAction }) {
                 () => api.patch(`/admin/submissions/${submission.id}/internal-note`, { internalNote }),
                 "Nie udało się zapisać notatki.",
             ),
+        resendVerification: async (submission) => {
+            const response = await runAction(
+                () => api.post(`/admin/users/${submission.userId}/resend-verification`),
+                "Nie udało się wysłać linku potwierdzającego.",
+            );
+            if (response) setMessage(response.data.message);
+        },
         setShowcaseHidden: (submission, hidden) =>
             runAction(
                 () => api.patch(`/admin/submissions/${submission.id}/showcase`, { hidden }),
